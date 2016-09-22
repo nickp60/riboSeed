@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """
-version 0.8.4
+version 0.8.5
 Minor version changes:
-  - there was a bug where specific_features were being looked for
-    in the locus tagl;  this was a corner case for the coli strain, but
-     largly irrelevant others
+  - made this rely on utils script
 #TODO:
 - set up logging
 - Make this less awful
@@ -30,6 +28,8 @@ import argparse
 import sys
 from Bio import SeqIO
 import time
+from pyutilsnrw.utils3_5 import get_genbank_record, check_single_scaffold,
+
 
 
 def get_args(DEBUG=False):
@@ -50,35 +50,6 @@ def get_args(DEBUG=False):
     args = parser.parse_args()
     return(args)
 
-
-def check_single_scaffold(input_genome_path, logger=None):
-    """Test for single scaffold
-    """
-    counter = -1  # if all goes well, returns 0, else returns 1 or more or -1
-    for line in open(input_genome_path, "r"):
-        if re.search("ORIGIN", line) is not None:
-            counter = counter + 1
-    return(counter)
-
-
-def get_genbank_record(input_genome_path, verbose=True, logger=None):
-    """reads the FIRST record only from a genbank file;
-    will probably only work for first scaffold
-    """
-    if verbose and logger:
-        log_status = logger.info
-    elif verbose:
-        log_status = sys.stderr.write
-    else:
-        pass
-
-    print("Reading genbank file...")
-    with open(input_genome_path) as input_genome_handle:
-        genome_seq_record = next(SeqIO.parse(input_genome_handle, "genbank"))
-    if genome_seq_record.seq[0: 100] == str("N" * 100):
-        log_status("Careful: the first 100 nucleotides are N's; " +
-                   "did you download the full .gb file?")
-    return(genome_seq_record)
 
 
 def get_filtered_locus_tag_dict(genome_seq_record, feature="rRNA",
@@ -194,16 +165,12 @@ if __name__ == "__main__":
         reader = csv.reader(infile)
         next(reader, None)  # skip the headers
         indexClusterDict = dict((rows[0], rows[1]) for rows in reader)
-    ##
-    # print(lociDict)
-    # print(indexClusterDict)
     clusteredDict = {}
     for k, v in indexClusterDict.items():
         clusteredDict.setdefault(v, []).append(lociDict[int(k)])
     # print(clusteredDict)
     with open(os.path.join(args.output,
-                           str(date +
-                               "_riboSelect_grouped_loci.txt")),
+                           str(date + "_riboSelect_grouped_loci.txt")),
               "w") as outfile:
         for k, v in clusteredDict.items():
             outfile.write(str(":".join(str(x[0]) for x in v) + '\n'))
