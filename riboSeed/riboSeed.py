@@ -295,8 +295,9 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
 #    spades_cmds=[]
     if prelim:
         prelim_cmd =\
-            str("{4}  --only-assembler --cov-cutoff off --sc --careful -k {0}" +
-                " {1} {2} -o {3}").format(kmers, reads, alt_contig, output, spades_exe)
+            str("{4}  --only-assembler --cov-cutoff off --sc --careful -k" +
+                " {0} {1} {2} -o {3}").format(kmers, reads, alt_contig,
+                                              output, spades_exe)
         logger.info("Running the following command:\n{0}".format(prelim_cmd))
         subprocess.run(prelim_cmd,
                        shell=sys.platform != "win32",
@@ -490,12 +491,13 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
     logger.debug(str("this fasta's output dirs: " +
                      "\n{0}\n{1}\n{2}").format(spades_dir, quast_dir,
                                                mapping_dir))
-    if not os.path.isdir(spades_dir):
-        os.makedirs(spades_dir)
-    if not os.path.isdir(quast_dir):
-        os.makedirs(quast_dir)
-    if not os.path.isdir(mapping_dir):
-        os.makedirs(mapping_dir)
+    for i in [spades_dir, quast_dir, mapping_dir]:
+        if not os.path.isdir(i):
+            os.makedirs(i)
+    # if not os.path.isdir(quast_dir):
+    #     os.makedirs(quast_dir)
+    # if not os.path.isdir(mapping_dir):
+    #     os.makedirs(mapping_dir)
     map_results_prefix = os.path.join(
         mapping_dir, str(exp_name + "_" +
                          os.path.split(fasta)[1].split(".fasta")[0]))
@@ -667,7 +669,8 @@ if __name__ == "__main__":
                  method=args.method, reference_genome=args.reference_genome,
                  fastq1=args.fastq1, fastq2=args.fastq2, fastqS=args.fastqS,
                  average_read_length=average_read_length, cores=args.cores,
-                 subtract_reads=args.subtract, ref_as_contig=args.ref_as_contig,
+                 subtract_reads=args.subtract,
+                 ref_as_contig=args.ref_as_contig,
                  fetch_mates=args.paired_inference,
                  keep_unmapped_reads=args.keep_unmapped,
                  paired_inference=args.paired_inference,
