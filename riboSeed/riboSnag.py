@@ -11,7 +11,7 @@ Minor version changes:
 #TODO:
 - set up logging
 - Make this less awful
-- Make this work with multiple scaffolds.  Should just mean 
+- Make this work with multiple scaffolds.  Should just mean
     wrapping certain looks in another for rec in record bit
 - Maybe use percentage based exclusion, rather than a "within" arg?
 Input:
@@ -106,22 +106,22 @@ def parse_clustered_loci_file(file):
 
 def extract_coords_from_locus(genome_seq_record, locus_tag_list=[],
                               verbose=True):
-    """given a list of locus_tags, return a list of 
+    """given a list of locus_tags, return a list of
     loc_number,coords, strand, product
     """
     loc_number = 0  # index for hits
     loc_list = []  # recipient structure
     for feat in genome_seq_record.features:
         try:
-            if (feat.qualifiers.get("locus_tag")[0] in locus_tag_list) and\
-               (feat.type == args.feature):
+            if (feat.qualifiers.get("locus_tag")[0] in locus_tag_list):  # and\
+               # (feat.type == args.feature):
                 #  SeqIO makes coords 0-based; the +1 below undoes that
-                coords = [feat.location.start.position + 1, 
+                coords = [feat.location.start.position + 1,
                           feat.location.end.position]
                 strand = feat.strand
                 product = feat.qualifiers.get("product")
                 locus_tag = feat.qualifiers.get("locus_tag")[0]
-                loc_list.append([loc_number, coords, strand, 
+                loc_list.append([loc_number, coords, strand,
                                  product, locus_tag])
                 loc_number = loc_number + 1
             else:
@@ -133,7 +133,7 @@ def extract_coords_from_locus(genome_seq_record, locus_tag_list=[],
         sys.exit(1)
     if verbose:
         print("Here are the detected region, strand, product, locus tag, \
-               and subfeatures of the results:") 
+               and subfeatures of the results:")
         pp.pprint(loc_list)
     return(loc_list)
 
@@ -142,12 +142,12 @@ def extract_coords_from_locus(genome_seq_record, locus_tag_list=[],
 def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
                                    within=50, minimum=50, replace=True,
                                    logger=None, verbose=True):
-    """ 
+    """
     given a list from get_coords, usually of length 3 (16,5,and 23 rRNAs),
-    return a string with the sequence of the region, replacing coding 
-    sequences with N's (or not, replace=False), and including the flanking 
+    return a string with the sequence of the region, replacing coding
+    sequences with N's (or not, replace=False), and including the flanking
     regions upstream and down.
-    
+
     revamped 20160913
     """
     if verbose and logger:
@@ -167,14 +167,14 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
                          " integer or two colon-seapred integers")
     region = ''
     #TODO : make this safer
-    smallest_feature = min([y[1] - y[0] for y in [ x[1] for x in coords]]) 
-    # print(smallest_feature)          
+    smallest_feature = min([y[1] - y[0] for y in [ x[1] for x in coords]])
+    # print(smallest_feature)
     if smallest_feature < (minimum):
         raise ValueError("invalid minimum! cannot exceed half of smallest " +
                          "feature, which is {0} in this case".format(
                              smallest_feature))
     # print("smallest featres")
-    # print([y[1] - y[0] for y in [ x[1] for x in coords]]) 
+    # print([y[1] - y[0] for y in [ x[1] for x in coords]])
     if verbose:
         for i in coords:
             log_status(str(i))
@@ -215,7 +215,7 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
             log_status(str(seq_with_ns[i*lb :lb+(i*lb)]+"\n"))
             log_status("\n")
     return(seq_with_ns)
- 
+
 
 
 if __name__ == "__main__":

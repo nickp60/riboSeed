@@ -190,8 +190,9 @@ def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
                         '{1}S.bam').format(samtools_exe, map_results_prefix)
         smaltcommands.extend([cmdindexS, cmdmapS, cmdviewS, cmdmergeS])
     else:
-        cmdmerge = str("{0} merge -f  {1}.bam " +
-                       "{1}_pe.bam").format(samtools_exe, map_results_prefix)
+        #  is there a better. safer way than using mv -f?
+        cmdmerge = str("mv -f {0}_pe.bam " +
+                       "{0}.bam").format(map_results_prefix)
         smaltcommands.extend([cmdmerge])
     logger.info("running SMALT:")
     logger.debug("with the following SMALT commands:")
@@ -210,8 +211,6 @@ def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
     logger.info(str("Combined mapped reads: " +
                     get_number_mapped(str(map_results_prefix + ".bam"),
                                       samtools_exe=args.samtools_exe)))
-
-
 
 
 def convert_bams_to_fastq(map_results_prefix, fastq_results_prefix,
