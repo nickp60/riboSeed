@@ -2,13 +2,15 @@
 #-*- coding: utf-8 -*-
 
 """
-version 0.9.1
+version 0.9.2
 
 Minor Version Revisions:
  - set smalt output to bams, removed the conversion step.
+
  - changed single pe from merge (that throws errors now) to moving with cp
    I didnt use the shutils copy because I needed it to be a subprocess call
    so it would jive with the current program
+ -changed it back?
 Created on Sun Jul 24 19:33:37 2016
 The goal of this script will be to use a small fasta sequence to build indices
 and use as references for BWA. Mapped sequences will be outputted from BWA
@@ -167,7 +169,7 @@ def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
     cmdindex = str("{3} index -k {0} -s {1} {2} {2}").format(
         k, step, ref, args.smalt_exe)
     cmdmap = str('{7} map -l pe -S {8} ' +
-                 '-m {0} -n {1} -g {2} -f bam -o {3}.bam {4} {5} ' +
+                 '-m {0} -n {1} -g {2} -f bam -o {3}_pe.bam {4} {5} ' +
                  '{6}').format(score_min, cores, distance_results,
                                map_results_prefix, ref, fastq_read1,
                                fastq_read2, args.smalt_exe, scoring)
@@ -191,8 +193,10 @@ def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
         smaltcommands.extend([cmdindexS, cmdmapS, cmdmergeS])
     else:
         #  is there a better. safer way than using mv -f?
-        cmdmerge = str("cp -f {0}_pe.bam " +
-                       "{0}.bam").format(map_results_prefix)
+        # cmdmerge = str("cp -f {0}_pe.bam " +
+        #                "{0}.bam").format(map_results_prefix)
+        cmdmerge = str("{0} merge -f  {1}.bam " +
+                       "{1}_pe.bam").format(samtools_exe, map_results_prefix)
         smaltcommands.extend([cmdmerge])
     logger.info("running SMALT:")
     logger.debug("with the following SMALT commands:")
