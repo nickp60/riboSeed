@@ -28,7 +28,7 @@ import argparse
 import sys
 from Bio import SeqIO
 import time
-from pyutilsnrw.utils3_5 import get_genbank_record, check_single_scaffold,
+from pyutilsnrw.utils3_5 import get_genbank_record, check_single_scaffold
 
 
 
