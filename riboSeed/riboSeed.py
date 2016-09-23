@@ -2,13 +2,13 @@
 #-*- coding: utf-8 -*-
 
 """
-version 0.9.0
+version 0.9.1
 
 Minor Version Revisions:
- - made consensus from contigs
- - fixed long-standing bugs in paired end merge #womp
- - better usage message at beginning of log
-
+ - set smalt output to bams, removed the conversion step.
+ - changed single pe from merge (that throws errors now) to moving with cp
+   I didnt use the shutils copy because I needed it to be a subprocess call
+   so it would jive with the current program
 Created on Sun Jul 24 19:33:37 2016
 The goal of this script will be to use a small fasta sequence to build indices
 and use as references for BWA. Mapped sequences will be outputted from BWA
@@ -109,8 +109,8 @@ def get_args(DEBUG=False):
     parser.add_argument("-i", "--iterations", dest='iterations',
                         action="store",
                         default=2, type=int,
-                        help="if iterations>1, multiple seedings will "+
-                        "occur after assembly of seed regions; "+
+                        help="if iterations>1, multiple seedings will " +
+                        "occur after assembly of seed regions; " +
                         "default: %(default)s")
     parser.add_argument("-v", "--verbosity", dest='verbosity', action="store",
                         default=2, type=int,
@@ -151,8 +151,6 @@ def get_args(DEBUG=False):
     return(args)
 
 
-
-
 def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
                      distance_results,
                      map_results_prefix, cores, samtools_exe,
@@ -169,29 +167,31 @@ def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
     cmdindex = str("{3} index -k {0} -s {1} {2} {2}").format(
         k, step, ref, args.smalt_exe)
     cmdmap = str('{7} map -l pe -S {8} ' +
-                 '-m {0} -n {1} -g {2} -o {3}.sam {4} {5} ' +
+                 '-m {0} -n {1} -g {2} -f bam -o {3}.bam {4} {5} ' +
                  '{6}').format(score_min, cores, distance_results,
                                map_results_prefix, ref, fastq_read1,
                                fastq_read2, args.smalt_exe, scoring)
-    cmdview = str('{0} view -bhS {1}.sam > {1}_pe.bam').format(
-        samtools_exe, map_results_prefix)
-    smaltcommands = [cmdindex, cmdmap, cmdview]
+    # cmdview = str('{0} view -bhS {1}.sam > {1}_pe.bam').format(
+    #     samtools_exe, map_results_prefix)
+    # smaltcommands = [cmdindex, cmdmap, cmdview]
+    smaltcommands = [cmdindex, cmdmap]
     if fastq_readS != "":
         cmdindexS = str('{0} index -k {1} -s {2} {3} {3}').format(
             smalt_exe, k, step, ref)
         cmdmapS = str("{7} map -S {6} " +
-                      "-m {0} -n {1} -g {2} -o {3}S.sam {4} " +
+                      "-m {0} -n {1} -g {2} -f bam -o {3}S.bam {4} " +
                       "{5}").format(score_min, cores, distance_results,
                                     map_results_prefix, ref, fastq_readS,
                                     scoring, smalt_exe)
-        cmdviewS = str('{0} view -bhS {1}S.sam > ' +
-                       '{1}S.bam').format(samtools_exe, map_results_prefix)
+        # cmdviewS = str('{0} view -bhS {1}S.sam > ' +
+        #                '{1}S.bam').format(samtools_exe, map_results_prefix)
         cmdmergeS = str('{0} merge -f  {1}.bam {1}_pe.bam ' +
                         '{1}S.bam').format(samtools_exe, map_results_prefix)
-        smaltcommands.extend([cmdindexS, cmdmapS, cmdviewS, cmdmergeS])
+        # smaltcommands.extend([cmdindexS, cmdmapS, cmdviewS, cmdmergeS])
+        smaltcommands.extend([cmdindexS, cmdmapS, cmdmergeS])
     else:
         #  is there a better. safer way than using mv -f?
-        cmdmerge = str("mv -f {0}_pe.bam " +
+        cmdmerge = str("cp -f {0}_pe.bam " +
                        "{0}.bam").format(map_results_prefix)
         smaltcommands.extend([cmdmerge])
     logger.info("running SMALT:")
