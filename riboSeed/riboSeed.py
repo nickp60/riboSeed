@@ -152,6 +152,11 @@ def get_args(DEBUG=False):
     args = parser.parse_args()
     return(args)
 
+# def is_non_zero_file(fpath):
+#     """http://stackoverflow.com/questions/2507808/python-how-to-check-file-empty-or-not
+#     """
+#     return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
+
 
 def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
                      distance_results,
@@ -262,6 +267,7 @@ def convert_bams_to_fastq(map_results_prefix, fastq_results_prefix,
 
 def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                as_paired=True, keep_best=True, prelim=False,
+               groom_contigs='keep_first',
                k="21,33,55,77,99", seqname='', spades_exe="spades.py"):
     """wrapper for common spades setting for long illumina reads
     ref_as_contig should be either blank, 'trusted', or 'untrusted'
@@ -272,6 +278,10 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
     but that is changed with each iteration. This should probably be addressed
     before next major version change
     """
+    if groom_contigs not in ['keep_first', 'consensus']:
+        logger.error("groom_contigs option must be either keep first or " +
+                     "consensus")
+        sys.exit(1)
     if seqname == '':
         seqname = ref
     kmers = k  # .split[","]
@@ -308,12 +318,12 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                        stderr=subprocess.PIPE, check=True)
         success = output_from_subprocess_exists(os.path.join(output,
                                                              "contigs.fasta"))
-        if prelim and keep_best and success:
+        if groom_contigs == "keep_first" and success:
             logger.info("reserving first contig")
             keep_only_first_contig(str(os.path.join(output, "contigs.fasta")),
-                                   newname=
-                                       os.path.splitext(os.path.basename(seqname))[0])
-        if prelim and success:
+                                   newname=os.path.splitext(
+                                       os.path.basename(seqname))[0])
+        elif success and groom_contigs == "consensus":
             # get consensus; copy ref for starters to double check later
             contigs_backup = copy_file(current_file=ref, dest_dir=output,
                                        name=str("backedup_contigs.fasta"),
@@ -321,10 +331,12 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
 
             # make pileup
             pileupcmd = str("smalt index {0} {0} ; smalt map {0} {1} | " +
-                            "samtools sort - | samtools mpileup -f {0} - " +
-                            "-o {2}").format(ref,
-                                             os.path.join(output, 'contigs.fasta'),
-                                             os.path.join(output, 'contigs_pileup.txt'))
+                            "samtools sort - | samtools mpileup -f {0} - -o " +
+                            "{2}").format(ref,
+                                          os.path.join(output,
+                                                       'contigs.fasta'),
+                                          os.path.join(output,
+                                                       'contigs_pileup.txt'))
             subprocess.run(pileupcmd,
                            shell=sys.platform != "win32",
                            stdout=subprocess.PIPE,
@@ -334,11 +346,14 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                                                         'contigs_pileup.txt'))
             # parse pileup
             consensus = reconstruct_seq(refpath=ref, pileup=pileup,
-                                        verbose=False, veryverb=False, logger=logger)
+                                        verbose=False, veryverb=False,
+                                        logger=logger)
             with open(os.path.join(output, 'contigs.fasta'), 'w') as new_seqs:
                 SeqIO.write(SeqRecord(Seq(consensus,IUPAC.IUPACAmbiguousDNA()),
-                                  id = "contigs_consensus_riboSeed",
-                                  description=""), new_seqs, 'fasta')
+                                      id="contigs_consensus_riboSeed",
+                                      description=""), new_seqs, 'fasta')
+        else:
+            logger.warning("No output from SPAdes this time around")
     else:
         spades_cmd = str(args.spades_exe + " --careful -k {0} {1} {2} -o " +
                          "{3}").format(kmers, reads, alt_contig, output)
@@ -351,7 +366,6 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
         success = output_from_subprocess_exists(os.path.join(output,
                                                              "contigs.fasta"))
     return("{0}contigs.fasta".format(os.path.join(output, "")), success)
-
 
 
 def check_samtools_pileup(pileup):
@@ -371,8 +385,9 @@ def check_samtools_pileup(pileup):
         raise ValueError("Error with reading pileup file")
     return(res)
 
+
 def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
-                      logger=None):
+                    logger=None):
     """ This is a bit of a mess, to say the least.  Given a list from
     check samtools pileup, and a reference fasta, this reconstructs ambiguous
     regions
@@ -389,7 +404,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
     seqfile = SeqIO.parse(open(refpath, "r"), "fasta")
     for i in seqfile:
         ref = str(i.seq)
-    ref = "${0}".format(ref) # make 0 based
+    ref = "${0}".format(ref)  # make 0 based
     new = ""
     skip = 0
     indels = 0
@@ -400,7 +415,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
     for i in range(0, len(ref)):  # counter for ref index
         if veryverb and verbose:
             try:
-                log_status("ref. index: %i\n pile index: %i" %(i,j))
+                log_status("ref. index: %i\n pile index: %i" % (i, j))
                 log_status(ref[i])
                 log_status(pileup[j])
             except:
@@ -415,7 +430,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
         elif j > len(pileup)-1:
             new = "".join([new, ref[i]])
         #  if index isnt in second col of pileup, skip, filling with ref
-        # note that because the reference is now zero base, no correction needed
+        # note because the reference is now zero base, no correction needed
         elif i != int((pileup[j][1])):
             if verbose:
                 log_status("no entry in pileup for %i" % i)
@@ -431,19 +446,19 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
         elif (ref[i] == "N" or pileup[j][4][0] != ref[i]) and \
              (len(pileup[j][4]) == 1 or \
               all(x == pileup[j][4][0] for x in list(pileup[j][4]))) and \
-             pileup[j][4][0] not in [",", ".", "^", "$"]:
-            new = "".join([new, pileup[j][4][0].upper()]) # append  upper
+            pileup[j][4][0] not in [",", ".", "^", "$"]:
+            new = "".join([new, pileup[j][4][0].upper()])  # append  upper
         # This is tp handle insetions;  could use a lamda?
         elif re.match(insert, pileup[j][4]) is not None and \
             all([hits == re.findall(insert, pileup[j][4])[0] for hits in \
                  re.findall(insert, pileup[j][4])]):
             if verbose:
                 log_status("found insert!")
-            insert_seq = re.search('[ACGTNacgtn]+',  pileup[j][4]).group(0)
-            insert_N = int(re.search('[0-9]+',  pileup[j][4]).group(0))
+            insert_seq = re.search('[ACGTNacgtn]+', pileup[j][4]).group(0)
+            insert_N = int(re.search('[0-9]+', pileup[j][4]).group(0))
             if not len(insert_seq) == insert_N:
                 raise ValueError("error parsing insert")
-            new="".join([new, insert_seq])
+            new = "".join([new, insert_seq])
             indels = indels + insert_N
             N_insertions = N_insertions + insert_N
         # deletions
@@ -452,7 +467,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
                  re.findall(insert, pileup[j][4])]):
             if verbose:
                 log_status("found deletion! {0}".format(pileup[j][4]))
-            delete_N = int(re.search('[0-9]+',  pileup[j][4]).group(0))
+            delete_N = int(re.search('[0-9]+', pileup[j][4]).group(0))
             skip = delete_N
             indels = indels + delete_N
             N_deletions = N_deletions + delete_N
@@ -461,18 +476,18 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
             not all(x == pileup[j][4][0] for x in list(pileup[j][4])):
             if verbose:
                 log_status("using ref")
-            new="".join([new, ref[i]])
+            new = "".join([new, ref[i]])
         else:
             if verbose:
                 log_status("Case Not covered!")
             sys.exit(1)
         j = j + 1  # increment the pileup counter
     if verbose:
-        log_status(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: "
-                        +"{2}").format(indels, N_deletions, N_insertions))
+        log_status(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: " +
+                       "{2}").format(indels, N_deletions, N_insertions))
     else:
-        print(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: "
-              +"{2}").format(indels, N_deletions, N_insertions))
+        print(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: " +
+                  "{2}").format(indels, N_deletions, N_insertions))
     return(new[1:])  # [1:] gets rid of starting dollar character
 
 
@@ -481,10 +496,10 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
          paired_inference, smalt_scoring):
     """
-    essentially a 'main' function, hopefully to parallelize time comsuming parts
+    essentially a 'main' function,  to parallelize time comsuming parts
     """
     logger.info("processing {0}".format(fasta))
-    logger.info("\n\tITEM %s of %s\n" % (str(fastas.index(fasta) + 1), nfastas))
+    logger.info("\nITEM %s of %s\n" % (str(fastas.index(fasta) + 1), nfastas))
     spades_dir = str(results_dir + "SPAdes_" +
                      os.path.split(fasta)[1].split(".fasta")[0])
     quast_dir = str(results_dir + "QUAST_" +
@@ -518,20 +533,19 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
             logger.info("copying contigs file for next iteration of assembly")
             new_reference = copy_file(current_file=new_reference,
                                       dest_dir=mapping_dir,
-                                      name=str(os.path.basename(fasta)+
-                                               "_iter_"+str(this_iteration)+
+                                      name=str(os.path.basename(fasta) +
+                                               "_iter_" + str(this_iteration) +
                                                ".fasta"),
                                       overwrite=True, logger=logger)
         logger.info("Iteration {0} for {1}, item {2} out of {3}".format(
             this_iteration,
-            os.path.basename(fasta), fastas.index(fasta)+1, len(fastas)))
+            os.path.basename(fasta), fastas.index(fasta) + 1, len(fastas)))
         map_to_ref_smalt(ref=new_reference, ref_genome=reference_genome,
                          fastq_read1=fastq1, fastq_read2=fastq2,
                          fastq_readS=fastqS, read_len=average_read_length,
                          map_results_prefix=map_results_prefix, cores=cores,
                          step=3, k=5,
-                         distance_results=
-                             os.path.join(results_dir, mapped_genome_sam),
+                         distance_results=os.path.join(results_dir, mapped_genome_sam),
                          scoring=smalt_scoring, smalt_exe=args.smalt_exe,
                          samtools_exe=args.samtools_exe)
         extract_mapped_and_mappedmates(map_results_prefix,
@@ -556,6 +570,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
             run_spades(pe1_1=mapped_fastq1, pe1_2=mapped_fastq2,
                        pe1_s=mapped_fastqS, prelim=True,
                        as_paired=paired_inference,
+                       groom_contigs="keep_first"
                        output=spades_dir, keep_best=last_time_through,
                        ref=new_reference, ref_as_contig=ref_as_contig,
                        k="21,33,55",
@@ -569,9 +584,9 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
     try:
         contigs_new_path = copy_file(current_file=contigs_path,
                                      dest_dir=mauve_path,
-                                     name=str(os.path.basename(fasta)+
-                                              "_final_iter_"
-                                              +str(this_iteration)+".fasta"),
+                                     name=str(os.path.basename(fasta) +
+                                              "_final_iter_" +
+                                              str(this_iteration) + ".fasta"),
                                      logger=logger)
     except:
         logger.warning("no contigs moved! {0}".format(fasta))
@@ -600,11 +615,10 @@ if __name__ == "__main__":
     mauve_dir = os.path.join(output_root, 'results', "mauve", "")
     t0 = time.time()
 
-    logger =\
-             set_up_logging(verbosity=args.verbosity,
-                        outfile=str("%s_riboSeed_log.txt" %
-                                    os.path.join(output_root,
-                                                 time.strftime("%Y%m%d%H%M"))),
+    logger = set_up_logging(verbosity=args.verbosity,
+                            outfile=str("%s_riboSeed_log.txt" %
+                                        os.path.join(output_root,
+                                                     time.strftime("%Y%m%d%H%M"))),
                             name=__name__)
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
@@ -690,7 +704,7 @@ if __name__ == "__main__":
                                      "fastq1": args.fastq1,
                                      "fastq2": args.fastq2,
                                      "fastqS": args.fastqS,
-                                     "cores":  4,  # cores": args.cores,
+                                     "cores": 4,  # cores": args.cores,
                                      "mauve_path": mauve_dir,
                                      "average_read_length": average_read_length,
                                      "fetch_mates": args.paired_inference,
@@ -728,7 +742,7 @@ if __name__ == "__main__":
                                     prelim=False, keep_best=False,
                                     k="21,33,55,77,99,127")
         run_quast(contigs=output_contigs,
-                  output=os.path.join(results_dir, str("quast_"+j)),
+                  output=os.path.join(results_dir, str("quast_" + j)),
                   quast_exe=args.quast_exe,
                   ref=args.reference_genome)
     # Report that we've finished
