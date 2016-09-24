@@ -200,8 +200,8 @@ def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
         #  is there a better. safer way than using mv -f?
         # cmdmerge = str("cp -f {0}_pe.bam " +
         #                "{0}.bam").format(map_results_prefix)
-        cmdmerge = str("{0} merge -f  {1}.bam " +
-                       "{1}_pe.bam").format(samtools_exe, map_results_prefix)
+        cmdmerge = str("{0} view -b {1}_pe.bam >" +
+                       "{1}.bam").format(samtools_exe, map_results_prefix)
         smaltcommands.extend([cmdmerge])
     logger.info("running SMALT:")
     logger.debug("with the following SMALT commands:")
@@ -570,7 +570,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
             run_spades(pe1_1=mapped_fastq1, pe1_2=mapped_fastq2,
                        pe1_s=mapped_fastqS, prelim=True,
                        as_paired=paired_inference,
-                       groom_contigs="keep_first"
+                       groom_contigs="keep_first",
                        output=spades_dir, keep_best=last_time_through,
                        ref=new_reference, ref_as_contig=ref_as_contig,
                        k="21,33,55",
@@ -741,6 +741,7 @@ if __name__ == "__main__":
                                     ref_as_contig=assembly_ref_as_contig,
                                     prelim=False, keep_best=False,
                                     k="21,33,55,77,99,127")
+        logger.info("\n\nRunning %s QUAST" % j )
         run_quast(contigs=output_contigs,
                   output=os.path.join(results_dir, str("quast_" + j)),
                   quast_exe=args.quast_exe,
