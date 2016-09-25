@@ -200,7 +200,7 @@ def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
         #  is there a better. safer way than using mv -f?
         # cmdmerge = str("cp -f {0}_pe.bam " +
         #                "{0}.bam").format(map_results_prefix)
-        cmdmerge = str("{0} view -b {1}_pe.bam >" +
+        cmdmerge = str("{0} view -bh {1}_pe.bam >" +
                        "{1}.bam").format(samtools_exe, map_results_prefix)
         smaltcommands.extend([cmdmerge])
     logger.info("running SMALT:")
