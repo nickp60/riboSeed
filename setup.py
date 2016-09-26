@@ -10,8 +10,10 @@ https://github.com/pypa/sampleproject
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 # To use a consistent encoding
+import re
 from codecs import open
 from os import path
+import sys
 
 here = path.abspath(path.dirname(__file__))
 
@@ -19,13 +21,27 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
+# from pyani
+with path.join('riboseed', '__init__.py') as fh:
+    for line in fh:
+        m = re.search(r"^__version__ = '(?P<version>[^']+)'$", line)
+        if m:
+            init_version = m.group('version')
+            break
+
+if sys.version_info <= (3, 0):
+    sys.stderr.write("ERROR: riboseed requires Python 3.5 " +
+                     "or above...exiting.\n")
+    sys.exit(1)
+
+
 setup(
     name='riboSeed',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.0',
+    version=init_version,
 
     description='assembline stuff in a more vtter manner',
     long_description=long_description,
@@ -71,7 +87,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['pyutilsnrw'],
+    packages=['riboSeed'],
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
@@ -81,7 +97,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['Biopython', "pyutilsnrw"],
+    install_requires=['numpy', 'scipy','Biopython', "pyutilsnrw"],
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:

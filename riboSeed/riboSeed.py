@@ -304,7 +304,7 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
     else:  # for 3 single end libraries
         singles = str("--pe1-s %s " % pe1_s)
         pairs = str("--pe2-s %s --pe3-s %s " % (pe1_1, pe1_2))
-    reads = str(pairs+singles)
+    reads = str(pairs + singles)
 #    spades_cmds=[]
     if prelim:
         prelim_cmd =\
@@ -427,7 +427,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
                 log_status("skipping {0}".format(i))
         # if j is greater then length of pileup, go with ref.
         # This should avoid out of range issues
-        elif j > len(pileup)-1:
+        elif j > len(pileup) - 1:
             new = "".join([new, ref[i]])
         #  if index isnt in second col of pileup, skip, filling with ref
         # note because the reference is now zero base, no correction needed
@@ -545,7 +545,8 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                          fastq_readS=fastqS, read_len=average_read_length,
                          map_results_prefix=map_results_prefix, cores=cores,
                          step=3, k=5,
-                         distance_results=os.path.join(results_dir, mapped_genome_sam),
+                         distance_results=os.path.join(results_dir,
+                                                       mapped_genome_sam),
                          scoring=smalt_scoring, smalt_exe=args.smalt_exe,
                          samtools_exe=args.samtools_exe)
         extract_mapped_and_mappedmates(map_results_prefix,
@@ -735,17 +736,20 @@ if __name__ == "__main__":
             assembly_ref_as_contig = 'trusted'
         else:
             raise ValueError("onl valid cases are de novo and de fere novo")
-        output_contigs = run_spades(pe1_1=args.fastq1, pe1_2=args.fastq2,
-                                    output=os.path.join(results_dir, j),
-                                    ref=assembly_ref,
-                                    ref_as_contig=assembly_ref_as_contig,
-                                    prelim=False, keep_best=False,
-                                    k="21,33,55,77,99,127")
-        logger.info("\n\nRunning %s QUAST" % j )
-        run_quast(contigs=output_contigs,
-                  output=os.path.join(results_dir, str("quast_" + j)),
-                  quast_exe=args.quast_exe,
-                  ref=args.reference_genome)
+        output_contigs, \
+            final_success = run_spades(pe1_1=args.fastq1, pe1_2=args.fastq2,
+                                       output=os.path.join(results_dir, j),
+                                       ref=assembly_ref,
+                                       ref_as_contig=assembly_ref_as_contig,
+                                       prelim=False, keep_best=False,
+                                       k="21,33,55,77,99,127")
+        if final_success:
+            logger.info("\n\nRunning %s QUAST" % j )
+            run_quast(contigs=output_contigs,
+                      output=os.path.join(results_dir, str("quast_" + j)),
+                      quast_exe=args.quast_exe,
+                      ref=args.reference_genome,
+                      logger=logger)
     # Report that we've finished
     logger.info("Done: %s." % time.asctime())
     logger.info("Time taken: %.2fs" % (time.time() - t0))
