@@ -46,14 +46,18 @@ def get_args(DEBUG=False):
     parser.add_argument("-o", "--output", help="output directory;" +
                         "default: %(default)s", default=os.getcwd(),
                         type=str, dest="output")
+    parser.add_argument("-c", "--clusters", help="number of rDNA clusters;" +
+                        "default is inferred: %(default)s", default=0,
+                        type=int, dest="clusters")
     args = parser.parse_args()
     return(args)
 
 
-def get_filtered_locus_tag_dict(genome_seq_record, feature="rRNA",
+def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
                                 specific_features="16s:23s:5s",
                                 verbose=True, logger=None):
-    """returns dictionary of index:locus_tag id pairs for all
+    """ Given a LIST (as of 20160927) or genbank records,
+    returns dictionary of index:locus_tag id pairs for all
     "feature"  entries.  This then gets clustered.
     requires having locus tag in your genbank file.  Non-negitable.
     should be prokka-friendly, so if you have a gb file with legacy
@@ -69,14 +73,16 @@ def get_filtered_locus_tag_dict(genome_seq_record, feature="rRNA",
         pass
     loc_number = 0  # counter
     locus_tag_dict = {}  # recipient structure
-    for feat in genome_seq_record.features:
-        try:
-            locustag = feat.qualifiers.get("locus_tag")[0]
-            product = feat.qualifiers.get("product")[0]
-            locus_tag_dict[loc_number] = [locustag, feat.type, product]
-            loc_number = loc_number + 1
-        except TypeError:
-            pass
+    # loop through records
+    for record in genome_seq_records:
+        for feat in record.features:
+            try:
+                locustag = feat.qualifiers.get("locus_tag")[0]
+                product = feat.qualifiers.get("product")[0]
+                locus_tag_dict[loc_number] = [locustag, feat.type, product]
+                loc_number = loc_number + 1
+            except TypeError:
+                pass
     if len(locus_tag_dict) < 1:
             raise ValueError("no locus tags found!")
     if verbose:
@@ -107,7 +113,7 @@ def get_filtered_locus_tag_dict(genome_seq_record, feature="rRNA",
                            " {0}; case-sensitive.  rRNA's must have locus " +
                            "tags!").format(specific_features[i]))
             sys.exit(1)
-    log_status(str(" occuraces of each specific feature: {0}; using " +
+    log_status(str(" occuraces of each specific feature: {0}; suggesting " +
                    " {1} clusters").format(nfeatures_occur,
                                            min(nfeatures_occur)))
 
@@ -143,21 +149,25 @@ if __name__ == "__main__":
     print(sys.argv[1:])
     specific_features = args.specific_features.split(":")
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
-    if check_single_scaffold(args.genbank_genome):
-        print("You really should only give this genbank files with one " +
-              "scaffold for now.")
-        sys.exit(1)
+    # if check_single_scaffold(args.genbank_genome):
+    #     print("You really should only give this genbank files with one " +
+    #           "scaffold for now.")
+    #     sys.exit(1)
     if not os.path.isdir(args.output):
         os.mkdir(args.output)
-    genome_record = get_genbank_record(args.genbank_genome)
+    genome_records = get_genbank_record(args.genbank_genome, first_only=False)
     lociDict, nfeat = \
-        get_filtered_locus_tag_dict(genome_seq_record=genome_record,
+        get_filtered_locus_tag_dict(genome_seq_records=genome_records,
                                     feature=args.feature,
                                     specific_features=specific_features,
                                     verbose=True)
     print(lociDict)
     # for each specific feature, get number of occurances
-    pure_python_kmeans(lociDict.keys(), centers=min(nfeat))
+    if args.clusters == 0:
+        pure_python_kmeans(lociDict.keys(), centers=min(nfeat))
+    else:
+        pure_python_kmeans(lociDict.keys(), centers=args.clusters)
+
     ## csv to dict
     with open('list.csv', mode='r') as infile:
         reader = csv.reader(infile)

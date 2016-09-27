@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 """
-version 0.8.3
+version 0.8.5
 Minor version changes:
- - offloaded functions to utils
- - cleaned up old code gunk
- - applied WD-40 to the bad parts
- - added width option to include within regions
- - changed all mentions of width to within, cause width is not accurate
- - replace argument added
+ - super-prelim multiple cscaffold handling
 #TODO:
 - set up logging
 - Make this less awful
@@ -104,30 +99,31 @@ def parse_clustered_loci_file(file):
     return(clusters)
 
 
-def extract_coords_from_locus(genome_seq_record, locus_tag_list=[],
+def extract_coords_from_locus(genome_seq_records, locus_tag_list=[],
                               verbose=True):
     """given a list of locus_tags, return a list of
     loc_number,coords, strand, product
     """
     loc_number = 0  # index for hits
     loc_list = []  # recipient structure
-    for feat in genome_seq_record.features:
-        try:
-            if (feat.qualifiers.get("locus_tag")[0] in locus_tag_list):  # and\
-               # (feat.type == args.feature):
-                #  SeqIO makes coords 0-based; the +1 below undoes that
-                coords = [feat.location.start.position + 1,
-                          feat.location.end.position]
-                strand = feat.strand
-                product = feat.qualifiers.get("product")
-                locus_tag = feat.qualifiers.get("locus_tag")[0]
-                loc_list.append([loc_number, coords, strand,
-                                 product, locus_tag])
-                loc_number = loc_number + 1
-            else:
+    for record in genome_seq_records:
+        for feat in record.features:
+            try:
+                if (feat.qualifiers.get("locus_tag")[0] in locus_tag_list):  # and\
+                   # (feat.type == args.feature):
+                   #  SeqIO makes coords 0-based; the +1 below undoes that
+                    coords = [feat.location.start.position + 1,
+                              feat.location.end.position]
+                    strand = feat.strand
+                    product = feat.qualifiers.get("product")
+                    locus_tag = feat.qualifiers.get("locus_tag")[0]
+                    loc_list.append([loc_number, coords, strand,
+                                     product, locus_tag])
+                    loc_number = loc_number + 1
+                else:
+                    pass
+            except:
                 pass
-        except:
-            pass
     if not loc_number > 0:
         raise ValueError("no hits found!")
         sys.exit(1)
@@ -137,6 +133,38 @@ def extract_coords_from_locus(genome_seq_record, locus_tag_list=[],
         pp.pprint(loc_list)
     return(loc_list)
 
+
+def get_genbank_seq_containing_locus(locus_tag_list, genbank_record_list):
+    """ given a list of loci and genbank records, return sequence of
+    genbank record that has all the loci.
+    If on different sequences, return error
+    """
+    nloci = len(locus_tag_list)
+    counter = 0
+    for record in genbank_record_list:
+        for feat in record.features:
+            try:
+                if (feat.qualifiers.get("locus_tag")[0] in locus_tag_list):  # and\
+                   # (feat.type == args.feature):
+                    counter = counter + 1
+                else:
+                    pass
+            except:
+                pass
+        if counter > nloci:
+            print("multiple occuraces of a locus tag!")
+            sys.exit(1)
+        if counter == nloci:
+            return(record.seq)
+        elif counter > 0:
+            print("some but not all loci found on this record.  " +
+                  " Unfortunately, this only handles cases where loci " +
+                  "are on the same record.")
+            sys.exit(1)
+        else:
+            pass
+    print("no record contained all loci !")
+    sys.exit(1)
 
 
 def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
@@ -167,14 +195,12 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
                          " integer or two colon-seapred integers")
     region = ''
     #TODO : make this safer
-    smallest_feature = min([y[1] - y[0] for y in [ x[1] for x in coords]])
+    smallest_feature = min([y[1] - y[0] for y in [x[1] for x in coords]])
     # print(smallest_feature)
     if smallest_feature < (minimum):
         raise ValueError("invalid minimum! cannot exceed half of smallest " +
                          "feature, which is {0} in this case".format(
                              smallest_feature))
-    # print("smallest featres")
-    # print([y[1] - y[0] for y in [ x[1] for x in coords]])
     if verbose:
         for i in coords:
             log_status(str(i))
@@ -238,15 +264,19 @@ if __name__ == "__main__":
     if not os.path.isdir(args.output):
         os.mkdir(args.output)
     clusteredDict = parse_clustered_loci_file(args.clustered_loci)
-    genome_sequence = get_genbank_seq(args.genbank_genome)
-    genome_record = get_genbank_record(args.genbank_genome)
+    # genome_sequences = get_genbank_seq(args.genbank_genome, first_only=False)
+    genome_records = get_genbank_record(args.genbank_genome, first_only=False)
+    # print(genome_sequences)
     regions = []
     for i in clusteredDict.keys():
         locus_tag_list = clusteredDict[i]
-        coord_list = extract_coords_from_locus(genome_record,
+        genbank_sequence = get_genbank_seq_containing_locus(
+            locus_tag_list=locus_tag_list,
+            genbank_record_list=genome_records)
+        coord_list = extract_coords_from_locus(genome_records,
                                                locus_tag_list=locus_tag_list,
                                                verbose=args.verbose)
-        regions.append(stitch_together_target_regions(genome_sequence,
+        regions.append(stitch_together_target_regions(genbank_sequence,
                                                       coords=coord_list,
                                                       within=args.within,
                                                       minimum=args.minimum,
