@@ -140,8 +140,8 @@ def get_genbank_seq_containing_locus(locus_tag_list, genbank_record_list):
     If on different sequences, return error
     """
     nloci = len(locus_tag_list)
-    counter = 0
     for record in genbank_record_list:
+    counter = 0
         for feat in record.features:
             try:
                 if (feat.qualifiers.get("locus_tag")[0] in locus_tag_list):  # and\

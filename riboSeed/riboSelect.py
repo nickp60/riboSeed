@@ -89,8 +89,8 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
         log_status("filtering by feature of interest")
     filtered = {k: v for k, v in locus_tag_dict.items() if v[1] == feature.strip()}
     if len(filtered) == 0:
-        log_status("ERROR! no {0} found in locus_tag_dict; rRNA's must have " +
-                   "locus tags".format(feature))
+        log_status(str("ERROR! no {0} found in locus_tag_dict; rRNA's must have " +
+                   "locus tags").format(feature))
         sys.exit(1)
     if verbose:
         for key in sorted(filtered):
