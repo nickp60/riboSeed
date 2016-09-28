@@ -73,6 +73,12 @@ def get_args():
     parser.add_argument("-r", "--replace",
                         help="replace sequence with N's; default: %(default)s",
                         default=False, action="store_true", dest="replace")
+    parser.add_argument("-p", "--per_contig",
+                        help="if genome is not small or nearly completed, " +
+                        "use --per_contigs. This searches for loci cluster " +
+                        "on a per-contig  basis as opposed to globally " +
+                        "searching for loci; default: %(default)s",
+                        default=False, action="store_true", dest="per_contig")
     parser.add_argument("-v", "--verbose",
                         help="verbose output (its ugly) default: %(default)s",
                         default=False, action="store_true", dest="verbose")
@@ -85,22 +91,23 @@ def get_args():
 
 
 def parse_clustered_loci_file(file):
+    """changed this to return a list, cause multiple clusters
+    can be on the smae contig, which makes for duplicated
+    dict keys, and those dont work
     """
-    """
-    clusters={}
-    index = 0
+    clusters = []
     try:
         with open(file, "r") as f:
             for line in f:
-               clusters[index] = line.strip("\n").split(":")
-               index = index + 1
+                seqname = line.strip("\n").split(" ")[0]
+                clusters.append([seqname, [ line.strip("\n").split(" ")[1].split(":")]])
     except:
         raise ValueError("problem parsing input clusters")
     return(clusters)
 
 
 def extract_coords_from_locus(genome_seq_records, locus_tag_list=[],
-                              verbose=True):
+                              feature="rRNA", verbose=True):
     """given a list of locus_tags, return a list of
     loc_number,coords, strand, product
     """
@@ -108,6 +115,8 @@ def extract_coords_from_locus(genome_seq_records, locus_tag_list=[],
     loc_list = []  # recipient structure
     for record in genome_seq_records:
         for feat in record.features:
+            if not feat.type in feature:
+                continue
             try:
                 if (feat.qualifiers.get("locus_tag")[0] in locus_tag_list):  # and\
                    # (feat.type == args.feature):
@@ -118,7 +127,7 @@ def extract_coords_from_locus(genome_seq_records, locus_tag_list=[],
                     product = feat.qualifiers.get("product")
                     locus_tag = feat.qualifiers.get("locus_tag")[0]
                     loc_list.append([loc_number, coords, strand,
-                                     product, locus_tag])
+                                     product, locus_tag, record.id])
                     loc_number = loc_number + 1
                 else:
                     pass
@@ -128,8 +137,8 @@ def extract_coords_from_locus(genome_seq_records, locus_tag_list=[],
         raise ValueError("no hits found!")
         sys.exit(1)
     if verbose:
-        print("Here are the detected region, strand, product, locus tag, \
-               and subfeatures of the results:")
+        print("Here are the detected  region,coords,  strand, product, locus tag, \
+               subfeatures aand sequence id of the results:")
         pp.pprint(loc_list)
     return(loc_list)
 
@@ -141,12 +150,17 @@ def get_genbank_seq_containing_locus(locus_tag_list, genbank_record_list):
     """
     nloci = len(locus_tag_list)
     for record in genbank_record_list:
-    counter = 0
+        counter = 0
+        found = []
         for feat in record.features:
             try:
                 if (feat.qualifiers.get("locus_tag")[0] in locus_tag_list):  # and\
                    # (feat.type == args.feature):
                     counter = counter + 1
+                    locus = feat.qualifiers.get('locus_tag')
+                    if locus not in found:
+                        found.append(locus)
+                    print(feat.qualifiers.get('locus_tag'))
                 else:
                     pass
             except:
@@ -164,6 +178,20 @@ def get_genbank_seq_containing_locus(locus_tag_list, genbank_record_list):
         else:
             pass
     print("no record contained all loci !")
+    sys.exit(1)
+
+
+def get_genbank_seq_matching_id(recordID, genbank_record_list):
+    """ given a list of loci and genbank records, return sequence of
+    genbank record that has all the loci.
+    If on different sequences, return error
+    """
+    for record in genbank_record_list:
+        if recordID == record.id:
+            return(record.seq)
+        else:
+            pass
+    print("no seqeuence found matching record id!")
     sys.exit(1)
 
 
@@ -208,14 +236,14 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
     global_start = min([y[0] for y in [x[1] for x in coords]]) - flank[0]
     global_end = max([y[1] for y in [x[1] for x in coords]]) + flank[1]
     full_seq = genome_sequence[global_start + 1: global_end]
-    seq_with_ns = full_seq
+    seq_with_ns = str(full_seq)
     if replace:
         for i in coords:
-            region_length = i[1][1] - i[1][0] - (2*within)
+            region_length = i[1][1] - i[1][0] - (2 * within)
             # if dealing with short sequences
-            if (i[1][1] - i[1][0]) < (2*within):
+            if (i[1][1] - i[1][0]) < (2 * within):
                 # set within to retain minimum sequence length
-                this_within = int((i[1][1] - i[1][0] - minimum) /2)
+                this_within = int((i[1][1] - i[1][0] - minimum) / 2)
             else:
                 # use default if not
                 this_within = within
@@ -228,20 +256,23 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
             #     region_within_end = int(region_within_end / 2)
             #     rel_end = (i[1][1] - region_within_end) - global_start
             seq_with_ns = str(seq_with_ns[0:rel_start] +
-                              str("N"*region_length) +
+                              str("N" * region_length) +
                               seq_with_ns[rel_end: ])
 
     if verbose:
         log_status(str("exp length {0} \nact length {1}".format(
-            global_end-global_start, len(full_seq))))
+            global_end - global_start, len(full_seq))))
     if verbose:
         lb = 60
-        for i in range(0, int(len(seq_with_ns) /lb)):
-            log_status(str(full_seq[i*lb :lb+(i*lb)]+"\n"))
-            log_status(str(seq_with_ns[i*lb :lb+(i*lb)]+"\n"))
+        for i in range(0, int(len(seq_with_ns) / lb)):
+            log_status(str(full_seq[i * lb: lb + (i * lb)] + "\n"))
+            log_status(str(seq_with_ns[i * lb: lb + (i * lb)] + "\n"))
             log_status("\n")
-    return(seq_with_ns)
-
+    seqrec = SeqRecord(Seq(seq_with_ns, IUPAC.IUPACAmbiguousDNA()),
+                       id=str(coords[0][5] + "_" +
+                              str(global_start) +
+                              ".." + str(global_end)))
+    return(seqrec)
 
 
 if __name__ == "__main__":
@@ -250,29 +281,20 @@ if __name__ == "__main__":
     # feature_regs = args.feature_regions.split(":")
     # print(args)
     print("Usage:\n{0}\n".format(str(" ".join([x for x in sys.argv]))))
-
-    # try:
-    #     feature_regs_len = [int(x) for x in args.feature_regions_lengths.split(":")]
-    # except ValueError:
-    #     print("feature_regions_lengths must be an integer, or integers separated" +
-    #           "by colons, such as 400:33")
-    #     sys.exit(1)
-    # if not len(specific_features) == len(feature_regs) == len(feature_regs_len):
-    #     print("features, feature_refions, and feature_region_lengths must be equal")
-    #     sys.exit(1)
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
     if not os.path.isdir(args.output):
         os.mkdir(args.output)
-    clusteredDict = parse_clustered_loci_file(args.clustered_loci)
+    clusteredList = parse_clustered_loci_file(args.clustered_loci)
     # genome_sequences = get_genbank_seq(args.genbank_genome, first_only=False)
     genome_records = get_genbank_record(args.genbank_genome, first_only=False)
     # print(genome_sequences)
     regions = []
-    for i in clusteredDict.keys():
-        locus_tag_list = clusteredDict[i]
-        genbank_sequence = get_genbank_seq_containing_locus(
-            locus_tag_list=locus_tag_list,
-            genbank_record_list=genome_records)
+    for i in clusteredList:
+        locus_tag_list = i[1][0]
+        recID = i[0]
+        genbank_sequence = \
+            get_genbank_seq_matching_id(recordID=recID,
+                                        genbank_record_list=genome_records)
         coord_list = extract_coords_from_locus(genome_records,
                                                locus_tag_list=locus_tag_list,
                                                verbose=args.verbose)
@@ -286,15 +308,11 @@ if __name__ == "__main__":
     output_index = 1
     for i in regions:
         filename = str("region_" + str(output_index))
-        i = str(i)
-        # print(i)
-        # print(len(i))
         with open(os.path.join(args.output,
                                str(date + "_" + filename + "_riboSnag.fasta")),
                   "w") as outfile:
-            SeqIO.write(SeqRecord(Seq(i,IUPAC.IUPACAmbiguousDNA()),
-                                  id = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
-                                      output_index, args.flanking, args.within)),
-                                  description=""), outfile, "fasta")
+            # i.description = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
+            #                           output_index, args.flanking, args.within))
+            SeqIO.write(i, outfile, "fasta")
             outfile.write('\n')
             output_index = output_index + 1
