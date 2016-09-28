@@ -2,7 +2,8 @@
 """
 version 0.8.6
 Minor version changes:
-  - this should work better to filter things by specific feature, and to contig by contig
+  - this should work better to filter things by specific feature,
+     and to go contig by contig
 #TODO:
 - set up logging
 - Make this less awful
@@ -82,6 +83,10 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     ribosome product annoation, not ht locus tag.
     if specific features is None, return all with type == feature
     """
+    if not isinstance(genome_seq_records, list):
+        raise("Error! this function can only accept a list of records" +
+              "simply put your genbank record in brackets if you only " +
+              "have a single record")
     if specific_features is None:
         just_feature = True
     else:
@@ -92,7 +97,7 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     elif verbose:
         log_status = sys.stderr.write
     else:
-        pass
+        log_status = print
     locus_tag_dict = {}  # recipient structure
     # loop through records
     for record in genome_seq_records:
@@ -103,8 +108,8 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
                 product_list = multisplit([",", " ", "-", "_"],
                                           feat.qualifiers.get("product")[0])
                 if not just_feature:
-                    if feat.type in feature and any(x in specific_features for x in \
-                                                    product_list):
+                    if feat.type in feature and \
+                       any(x in specific_features for x in product_list):
                         locus_tag_dict[loc_number] = [loc_number,
                                                       record.id,
                                                       locustag,
@@ -123,8 +128,11 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
             except TypeError:
                 pass
             loc_number = loc_number + 1  # increment index after each feature
-    if len(locus_tag_dict) < 1:
-        log_status("no locus tags found for {0} features with annotated products!".format(feature))
+        if len(locus_tag_dict) < 1:
+            log_status(str("no locus tags found in {0} for " +
+                           "{1} features with annotated products matching" +
+                           "{2}!").format(record.id,
+                                          feature, specific_features))
 
     filtered = locus_tag_dict
     if verbose:
@@ -139,7 +147,7 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
         hit_list_simple = []
         for i in specific_features:
             hits = 0
-            subset = {k:v for k, v in lociDict.items() if record.id in v}
+            subset = {k: v for k, v in lociDict.items() if record.id in v}
             for k, v in subset.items():
                 if any([i in x for x in v[-1]]):
                     hits = hits + 1
@@ -149,10 +157,9 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
             hit_list_simple.append(hits)
         nfeatures_occur[record.id] = (hit_list)
         nfeat_simple[record.id] = hit_list_simple
-    print(nfeatures_occur)
-    print(nfeat_simple)
-
     return(filtered, nfeatures_occur, nfeat_simple)
+
+
 
 
 def pure_python_kmeans(data, group_by=None, centers=3, DEBUG=True):
@@ -175,9 +182,15 @@ def pure_python_kmeans(data, group_by=None, centers=3, DEBUG=True):
                 f.write('\n')
     subprocess.run("Rscript km_script.R", shell=sys.platform != 'win32',
                    check=True)
+    with open('list.csv', mode='r') as infile:
+        reader = csv.reader(infile)
+        next(reader, None)  # skip the headers
+        indexClusterDict = dict((rows[0], rows[1]) for rows in reader)
+
     if not DEBUG:
         os.remove(os.path.join(os.getcwd(), "list.csv"))
         os.remove(os.path.join(os.getcwd(), "km_script.R"))
+    return(indexClusterDict)
 
 
 if __name__ == "__main__":
@@ -202,66 +215,70 @@ if __name__ == "__main__":
         print("removing existing output file")
         os.remove(output_path)
 
-    if True:
-        # get genome records into a list
-        genome_records = get_genbank_record(args.genbank_genome,
-                                            first_only=False)
-        # get list of loci matching feature and optionally specific features
-        # also returns nfeat, a dict of feature count by genbank id
-        lociDict, nfeat, nfeat_simple= \
-            get_filtered_locus_tag_dict(genome_seq_records=genome_records,
-                                        feature=args.feature,
-                                        specific_features=args.specific_features,
-                                        verbose=True)
-        print(lociDict)
-        # default case, clusters are inferred
-        # if not, must be equal to the length of genbank records
-        if args.clusters != "":
-            try:
-                centers = [int(x) for x in args.clusters.split(":")]
-                print(centers)
-            except:
-                print("cannot coerce --clusters to integer!")
-                sys.exit(1)
-        else:
-            centers = [0 for x in genome_records]
-        # if unequal lengths, throw error
-        if len(genome_records) != len(centers):
-            print("centers must be the same length as number" +
-                  " of genbank records!")
+    # get genome records into a list
+    genome_records = get_genbank_record(args.genbank_genome,
+                                        first_only=False)
+    # get list of loci matching feature and optionally specific features
+    # also returns nfeat, a dict of feature count by genbank id
+    lociDict, nfeat, nfeat_simple = \
+        get_filtered_locus_tag_dict(genome_seq_records=genome_records,
+                                    feature=args.feature,
+                                    specific_features=args.specific_features,
+                                    verbose=True)
+    print(lociDict)
+    # default case, clusters are inferred
+    # if not, must be equal to the length of genbank records
+    if args.clusters != "":
+        try:
+            centers = [int(x) for x in args.clusters.split(":")]
+            print(centers)
+        except:
+            print("cannot coerce --clusters to integer!")
             sys.exit(1)
-        # print clusters for accession for user to verify
-        for i in range(0, len(genome_records)):  # for each genbank id
-            print("using {0} clusters for {1}".format(
-                centers[i], genome_records[i].id))
-            # get subset of lociDict for that id
-            subset = {key: value for key, value in lociDict.items() if \
-                      genome_records[i].id in value }
-            # skip if that doesnt have any hits
-            if len(subset) == 0:
-                print("no hits in {0}".format(genome_records[i].id))
-                continue
-            #  find nfeat for this genbank id by subsetting;
-            # is this a bad way of doesnt things?
-            rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
-                          genome_records[i].id in k }.values())[0]
-            if centers[i] == 0:
-                pure_python_kmeans(lociDict.keys(), centers=min(rec_nfeat))
-            else:
-                pure_python_kmeans(lociDict.keys(), centers=centers[i])
-            ## csv to dict
-            with open('list.csv', mode='r') as infile:
-                reader = csv.reader(infile)
-                next(reader, None)  # skip the headers
-                indexClusterDict = dict((rows[0], rows[1]) for rows in reader)
-                print(indexClusterDict)
-                clusteredDict = {}
-                for k, v in indexClusterDict.items():
-                    clusteredDict.setdefault(v, []).append([x for x in subset[int(k)]])
-                    # print(clusteredDict)
-                with open(os.path.join(args.output,
-                                       str(date + "_riboSelect_grouped_loci.txt")),
-                          "a") as outfile:
-                    for k, v in clusteredDict.items():
-                        outfile.write(str(v[0][1] + " " + str(":".join(str(x[2]) for x in v)) + '\n'))
-                        sys.stdout.write(str(v[0][1] + " " + str(":".join(str(x[2]) for x in v)) + '\n'))
+    else:
+        centers = [0 for x in genome_records]
+    # if unequal lengths, throw error
+    if len(genome_records) != len(centers):
+        print("centers must be the same length as number" +
+              " of genbank records!")
+        sys.exit(1)
+    # print clusters for accession for user to verify
+    for i in range(0, len(genome_records)):  # for each genbank id
+        print("using {0} clusters for {1}".format(
+            centers[i], genome_records[i].id))
+        # get subset of lociDict for that id
+        subset = {key: value for key, value in lociDict.items() if \
+                  genome_records[i].id in value }
+        # skip if that doesnt have any hits
+        if len(subset) == 0:
+            print("no hits in {0}".format(genome_records[i].id))
+            continue
+        #  find nfeat for this genbank id by subsetting;
+        # is this a bad way of doesnt things?
+    rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
+                       genome_records[i].id in k }.values())[0]
+    if centers[i] == 0:
+        indexClusterDict = pure_python_kmeans(lociDict.keys(), centers=min(rec_nfeat))
+    else:
+        indexClusterDict =  pure_python_kmeans(lociDict.keys(), centers=centers[i])
+        ## csv to dict
+        # with open('list.csv', mode='r') as infile:
+        #     reader = csv.reader(infile)
+        #     next(reader, None)  # skip the headers
+        #     indexClusterDict = dict((rows[0], rows[1]) for rows in reader)
+    print(indexClusterDict)
+    clusteredDict = {}
+    for k, v in indexClusterDict.items():
+        clusteredDict.setdefault(v, []).append(
+            [x for x in subset[int(k)]])
+    with open(os.path.join(args.output,
+                           str(date + "_riboSelect_grouped_loci.txt")),
+              "a") as outfile:
+        for k, v in clusteredDict.items():
+            outfile.write(str(v[0][1] +
+                              " " +
+                              str(":".join(str(x[2]) for x in v)) +
+                              '\n'))
+            sys.stdout.write(str(v[0][1] + " " +
+                                 str(":".join(str(x[2]) for x in v)) +
+                                 '\n'))
