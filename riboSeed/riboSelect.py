@@ -258,9 +258,11 @@ if __name__ == "__main__":
     rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
                        genome_records[i].id in k }.values())[0]
     if centers[i] == 0:
-        indexClusterDict = pure_python_kmeans(lociDict.keys(), centers=min(rec_nfeat))
+        indexClusterDict = pure_python_kmeans(lociDict.keys(),
+                                              centers=min(rec_nfeat))
     else:
-        indexClusterDict =  pure_python_kmeans(lociDict.keys(), centers=centers[i])
+        indexClusterDict =  pure_python_kmeans(lociDict.keys(),
+                                               centers=centers[i])
         ## csv to dict
         # with open('list.csv', mode='r') as infile:
         #     reader = csv.reader(infile)
@@ -275,10 +277,7 @@ if __name__ == "__main__":
                            str(date + "_riboSelect_grouped_loci.txt")),
               "a") as outfile:
         for k, v in clusteredDict.items():
-            outfile.write(str(v[0][1] +
-                              " " +
-                              str(":".join(str(x[2]) for x in v)) +
-                              '\n'))
-            sys.stdout.write(str(v[0][1] + " " +
-                                 str(":".join(str(x[2]) for x in v)) +
-                                 '\n'))
+            outstr = v[0][1] + " " + ":".join(x[2] for x in v) + '\n'
+            outfile.write(outstr)
+            sys.stdout.write(outstr)
+
