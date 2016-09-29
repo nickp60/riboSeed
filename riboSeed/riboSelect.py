@@ -133,7 +133,7 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
                                           feature, specific_features))
     filtered = locus_tag_dict
     if verbose and logger:
-        for key in sorted(locus_tag_dict):
+        for key in sorted(filtered):
                 logger.info("%s: %s;" % (key, filtered[key]))
 
     locus_tag_dict = locus_tag_dict
@@ -239,6 +239,7 @@ if __name__ == "__main__":
                                     feature=args.feature,
                                     specific_features=args.specific_features,
                                     verbose=True)
+
     # default case, clusters are inferred
     # if not, must be equal to the length of genbank records
     if args.clusters != "":
