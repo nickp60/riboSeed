@@ -1,31 +1,31 @@
 # RiboSeed Pipeline
 ## Description
-RiboSeed in an supplemental assembly method to try to address the issue of multiple 16s copies in a genome.  It takes advantage of the fact that while each 16S is identical, the regions flanking are unique, and therfore should be able to be used to seed an alignment.
+RiboSeed is an supplemental assembly method to try to address the issue of multiple 16s copies in a genome.  It takes advantage of the fact that while each 16S is identical, the regions flanking are unique, and therfore should be able to be used to seed an alignment.
 
 The pipeline (currently) consists of two main stages:
 
 ### Selection and extraction
 For generalized selection and extraction of a feature type:
 
-* otherSelect [under development]
+* `otherSelect` [under development]
 
 For ribosomal region selection and extraction
 
-* riboSelect.py searches the genome for rRNA annotations, clusters them into likely ribosomal groups, and outputs a colon-separated list of clustered rRNA locus tags
+* `riboSelect.py` searches the genome for rRNA annotations, clusters them into likely ribosomal groups, and outputs a colon-separated list of clustered rRNA locus tags
 
-NOTE: the format is very simple, and due to the relativly small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropiate
+NOTE: the format is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropiate
 
-* riboSnag.py takes the list of clustered locus tags and extracts their sequeces with flanking regions, optionaly turning the coding sequences to N's to minimize bias towards reference. is used to pull out regions of interest from a genbankk file.  Outputs a directory with a fasta file for each clustered region
+* `riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file.  Outputs a directory with a fasta file for each clustered region
 
-* riboSeed.py is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads, and then running SPAdes assembly to hopefully resolve the contig junctions.
+* `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.
 
 ## Known Bugs
 
-* It looks like the --paired-inference option will cause an error with SPAdes if you are submitting a fastq of Simgleton/unpaired reads as part of the assembly.
+* It looks like the `--paired-inference` option will cause an error with `SPAdes` if you are submitting a fastq of singleton/unpaired reads as part of the assembly.
 
-* Submitting --smalt_scoring with vastly different scoring schemes usually causes an error.
+* Submitting `--smalt_scoring` with vastly different scoring schemes usually causes an error.
 
-* otherSelect will replace the legacy functioning of riboSnag (prior to version 0.8.0)
+* `otherSelect` will replace the legacy functioning of `riboSnag` (prior to version 0.8.0)
 
 ## Requirements
 
@@ -43,7 +43,7 @@ External Requirements
 #The rest of this readme is old, and will be updated soon.
 
 # riboSnag.py
-This script is used to get regions of interest from a genbank file.  In practice, given a *full* Genbank file (including the sequence), a feature type (rRNA), specific feature type (grepped from '/product='), region (upstream), region length (400bp), this finds all occurances of a specific feature and extracts the desired sequence, usual a region flanking the feature.
+This script is used to get regions of interest from a Genbank file.  In practice, given a *full* Genbank file (including the sequence), a feature type (rRNA), specific feature type (grepped from '/product='), region (upstream), region length (400bp), this finds all occurrences of a specific feature and extracts the desired sequence, usually a region flanking the feature.
 
 You will probably want to preview your file to figure out the syntax used. (ie, 16s vs 16S, rRNA vs RRNA, etc...)
 
@@ -84,7 +84,7 @@ Output is a directory with a fasta file for each of the regions found in the gen
 
 
 # riboSeed.py
-This takes the output from riboSnag, and for each file it maps reads to it, extracts mapped reads, assembles extracted reads, and then repeats that depending on the number of iterations specified.  Then, it uses SPAdes to assemble the raw reads with the other fragments as "trusted contigs".
+This takes the output from `riboSnag`, and for each file it maps reads to it, extracts mapped reads, assembles extracted reads, and then repeats that depending on the number of iterations specified.  Then, it uses `SPAdes` to assemble the raw reads with the other fragments as "trusted contigs".
 
 ```
 
@@ -164,8 +164,8 @@ optional arguments:
 
 ## Output
 
-This outputs two main directories: map and results.  If --temps is true, temporary files from the mapping scheme will be retained, and is useful for assessing problems.  
-The results directory will contain a 'mauve' directory with all the extended fragments, the mapped fastq files, and a de_novo and de_fere_novo folder, containing the results with the de novo mapping and supplemented mapping, respectively.
+This outputs two main directories: `map` and `results`.  If `--temps` is true, temporary files from the mapping scheme will be retained, and is useful for assessing problems.  
+The results directory will contain a 'mauve' directory with all the extended fragments, the mapped fastq files, and a `de_novo` and `de_fere_novo` folder, containing the results with the *de novo* mapping and supplemented mapping, respectively.
 
 
 ## Suggested Running
