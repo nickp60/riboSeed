@@ -123,9 +123,13 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    entry_points={
-        'console_scripts': [
-            'sample=sample:main',
-        ],
-    },
+    #entry_points={
+    #    'console_scripts': [
+    #        'sample=sample:main',
+    #    ],
+    #},
+    # Using the scripts keyword here for speed, as the entry points are not
+    # yet defined
+    scripts=['riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
+             'riboSeed/riboSnag.py'],
 )
