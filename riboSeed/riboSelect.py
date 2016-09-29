@@ -92,12 +92,12 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     else:
         all_feature = False
         specific_features = specific_features.split(":")
-    if verbose and logger:
-        log_status = logger.info
-    elif verbose:
-        log_status = sys.stderr.write
-    else:
-        log_status = print
+    #if verbose and logger:
+    #    log_status = logger.info
+    #elif verbose:
+    #    log_status = sys.stderr.write
+    #else:
+    #    log_status = print
     locus_tag_dict = {}  # recipient structure
     # loop through records
     for record in genome_seq_records:
@@ -125,15 +125,15 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
             loc_number = loc_number + 1  # increment index after each feature
         # this is a soft warning, as we want to be able to loop
         # through all records before worrying
-        if len(locus_tag_dict) < 1:
+        if len(locus_tag_dict) < 1 and logger:
             log_status(str("no locus tags found in {0} for " +
                            "{1} features with annotated products matching " +
                            "{2}!\n").format(record.id,
                                           feature, specific_features))
-    locus_tag_dict = locus_tag_dict
-    if verbose:
+    filtered = locus_tag_dict
+    if verbose and logger:
         for key in sorted(locus_tag_dict):
-                log_status("%s: %s;" % (key, locus_tag_dict[key]))
+                logger.info("%s: %s;" % (key, filtered[key]))
 
     locus_tag_dict = locus_tag_dict
     #  This bit counts the number of hits per specific feature.
@@ -206,13 +206,21 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
 
 
 if __name__ == "__main__":
+
     args = get_args(DEBUG=False)
-    log = sys.stderr.write  # to keep streaming clean if this goes that route
-    log("Current usage:\n")
-    log(" ".join(sys.argv[1:]) + "\n")
+    print("Current usage:")
+    print(sys.argv[1:])
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
-    if not os.path.isdir(args.output):
-        os.mkdir(args.output)
+
+    # Create output directory only if it does not exist
+    try:
+        os.makedirs(args.output)
+    except FileExistsError:
+        print("Selected output directory %s exists (exiting)" % 
+              args.output)
+        sys.exit(1)
+
+    # Check if output file exists; if so, remove it
     output_path = os.path.join(args.output,
                                str(date + "_riboSelect_grouped_loci.txt"))
     if os.path.exists(output_path):
@@ -222,6 +230,7 @@ if __name__ == "__main__":
     # get genome records into a list
     genome_records = get_genbank_record(args.genbank_genome,
                                         first_only=False, verbose=False)
+
     # get list of loci matching feature and optionally specific features
     # also returns nfeat, a dict of feature count by genbank id
     lociDict, nfeat, nfeat_simple = \
@@ -229,6 +238,7 @@ if __name__ == "__main__":
                                     feature=args.feature,
                                     specific_features=args.specific_features,
                                     verbose=True)
+
     # default case, clusters are inferred
     # if not, must be equal to the length of genbank records
     if args.clusters != "":
@@ -240,11 +250,13 @@ if __name__ == "__main__":
             sys.exit(1)
     else:
         centers = [0 for x in genome_records]
+
     # if unequal lengths, throw error
     if len(genome_records) != len(centers):
         log("centers must be the same length as number" +
             " of genbank records!\n")
         sys.exit(1)
+
     # log clusters for accession for user to verify
     ##### refactoring: (noun) the way
     ##### for each genbank record, process, and append any hits to outfile
@@ -264,40 +276,33 @@ if __name__ == "__main__":
             continue
         #  find nfeat for this genbank id by subsetting;
         # is this a bad way of doesnt things?
+
         if nfeat_simple is None and centers == 0:
             log(" without specific features submitted, cannot calculate" +
                 " number centers needed for clustering.  Please submit the" +
                 " desired number of clusters with the --clusters argument!\n")
             sys.exit(1)
-        rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
-                           genome_records[i].id in k }.values())[0]
-        if centers[i] == 0:
-            if min(rec_nfeat) == 0:
-                best_shot_centers = max(rec_nfeat)
-            else:
-                best_shot_centers = min(rec_nfeat)
-            if best_shot_centers == 0:
-                log("skipping the clustering for {0}\n".format(i))
-                continue
-            indexClusters = pure_python_kmeans(subset.keys(),
-                                               centers=best_shot_centers,
-                                               DEBUG=args.keep_temps)
-        else:
-            indexClusters = pure_python_kmeans(subset.keys(),
-                                               centers=centers[i],
-                                               DEBUG=args.keep_temps)
-        # indexClusters should be like { "1": [3,4,6], "2": [66,45,63]}
-        with open(output_path, "a") as outfile:
-            for k, v in indexClusters.items():
-                # for each k:v, this replaces the index in v with the locus tag
-                # from subset, and writes it out in the way that plays nice
-                # riboSeed
-                outfile.write(str(genome_records[i].id +
-                                  " " +
-                                  str(":".join([subset[x][2] for x in v])) +
-                                  '\n'))
-                # this should be the only thing going to stdout.
-                sys.stdout.write(str(genome_records[i].id +
-                                     " " +
-                                     str(":".join([subset[x][2] for x in v])) +
-                                     '\n'))
+
+    rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
+                       genome_records[i].id in k }.values())[0]
+
+    if centers[i] == 0:
+        indexClusterDict = pure_python_kmeans(lociDict.keys(),
+                                              centers=min(rec_nfeat))
+    else:
+        indexClusterDict =  pure_python_kmeans(lociDict.keys(),
+                                               centers=centers[i])
+    print(indexClusterDict)
+
+    clusteredDict = {}
+    for k, v in indexClusterDict.items():
+        clusteredDict.setdefault(v, []).append(
+            [x for x in subset[int(k)]])
+
+    with open(os.path.join(args.output,
+                           str(date + "_riboSelect_grouped_loci.txt")),
+              "a") as outfile:
+        for k, v in clusteredDict.items():
+            outstr = v[0][1] + " " + ":".join(x[2] for x in v) + '\n'
+            outfile.write(outstr)
+            sys.stdout.write(outstr)
