@@ -37,27 +37,21 @@ def get_args(DEBUG=False):
                                      " rRNA regions from a gb file, returns" +
                                      "a text file with the clusters")
     parser.add_argument("genbank_genome", help="Genbank file (WITH SEQUENCE)")
-    parser.add_argument("-f", "--feature", help="Feature, rRNA or RRNA; " +
-                        "default: %(default)s",
+    parser.add_argument("-f", "--feature",
+                        help="Feature, rRNA or RRNA; default: %(default)s",
                         default='rRNA', type=str)
-    parser.add_argument("-s", "--specific_features", help="colon:separated" +
-                        " -- specific features\
-                         ; default: %(default)s",
+    parser.add_argument("-s", "--specific_features",
+                        help="colon:separated -- specific features; " +\
+                        "default: %(default)s",
                         default='16S:23S:5S', type=str)
-    parser.add_argument("-o", "--output", help="output directory;" +
-                        "default: %(default)s", default=os.getcwd(),
-                        type=str, dest="output")
-    parser.add_argument("-c", "--clusters", help="number of rDNA clusters;" +
-                        "can be a colon:separated list that matches number " +
-                        "of genbank records"
-                        "default is inferred: %(default)s", default='',
-                        type=str, dest="clusters")
-    # parser.add_argument( "--per_contig",
-    #                     help="if genome is not small or nearly completed, " +
-    #                     "run with --per_contigs. This finds clusters " +
-    #                     "on a per-contig  basis as opposed to globally " +
-    #                     "searching for loci; default: %(default)s",
-    #                     default=False, action="store_true")  # , dest="per_contig")
+    parser.add_argument("-o", "--output",
+                        help="output directory; default: %(default)s",
+                        default=os.getcwd(), type=str, dest="output")
+    parser.add_argument("-c", "--clusters",
+                        help="number of rDNA clusters; can be a " +\
+                        "colon:separated list that matches number " +\
+                        "of genbank records; default is inferred: %(default)s",
+                        default='',  type=str, dest="clusters")
     args = parser.parse_args()
     return(args)
 
@@ -227,7 +221,7 @@ if __name__ == "__main__":
                                     specific_features=args.specific_features,
                                     verbose=True)
     print(lociDict)
-
+ 
     # default case, clusters are inferred
     # if not, must be equal to the length of genbank records
     if args.clusters != "":
@@ -273,8 +267,7 @@ if __name__ == "__main__":
 
     clusteredDict = {}
     for k, v in indexClusterDict.items():
-        clusteredDict.setdefault(v, []).append(
-            [x for x in subset[int(k)]])
+        clusteredDict.setdefault(v, []).append([x for x in subset[int(k)]])
 
     with open(os.path.join(args.output,
                            str(date + "_riboSelect_grouped_loci.txt")),
