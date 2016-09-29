@@ -32,7 +32,7 @@ import time
 from pyutilsnrw.utils3_5 import get_genbank_record, check_single_scaffold
 
 
-def get_args(DEBUG=False):
+def get_args():
     parser = argparse.ArgumentParser(description="This is used to extract" +
                                      " rRNA regions from a gb file, returns" +
                                      "a text file with the clusters")
@@ -52,6 +52,8 @@ def get_args(DEBUG=False):
                         "colon:separated list that matches number " +\
                         "of genbank records; default is inferred: %(default)s",
                         default='',  type=str, dest="clusters")
+    parser.add_argument("--debug", dest="debug", action="store_true",
+                        help="Enable debug messages")
     args = parser.parse_args()
     return(args)
 
@@ -156,7 +158,7 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
 
 
 
-def pure_python_kmeans(data, group_by=None, centers=3, DEBUG=True):
+def pure_python_kmeans(data, group_by=None, centers=3, debug=False):
     """giveb 1d list of numberic data and number of centers, returns a
     csv with the data and cluster, and LP's disapointment
     """
@@ -181,7 +183,7 @@ def pure_python_kmeans(data, group_by=None, centers=3, DEBUG=True):
         next(reader, None)  # skip the headers
         indexClusterDict = dict((rows[0], rows[1]) for rows in reader)
 
-    if not DEBUG:
+    if not debug:
         os.remove(os.path.join(os.getcwd(), "list.csv"))
         os.remove(os.path.join(os.getcwd(), "km_script.R"))
     return(indexClusterDict)
@@ -189,7 +191,7 @@ def pure_python_kmeans(data, group_by=None, centers=3, DEBUG=True):
 
 if __name__ == "__main__":
 
-    args = get_args(DEBUG=False)
+    args = get_args()
     print("Current usage:")
     print(sys.argv[1:])
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
@@ -259,10 +261,12 @@ if __name__ == "__main__":
 
     if centers[i] == 0:
         indexClusterDict = pure_python_kmeans(lociDict.keys(),
-                                              centers=min(rec_nfeat))
+                                              centers=min(rec_nfeat),
+                                              debug=args.debug)
     else:
         indexClusterDict =  pure_python_kmeans(lociDict.keys(),
-                                               centers=centers[i])
+                                               centers=centers[i],
+                                               debug=args.debug)
     print(indexClusterDict)
 
     clusteredDict = {}
