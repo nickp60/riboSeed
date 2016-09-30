@@ -298,7 +298,7 @@ if __name__ == "__main__":
     args = get_args()
     output_root = os.path.abspath(os.path.expanduser(args.output))
     logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=str("%s_riboSeed_log.txt" %
+                            outfile=str("%s_riboSnag_log.txt" %
                                         os.path.join(output_root,
                                                      time.strftime("%Y%m%d%H%M"))),
                             name=__name__)
