@@ -29,7 +29,7 @@ import argparse
 import sys
 from Bio import SeqIO
 import time
-from pyutilsnrw.utils3_5 import get_genbank_record, check_single_scaffold
+from pyutilsnrw.utils3_5 import check_single_scaffold
 
 
 def get_args():
@@ -84,10 +84,10 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     ribosome product annoation, not ht locus tag.
     if specific features is None, return all with type == feature
     """
-    if not isinstance(genome_seq_records, list):
-        raise("Error! this function can only accept a list of records" +
-              "simply put your genbank record in brackets if you only " +
-              "have a single record")
+    #if not isinstance(genome_seq_records, list):
+    #    raise("Error! this function can only accept a list of records" +
+    #          "simply put your genbank record in brackets if you only " +
+    #          "have a single record")
     if specific_features is None:
         all_feature = True
     else:
@@ -179,26 +179,25 @@ def pure_python_kmeans(data, group_by=None, centers=3, debug=False):
              "km <- kmeans(data[,1], nstart=100,iter.max=100,centers=centers)",
              "data[,2] <- km[1]",
              "data <- data[order(data[,1]),  ]",
-             "write.csv(data, 'list.csv',  row.names=F)"]
+             "write.table(data, 'list.csv', sep=',', row.names=F, col.names=F)"]
     with open(os.path.join(os.getcwd(), "km_script.R"), "w") as f:
         for i in rcmds:
-                f.write(i + "\n")
+            f.write(i + "\n")
     subprocess.run("Rscript km_script.R", shell=sys.platform != 'win32',
                    check=True)
     with open('list.csv', mode='r') as infile:
         reader = csv.reader(infile)
-        next(reader, None)  # skip the headers
         indexClusterDict = {}
         for row in reader:
             try:
                 if row[1] in indexClusterDict:
-                    indexClusterDict[row[1]].append(kind(row[0]))
+                    indexClusterDict[row[1]].append(row[0])
                 else:
-                    indexClusterDict[row[1]] = [kind(row[0])]
+                    indexClusterDict[row[1]] = [row[0]]
             except:
-                log("error constructing dictionary from csv; " +
-                    "possibly due to type casting? adjust the 'kind' " +
-                    "arg to string if in doubt")
+                print("error constructing dictionary from csv; " +
+                      "possibly due to type casting? adjust the 'kind' " +
+                      "arg to string if in doubt")
                 sys.exit(1)
     if not debug:
         os.remove(os.path.join(os.getcwd(), "list.csv"))
@@ -225,12 +224,13 @@ if __name__ == "__main__":
     output_path = os.path.join(args.output,
                                str(date + "_riboSelect_grouped_loci.txt"))
     if os.path.exists(output_path):
-        log("removing existing output file\n")
+        prnt("removing existing output file\n")
         os.remove(output_path)
 
     # get genome records into a list
-    genome_records = get_genbank_record(args.genbank_genome,
-                                        first_only=False, verbose=False)
+    with open(args.genbank_genome) as fh:
+        genome_records = list(SeqIO.parse(fh, 'genbank'))
+    print("Loaded %d records" % len(genome_records))
 
     # get list of loci matching feature and optionally specific features
     # also returns nfeat, a dict of feature count by genbank id
@@ -245,17 +245,16 @@ if __name__ == "__main__":
     if args.clusters != "":
         try:
             centers = [int(x) for x in args.clusters.split(":")]
-            log(str(centers))
+            print(str(centers))
         except:
-            log("cannot coerce --clusters to integer!\n")
+            print("cannot coerce --clusters to integer!\n")
             sys.exit(1)
     else:
         centers = [0 for x in genome_records]
 
     # if unequal lengths, throw error
     if len(genome_records) != len(centers):
-        log("centers must be the same length as number" +
-            " of genbank records!\n")
+        print("centers must be the same length as number of genbank records!\n")
         sys.exit(1)
 
     # log clusters for accession for user to verify
@@ -263,25 +262,24 @@ if __name__ == "__main__":
     ##### for each genbank record, process, and append any hits to outfile
     #####
     for i in range(0, len(genome_records)):
-        log("Processing {0}\n".format(genome_records[i].id))
+        print("Processing {0}\n".format(genome_records[i].id))
         # if user gives clusters, make sure it matches the length:
-        if args.clusters:
-            log("using {0} clusters for {1}\n".format(
-                centers[i], genome_records[i].id))
+        #if args.clusters:
+        #    logger.info("using {0} clusters for {1}\n".format(centers[i],
+        #                                           genome_records[i].id))
         # get subset of lociDict for that id
         subset = {key: value for key, value in lociDict.items() if \
                   genome_records[i].id in value }
         # skip if that doesnt have any hits
-        if len(subset) == 0:
-            log("no hits in {0}\n".format(genome_records[i].id))
-            continue
+        #if len(subset) == 0:
+        #    logger.info("no hits in {0}\n".format(genome_records[i].id))
+        #    continue
         #  find nfeat for this genbank id by subsetting;
         # is this a bad way of doesnt things?
-
         if nfeat_simple is None and centers == 0:
-            log(" without specific features submitted, cannot calculate" +
-                " number centers needed for clustering.  Please submit the" +
-                " desired number of clusters with the --clusters argument!\n")
+            print("without specific features submitted, cannot calculate " +
+                  "number centers needed for clustering.  Please submit the" +
+                  "desired number of clusters with the --clusters argument!\n")
             sys.exit(1)
 
     rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
@@ -295,11 +293,11 @@ if __name__ == "__main__":
         indexClusterDict =  pure_python_kmeans(lociDict.keys(),
                                                centers=centers[i],
                                                debug=args.debug)
-    print(indexClusterDict)
+    #print(indexClusterDict)
 
     clusteredDict = {}
     for k, v in indexClusterDict.items():
-        clusteredDict.setdefault(v, []).append([x for x in subset[int(k)]])
+        clusteredDict.setdefault(k, []).extend([subset[int(x)] for x in v])
 
     with open(os.path.join(args.output,
                            str(date + "_riboSelect_grouped_loci.txt")),
