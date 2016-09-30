@@ -60,6 +60,10 @@ def get_args():
                         "of genbank records.  Default is inferred from " +\
                         "specific feature with fewest hits", default='',
                         type=str, dest="clusters")
+    parser.add_argument("-v", "--verbosity", dest='verbosity', action="store",
+                        default=2, type=int,
+                        help="1 = debug(), 2 = info(), 3 = warning(), " +
+                        "4 = error() and 5 = critical(); default: %(default)s")
     args = parser.parse_args()
     return(args)
 
@@ -209,17 +213,8 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
 
 
 if __name__ == "__main__":
-    args = get_args(DEBUG=False)
-    logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=str("%s_riboSelect_log.txt" %
-                                        os.path.join(output_root,
-                                                     time.strftime("%Y%m%d%H%M"))),
-                            name=__name__)
-
-    log = sys.stderr.write  # to keep streaming clean if this goes that route
-    log("Current usage:\n")
-    log(" ".join(sys.argv[1:]) + "\n")
-    date = str(datetime.datetime.now().strftime('%Y%m%d'))
+    args = get_args()
+    output_root = os.path.abspath(os.path.expanduser(args.output))
     # Create output directory only if it does not exist
     try:
         os.makedirs(args.output)
@@ -227,12 +222,22 @@ if __name__ == "__main__":
         print("Selected output directory %s exists (exiting)" %
               args.output)
         sys.exit(1)
+    logger = set_up_logging(verbosity=args.verbosity,
+                            outfile=str("%s_riboSelect_log.txt" %
+                                        os.path.join(output_root,
+                                                     time.strftime("%Y%m%d%H%M"))),
+                            name=__name__)
+
+    # log = sys.stderr.write  # to keep streaming clean if this goes that route
+    logger.info("Current usage:\n")
+    logger.info(" ".join(sys.argv[1:]) + "\n")
+    date = str(datetime.datetime.now().strftime('%Y%m%d'))
 
     # Check if output file exists; if so, remove it
     output_path = os.path.join(args.output,
                                str(date + "_riboSelect_grouped_loci.txt"))
     if os.path.exists(output_path):
-        log("removing existing output file\n")
+        logger.info("removing existing output file\n")
         os.remove(output_path)
 
     # get genome records into a list
@@ -252,17 +257,18 @@ if __name__ == "__main__":
     if args.clusters != "":
         try:
             centers = [int(x) for x in args.clusters.split(":")]
-            log(str(centers))
+            logger.info(str(centers))
         except:
-            log("cannot coerce --clusters to integer!\n")
+            logger.error("cannot coerce --clusters to integer after " +\
+                         "splitting on colons!\n")
             sys.exit(1)
     else:
         centers = [0 for x in genome_records]
 
     # if unequal lengths, throw error
-    # log clusters for accession for user to verify
+    # logger.info clusters for accession for user to verify
     if len(genome_records) != len(centers):
-        log("centers must be the same length as number" +
+        logger.error("centers must be the same length as number" +
             " of genbank records!\n")
         sys.exit(1)
 
@@ -270,23 +276,23 @@ if __name__ == "__main__":
     ##### for each genbank record, process, and append any hits to outfile
     #####
     for i in range(0, len(genome_records)):
-        log("Processing {0}\n".format(genome_records[i].id))
+        logger.info("Processing {0}\n".format(genome_records[i].id))
         # if user gives clusters, make sure it matches the length:
         if args.clusters:
-            log("using {0} clusters for {1}\n".format(
+            logger.info("using {0} clusters for {1}\n".format(
                 centers[i], genome_records[i].id))
         # get subset of lociDict for that id
         subset = {key: value for key, value in lociDict.items() if \
                   genome_records[i].id in value }
         # skip if that doesnt have any hits
         if len(subset) == 0:
-            log("no hits in {0}\n".format(genome_records[i].id))
+            logger.warning("no hits in {0}\n".format(genome_records[i].id))
             continue
 
         #  find nfeat for this genbank id by subsetting;
         # is this a bad way of doesnt things?
         if nfeat_simple is None and centers == 0:
-            log(" without specific features submitted, cannot calculate" +
+            logger.error("Without specific features submitted, cannot calculate" +
                 " number centers needed for clustering.  Please submit the" +
                 " desired number of clusters with the --clusters argument!\n")
             sys.exit(1)
@@ -301,7 +307,7 @@ if __name__ == "__main__":
             else:
                 best_shot_centers = min(rec_nfeat)
             if best_shot_centers == 0:
-                log("skipping the clustering for {0}\n".format(i))
+                logger.info("skipping the clustering for {0}\n".format(i))
                 continue
             indexClusters = pure_python_kmeans(subset.keys(),
                                                centers=best_shot_centers,
