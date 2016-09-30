@@ -51,16 +51,6 @@ logger = logging
                  "Subprocess.call among otherthings wont run if you try this" +
                  " with less than python 3.5")
 class riboSnag_TestCase(unittest.TestCase):
-    # def init(self):
-    #     pass
-    # keep_temps = False
-    # self.samtools = "test"
-    # # samtools_exe = "samtoolz"
-    # # def __init__(self, testname, keep_temps):
-    # #     super(utils3_5TestCase, self).__init__(testname)
-    # #     self.keep_temps = keep_temps
-    # #     pass
-    # print(self.samtools)
     def setUp(self):
         pass
 
