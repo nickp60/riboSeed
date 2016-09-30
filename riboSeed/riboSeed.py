@@ -21,9 +21,6 @@ and use as references for BWA. Mapped sequences will be outputted from BWA
  plus twice the length of the reads, as it should have tails on either side.
 @author: nicholas, but I stole some stuff from github/x/stx_subtyping
 
-Any function that uses subprocess will have args for stderr and stdout, to
- pipe those outputs to the log files
-
 """
 import gzip
 import sys
@@ -153,14 +150,19 @@ def get_args(DEBUG=False):
     return(args)
 
 # def is_non_zero_file(fpath):
-#     """http://stackoverflow.com/questions/2507808/python-how-to-check-file-empty-or-not
+#     """http://stackoverflow.com/questions/2507808/
+#        python-how-to-check-file-empty-or-not
 #     """
 #     return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
 
 
 def check_smalt_full_install(smalt_exe, logger=None):
-    smalttestdir = os.path.join(os.path.dirname(__file__), "sample_data",
-                                "smalt_test")
+    smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                "sample_data",
+                                "smalt_test","")
+    if logger:
+        logger.debug("looking for smalt test dir: {0}".format(
+            smalttestdir))
     if not os.path.exists(smalttestdir):
         if logger:
             logger.error("cannot find smalt_test dir containing " +\
@@ -169,25 +171,33 @@ def check_smalt_full_install(smalt_exe, logger=None):
     ref = os.path.join(smalttestdir, "ref_to_test_bambamc.fasta")
     index = os.path.join(smalttestdir, "test_index")
     test_bam = os.path.join(smalttestdir, "test_mapping.bam")
-    test_reads = os.path.join(smalttestdir, "reads_to_test_bambamc.fasta")
+    test_reads = os.path.join(smalttestdir, "reads_to_test_bambamc.fastq")
     testindexcmd = str("{0} index {1} {2}".format(smalt_exe, index, ref))
-    testmapcmd = str("{0} map -f bam {1} {2} > {3}".format(smalt_exe, index,
-                                                           test_reads,
-                                                           test_bam))
-    try:
-        subprocess.run([testindexcmd, testmapcmd],
-                       shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE, check=True)
-    except:
-        if logger:
-            logger.error("Error running test to ensure bambamc library is " +\
-                         "installed! See https://github.com/gt1/bambamc and" +\
-                         " the smalt install guide for more details." +\
-                         "https://sourceforge.net/projects/smalt/files/")
-        sys.exit(1)
+    testmapcmd = str("{0} map -f bam -o {1} {2} {3}".format(smalt_exe,
+                                                            test_bam,
+                                                            index,
+                                                            test_reads))
+    if logger:
+        logger.debug("testing instalation of smalt and bambamc")
+    for i in [testindexcmd, testmapcmd]:
+        try:
+            if logger:
+                logger.debug(i)
+            subprocess.run([i],
+                           shell=sys.platform != "win32",
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           check=True)
+        except:
+            if logger:
+                logger.error("Error running test to check bambamc library is " +\
+                             "installed! See https://github.com/gt1/bambamc " +\
+                             "and the smalt install guide for more details." +\
+                             "https://sourceforge.net/projects/smalt/files/")
+            sys.exit(1)
     os.remove(test_bam)
-    os.remove(test_index)
+    os.remove(str(index + ".sma"))
+    os.remove(str(index + ".smi"))
 
 
 def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
@@ -381,7 +391,8 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                                         verbose=False, veryverb=False,
                                         logger=logger)
             with open(os.path.join(output, 'contigs.fasta'), 'w') as new_seqs:
-                SeqIO.write(SeqRecord(Seq(consensus,IUPAC.IUPACAmbiguousDNA()),
+                seqrec = Seq(consensus, IUPAC.IUPACAmbiguousDNA())
+                SeqIO.write(SeqRecord(seqrec,
                                       id="contigs_consensus_riboSeed",
                                       description=""), new_seqs, 'fasta')
         else:
@@ -669,7 +680,7 @@ if __name__ == "__main__":
     check_installed_tools([args.smalt_exe, args.samtools_exe,
                            args.spades_exe, args.quast_exe], logger=logger)
     # check bambamc is installed proper
-    check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger):
+    check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
     for i in [map_output_dir, results_dir, mauve_dir]:
         make_outdir(i)
     average_read_length = get_ave_read_len_from_fastq(args.fastq1,
