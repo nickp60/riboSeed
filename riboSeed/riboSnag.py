@@ -131,35 +131,39 @@ def extract_coords_from_locus(genome_seq_records, locus_tag_list=[],
     loc_number = 0  # index for hits
     loc_list = []  # recipient structure
     for record in genome_seq_records:
-        logger.debug("searching {0}".format(
-            record.id))
-        logger.debug(locus_tag_list)
+        logger.debug("searching {0} for loci in this list: {1}".format(
+            record.id, locus_tag_list))
         for feat in record.features:
             if not feat.type in feature:
                 continue
+            logger.debug("found {0} in the following feature : \n{1}".format(
+                feature, feat))
+
             try:
-                if (feat.qualifiers.get("locus_tag")[0] in locus_tag_list):
-                   # (feat.type == args.feature):
-                   #  SeqIO makes coords 0-based; the +1 below undoes that
-                    coords = [feat.location.start.position + 1,
-                              feat.location.end.position]
-                    strand = feat.strand
-                    product = feat.qualifiers.get("product")
-                    locus_tag = feat.qualifiers.get("locus_tag")[0]
-                    loc_list.append([loc_number, coords, strand,
-                                     product, locus_tag, record.id])
-                    logger.debug(" ".join([loc_number, coords, strand,
-                                     product, locus_tag, record.id]))
-                    loc_number = loc_number + 1
-                else:
-                    pass
+                locus_tag = feat.qualifiers.get("locus_tag")[0]
             except:
+                logger.error(str("found a feature ({0}), but there is no" +\
+                                 "locus tag associated with it!").format(
+                                     feat))
+                sys.exit(1)
+
+            if locus_tag in locus_tag_list:
+                #  SeqIO makes coords 0-based; the +1 below undoes that
+                coords = [feat.location.start.position + 1,
+                          feat.location.end.position]
+                strand = feat.strand
+                product = feat.qualifiers.get("product")
+                # locus_tag = feat.qualifiers.get("locus_tag")[0]
+                loc_list.append([loc_number, coords, strand,
+                                 product, locus_tag, record.id])
+                loc_number = loc_number + 1
+            else:
                 pass
     if not loc_number > 0:
         logger.error("no hits found in any record! Double " +
                      "check your genbank file")
         sys.exit(1)
-    logger.info("Here are the detected region,coords, strand, product, " +
+    logger.debug("Here are the detected region,coords, strand, product, " +
                 "locus tag, subfeatures aand sequence id of the results:")
     logger.info(loc_list)
     return(loc_list)
@@ -232,36 +236,45 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
 
     revamped 20160913
     """
-    if verbose and logger:
-        log_status = logger.debug
-    elif verbose:
-        log_status = sys.stderr.write
-    else:
-        pass
-
+    if logger is None:
+        logger.error("Must have logger for this function")
+        sys.exit(1)
     try:
         flank = [int(x) for x in flanking.split(":")]
         if len(flank) == 1:  # if only one value use for both up and downstream
             flank.append(flank[0])
         assert(len(flank) == 2)
     except:
-        raise ValueError("Error parsing flanking value; must either be " +
-                         " integer or two colon-seapred integers")
+        logger.error("Error parsing flanking value; must either be " +
+                     " integer or two colon-seapred integers")
+        sys.exit(1)
     #TODO : make this safer
     smallest_feature = min([y[1] - y[0] for y in [x[1] for x in coords]])
-    # print(smallest_feature)
     if smallest_feature < (minimum):
         raise ValueError("invalid minimum! cannot exceed half of smallest " +
                          "feature, which is {0} in this case".format(
                              smallest_feature))
     if verbose:
         for i in coords:
-            log_status(str(i))
-    #  This works as long as coords are never inreverse order
+            logger.info(str(i))
+    #  This works as long as coords are never in reverse order
+    # TODO check coords are increasing
     global_start = min([y[0] for y in [x[1] for x in coords]]) - flank[0]
+    # if start is negative, just use 0, the beginning of the sequence
+    if global_start < 0:
+        logger.warning("Caution! Cannot retrieve full flanking region, as " +\
+                       "the 5' flanking region extends past start of sequence")
+        global_start = 0
     global_end = max([y[1] for y in [x[1] for x in coords]]) + flank[1]
-    full_seq = genome_sequence[global_start + 1: global_end]
+    if global_end > len(genome_sequence):
+        logger.warning("Caution! Cannot retrieve full flanking region, as " +\
+                       "the 3' flanking region extends past end of sequence")
+        global_end = len(genome_sequence)
+    full_seq = genome_sequence[global_start : global_end]
     seq_with_ns = str(full_seq)
+    #
+    # loop to mask actual coding regions with N's
+    #
     if replace:
         for i in coords:
             region_length = i[1][1] - i[1][0] - (2 * within)
@@ -284,15 +297,20 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
                               str("N" * region_length) +
                               seq_with_ns[rel_end: ])
 
-    if verbose:
-        log_status(str("exp length {0} \nact length {1}".format(
-            global_end - global_start, len(full_seq))))
+    #
+    #
+    try:
+        assert(global_end - global_start, len(full_seq))
+    except:
+        print("well that assertion failed!")
+    logger.info(str("\nexp length {0} \nact length {1}".format(
+        global_end - global_start, len(full_seq))))
     if verbose:
         lb = 60
         for i in range(0, int(len(seq_with_ns) / lb)):
-            log_status(str(full_seq[i * lb: lb + (i * lb)] + "\n"))
-            log_status(str(seq_with_ns[i * lb: lb + (i * lb)] + "\n"))
-            log_status("\n")
+            print(str(full_seq[i * lb: lb + (i * lb)] + "\n"))
+            print(str(seq_with_ns[i * lb: lb + (i * lb)] + "\n"))
+            print("\n")
     seqrec = SeqRecord(Seq(seq_with_ns, IUPAC.IUPACAmbiguousDNA()),
                        id=str(coords[0][5] + "_" +
                               str(global_start) +
@@ -349,7 +367,9 @@ if __name__ == "__main__":
                                                       minimum=args.minimum,
                                                       flanking=args.flanking,
                                                       replace=args.replace,
-                                                      verbose=True))
+                                                      verbose=True,
+                                                      logger=logger))
+    logger.debug(regions)
     output_index = 1
     for i in regions:
         filename = str("region_" + str(output_index))
