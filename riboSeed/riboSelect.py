@@ -168,11 +168,40 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
                         pass
                 hit_list.append([i, hits])
                 hit_list_simple.append(hits)
-        nfeatures_occur[record.id] = (hit_list)
-        nfeat_simple[record.id] = hit_list_simple
+            nfeatures_occur[record.id] = (hit_list)
+            nfeat_simple[record.id] = hit_list_simple
     else:
         nfeatures_occur, nfeat_simple = None, None
     return(locus_tag_dict, nfeatures_occur, nfeat_simple)
+
+
+# def count_specific_feature_occurances(subset, specific_features):
+
+#     #  This bit counts the number of hits per specific feature.
+#     # It should probably be offloaded
+#     # to the main loop above, but it works.
+#     nfeatures_occur = {}  # makes  {genome : [['18S', 5],['28S',3]]}
+#     nfeat_simple = {}  # makes  {genome : [5, 3]}
+#     for record in genome_seq_records:
+#         hit_list = []  # [specific feature, count] list
+#         hit_list_simple = []  # [count] list
+#         for i in specific_features:
+#             hits = 0
+#             subset = {k: v for k, v in locus_tag_dict.items() \
+#                       if record.id in v}
+#             for k, v in subset.items():
+#                 # hint: v[-1] should be the product annotation
+#                 if any([i in x for x in v[-1]]):
+#                     hits = hits + 1
+#                 else:
+#                     pass
+#             hit_list.append([i, hits])
+#             hit_list_simple.append(hits)
+#     nfeatures_occur[record.id] = (hit_list)
+#     nfeat_simple[record.id] = hit_list_simple
+#     else:
+#         nfeatures_occur, nfeat_simple = None, None
+#     return(locus_tag_dict, nfeatures_occur, nfeat_simple)
 
 
 def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
@@ -206,9 +235,9 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
                 else:
                     indexClusterDict[row[1]] = [kind(row[0])]
             except:
-                log("error constructing dictionary from csv; " +
-                    "possibly due to type casting? adjust the 'kind' " +
-                    "arg to string if in doubt")
+                print("error constructing dictionary from csv; " +
+                      "possibl due to type casting? adjust the 'kind' " +
+                      "arg to string if in doubt")
                 sys.exit(1)
     if not DEBUG:
         os.remove(os.path.join(os.getcwd(), "list.csv"))
@@ -223,12 +252,13 @@ if __name__ == "__main__":
     try:
         os.makedirs(args.output)
     except FileExistsError:
-        print("Selected output directory %s exists (exiting)" %
+        print("#Selected output directory %s exists" %
               args.output)
         if not args.clobber:
+            print("exiting")
             sys.exit(1)
         else:
-            print("continuing, and risking potential loss of data")
+            print("# continuing, and risking potential loss of data")
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=str("%s_riboSelect_log.txt" %
                                         os.path.join(output_root,
@@ -298,24 +328,24 @@ if __name__ == "__main__":
         subset = {key: value for key, value in lociDict.items() if \
                   genome_records[i].id in value }
         # skip if that doesnt have any hits
-        logger.debug(subset)
+        logger.debug("subset: {0}".format(subset))
         if len(subset) == 0:
-            logger.warning("no hits in {0}\n".format(genome_records[i].id))
+            logger.info("no hits in {0}\n".format(genome_records[i].id))
             continue
-        logger.debug("hits in {0}\n".format(genome_records[i].id))
+        logger.info("hits in {0}\n".format(genome_records[i].id))
 
         #  find nfeat for this genbank id by subsetting;
         # is this a bad way of doesnt things?
-        if nfeat_simple is None and centers == 0:
+        logger.debug("centers: {0}".format(centers))
+        logger.debug("nfeat_simple: {0}".format(nfeat_simple))
+        if nfeat_simple is None and centers[i] == 0:
             logger.error("Without specific features submitted, cannot calculate" +
                 " number centers needed for clustering.  Please submit the" +
                 " desired number of clusters with the --clusters argument!\n")
             sys.exit(1)
-
-        print(nfeat_simple)
         rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
                            genome_records[i].id in k }.values())[0]
-        logger.debug(rec_nfeat)#[0]
+        logger.debug("rec_nfeat: {0}".format(rec_nfeat))#[0]
         if centers[i] == 0:
             if min(rec_nfeat) == 0:
                 best_shot_centers = max(rec_nfeat)
