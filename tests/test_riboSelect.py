@@ -4,7 +4,7 @@ Created on Tue Aug 30 08:57:31 2016
 @author: nicholas
 
 """
-__version__ = "0.0.3"
+__version__ = "0.0.1"
 import sys
 import logging
 import subprocess
