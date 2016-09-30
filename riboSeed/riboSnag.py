@@ -85,6 +85,10 @@ def get_args():
                         help="output directory; default: %(default)s",
                         default=os.getcwd(),
                         type=str, dest="output")
+    parser.add_argument( "--clobber",
+                         help="overwrite previous output filesy" +\
+                         "default: %(default)s", action='store_true',
+                        default=False, dest="clobber")
     args = parser.parse_args()
     return(args)
 
@@ -103,6 +107,8 @@ def parse_clustered_loci_file(file, logger=None):
     try:
         with open(file, "r") as f:
             for line in f:
+                if line.startswith("#"):
+                    print("look, a coment!")
                 seqname = line.strip("\n").split(" ")[0]
                 clusters.append([seqname,
                                  [line.strip("\n").split(" ")[1].split(":")]])
@@ -297,18 +303,29 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
 if __name__ == "__main__":
     args = get_args()
     output_root = os.path.abspath(os.path.expanduser(args.output))
+    # Create output directory only if it does not exist
+    try:
+        os.makedirs(args.output)
+    except FileExistsError:
+        print("#Selected output directory %s exists" %
+              args.output)
+        if not args.clobber:
+            print("exiting")
+            sys.exit(1)
+        else:
+            print("# continuing, and risking potential loss of data")
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=str("%s_riboSnag_log.txt" %
                                         os.path.join(output_root,
                                                      time.strftime("%Y%m%d%H%M"))),
                             name=__name__)
-# specific_features = args.specific_features.split(":")
+    # specific_features = args.specific_features.split(":")
     # feature_regs = args.feature_regions.split(":")
     # print(args)
     print("Usage:\n{0}\n".format(str(" ".join([x for x in sys.argv]))))
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
-    if not os.path.isdir(args.output):
-        os.mkdir(args.output)
+    # if not os.path.isdir(args.output):
+    #     os.mkdir(args.output)
     clusteredList = parse_clustered_loci_file(args.clustered_loci, logger=logger)
     # genome_sequences = get_genbank_seq(args.genbank_genome, first_only=False)
     genome_records = get_genbank_record(args.genbank_genome, first_only=False,
