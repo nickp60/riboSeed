@@ -11,11 +11,19 @@ For generalized selection and extraction of a feature type:
 
 For ribosomal region selection and extraction
 
-* `riboSelect.py` searches the genome for rRNA annotations, clusters them into likely ribosomal groups, and outputs a colon-separated list of clustered rRNA locus tags
+* `riboSelect.py` searches the genome for rRNA annotations, clusters them into likely ribosomal groups, and outputs a colon-separated list of clustered rRNA locus tags by record
 
-NOTE: the format is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropiate
+NOTE: the format is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropiate. The format is "genome_sequence_id locus_tag1:locus_tag2", where each line represents a cluster. See example below, where 14 rRNA's are clustered into 6 groups:
+```
+CM000577.1 FGSG_20052:FGSG_20051:FGSG_20053
+CM000577.1 FGSG_20048:FGSG_20047
+CM000577.1 FGSG_20049:FGSG_20050
+CM000577.1 FGSG_20054:FGSG_20056:FGSG_20055
+CM000577.1 FGSG_20058:FGSG_20057
+CM000577.1 FGSG_20075:FGSG_20074
+```
 
-* `riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file.  Outputs a directory with a fasta file for each clustered region
+* `riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file.  Outputs a directory with a fasta file for each clustered region (and a log file).
 
 * `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.
 
@@ -27,18 +35,24 @@ NOTE: the format is very simple, and due to the relatively small number of such 
 
 * `otherSelect` will replace the legacy functioning of `riboSnag` (prior to version 0.8.0)
 
-## Requirements
+## Installation
 
-Python Requirements:
+Installing with pip3.5 will be the easiest way, but prior to release, clone the repository, and run setup.py.
+
+### Python Requirements:
 * Python v3.5 or higher
 * Biopython
+* pyutilsrnw
 
-External Requirements
+### External Requirements
 * R (don't ask...)
 * SPAdes v3.8 or higher
-* SMALT (version?)
-* SAMTools (version?)
-* QUAST (optional)
+* SMALT (tested with 0.7.6)
+* SAMTools (tested with 1.3.1)
+* QUAST (tested with 4.1)
+
+## Note on installation of SMALT
+Must have bambamc installed!
 
 #The rest of this readme is old, and will be updated soon.
 
@@ -164,7 +178,7 @@ optional arguments:
 
 ## Output
 
-This outputs two main directories: `map` and `results`.  If `--temps` is true, temporary files from the mapping scheme will be retained, and is useful for assessing problems.  
+This outputs two main directories: `map` and `results`.  If `--temps` is true, temporary files from the mapping scheme will be retained, and is useful for assessing problems.
 The results directory will contain a 'mauve' directory with all the extended fragments, the mapped fastq files, and a `de_novo` and `de_fere_novo` folder, containing the results with the *de novo* mapping and supplemented mapping, respectively.
 
 
