@@ -158,6 +158,38 @@ def get_args(DEBUG=False):
 #     return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
 
 
+def check_smalt_full_install(smalt_exe, logger=None):
+    smalttestdir = os.path.join(os.path.dirname(__file__), "sample_data",
+                                "smalt_test")
+    if not os.path.exists(smalttestdir):
+        if logger:
+            logger.error("cannot find smalt_test dir containing " +\
+                         "files to verify bambamc install!")
+            sys.exit(1)
+    ref = os.path.join(smalttestdir, "ref_to_test_bambamc.fasta")
+    index = os.path.join(smalttestdir, "test_index")
+    test_bam = os.path.join(smalttestdir, "test_mapping.bam")
+    test_reads = os.path.join(smalttestdir, "reads_to_test_bambamc.fasta")
+    testindexcmd = str("{0} index {1} {2}".format(smalt_exe, index, ref))
+    testmapcmd = str("{0} map -f bam {1} {2} > {3}".format(smalt_exe, index,
+                                                           test_reads,
+                                                           test_bam))
+    try:
+        subprocess.run([testindexcmd, testmapcmd],
+                       shell=sys.platform != "win32",
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE, check=True)
+    except:
+        if logger:
+            logger.error("Error running test to ensure bambamc library is " +\
+                         "installed! See https://github.com/gt1/bambamc and" +\
+                         " the smalt install guide for more details." +\
+                         "https://sourceforge.net/projects/smalt/files/")
+        sys.exit(1)
+    os.remove(test_bam)
+    os.remove(test_index)
+
+
 def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
                      distance_results,
                      map_results_prefix, cores, samtools_exe,
@@ -636,6 +668,8 @@ if __name__ == "__main__":
     logger.debug("checking for installations of all required external tools")
     check_installed_tools([args.smalt_exe, args.samtools_exe,
                            args.spades_exe, args.quast_exe], logger=logger)
+    # check bambamc is installed proper
+    check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger):
     for i in [map_output_dir, results_dir, mauve_dir]:
         make_outdir(i)
     average_read_length = get_ave_read_len_from_fastq(args.fastq1,
