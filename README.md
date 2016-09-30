@@ -36,7 +36,7 @@ CM000577.1 FGSG_20075:FGSG_20074
 * `otherSelect` will replace the legacy functioning of `riboSnag` (prior to version 0.8.0)
 
 ## Installation
-
+The trickiest part of this whole business is propperly installing SMALT.
 Installing with pip3.5 will be the easiest way, but prior to release, clone the repository, and run setup.py.
 
 ### Python Requirements:
