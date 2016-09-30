@@ -53,6 +53,10 @@ def get_args():
                          help="view intermediate clustering files" +\
                          "default: %(default)s", action='store_true',
                         default=False, dest="keep_temps")
+    parser.add_argument( "--clobber",
+                         help="overwrite previous output filesy" +\
+                         "default: %(default)s", action='store_true',
+                        default=False, dest="clobber")
     parser.add_argument("-c", "--clusters",
                         help="number of rDNA clusters;" +
                         "if submitting multiple records, must be a " +\
@@ -221,7 +225,10 @@ if __name__ == "__main__":
     except FileExistsError:
         print("Selected output directory %s exists (exiting)" %
               args.output)
-        sys.exit(1)
+        if not args.clobber:
+            sys.exit(1)
+        else:
+            print("continuing, and risking potential loss of data")
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=str("%s_riboSelect_log.txt" %
                                         os.path.join(output_root,
@@ -237,8 +244,12 @@ if __name__ == "__main__":
     output_path = os.path.join(args.output,
                                str(date + "_riboSelect_grouped_loci.txt"))
     if os.path.exists(output_path):
-        logger.info("removing existing output file\n")
-        os.remove(output_path)
+        if args.clobber:
+            logger.info("removing existing output file\n")
+            os.remove(output_path)
+        else:
+            logger.error("Existing output file found!")
+            sys.exit(1)
 
     # get genome records into a list
     genome_records = get_genbank_record(args.genbank_genome,
@@ -275,7 +286,9 @@ if __name__ == "__main__":
     #####
     ##### for each genbank record, process, and append any hits to outfile
     #####
+    logger.debug(lociDict)
     for i in range(0, len(genome_records)):
+
         logger.info("Processing {0}\n".format(genome_records[i].id))
         # if user gives clusters, make sure it matches the length:
         if args.clusters:
@@ -285,9 +298,11 @@ if __name__ == "__main__":
         subset = {key: value for key, value in lociDict.items() if \
                   genome_records[i].id in value }
         # skip if that doesnt have any hits
+        logger.debug(subset)
         if len(subset) == 0:
             logger.warning("no hits in {0}\n".format(genome_records[i].id))
             continue
+        logger.debug("hits in {0}\n".format(genome_records[i].id))
 
         #  find nfeat for this genbank id by subsetting;
         # is this a bad way of doesnt things?
@@ -299,8 +314,8 @@ if __name__ == "__main__":
 
         print(nfeat_simple)
         rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
-                           genome_records[i].id in k }.values())
-        print(rec_nfeat)#[0]
+                           genome_records[i].id in k }.values())[0]
+        logger.debug(rec_nfeat)#[0]
         if centers[i] == 0:
             if min(rec_nfeat) == 0:
                 best_shot_centers = max(rec_nfeat)
@@ -323,9 +338,9 @@ if __name__ == "__main__":
                 # for each k:v, this replaces the index in v with the locus tag
                 # from subset, and writes it out in the way that plays nice
                 # riboSeed
-                outstr =str(genome_records[i].id + " " + \
-                                  str(":".join([subset[x][2] for x in v])) +
-                                  '\n')
+                outstr = str(genome_records[i].id + " " + \
+                             str(":".join([subset[x][2] for x in v])) +
+                             '\n')
                 outfile.write(outstr)
                 # this should be the only thing going to stdout.
                 sys.stdout.write(outstr)
