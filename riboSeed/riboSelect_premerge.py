@@ -29,7 +29,8 @@ import argparse
 import sys
 from Bio import SeqIO
 import time
-from pyutilsnrw.utils3_5 import get_genbank_record, check_single_scaffold
+from pyutilsnrw.utils3_5 import get_genbank_record, check_single_scaffold, \
+    set_up_logging
 
 
 def get_args(DEBUG=False):
@@ -207,6 +208,12 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
 
 if __name__ == "__main__":
     args = get_args(DEBUG=False)
+    logger = set_up_logging(verbosity=args.verbosity,
+                            outfile=str("%s_riboSelect_log.txt" %
+                                        os.path.join(output_root,
+                                                     time.strftime("%Y%m%d%H%M"))),
+                            name=__name__)
+
     log = sys.stderr.write  # to keep streaming clean if this goes that route
     log("Current usage:\n")
     log(" ".join(sys.argv[1:]) + "\n")
@@ -269,8 +276,10 @@ if __name__ == "__main__":
                 " number centers needed for clustering.  Please submit the" +
                 " desired number of clusters with the --clusters argument!\n")
             sys.exit(1)
+        print(nfeat_simple)
         rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
-                           genome_records[i].id in k }.values())[0]
+                           genome_records[i].id in k }.values())
+        print(rec_nfeat)#[0]
         if centers[i] == 0:
             if min(rec_nfeat) == 0:
                 best_shot_centers = max(rec_nfeat)

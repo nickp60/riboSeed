@@ -1,0 +1,5 @@
+This test directory contains the code to test riboseed.
+The references directory has a set files to be used in the tests.
+
+The test select and
+wget ftp://ftp.ncbi.nlm.nih.gov/sra/wgs_aux/AO/CP/AOCP01/AOCP01.1.gbff.gz
