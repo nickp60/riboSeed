@@ -300,9 +300,13 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
     #
     #
     try:
+        # make sure the sequence is correct length, corrected for zero-index
         assert(global_end - global_start, len(full_seq))
+        # make sure replacement didnt change seq length
+        assert(len(full_seq), len(seq_with_ns))
     except:
-        print("well that assertion failed!")
+        logger.error("There appears to be an error with how the seqeuence " +
+                     "coordinates are being calculated!")
     logger.info(str("\nexp length {0} \nact length {1}".format(
         global_end - global_start, len(full_seq))))
     if verbose:
