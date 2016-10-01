@@ -32,7 +32,6 @@ import time
 from pyutilsnrw.utils3_5 import get_genbank_record, check_single_scaffold, \
     set_up_logging
 
-
 def get_args():
     parser = argparse.ArgumentParser(description="This is used to extract" +
                                      " rRNA regions from a gb file, returns" +
@@ -45,10 +44,6 @@ def get_args():
                         help="colon:separated -- specific features" +\
                         "; default: %(default)s",
                         default='16S:23S:5S', type=str)
-    parser.add_argument("-o", "--output",
-                        help="output directory;" +
-                        "default: %(default)s", default=os.getcwd(),
-                        type=str, dest="output")
     parser.add_argument( "--keep_temps",
                          help="view intermediate clustering files" +\
                          "default: %(default)s", action='store_true',
@@ -68,6 +63,11 @@ def get_args():
                         default=2, type=int,
                         help="1 = debug(), 2 = info(), 3 = warning(), " +
                         "4 = error() and 5 = critical(); default: %(default)s")
+    parser.add_argument("-o", "--output",
+                        help="output directory; default: %(default)s",
+                        default=os.getcwd(), type=str, dest="output")
+    parser.add_argument("--debug", dest="debug", action="store_true",
+                        help="Enable debug messages")
     args = parser.parse_args()
     return(args)
 
@@ -94,21 +94,15 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     ribosome product annoation, not ht locus tag.
     if specific features is None, return all with type == feature
     """
-    if not isinstance(genome_seq_records, list):
-        raise("Error! this function can only accept a list of records" +
-              "simply put your genbank record in brackets if you only " +
-              "have a single record")
+    #if not isinstance(genome_seq_records, list):
+    #    raise("Error! this function can only accept a list of records" +
+    #          "simply put your genbank record in brackets if you only " +
+    #          "have a single record")
     if specific_features is None:
         all_feature = True
     else:
         all_feature = False
         specific_features = specific_features.split(":")
-    # if verbose and logger:
-    #     log_status = logger.info
-    # elif verbose:
-    #     log_status = sys.stderr.write
-    # else:
-    #     log_status = print
     locus_tag_dict = {}  # recipient structure
     # loop through records
     for record in genome_seq_records:
@@ -175,33 +169,6 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     return(locus_tag_dict, nfeatures_occur, nfeat_simple)
 
 
-# def count_specific_feature_occurances(subset, specific_features):
-
-#     #  This bit counts the number of hits per specific feature.
-#     # It should probably be offloaded
-#     # to the main loop above, but it works.
-#     nfeatures_occur = {}  # makes  {genome : [['18S', 5],['28S',3]]}
-#     nfeat_simple = {}  # makes  {genome : [5, 3]}
-#     for record in genome_seq_records:
-#         hit_list = []  # [specific feature, count] list
-#         hit_list_simple = []  # [count] list
-#         for i in specific_features:
-#             hits = 0
-#             subset = {k: v for k, v in locus_tag_dict.items() \
-#                       if record.id in v}
-#             for k, v in subset.items():
-#                 # hint: v[-1] should be the product annotation
-#                 if any([i in x for x in v[-1]]):
-#                     hits = hits + 1
-#                 else:
-#                     pass
-#             hit_list.append([i, hits])
-#             hit_list_simple.append(hits)
-#     nfeatures_occur[record.id] = (hit_list)
-#     nfeat_simple[record.id] = hit_list_simple
-#     else:
-#         nfeatures_occur, nfeat_simple = None, None
-#     return(locus_tag_dict, nfeatures_occur, nfeat_simple)
 
 
 def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
@@ -218,28 +185,27 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
              "km <- kmeans(data[,1], nstart=100,iter.max=100,centers=centers)",
              "data[,2] <- km[1]",
              "data <- data[order(data[,1]),  ]",
-             "write.csv(data, 'list.csv',  row.names=F)"]
+             "write.table(data, 'list.csv', sep=',', row.names=F, col.names=F)"]
     with open(os.path.join(os.getcwd(), "km_script.R"), "w") as f:
         for i in rcmds:
-                f.write(i + "\n")
+            f.write(i + "\n")
     subprocess.run("Rscript km_script.R", shell=sys.platform != 'win32',
                    check=True)
     with open('list.csv', mode='r') as infile:
         reader = csv.reader(infile)
-        next(reader, None)  # skip the headers
         indexClusterDict = {}
         for row in reader:
             try:
                 if row[1] in indexClusterDict:
-                    indexClusterDict[row[1]].append(kind(row[0]))
+                    indexClusterDict[row[1]].append(row[0])
                 else:
-                    indexClusterDict[row[1]] = [kind(row[0])]
+                    indexClusterDict[row[1]] = [row[0]]
             except:
                 print("error constructing dictionary from csv; " +
-                      "possibl due to type casting? adjust the 'kind' " +
+                      "possibly due to type casting? adjust the 'kind' " +
                       "arg to string if in doubt")
                 sys.exit(1)
-    if not DEBUG:
+    if not debug:
         os.remove(os.path.join(os.getcwd(), "list.csv"))
         os.remove(os.path.join(os.getcwd(), "km_script.R"))
     return(indexClusterDict)
@@ -282,8 +248,9 @@ if __name__ == "__main__":
             sys.exit(1)
 
     # get genome records into a list
-    genome_records = get_genbank_record(args.genbank_genome,
-                                        first_only=False, verbose=False)
+    with open(args.genbank_genome) as fh:
+        genome_records = list(SeqIO.parse(fh, 'genbank'))
+    print("Loaded %d records" % len(genome_records))
 
     # get list of loci matching feature and optionally specific features
     # also returns nfeat, a dict of feature count by genbank id
