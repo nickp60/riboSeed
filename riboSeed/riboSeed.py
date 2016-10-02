@@ -2,15 +2,11 @@
 #-*- coding: utf-8 -*-
 
 """
-version 0.9.2
+version 0.9.3
 
 Minor Version Revisions:
- - set smalt output to bams, removed the conversion step.
+ - added min improvement option
 
- - changed single pe from merge (that throws errors now) to moving with cp
-   I didnt use the shutils copy because I needed it to be a subprocess call
-   so it would jive with the current program
- -changed it back?
 Created on Sun Jul 24 19:33:37 2016
 The goal of this script will be to use a small fasta sequence to build indices
 and use as references for BWA. Mapped sequences will be outputted from BWA
@@ -45,7 +41,8 @@ from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
     make_output_prefix, combine_contigs, run_quast, \
     copy_file, check_installed_tools, get_ave_read_len_from_fastq, \
     get_number_mapped, extract_mapped_and_mappedmates, clean_temp_dir, \
-    output_from_subprocess_exists, keep_only_first_contig
+    output_from_subprocess_exists, keep_only_first_contig, get_fasta_lengths
+
 #################################### functions ###############################
 
 
@@ -74,6 +71,12 @@ def get_args(DEBUG=False):
                         default=1, type=int,
                         help="cores for multiprocessing workers" +
                         "; default: %(default)s")
+    parser.add_argument("-g", "--min_growth", dest='min_growth',
+                        action="store",
+                        default=0, type=int,
+                        help="skip remaining iterations if contig doesnt " +
+                        "extend by --min_growth. if 0, ignore" +
+                        "; default: %(default)s")
     parser.add_argument("-r", "--reference_genome", dest='reference_genome',
                         action="store", default='', type=str,
                         help="fasta reference genome, used for estimating " +
@@ -86,7 +89,8 @@ def get_args(DEBUG=False):
                         help="if --paired_inference, mapped read's " +
                         "pairs are included; default: %(default)s")
     parser.add_argument("--subtract", dest='subtract', action="store_true",
-                        default=False, help="if --subtract, reads aligned " +
+                        default=False,
+                        help="if --subtract, reads aligned " +
                         "to each reference will not be aligned to future " +
                         "iterations.  Probably you shouldnt do this" +
                         "unless you really happen to want to")
@@ -535,9 +539,9 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
 
 
 def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
-         reference_genome, fastq1, fastq2, fastqS, average_read_length, cores,
+         reference_genome, fastq1, fastq2, fastqS, ave_read_length, cores,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
-         paired_inference, smalt_scoring):
+         paired_inference, smalt_scoring, min_growth, max_iterations):
     """
     essentially a 'main' function,  to parallelize time comsuming parts
     """
@@ -567,10 +571,10 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                          os.path.split(fasta)[1].split(".fasta")[0]))
     new_reference = copy_file(current_file=fasta, dest_dir=mapping_dir,
                               name='', overwrite=False, logger=logger)
-    this_iteration = 1
+    this_iteration = 1  # counter for iterations.
     # perform iterative mapping
     proceed = True  # this is set to false in while loop if spades fails
-    while this_iteration <= args.iterations and proceed:
+    while this_iteration <= max_iterations and proceed:
         # if not the first round, replace ref with extended contigs
         if this_iteration != 1:
             logger.info("copying contigs file for next iteration of assembly")
@@ -622,8 +626,26 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         if not proceed:
             logger.warning("Assembly failed: no spades output for {0}".format(
                            os.path.basename(fasta)))
-        this_iteration = this_iteration + 1
+        # compare lengths of reference and freshly assembled contig
+        contig_length_diff = get_fasta_lengths(contigs_path)[0] - \
+                             get_fasta_lengths(new_reference)[0]
+        logger.info("The new contig differs from the reference (or previous " +
+                    "iteration) by {0} bases".format(contig_length_diff))
+        #  This is a feature that is supposed to help skip unneccesary
+        # iterations.  If the difference is negative (new contig is shorter)
+        # continue, as this may happen (especially in first mapping if
+        # reference is not closely related to Sample), continue to map.
+        # If the contig length increases, but not as much as min_growth,
+        # skip future iterations
+        if contig_length_diff > 0 and contig_length_diff < min_growth and \
+           min_growth != 0:  # ie, ignore by default
+            this_iteration = max_iterations
+        else:
+            this_iteration = this_iteration + 1
+
+        # use contigs_path as new reference
         new_reference = contigs_path
+
     #  Now, after iterative seeding
     try:
         contigs_new_path = copy_file(current_file=contigs_path,
@@ -731,13 +753,15 @@ if __name__ == "__main__":
                  mauve_path=mauve_dir, map_output_dir=map_output_dir,
                  method=args.method, reference_genome=args.reference_genome,
                  fastq1=args.fastq1, fastq2=args.fastq2, fastqS=args.fastqS,
-                 average_read_length=average_read_length, cores=args.cores,
+                 ave_read_length=average_read_length, cores=args.cores,
                  subtract_reads=args.subtract,
                  ref_as_contig=args.ref_as_contig,
                  fetch_mates=args.paired_inference,
                  keep_unmapped_reads=args.keep_unmapped,
                  paired_inference=args.paired_inference,
-                 smalt_scoring=args.smalt_scoring)
+                 smalt_scoring=args.smalt_scoring,
+                 min_growth=args.min_growth,
+                 max_iterations=args.iterations)
     else:
         pool = multiprocessing.Pool(processes=args.cores)
         # cores_per_process =
@@ -752,13 +776,15 @@ if __name__ == "__main__":
                                      "fastqS": args.fastqS,
                                      "cores": 4,  # cores": args.cores,
                                      "mauve_path": mauve_dir,
-                                     "average_read_length": average_read_length,
+                                     "ave_read_length": average_read_length,
                                      "fetch_mates": args.paired_inference,
                                      "keep_unmapped_reads": args.keep_unmapped,
                                      "paired_inference": args.paired_inference,
                                      "subtract_reads": args.subtract,
                                      "ref_as_contig": args.ref_as_contig,
-                                     "smalt_scoring": args.smalt_scoring})
+                                     "smalt_scoring": args.smalt_scoring,
+                                     "min_growth": args.min_growth,
+                                     "max_iterations": args.iterations})
                    for fasta in fastas]
         pool.close()
         pool.join()
