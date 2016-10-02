@@ -71,6 +71,15 @@ def get_args(DEBUG=False):
                         default=1, type=int,
                         help="cores for multiprocessing workers" +
                         "; default: %(default)s")
+    parser.add_argument("-k", "--kmers", dest='kmers', action="store",
+                        default="21,33,55,77,99,127", type=str,
+                        help="kmers used for final assembly" +
+                        ", separated by commas; default: %(default)s")
+    parser.add_argument("-p", "--pre_kmers", dest='pre_kmers', action="store",
+                        default="21,33,55", type=str,
+                        help="kmers used during seeding assemblies, " +
+                        "separated bt commas" +
+                        "; default: %(default)s")
     parser.add_argument("-g", "--min_growth", dest='min_growth',
                         action="store",
                         default=0, type=int,
@@ -541,7 +550,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
 def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
          reference_genome, fastq1, fastq2, fastqS, ave_read_length, cores,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
-         paired_inference, smalt_scoring, min_growth, max_iterations):
+         paired_inference, smalt_scoring, min_growth, max_iterations, kmers):
     """
     essentially a 'main' function,  to parallelize time comsuming parts
     """
@@ -621,7 +630,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                        groom_contigs="keep_first",
                        output=spades_dir, keep_best=last_time_through,
                        ref=new_reference, ref_as_contig=ref_as_contig,
-                       k="21,33,55",
+                       k=kmers,
                        seqname=fasta, spades_exe=args.spades_exe)
         if not proceed:
             logger.warning("Assembly failed: no spades output for {0}".format(
@@ -761,7 +770,8 @@ if __name__ == "__main__":
                  paired_inference=args.paired_inference,
                  smalt_scoring=args.smalt_scoring,
                  min_growth=args.min_growth,
-                 max_iterations=args.iterations)
+                 max_iterations=args.iterations,
+                 kmers=args.pre_kmers)
     else:
         pool = multiprocessing.Pool(processes=args.cores)
         # cores_per_process =
@@ -784,7 +794,8 @@ if __name__ == "__main__":
                                      "ref_as_contig": args.ref_as_contig,
                                      "smalt_scoring": args.smalt_scoring,
                                      "min_growth": args.min_growth,
-                                     "max_iterations": args.iterations})
+                                     "max_iterations": args.iterations,
+                                     "kmers": args.pre_kmers})
                    for fasta in fastas]
         pool.close()
         pool.join()
@@ -813,7 +824,7 @@ if __name__ == "__main__":
                                        ref=assembly_ref,
                                        ref_as_contig=assembly_ref_as_contig,
                                        prelim=False, keep_best=False,
-                                       k="21,33,55,77,99,127")
+                                       k=args.kmers)
         if final_success:
             logger.info("\n\nRunning %s QUAST" % j )
             run_quast(contigs=output_contigs,
@@ -823,4 +834,4 @@ if __name__ == "__main__":
                       logger=logger)
     # Report that we've finished
     logger.info("Done: %s." % time.asctime())
-    logger.info("Time taken: %.2fs" % (time.time() - t0))
+    logger.info("Time taken: %.2fm" % (time.time() - t0 / 60))
