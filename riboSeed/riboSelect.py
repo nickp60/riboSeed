@@ -170,7 +170,6 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
 
 
 
-
 def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
     """giveb 1d list of numberic data and number of centers, returns a
     csv with the data and cluster, and LP's disapointment
@@ -205,7 +204,7 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
                       "possibly due to type casting? adjust the 'kind' " +
                       "arg to string if in doubt")
                 sys.exit(1)
-    if not debug:
+    if not DEBUG:
         os.remove(os.path.join(os.getcwd(), "list.csv"))
         os.remove(os.path.join(os.getcwd(), "km_script.R"))
     return(indexClusterDict)
@@ -312,7 +311,7 @@ if __name__ == "__main__":
             sys.exit(1)
         rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
                            genome_records[i].id in k }.values())[0]
-        logger.debug("rec_nfeat: {0}".format(rec_nfeat))#[0]
+        logger.debug("rec_nfeat: {0}".format(rec_nfeat))  #[0]
         if centers[i] == 0:
             if min(rec_nfeat) == 0:
                 best_shot_centers = max(rec_nfeat)
@@ -336,7 +335,7 @@ if __name__ == "__main__":
                 # from subset, and writes it out in the way that plays nice
                 # riboSeed
                 outstr = str(genome_records[i].id + " " + \
-                             str(":".join([subset[x][2] for x in v])) +
+                             str(":".join([subset[int(x)][2] for x in v])) +
                              '\n')
                 outfile.write(outstr)
                 # this should be the only thing going to stdout.
