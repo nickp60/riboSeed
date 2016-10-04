@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """
-version 0.8.5
+version 0.8.6
 Minor version changes:
- - super-prelim multiple cscaffold handling
+ - refactored so that extract coords looks at a single genbank
+   record, not looping through all
 #TODO:
 - set up logging
 - Make this less awful
@@ -108,10 +109,11 @@ def parse_clustered_loci_file(file, logger=None):
         with open(file, "r") as f:
             for line in f:
                 if line.startswith("#"):
-                    print("look, a coment!")
+                    continue
                 seqname = line.strip("\n").split(" ")[0]
-                clusters.append([seqname,
-                                 [line.strip("\n").split(" ")[1].split(":")]])
+                loci_list = [x for x in \
+                             line.strip("\n").split(" ")[1].split(":")]
+                clusters.append([seqname, loci_list])
     except:
         logger.error("Cluster file could not be parsed!")
         sys.exit(1)
@@ -121,7 +123,7 @@ def parse_clustered_loci_file(file, logger=None):
     return(clusters)
 
 
-def extract_coords_from_locus(genome_seq_records, locus_tag_list=[],
+def extract_coords_from_locus(record, locus_tag_list=[],
                               feature="rRNA", verbose=True, logger=None):
     """given a list of locus_tags, return a list of
     loc_number,coords, strand, product
@@ -130,59 +132,56 @@ def extract_coords_from_locus(genome_seq_records, locus_tag_list=[],
         raise ValueError("logging must be used!")
     loc_number = 0  # index for hits
     loc_list = []  # recipient structure
-    for record in genome_seq_records:
-        logger.debug("searching {0} for loci in this list: {1}".format(
-            record.id, locus_tag_list))
-        for feat in record.features:
-            if not feat.type in feature:
-                continue
-            logger.debug("found {0} in the following feature : \n{1}".format(
-                feature, feat))
+    # for record in genome_seq_records:
+    #     logger.debug("searching {0} for loci in this list: {1}".format(
+    #         record.id, locus_tag_list))
+    for feat in record.features:
+        if not feat.type in feature:
+            continue
+        logger.debug("found {0} in the following feature : \n{1}".format(
+            feature, feat))
 
-            try:
-                locus_tag = feat.qualifiers.get("locus_tag")[0]
-            except:
-                logger.error(str("found a feature ({0}), but there is no" +\
-                                 "locus tag associated with it!").format(
-                                     feat))
-                sys.exit(1)
+        try:
+            locus_tag = feat.qualifiers.get("locus_tag")[0]
+        except:
+            logger.error(str("found a feature ({0}), but there is no" +\
+                             "locus tag associated with it!").format(
+                                 feat))
+            sys.exit(1)
 
-            if locus_tag in locus_tag_list:
-                #  SeqIO makes coords 0-based; the +1 below undoes that
-                coords = [feat.location.start.position + 1,
-                          feat.location.end.position]
-                strand = feat.strand
-                product = feat.qualifiers.get("product")
-                # locus_tag = feat.qualifiers.get("locus_tag")[0]
-                loc_list.append([loc_number, coords, strand,
-                                 product, locus_tag, record.id])
-                loc_number = loc_number + 1
-            else:
-                pass
+        if locus_tag in locus_tag_list:
+            #  SeqIO makes coords 0-based; the +1 below undoes that
+            coords = [feat.location.start.position + 1,
+                      feat.location.end.position]
+            strand = feat.strand
+            product = feat.qualifiers.get("product")
+            # locus_tag = feat.qualifiers.get("locus_tag")[0]
+            loc_list.append([loc_number, coords, strand,
+                             product, locus_tag, record.id])
+            loc_number = loc_number + 1
+        else:
+            pass
     if not loc_number > 0:
         logger.error("no hits found in any record! Double " +
                      "check your genbank file")
         sys.exit(1)
     logger.debug("Here are the detected region,coords, strand, product, " +
-                "locus tag, subfeatures aand sequence id of the results:")
-    logger.info(loc_list)
+                 "locus tag, subfeatures and sequence id of the results:")
+    logger.debug(loc_list)
     return(loc_list)
 
 
-
-def get_genbank_seq_matching_id(recordID, genbank_record_list):
+def get_genbank_rec_from_multigb(recordID, genbank_record_list):
     """ given a list of loci and genbank records, return sequence of
     genbank record that has all the loci.
     If on different sequences, return error
     """
-    if logger is None:
-        raise ValueError("logging must be used!")
     for record in genbank_record_list:
         if recordID == record.id:
-            return(record.seq)
+            return(record)
         else:
             pass
-    print("no seqeuence found matching record id!")
+    print("no record found matching record id!")
     sys.exit(1)
 
 
@@ -319,13 +318,13 @@ if __name__ == "__main__":
     for i in clusteredList:
         locus_tag_list = i[1][0]
         recID = i[0]
-        genbank_sequence = \
-            get_genbank_seq_matching_id(recordID=recID,
+        genbank_rec = \
+            get_genbank_rec_from_multigb(recordID=recID,
                                         genbank_record_list=genome_records)
-        coord_list = extract_coords_from_locus(genome_records,
+        coord_list = extract_coords_from_locus(record=genome_rec,
                                                locus_tag_list=locus_tag_list,
                                                verbose=True, logger=logger)
-        regions.append(stitch_together_target_regions(genbank_sequence,
+        regions.append(stitch_together_target_regions(genbank_rec.seq,
                                                       coords=coord_list,
                                                       within=args.within,
                                                       minimum=args.minimum,
@@ -333,6 +332,7 @@ if __name__ == "__main__":
                                                       replace=args.replace,
                                                       verbose=False,
                                                       logger=logger))
+
     logger.debug(regions)
     output_index = 1
     for i in regions:

@@ -33,14 +33,18 @@ import glob
 import argparse
 sys.dont_write_bytecode = True
 
+
 from pyutilsnrw.utils3_5 import get_genbank_seq, get_genbank_record
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
-    extract_coords_from_locus, get_genbank_seq_matching_id,\
-    stitch_together_target_regions
+    extract_coords_from_locus,\
+    stitch_together_target_regions, get_genbank_rec_from_multigb
+
 
 
 logger = logging
+
+
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among otherthings wont run if you try this" +
                  " with less than python 3.5")
@@ -65,12 +69,19 @@ class riboSnag_TestCase(unittest.TestCase):
         """
         clusters = parse_clustered_loci_file(self.test_loci_file,
                                              logger=logger)
-        self.assertEqual(clusters[0][0], "CM000577.1")
+        ref_loci_list = ['CM000577.1',
+                         ['FGSG_20052', 'FGSG_20051', 'FGSG_20053']]
+        self.assertEqual(clusters[0], ref_loci_list)
+
+    def test_get_genbank_seq_matching_id(self):
+        records = get_genbank_record(self.test_gb_file)
+        print(records)
+        record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
+                                          genbank_record_list=records)
 
     def test_extract_coords_from_locus(self):
-
         records = get_genbank_record(self.test_gb_file)
-        coord_list = extract_coords_from_locus(genome_seq_records=records,
+        coord_list = extract_coords_from_locus(record=records[0],
                                                locus_tag_list=["ECUMN_0004"],
                                                feature="CDS",
                                                verbose=True, logger=logger)[0]
@@ -82,8 +93,29 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(loc_index, 0)
         self.assertEqual(locus_tag, "ECUMN_0004")
         self.assertEqual(strand, 1)
-        self.assertEqual(coords,[3692, 4978])
-        self.assertEqual(seqid,'NC_011751.1')
+        self.assertEqual(coords, [3692, 4978])
+        self.assertEqual(seqid, 'NC_011751.1')
+
+
+    def test_stitching(self):
+        records = get_genbank_record(self.test_gb_file)
+        clusters = parse_clustered_loci_file(self.test_loci_file,
+                                             logger=logger)
+        record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
+                                          genbank_record_list=records)
+        print(clusters[0])
+        coord_list = extract_coords_from_locus(record=record,
+                                               locus_tag_list=["ECUMN_0004"],
+                                               feature="CDS",
+                                               verbose=True, logger=logger)[0]
+        stitched_record = stitch_together_target_regions(genome_sequence=record.seq,
+                                                         coords=coordlist[0],
+                                                         flanking="500:500",
+                                                         within=50, minimum=50,
+                                                         replace=True,
+                                                         logger=logger,
+                                                         verbose=True)
+
 
     def tearDown(self):
         pass

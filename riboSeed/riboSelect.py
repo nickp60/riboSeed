@@ -93,6 +93,7 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     20160922 This was changed to add checking for rRNA type from
     ribosome product annoation, not ht locus tag.
     if specific features is None, return all with type == feature
+    Changed from having index used for clustering to using the first coord
     """
     #if not isinstance(genome_seq_records, list):
     #    raise("Error! this function can only accept a list of records" +
@@ -113,16 +114,19 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
                     locustag = feat.qualifiers.get("locus_tag")[0]
                     product_list = multisplit([",", " ", "-", "_"],
                                               feat.qualifiers.get("product")[0])
+                    coords = [feat.location.start.position + 1,
+                              feat.location.end.position]
+
                     # if either specific feature is found in product or
                     # only interested in all features, add locus to dict
                     if (not all_feature and \
                         any(x in specific_features for x in product_list)) or \
                         all_feature:
-                        locus_tag_dict[loc_number] = [loc_number,
-                                                      record.id,
-                                                      locustag,
-                                                      feat.type,
-                                                      product_list]
+                            locus_tag_dict[coords[0]] = [loc_number,
+                                                         record.id,
+                                                         locustag,
+                                                         feat.type,
+                                                         product_list]
                     else:
                         pass
                 except TypeError:
