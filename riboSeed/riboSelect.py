@@ -44,11 +44,11 @@ def get_args():
                         help="colon:separated -- specific features" +\
                         "; default: %(default)s",
                         default='16S:23S:5S', type=str)
-    parser.add_argument( "--keep_temps",
+    parser.add_argument("--keep_temps",
                          help="view intermediate clustering files" +\
                          "default: %(default)s", action='store_true',
                         default=False, dest="keep_temps")
-    parser.add_argument( "--clobber",
+    parser.add_argument("--clobber",
                          help="overwrite previous output filesy" +\
                          "default: %(default)s", action='store_true',
                         default=False, dest="clobber")
@@ -169,7 +169,6 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     return(locus_tag_dict, nfeatures_occur, nfeat_simple)
 
 
-
 def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
     """giveb 1d list of numberic data and number of centers, returns a
     csv with the data and cluster, and LP's disapointment
@@ -207,7 +206,12 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
     if not DEBUG:
         os.remove(os.path.join(os.getcwd(), "list.csv"))
         os.remove(os.path.join(os.getcwd(), "km_script.R"))
-    return(indexClusterDict)
+    cast_dict = {}
+    if kind not in [int, str, float]:
+        raise(TypeError)
+    for k, v in indexClusterDict.items():
+        cast_dict[k] = [kind(x) for x in v]
+    return(cast_dict)
 
 
 if __name__ == "__main__":

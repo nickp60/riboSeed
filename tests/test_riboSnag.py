@@ -33,18 +33,12 @@ import glob
 import argparse
 sys.dont_write_bytecode = True
 
-from riboSeed.riboSnag import parse_clustered_loci_file
+from pyutilsnrw.utils3_5 import get_genbank_seq, get_genbank_record
 
+from riboSeed.riboSnag import parse_clustered_loci_file, \
+    extract_coords_from_locus, get_genbank_seq_matching_id,\
+    stitch_together_target_regions
 
-def get_args():
-    parser = argparse.ArgumentParser(
-        description="test suite for pyutilsnrw repo")
-    parser.add_argument("-k", "--keep_temps", dest='keep_temps',
-                        action="store_true",
-                        help="set if you want to inspect the output files",
-                        default=False)
-    args = parser.parse_args()
-    return(args)
 
 logger = logging
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
@@ -52,65 +46,47 @@ logger = logging
                  " with less than python 3.5")
 class riboSnag_TestCase(unittest.TestCase):
     def setUp(self):
-        pass
+        self.curdir = os.getcwd()
+        self.testdirname = os.path.join(os.path.dirname(__file__),
+                                        "output_utils3_5_tests")
+        self.test_loci_file = os.path.join(os.path.dirname(__file__),
+                                           str("references" + os.path.sep +
+                                               'grouped_loci_reference.txt'))
+        self.test_gb_file = os.path.join(os.path.dirname(__file__),
+                                         str("references" + os.path.sep +
+                                             'NC_011751.1.gb'))
+        self.test_loci_file = os.path.join(os.path.dirname(__file__),
+                                           str("references" + os.path.sep +
+                                               'grouped_loci_reference.txt'))
+        self.samtools_exe = "samtools"
 
     def test_parse_loci(self):
-        clusters = parse_clustered_loci_file(test_loci_file, logger=logger)
+        """
+        """
+        clusters = parse_clustered_loci_file(self.test_loci_file,
+                                             logger=logger)
         self.assertEqual(clusters[0][0], "CM000577.1")
 
+    def test_extract_coords_from_locus(self):
 
-    # # def test_this_fails(self):
-    # #      self.assertEqual("pinecone", 42)
-
-    # def test_clean_temp_dir(self):
-    #     """ I tried to do something like
-    #     @unittest.skipUnless(clean_temp, "temporary files were retained")
-    #     but couldnt get the variabel to be passed through.
-    #     """
-    #     if not os.path.exists(os.path.join(testdirname, "test_subdir")):
-    #         os.makedirs(os.path.join(testdirname, "test_subdir"))
-    #     clean_temp_dir(testdirname)
-
-    # def test_make_output_prefix(self):
-    #     test_prefix = make_output_prefix(testdirname, "utils_3.5")
-    #     self.assertEqual(test_prefix,
-    #                      "".join([testdirname, os.path.sep, "utils_3.5"]))
-
-    # def test_check_installed_tools(self):
-    #     """is pwd on all mac/linux systems?
-    #     #TODO replace with better passing test
-    #     """
-    #     check_installed_tools(["pwd"])
-    #     # test fails properly
-    #     with self.assertRaises(SystemExit):
-    #         check_installed_tools(["thisisnotapathtoanactualexecutable"])
-
-    # def test_md5_strings(self):
-    #     """ minimal md5 examples
-    #     """
-    #     self.assertEqual(md5("thisstringisidenticalto", string=True),
-    #                      md5("thisstringisidenticalto", string=True))
-    #     self.assertNotEqual(md5("thisstringisntidenticalto", string=True),
-    #                         md5("thisstringisnotidenticalto", string=True))
+        records = get_genbank_record(self.test_gb_file)
+        coord_list = extract_coords_from_locus(genome_seq_records=records,
+                                               locus_tag_list=["ECUMN_0004"],
+                                               feature="CDS",
+                                               verbose=True, logger=logger)[0]
+        loc_index = coord_list[0]
+        locus_tag = coord_list[4]
+        strand = coord_list[2]
+        coords = coord_list[1]
+        seqid  = coord_list[5]
+        self.assertEqual(loc_index, 0)
+        self.assertEqual(locus_tag, "ECUMN_0004")
+        self.assertEqual(strand, 1)
+        self.assertEqual(coords,[3692, 4978])
+        self.assertEqual(seqid,'NC_011751.1')
 
     def tearDown(self):
         pass
 
 if __name__ == '__main__':
-    args = get_args()
-    curdir = os.getcwd()
-    # samtools_exe = args.samtools_exe
-    testdirname = os.path.join(os.path.dirname(__file__),
-                               "output_utils3_5_tests")
-    test_loci_file = os.path.join(os.path.dirname(__file__),
-                                   str("references" + os.path.sep +
-                                       'grouped_loci_reference.txt'))
-    test_gb_file = os.path.join(os.path.dirname(__file__),
-                                   str("references" + os.path.sep +
-                                       'NC_011751.1.gb'))
-    test_loci_file = os.path.join(os.path.dirname(__file__),
-                                   str("references" + os.path.sep +
-                                       'grouped_loci_reference.txt'))
-    # utils3_5TestCase.keep_temps = args.keep_temps
-    samtools_exe = "samtools"
     unittest.main()
