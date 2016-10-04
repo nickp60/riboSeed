@@ -85,9 +85,9 @@ def get_args():
                         help="output directory; default: %(default)s",
                         default=os.getcwd(),
                         type=str, dest="output")
-    parser.add_argument( "--clobber",
-                         help="overwrite previous output filesy" +\
-                         "default: %(default)s", action='store_true',
+    parser.add_argument("--clobber",
+                        help="overwrite previous output files" +\
+                        "default: %(default)s", action='store_true',
                         default=False, dest="clobber")
     args = parser.parse_args()
     return(args)
@@ -168,45 +168,6 @@ def extract_coords_from_locus(genome_seq_records, locus_tag_list=[],
     logger.info(loc_list)
     return(loc_list)
 
-
-# def get_genbank_seq_containing_locus(locus_tag_list, genbank_record_list):
-#     """ given a list of loci and genbank records, return sequence of
-#     genbank record that has all the loci.
-#     If on different sequences, return error
-#     """
-#     if logger is None:
-#         raise ValueError("logging must be used!")
-#     nloci = len(locus_tag_list)
-#     for record in genbank_record_list:
-#         counter = 0
-#         found = []
-#         for feat in record.features:
-#             try:
-#                 if (feat.qualifiers.get("locus_tag")[0] in locus_tag_list):
-#                    # (feat.type == args.feature):
-#                     counter = counter + 1
-#                     locus = feat.qualifiers.get('locus_tag')
-#                     if locus not in found:
-#                         found.append(locus)
-#                     print(feat.qualifiers.get('locus_tag'))
-#                 else:
-#                     pass
-#             except:
-#                 pass
-#         if counter > nloci:
-#             print("multiple occuraces of a locus tag!")
-#             sys.exit(1)
-#         if counter == nloci:
-#             return(record.seq)
-#         elif counter > 0:
-#             print("some but not all loci found on this record.  " +
-#                   " Unfortunately, this only handles cases where loci " +
-#                   "are on the same record.")
-#             sys.exit(1)
-#         else:
-#             pass
-#     print("no record contained all loci !")
-#     sys.exit(1)
 
 
 def get_genbank_seq_matching_id(recordID, genbank_record_list):
@@ -341,14 +302,13 @@ if __name__ == "__main__":
                                         os.path.join(output_root,
                                                      time.strftime("%Y%m%d%H%M"))),
                             name=__name__)
-    # specific_features = args.specific_features.split(":")
-    # feature_regs = args.feature_regions.split(":")
-    # print(args)
+
     print("Usage:\n{0}\n".format(str(" ".join([x for x in sys.argv]))))
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
     # if not os.path.isdir(args.output):
     #     os.mkdir(args.output)
-    clusteredList = parse_clustered_loci_file(args.clustered_loci, logger=logger)
+    clusteredList = parse_clustered_loci_file(args.clustered_loci,
+                                              logger=logger)
     # genome_sequences = get_genbank_seq(args.genbank_genome, first_only=False)
     genome_records = get_genbank_record(args.genbank_genome, first_only=False,
                                         logger=logger)
@@ -371,7 +331,7 @@ if __name__ == "__main__":
                                                       minimum=args.minimum,
                                                       flanking=args.flanking,
                                                       replace=args.replace,
-                                                      verbose=True,
+                                                      verbose=False,
                                                       logger=logger))
     logger.debug(regions)
     output_index = 1

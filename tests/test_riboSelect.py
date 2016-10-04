@@ -20,16 +20,6 @@ from riboSeed.riboSelect import multisplit, get_filtered_locus_tag_dict, \
 from pyutilsnrw.utils3_5 import get_genbank_record, check_installed_tools
 
 
-def get_args():
-    parser = argparse.ArgumentParser(
-        description="test suite for pyutilsnrw repo")
-    parser.add_argument("-k", "--keep_temps", dest='keep_temps',
-                        action="store_true",
-                        help="set if you want to inspect the output files",
-                        default=False)
-    args = parser.parse_args()
-    return(args)
-
 logger = logging
 
 
@@ -38,7 +28,18 @@ logger = logging
                  " with less than python 3.5")
 class riboSelect_TestCase(unittest.TestCase):
     def setUp(self):
-        pass
+        self.curdir = os.getcwd()
+        self.testdirname = os.path.join(os.path.dirname(__file__),
+                                        "output_utils3_5_tests")
+        self.test_loci_file = os.path.join(os.path.dirname(__file__),
+                                           str("references" + os.path.sep +
+                                               'grouped_loci_reference.txt'))
+        self.test_gb_file = os.path.join(os.path.dirname(__file__),
+                                         str("references" + os.path.sep +
+                                             'NC_011751.1.gb'))
+        self.test_loci_file = os.path.join(os.path.dirname(__file__),
+                                           str("references" + os.path.sep +
+                                               'grouped_loci_reference.txt'))
 
     def test_multisplit(self):
         test_string = "look_this+is+a locus_that_is+multi-delimited"
@@ -54,7 +55,7 @@ class riboSelect_TestCase(unittest.TestCase):
 
     def test_get_filtered_locus_tag_dict(self):
         # test single genbank record
-        record = get_genbank_record(test_gb_file)
+        record = get_genbank_record(self.test_gb_file)[0]
         # with self.assertRaises(SystemExit):
         # test that when given a bad feature empty results are returned
         bum_coords, bum_nfeat, bum_nfeat_simple = \
@@ -88,7 +89,7 @@ class riboSelect_TestCase(unittest.TestCase):
         if r_is_installed:
             test_for_clustering = [4, 5, 5, 6, 10, 3, 18, 34, 44, 38]
             clusters = pure_python_kmeans(test_for_clustering, group_by=None,
-                                          centers=3, DEBUG=True)
+                                          centers=3, DEBUG=True, kind=int)
             ref_dict = {'2': [3, 4, 5, 5, 6, 10], '1': [34, 38, 44], '3': [18]}
             self.assertEqual(ref_dict, clusters)
 
@@ -97,19 +98,4 @@ class riboSelect_TestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    args = get_args()
-    curdir = os.getcwd()
-    # samtools_exe = args.samtools_exe
-    testdirname = os.path.join(os.path.dirname(__file__),
-                               "output_utils3_5_tests")
-    test_loci_file = os.path.join(os.path.dirname(__file__),
-                                   str("references" + os.path.sep +
-                                       'grouped_loci_reference.txt'))
-    test_gb_file = os.path.join(os.path.dirname(__file__),
-                                   str("references" + os.path.sep +
-                                       'NC_011751.1.gb'))
-    test_loci_file = os.path.join(os.path.dirname(__file__),
-                                   str("references" + os.path.sep +
-                                       'grouped_loci_reference.txt'))
-    # utils3_5TestCase.keep_temps = args.keep_temps
     unittest.main()
