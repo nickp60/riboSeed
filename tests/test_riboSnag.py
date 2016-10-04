@@ -31,6 +31,7 @@ import unittest
 import hashlib
 import glob
 import argparse
+from Bio import SeqIO
 sys.dont_write_bytecode = True
 
 
@@ -62,6 +63,9 @@ class riboSnag_TestCase(unittest.TestCase):
         self.test_loci_file = os.path.join(os.path.dirname(__file__),
                                            str("references" + os.path.sep +
                                                'grouped_loci_reference.txt'))
+        self.test_cluster1 = os.path.join(os.path.dirname(__file__),
+                                          str("references" + os.path.sep +
+                                              'cluster1.fasta'))
         self.samtools_exe = "samtools"
 
     def test_parse_loci(self):
@@ -69,15 +73,16 @@ class riboSnag_TestCase(unittest.TestCase):
         """
         clusters = parse_clustered_loci_file(self.test_loci_file,
                                              logger=logger)
-        ref_loci_list = ['CM000577.1',
-                         ['FGSG_20052', 'FGSG_20051', 'FGSG_20053']]
+        ref_loci_list = ['NC_011751.1',
+                         ['ECUMN_16S_6', 'ECUMN_23S_6', 'ECUMN_5S_7']]
+
         self.assertEqual(clusters[0], ref_loci_list)
 
     def test_get_genbank_seq_matching_id(self):
         records = get_genbank_record(self.test_gb_file)
-        print(records)
         record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
-                                          genbank_record_list=records)
+                                              genbank_record_list=records)
+        self.assertEqual(records[0].seq, record.seq)
 
     def test_extract_coords_from_locus(self):
         records = get_genbank_record(self.test_gb_file)
@@ -96,26 +101,32 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(coords, [3692, 4978])
         self.assertEqual(seqid, 'NC_011751.1')
 
-
     def test_stitching(self):
+        """  This is actually the thing needing the most testing, most likely
+        """
         records = get_genbank_record(self.test_gb_file)
         clusters = parse_clustered_loci_file(self.test_loci_file,
                                              logger=logger)
         record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
-                                          genbank_record_list=records)
-        print(clusters[0])
+                                              genbank_record_list=records)
         coord_list = extract_coords_from_locus(record=record,
-                                               locus_tag_list=["ECUMN_0004"],
-                                               feature="CDS",
-                                               verbose=True, logger=logger)[0]
-        stitched_record = stitch_together_target_regions(genome_sequence=record.seq,
-                                                         coords=coordlist[0],
-                                                         flanking="500:500",
+                                               locus_tag_list=clusters[0][1],
+                                               feature="rRNA",
+                                               verbose=True, logger=logger)
+        stitched_record = stitch_together_target_regions(genome_sequence=\
+                                                         record.seq,
+                                                         coords=coord_list,
+                                                         flanking="700:700",
                                                          within=50, minimum=50,
-                                                         replace=True,
+                                                         replace=False,
                                                          logger=logger,
-                                                         verbose=True)
-
+                                                         verbose=False)
+        with open(self.test_cluster1, 'r') as ref:
+            ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
+        print(ref_rec)
+        print(stitched_record)
+        self.assertEqual(ref_rec.seq, stitched_record.seq)
+        #TODO write test ccase with replacement
 
     def tearDown(self):
         pass
