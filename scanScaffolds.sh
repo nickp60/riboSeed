@@ -6,9 +6,43 @@
 #    ( must end with sep "/")
 # argument 2 is suffix, such as .fa or .fna, etc
 # argument 3 is the desired output directory
+# argument 4 is kingdom: bac or euk
+# argument 5 is threshold [float 0-1], where 1 is 100% identity
 # output scanScaffolds_combined.gb in current directory
 echo 'USAGE: /path/to/contigs/dir/ *ext /path/to/outdir/'
+if [ -d "$3" ]; then
+    echo "output dir exists!"
+    echo "play things safe, make a new directory for results"
+    exit
+fi
 NFILES=$(ls $1*$2  -1 | wc -l) # count files that you will process
+## check args
+if "$4"!="euk" and "$4"!="bac"
+then
+    echo "invalid kindom argument! Cannot give threshold without a kingdom"
+    exit
+fi
+
+###
+### handle optional arguments
+if [ -z "$5" ] and [ -z "$4" ]
+then
+    echo "using default threshold of .5 identity"
+    THRESH=.5
+    echo "using default kingdom: euk"
+    KINGDOM="euk"
+elif [ -z "$5" ]
+then
+    echo "using default threshold of .5 identity"
+    KINGDOM="$4"
+    THRESH=.5
+else
+    KINGDOM="$4"
+    THRESH="$5"
+fi
+###
+###
+
 THISFILE=1 # counter to increment
 mkdir "$3"  # make destination directory
 for i in "$1"*"$2";  # for each file matching extension
@@ -20,7 +54,7 @@ BASENAME=$(basename "$i")  # get the basename of the file without path
 outdir="$3"${BASENAME}_barrnap
 sed 's/^[^ ]*[|]\([^|]*\)[|] .*$/>\1/' ${i} > ${outdir}_renamed${2}
 
-~/barrnap/bin/barrnap -kingdom euk ${outdir}_renamed${2} --reject 0.1 > ${outdir}.gff
+~/barrnap/bin/barrnap -kingdom "$KINGDOM" ${outdir}_renamed${2} --reject "$THRESH" > ${outdir}.gff
 # add dumb locus tags
 LOCUS=1
 while read j; do
@@ -38,4 +72,5 @@ seqret -sequence ${outdir}_renamed${2} -feature -fformat gff3 -fopenfile ${outdi
 THISFILE=$((THISFILE+1))
 done
 # combine results
-cat "$3"*.gb > scanScaffolds_combined.gb
+
+cat "$3"*.gb > ${3}scanScaffolds_combined.gb
