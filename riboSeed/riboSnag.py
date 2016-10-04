@@ -181,8 +181,15 @@ def get_genbank_rec_from_multigb(recordID, genbank_record_list):
             return(record)
         else:
             pass
+    # if none found, this block is executed
     print("no record found matching record id!")
     sys.exit(1)
+
+def strictly_increasing(L):
+    """from 6502: http://stackoverflow.com/questions/4983258/
+    python-how-to-check-list-monotonicity
+    """
+    return(all(x<y for x, y in zip(L, L[1:])))
 
 
 def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
@@ -194,10 +201,13 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
     sequences with N's (or not, replace=False), and including the flanking
     regions upstream and down.
 
-    revamped 20160913
+    revamped 20161004
     """
     if logger is None:
         logger.error("Must have logger for this function")
+        sys.exit(1)
+    if replace is True:
+        logger.error("MWe got rid of the replace option; it just wasnt useful")
         sys.exit(1)
     try:
         flank = [int(x) for x in flanking.split(":")]
@@ -208,29 +218,39 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
         logger.error("Error parsing flanking value; must either be " +
                      " integer or two colon-seapred integers")
         sys.exit(1)
-    #TODO : make this safer
+
+    #TODO : make this safer. coord list is constructed sequentially but this
+    # is a backup. Throws sort of a cryptic error. but as I said, its a backup
+    start_list = [y[0] for y in [x[1] for x in coords]]
+    logger.debug("Start_list: {0}".format(start_list))
+    if not strictly_increasing([x for x in start_list]):
+        logger.error("coords are not increasing!")
+        sys.exit(1)
     smallest_feature = min([y[1] - y[0] for y in [x[1] for x in coords]])
     if smallest_feature < (minimum):
-        raise ValueError("invalid minimum! cannot exceed half of smallest " +
-                         "feature, which is {0} in this case".format(
-                             smallest_feature))
-    if verbose:
-        for i in coords:
-            logger.info(str(i))
+        print("invalid minimum of {0}! cannot exceed half of smallest " +
+              "feature, which is {1} in this case".format(
+                  minimum, smallest_feature))
+        sys.exit(1)
+
+    logger.debug("stitching together the following coords:")
+    for i in coords:
+        logger.debug(str(i))
     #  This works as long as coords are never in reverse order
-    # TODO check coords are increasing
     global_start = min([y[0] for y in [x[1] for x in coords]]) - flank[0]
+    #
     # if start is negative, just use 0, the beginning of the sequence
-    if global_start < 0:
+    if global_start < 1:
         logger.warning("Caution! Cannot retrieve full flanking region, as " +\
                        "the 5' flanking region extends past start of sequence")
-        global_start = 0
+        global_start = 1
     global_end = max([y[1] for y in [x[1] for x in coords]]) + flank[1]
     if global_end > len(genome_sequence):
         logger.warning("Caution! Cannot retrieve full flanking region, as " +\
                        "the 3' flanking region extends past end of sequence")
         global_end = len(genome_sequence)
-    full_seq = genome_sequence[global_start : global_end]
+    #  the minus one makes things go from 1 based to zeor based
+    full_seq = genome_sequence[global_start-1 : global_end]
     seq_with_ns = str(full_seq)
     #
     # loop to mask actual coding regions with N's
@@ -247,39 +267,66 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
                 this_within = within
             rel_start = (i[1][0] + this_within) - global_start
             rel_end = (i[1][1] - this_within) - global_start
-            # while rel_start < 0:
-            #     region_within_start = int(region_within_start / 2)
-            #     rel_start = (i[1][0] + region_within_start) - global_start
-            # while rel_end < 0:
-            #     region_within_end = int(region_within_end / 2)
-            #     rel_end = (i[1][1] - region_within_end) - global_start
             seq_with_ns = str(seq_with_ns[0:rel_start] +
                               str("N" * region_length) +
                               seq_with_ns[rel_end: ])
 
-    #
-    #
-    try:
-        # make sure the sequence is correct length, corrected for zero-index
-        assert(global_end - global_start, len(full_seq))
-        # make sure replacement didnt change seq length
-        assert(len(full_seq), len(seq_with_ns))
-    except:
-        logger.error("There appears to be an error with how the seqeuence " +
-                     "coordinates are being calculated!")
+        try:
+            # make sure the sequence is correct length, corrected for zero-index
+            assert(global_end - global_start, len(full_seq))
+            # make sure replacement didnt change seq length
+            assert(len(full_seq), len(seq_with_ns))
+        except:
+            logger.error("There appears to be an error with the seqeuence " +
+                         "coordinate  calculation!")
+    # again, plus 1 corrects for 0 index.
+    # len("AAAA") = 4 vs AAAA[-1] - AAAA[0] = 3
     logger.info(str("\nexp length {0} \nact length {1}".format(
-        global_end - global_start, len(full_seq))))
+        global_end - global_start + 1, len(full_seq))))
     if verbose:
-        lb = 60
+        lb = 70
         for i in range(0, int(len(seq_with_ns) / lb)):
-            print(str(full_seq[i * lb: lb + (i * lb)] + "\n"))
-            print(str(seq_with_ns[i * lb: lb + (i * lb)] + "\n"))
-            print("\n")
+            print(str(full_seq[i * lb: lb + (i * lb)] ))
+            print(str(seq_with_ns[i * lb: lb + (i * lb)] ))
+            print()
     seqrec = SeqRecord(Seq(seq_with_ns, IUPAC.IUPACAmbiguousDNA()),
                        id=str(coords[0][5] + "_" +
                               str(global_start) +
                               ".." + str(global_end)))
     return(seqrec)
+
+
+def main(clusteredList, genome_records, logger, verbose, within, flanking, replace, output):
+    for i in clusteredList:
+        locus_tag_list = i[1]
+        recID = i[0]
+        genbank_rec = \
+            get_genbank_rec_from_multigb(recordID=recID,
+                                         genbank_record_list=genome_records)
+        coord_list = extract_coords_from_locus(record=genbank_rec,
+                                               locus_tag_list=locus_tag_list,
+                                               verbose=True, logger=logger)
+        regions.append(stitch_together_target_regions(genbank_rec.seq,
+                                                      coords=coord_list,
+                                                      within=args.within,
+                                                      minimum=args.minimum,
+                                                      flanking=args.flanking,
+                                                      replace=args.replace,
+                                                      verbose=False,
+                                                      logger=logger))
+
+    logger.debug(regions)
+    output_index = 1
+    for i in regions:
+        filename = str("region_" + str(output_index))
+        with open(os.path.join(args.output,
+                               str(date + "_" + filename + "_riboSnag.fasta")),
+                  "w") as outfile:
+            # i.description = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
+            #                           output_index, args.flanking, args.within))
+            SeqIO.write(i, outfile, "fasta")
+            outfile.write('\n')
+            output_index = output_index + 1
 
 
 if __name__ == "__main__":
@@ -315,33 +362,10 @@ if __name__ == "__main__":
     regions = []
     logger.info("clustered loci list:")
     logger.info(clusteredList)
-    for i in clusteredList:
-        locus_tag_list = i[1][0]
-        recID = i[0]
-        genbank_rec = \
-            get_genbank_rec_from_multigb(recordID=recID,
-                                        genbank_record_list=genome_records)
-        coord_list = extract_coords_from_locus(record=genome_rec,
-                                               locus_tag_list=locus_tag_list,
-                                               verbose=True, logger=logger)
-        regions.append(stitch_together_target_regions(genbank_rec.seq,
-                                                      coords=coord_list,
-                                                      within=args.within,
-                                                      minimum=args.minimum,
-                                                      flanking=args.flanking,
-                                                      replace=args.replace,
-                                                      verbose=False,
-                                                      logger=logger))
-
-    logger.debug(regions)
-    output_index = 1
-    for i in regions:
-        filename = str("region_" + str(output_index))
-        with open(os.path.join(args.output,
-                               str(date + "_" + filename + "_riboSnag.fasta")),
-                  "w") as outfile:
-            # i.description = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
-            #                           output_index, args.flanking, args.within))
-            SeqIO.write(i, outfile, "fasta")
-            outfile.write('\n')
-            output_index = output_index + 1
+    main(clusteredList=clusteredList,
+         genome_records=genome_records,
+         logger=logger,
+         verbose=False, within=args.within,
+         flanking=args.flanking,
+         replace=args.replace,
+         output=args.output)
