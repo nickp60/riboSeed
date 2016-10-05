@@ -61,24 +61,28 @@ class riboSelect_TestCase(unittest.TestCase):
         bum_coords, bum_nfeat, bum_nfeat_simple = \
             get_filtered_locus_tag_dict([record], feature="RRNA",
                                         specific_features="16S",
-                                        verbose=False)
+                                        verbose=False,
+                                        logger=logger)
         self.assertTrue([len(x) == 0 for x in \
                          [bum_nfeat, bum_nfeat_simple, bum_coords]])
         bum_coords2, bum_nfeat2, bum_nfeat_simple2 = \
             get_filtered_locus_tag_dict([record], feature="rRNA",
                                         specific_features="18S",
-                                        verbose=False)
+                                        verbose=False,
+                                        logger=logger)
         self.assertTrue([len(x) == 0 for x in \
                          [bum_nfeat, bum_nfeat_simple, bum_coords]])
 
         filtered, nfeat, nfeat_simple =\
                 get_filtered_locus_tag_dict([record], feature="rRNA",
                                             specific_features="16S",
-                                            verbose=False)
+                                            verbose=False,
+                                            logger=logger)
         self.assertEqual(len(filtered), 7)
+        print(filtered)
         self.assertEqual([8614, 'NC_011751.1', 'ECUMN_16S_4', 'rRNA',
                           ['ribosomal', 'RNA', '16S']],
-                         filtered[8614])
+                         filtered[('NC_011751.1', 4428675)])
         self.assertEqual(nfeat_simple, {'NC_011751.1': [7]})
         # test scaffolded
         #TODO
