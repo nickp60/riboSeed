@@ -1,0 +1,15 @@
+~/GitHub/riboSeed/scanScaffolds.sh ./data/seq/ .fasta ./data/scanned/ bac
+~/GitHub/riboSeed/riboSeed/riboSelect.py ./data/scanned/scanScaffolds_combined.gb -o ./data/select/
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSnag.py ./data/scanned/scanScaffolds_combined.gb ./data/select/20161005_riboSelect_grouped_loci.txt -o ./data/seed/
+cat ./data/seed/20161005_region_* >./data/littlegenome.fa
+#aside
+# exactly one end mapped
+samtools view -bh -F 4 -f 8 in.bam > out1.bam
+samtools view -bh -F 8 -f 4 in.bam > out2.bam
+
+# exactly two ends mapped
+samtools view -bh -F 12 in.bam > out3.bam
+##
+smalt index little ./data/littlegenome.fa
+smalt map -o mapped.sam little ./ERR580963_1.fastq ./ERR580963_2.fastq
+samtools fastq -F 4 ./mapped.sam -1 toy_readsF.fastq -2 toy_readsR.fastq
