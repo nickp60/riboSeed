@@ -268,9 +268,11 @@ def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
                                       samtools_exe=args.samtools_exe)))
 
 
-def convert_bams_to_fastq(map_results_prefix, fastq_results_prefix,
+def convert_bams_to_fastq(map_results_prefix,
+                          fastq_results_prefix,
                           keep_unmapped):
-    """ new version with samtools.  Why didnt I do this before?
+    """ return 6 paths: unmapped F, R, S and mapped F, R. S
+    new version with samtools.  Why didnt I do this before?
     given the prefix for the mapped bam files, write out mapped (and optionally
     unmapped) reads to fasta files
     """
@@ -321,7 +323,8 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                as_paired=True, keep_best=True, prelim=False,
                groom_contigs='keep_first',
                k="21,33,55,77,99", seqname='', spades_exe="spades.py"):
-    """wrapper for common spades setting for long illumina reads
+    """return path to contigs
+    wrapper for common spades setting for long illumina reads
     ref_as_contig should be either blank, 'trusted', or 'untrusted'
     prelim flag is True, only assembly is run, and without coverage correction
     #TODO

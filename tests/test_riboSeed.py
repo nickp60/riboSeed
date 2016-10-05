@@ -51,95 +51,41 @@ class utils3_5TestCase(unittest.TestCase):
         self.ref_gb
         self.ref_fasta
         self.ref_Ffastq
-        self.ref_rfastq
-
-
+        self.ref_Rfastq
+        self.ref_disctance
+        self.pileup
         pass
 
-    def test_map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
-                              distance_results,
-                              map_results_prefix, cores, samtools_exe,
-                              smalt_exe, fastq_readS="",
-                              read_len=100, step=3, k=5,
-                              scoring="match=1,subst=-4,gapopen=-4,gapext=-3"):
+    def test_map_to_ref_smalt(self):
+        map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
+                         distance_results,
+                         map_results_prefix, cores, samtools_exe,
+                         smalt_exe, fastq_readS="",
+                         read_len=100, step=3, k=5,
+                         scoring="match=1,subst=-4,gapopen=-4,gapext=-3")
 
-def convert_bams_to_fastq(map_results_prefix, fastq_results_prefix,
-                          keep_unmapped):
+    def test_convert_bams_to_fastq(self):
+        convert_bams_to_fastq(map_results_prefix,
+                              fastq_results_prefix,
+                              keep_unmapped)
 
-get_filtered_locus_tag_dict(genome_seq_record, feature="rRNA",
-                                specific_features="16s:23s:5s",
-                                verbose=True, logger=None):
-    """returns dictionary of index:locus_tag id pairs for all
-    "feature"  entries.  This then gets clustered.
-    requires having locus tag in your genbank file.  Non-negitable.
-    should be prokka-friendly, so if you have a gb file with legacy
-    annotations, just run through prokka (with an rRNA caller)
-    20160922 This was changed to add checking for rRNA type from
-    ribosome product annoation, not ht locus tag.
-    """
-    if verbose and logger:
-        log_status = logger.info
-    elif verbose:
-        log_status = sys.stderr.write
-    else:
-        pass
-    loc_number = 0  # counter
-    locus_tag_dict = {}  # recipient structure
-    for feat in genome_seq_record.features:
-        try:
-            locustag = feat.qualifiers.get("locus_tag")[0]
-            product = feat.qualifiers.get("product")[0]
-            locus_tag_dict[loc_number] = [locustag, feat.type, product]
-            loc_number = loc_number + 1
-        except TypeError:
-            pass
-    if len(locus_tag_dict) < 1:
-            raise ValueError("no locus tags found!")
-    if verbose:
-        log_status("filtering by feature of interest")
-    filtered = {k: v for k, v in locus_tag_dict.items() if v[1] == feature.strip()}
-    if len(filtered) == 0:
-        log_status("ERROR! no {0} found in locus_tag_dict; rRNA's must have " +
-                   "locus tags".format(feature))
-        sys.exit(1)
-    if verbose:
-        for key in sorted(filtered):
-                log_status("%s: %s;" % (key, filtered[key]))
-    ###
-    lociDict = filtered
-    nfeatures_occur = []  #  [0 for x in specific_features]
-    for i in specific_features:
-        hits = 0
-        for k, v in lociDict.items():
-            if any([i in x for x in v]):
-                hits = hits +1
-            else:
-                pass
-        nfeatures_occur.append(hits)
-    print(nfeatures_occur)
-    for i in range(0, len(specific_features)):
-        if nfeatures_occur[i] == 0:
-            log_status(str("no features found! check that your file contains" +
-                           " {0}; case-sensitive.  rRNA's must have locus " +
-                           "tags!").format(specific_features[i]))
-            sys.exit(1)
-    log_status(str(" occuraces of each specific feature: {0}; using " +
-                   " {1} clusters").format(nfeatures_occur,
-                                           min(nfeatures_occur)))
+    def test_run_spades(self):
+        run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
+                   as_paired=True, keep_best=True, prelim=False,
+                   groom_contigs='keep_first',
+                   k="21,33,55,77,99", seqname='', spades_exe="spades.py")
 
-    ###
-    return(filtered, nfeatures_occur)
+    def test_check_samtools_pileup(self):
+        check_samtools_pileup(self.pileup)
 
-
-
+    def test_reconstruct_seq(self):
+        reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
+                    logger=None)
 
     def tearDown(self):
         pass
 
 if __name__ == '__main__':
-    args = get_args()
-    curdir = os.getcwd()
-    # samtools_exe = args.samtools_exe
     samtools_exe = "samtools"
     check_smalt_full_install(smalt_exe, logger=None)
     unittest.main()
