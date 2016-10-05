@@ -15,17 +15,23 @@
 # output scanScaffolds_combined.gb in current directory
 echo 'USAGE: /path/to/contigs/dir/ *ext /path/to/outdir/ kingdom threshold'
 echo 'example: $ barrnap'
+if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3"]
+then
+    echo "mandatory arguments: dir, extension, and output_dir"
+    exit 1
+fi
+
 if [ -d "$3" ]; then
     echo "output dir exists!"
     echo "play things safe, make a new directory for results"
-    exit
+    exit 1
 fi
 NFILES=$(ls $1*$2  -1 | wc -l) # count files that you will process
 ## check args
 if "$4"!="euk" and "$4"!="bac"
 then
     echo "invalid kindom argument! Cannot give threshold without a kingdom"
-    exit
+    exit 1
 fi
 
 ###
