@@ -33,40 +33,34 @@ import glob
 import argparse
 sys.dont_write_bytecode = True
 
-from riboseed.riboSelect import make_output_prefix, check_installed_tools,\
+from pyutilsnrw.utils3_5 import make_output_prefix, check_installed_tools,\
     copy_file, get_ave_read_len_from_fastq, get_number_mapped,\
     extract_mapped_and_mappedmates, keep_only_first_contig, md5,\
     combine_contigs, clean_temp_dir
 
+from riboSeed.riboseed import  check_smalt_full_install,\
+    map_to_ref_smalt, convert_bams_to_fastq
 
-def get_args():
-    parser = argparse.ArgumentParser(
-        description="test suite for pyutilsnrw repo")
-    parser.add_argument("-k", "--keep_temps", dest='keep_temps',
-                        action="store_true",
-                        help="set if you want to inspect the output files",
-                        default=False)
-    args = parser.parse_args()
-    return(args)
 
 
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among otherthings wont run if you try this" +
                  " with less than python 3.5")
 class utils3_5TestCase(unittest.TestCase):
-    # def init(self):
-    #     pass
-    # keep_temps = False
-    # self.samtools = "test"
-    # # samtools_exe = "samtoolz"
-    # # def __init__(self, testname, keep_temps):
-    # #     super(utils3_5TestCase, self).__init__(testname)
-    # #     self.keep_temps = keep_temps
-    # #     pass
-    # print(self.samtools)
     def setUp(self):
         pass
 
+def check_smalt_full_install(smalt_exe, logger=None):
+
+def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
+                     distance_results,
+                     map_results_prefix, cores, samtools_exe,
+                     smalt_exe, fastq_readS="",
+                     read_len=100, step=3, k=5,
+                     scoring="match=1,subst=-4,gapopen=-4,gapext=-3"):
+
+def convert_bams_to_fastq(map_results_prefix, fastq_results_prefix,
+                          keep_unmapped):
 
 get_filtered_locus_tag_dict(genome_seq_record, feature="rRNA",
                                 specific_features="16s:23s:5s",
