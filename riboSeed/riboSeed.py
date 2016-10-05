@@ -41,8 +41,8 @@ from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
     make_output_prefix, combine_contigs, run_quast, \
     copy_file, check_installed_tools, get_ave_read_len_from_fastq, \
     get_number_mapped, extract_mapped_and_mappedmates, clean_temp_dir, \
-    output_from_subprocess_exists, keep_only_first_contig, get_fasta_lengths
-
+    output_from_subprocess_exists, keep_only_first_contig, get_fasta_lengths, \
+    file_len
 #################################### functions ###############################
 
 
@@ -209,7 +209,8 @@ def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
                      map_results_prefix, cores, samtools_exe,
                      smalt_exe, fastq_readS="",
                      read_len=100, step=3, k=5,
-                     scoring="match=1,subst=-4,gapopen=-4,gapext=-3"):
+                     scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+                     logger=None):
     """run smalt based on pased args
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
@@ -307,8 +308,8 @@ def convert_bams_to_fastq(map_results_prefix,
     if keep_unmapped:
         fnames = []
         for bam_idx in (0, 1):
-            for suffix in (‘1’, ‘2’, ’S’):
-                fnames.append(“{0}{1}{2}.fastq”.format(fast_results_prefix, bams[bam_idx], suffix))
+            for suffix in ('1', '2', 'S'):
+                fnames.append("{0}{1}{2}.fastq".format(fast_results_prefix, bams[bam_idx], suffix))
             return(fnames)
     else:
         return(None,  # unmapped forward
@@ -604,7 +605,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                          distance_results=os.path.join(results_dir,
                                                        mapped_genome_sam),
                          scoring=smalt_scoring, smalt_exe=args.smalt_exe,
-                         samtools_exe=args.samtools_exe)
+                         samtools_exe=args.samtools_exe, logger=logger)
         extract_mapped_and_mappedmates(map_results_prefix,
                                        fetch_mates=fetch_mates,
                                        samtools_exe=args.samtools_exe,
@@ -712,6 +713,12 @@ if __name__ == "__main__":
                            args.spades_exe, args.quast_exe], logger=logger)
     # check bambamc is installed proper
     check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
+    # check equal length fastq
+    if file_len(args.fastq1) != file_len(args.fastq2):
+        logger.error("Input Fastq's are of unequal length! Try " +
+                     "fixing with this script: https://github.com/enormandeau/Scripts/blob/master/fastqCombinePairedEnd.py")
+        sys.exit(1)
+
     for i in [map_output_dir, results_dir, mauve_dir]:
         make_outdir(i)
     average_read_length = get_ave_read_len_from_fastq(args.fastq1,
@@ -834,4 +841,4 @@ if __name__ == "__main__":
                       logger=logger)
     # Report that we've finished
     logger.info("Done: %s." % time.asctime())
-    logger.info("Time taken: %.2fm" % (time.time() - t0 / 60))
+    logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))

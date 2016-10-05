@@ -1,0 +1,40 @@
+Command line: /home/nicholas/SPAdes-3.9.0-Linux/bin/spades.py	--careful	-k	21,33,55,77,99,127	--pe1-1	/home/nicholas/GitHub/FB/Ecoli_comparative_genomics/results/toy_set/toy_reads1.fq	--pe1-2	/home/nicholas/GitHub/FB/Ecoli_comparative_genomics/results/toy_set/toy_reads2.fq	--trusted-contigs	/home/nicholas/GitHub/FB/Ecoli_comparative_genomics/results/toy_set/pseudata/seed1/results/mauve/riboSeedContigs.fasta	-o	/home/nicholas/GitHub/FB/Ecoli_comparative_genomics/results/toy_set/pseudata/seed1/results/de_fere_novo	
+
+System information:
+  SPAdes version: 3.9.0
+  Python version: 2.7.6
+  OS: Linux-3.13.0-95-generic-x86_64-with-Ubuntu-14.04-trusty
+
+Output dir: /home/nicholas/GitHub/FB/Ecoli_comparative_genomics/results/toy_set/pseudata/seed1/results/de_fere_novo
+Mode: read error correction and assembling
+Debug mode is turned OFF
+
+Dataset parameters:
+  Multi-cell mode (you should set '--sc' flag if input data was obtained with MDA (single-cell) technology or --meta flag if processing metagenomic dataset)
+  Reads:
+    Library number: 1, library type: paired-end
+      orientation: fr
+      left reads: ['/home/nicholas/GitHub/FB/Ecoli_comparative_genomics/results/toy_set/toy_reads1.fq']
+      right reads: ['/home/nicholas/GitHub/FB/Ecoli_comparative_genomics/results/toy_set/toy_reads2.fq']
+      interlaced reads: not specified
+      single reads: not specified
+    Library number: 2, library type: trusted-contigs
+      left reads: not specified
+      right reads: not specified
+      interlaced reads: not specified
+      single reads: ['/home/nicholas/GitHub/FB/Ecoli_comparative_genomics/results/toy_set/pseudata/seed1/results/mauve/riboSeedContigs.fasta']
+Read error correction parameters:
+  Iterations: 1
+  PHRED offset will be auto-detected
+  Corrected reads will be compressed (with gzip)
+Assembly parameters:
+  k: [21, 33, 55, 77, 99, 127]
+  Repeat resolution is enabled
+  Mismatch careful mode is turned ON
+  MismatchCorrector will be used
+  Coverage cutoff is turned OFF
+Other parameters:
+  Dir for temp files: /home/nicholas/GitHub/FB/Ecoli_comparative_genomics/results/toy_set/pseudata/seed1/results/de_fere_novo/tmp
+  Threads: 16
+  Memory limit (in Gb): 3
+
