@@ -99,6 +99,7 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     #    raise("Error! this function can only accept a list of records" +
     #          "simply put your genbank record in brackets if you only " +
     #          "have a single record")
+    TMI = verbose
     if specific_features is None:
         all_feature = True
     else:
@@ -108,30 +109,44 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     # loop through records
     for record in genome_seq_records:
         loc_number = 0  # counter that for index of hits; this is clustered
+        logger.debug("scanning {0}".format(record.id))
         for feat in record.features:
             if feat.type in feature:
                 try:
                     locustag = feat.qualifiers.get("locus_tag")[0]
-                    product_list = multisplit([",", " ", "-", "_"],
-                                              feat.qualifiers.get("product")[0])
-                    coords = [feat.location.start.position + 1,
-                              feat.location.end.position]
-
-                    # if either specific feature is found in product or
-                    # only interested in all features, add locus to dict
-                    if (not all_feature and \
-                        any(x in specific_features for x in product_list)) or \
-                        all_feature:
-                            locus_tag_dict[coords[0]] = [loc_number,
-                                                         record.id,
-                                                         locustag,
-                                                         feat.type,
-                                                         product_list]
-                    else:
-                        pass
                 except TypeError:
+                    if TMI:
+                        logger.debug("no locus tag for this feature!")
+                    continue
+                product_list = multisplit([",", " ", "-", "_"],
+                                          feat.qualifiers.get("product")[0])
+                if TMI:
+                    logger.debug(product_list)
+                coords = [feat.location.start.position + 1,
+                          feat.location.end.position]
+                if TMI:
+                    logger.debug(coords)
+                # if either specific feature is found in product or
+                # only interested in all features, add locus to dict
+                if (not all_feature and \
+                    any([x in specific_features for x in product_list])) or \
+                    all_feature:
+                    # key is start coord
+                    locus_tag_dict[(record.id, coords[0])] = [loc_number,
+                                                 record.id,
+                                                 locustag,
+                                                 feat.type,
+                                                 product_list]
+                else:
+                    if TMI:
+                        logger.debug("Whoa! not adding this feat to " +
+                                     "list: {0}".format(feat))
                     pass
-            loc_number = loc_number + 1  # increment index after each feature
+                loc_number = loc_number + 1  # increment index after feature
+            else:
+                if TMI:
+                    logger.dubug("skipping: {0}".format(feat))
+                loc_number = loc_number + 1  # increment index after feature
         # this is a soft warning, as we want to be able to loop
         # through all records before worrying
         if len(locus_tag_dict) < 1 and logger:
@@ -225,6 +240,7 @@ if __name__ == "__main__":
     try:
         os.makedirs(args.output)
     except FileExistsError:
+         # leaving comment char'#' added for stream output usage
         print("#Selected output directory %s exists" %
               args.output)
         if not args.clobber:
@@ -261,11 +277,17 @@ if __name__ == "__main__":
 
     # get list of loci matching feature and optionally specific features
     # also returns nfeat, a dict of feature count by genbank id
+    logger.debug(str("search {0} for {1} features containing {2} in the " +
+                     "product annotation").format(
+                         str([x.id for x in genome_records]),
+                         args.feature,
+                         str([x for x in args.specific_features.split(":")])))
     lociDict, nfeat, nfeat_simple = \
         get_filtered_locus_tag_dict(genome_seq_records=genome_records,
                                     feature=args.feature,
                                     specific_features=args.specific_features,
-                                    verbose=True)
+                                    verbose=False,
+                                    logger=logger)
 
     # default case, clusters are inferred
     # if not, must be equal to the length of genbank records
@@ -290,7 +312,9 @@ if __name__ == "__main__":
     #####
     ##### for each genbank record, process, and append any hits to outfile
     #####
-    logger.debug(lociDict)
+    logger.debug("All loci:")
+    for k, v in lociDict.items():
+        logger.debug(str(k) + "\t" + str(v))
     for i in range(0, len(genome_records)):
 
         logger.info("Processing {0}\n".format(genome_records[i].id))
@@ -302,7 +326,10 @@ if __name__ == "__main__":
         subset = {key: value for key, value in lociDict.items() if \
                   genome_records[i].id in value }
         # skip if that doesnt have any hits
-        logger.debug("subset: {0}".format(subset))
+        logger.debug("Subset loci:")
+        for k, v in subset.items():
+            logger.debug(str(k) + "\t" + str(v))
+
         if len(subset) == 0:
             logger.info("no hits in {0}\n".format(genome_records[i].id))
             continue
@@ -313,13 +340,17 @@ if __name__ == "__main__":
         logger.debug("centers: {0}".format(centers))
         logger.debug("nfeat_simple: {0}".format(nfeat_simple))
         if nfeat_simple is None and centers[i] == 0:
-            logger.error("Without specific features submitted, cannot calculate" +
-                " number centers needed for clustering.  Please submit the" +
-                " desired number of clusters with the --clusters argument!\n")
+            logger.error("No specific features submitted, cannot calculate " +
+                         " number centers needed for clustering.  Please" +
+                         "submit the desired number of clusters with the  " +
+                         "--clusters argument!\n")
             sys.exit(1)
         rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
                            genome_records[i].id in k }.values())[0]
-        logger.debug("rec_nfeat: {0}".format(rec_nfeat))  #[0]
+        logger.debug("rec_nfeat: {0}".format(rec_nfeat))
+        # logger.debug([x[1] for x in list(subset)])
+        indexes = [x[1] for x in list(subset)] # get index back from tuple key
+
         if centers[i] == 0:
             if min(rec_nfeat) == 0:
                 best_shot_centers = max(rec_nfeat)
@@ -328,11 +359,12 @@ if __name__ == "__main__":
             if best_shot_centers == 0:
                 logger.info("skipping the clustering for {0}\n".format(i))
                 continue
-            indexClusters = pure_python_kmeans(subset.keys(),
+            # indexClusters = pure_python_kmeans(subset.keys(),
+            indexClusters = pure_python_kmeans(indexes,
                                                centers=best_shot_centers,
                                                DEBUG=args.keep_temps)
         else:
-            indexClusters = pure_python_kmeans(subset.keys(),
+            indexClusters = pure_python_kmeans(indexes,
                                                centers=centers[i],
                                                DEBUG=args.keep_temps)
 
@@ -343,7 +375,7 @@ if __name__ == "__main__":
                 # from subset, and writes it out in the way that plays nice
                 # riboSeed
                 outstr = str(genome_records[i].id + " " + \
-                             str(":".join([subset[int(x)][2] for x in v])) +
+                             str(":".join([subset[(genome_records[i].id, int(x))][2] for x in v])) +
                              '\n')
                 outfile.write(outstr)
                 # this should be the only thing going to stdout.
