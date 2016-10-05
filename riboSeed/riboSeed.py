@@ -150,9 +150,6 @@ def get_args(DEBUG=False):
     parser.add_argument("--samtools_exe", dest="samtools_exe",
                         action="store", default="samtools",
                         help="Path to bwa executable; default: %(default)s")
-    # parser.add_argument("--bcftools_exe", dest="bcftools_exe",
-    #                     action="store", default="bcftools",
-    #                     help="Path to bwa executable; default: %(default)s")
     parser.add_argument("--smalt_exe", dest="smalt_exe",
                         action="store", default="smalt",
                         help="Path to smalt executable; default: %(default)s")
@@ -161,12 +158,6 @@ def get_args(DEBUG=False):
                         help="Path to quast executable; default: %(default)s")
     args = parser.parse_args()
     return(args)
-
-# def is_non_zero_file(fpath):
-#     """http://stackoverflow.com/questions/2507808/
-#        python-how-to-check-file-empty-or-not
-#     """
-#     return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
 
 
 def check_smalt_full_install(smalt_exe, logger=None):
@@ -304,13 +295,19 @@ def convert_bams_to_fastq(map_results_prefix, fastq_results_prefix,
         subprocess.run(i, shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, check=True)
+    # if keep_unmapped:
+    #     return("%s%s1.fastq" % (fastq_results_prefix, bams[0]),  # unmapped fwd
+    #            "%s%s2.fastq" % (fastq_results_prefix, bams[0]),  # unmapped rev
+    #            "%s%sS.fastq" % (fastq_results_prefix, bams[0]),  # unmapped s
+    #            "%s%s1.fastq" % (fastq_results_prefix, bams[1]),  # mapped fwd
+    #            "%s%s2.fastq" % (fastq_results_prefix, bams[1]),  # mapped rev
+    #            "%s%sS.fastq" % (fastq_results_prefix, bams[1]))  # mapped s
     if keep_unmapped:
-        return("%s%s1.fastq" % (fastq_results_prefix, bams[0]),  # unmapped fwd
-               "%s%s2.fastq" % (fastq_results_prefix, bams[0]),  # unmapped rev
-               "%s%sS.fastq" % (fastq_results_prefix, bams[0]),  # unmapped s
-               "%s%s1.fastq" % (fastq_results_prefix, bams[1]),  # mapped fwd
-               "%s%s2.fastq" % (fastq_results_prefix, bams[1]),  # mapped rev
-               "%s%sS.fastq" % (fastq_results_prefix, bams[1]))  # mapped s
+        fnames = []
+        for bam_idx in (0, 1):
+            for suffix in (‘1’, ‘2’, ’S’):
+                fnames.append(“{0}{1}{2}.fastq”.format(fast_results_prefix, bams[bam_idx], suffix))
+            return(fnames)
     else:
         return(None,  # unmapped forward
                None,  # unmapped reverse

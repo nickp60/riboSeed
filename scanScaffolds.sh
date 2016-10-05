@@ -1,15 +1,20 @@
 #!/bin/bash
 # version 0.0.1
-# Many scaffolded assemblies from NCBI will not have rRNA annotated.  In order make things work well with riboSeed, point this script at a dirctory into which you have all the contigs.
+# Requires barrnap and seqret in PATH
+
+# Many assemblies, genomes from NCBI will not have rRNA annotated.
+#In order make things work well with riboSeed,
+#point this script at a dirctory into which you have all the contigs.
 #
 # argument 1 is directory containing contig fastas with the prefix given by arg 2
 #    ( must end with sep "/")
 # argument 2 is suffix, such as .fa or .fna, etc
 # argument 3 is the desired output directory
-# argument 4 is kingdom: bac or euk
+# argument 4 is kingdom: bac  euk mito arc
 # argument 5 is threshold [float 0-1], where 1 is 100% identity
 # output scanScaffolds_combined.gb in current directory
-echo 'USAGE: /path/to/contigs/dir/ *ext /path/to/outdir/'
+echo 'USAGE: /path/to/contigs/dir/ *ext /path/to/outdir/ kingdom threshold'
+echo 'example: $ barrnap'
 if [ -d "$3" ]; then
     echo "output dir exists!"
     echo "play things safe, make a new directory for results"
@@ -54,9 +59,9 @@ BASENAME=$(basename "$i")  # get the basename of the file without path
 outdir="$3"${BASENAME}_barrnap
 sed 's/^[^ ]*[|]\([^|]*\)[|] .*$/>\1/' ${i} > ${outdir}_renamed${2}
 
-~/barrnap/bin/barrnap -kingdom "$KINGDOM" ${outdir}_renamed${2} --reject "$THRESH" > ${outdir}.gff
+barrnap -kingdom "$KINGDOM" ${outdir}_renamed${2} --reject "$THRESH" > ${outdir}.gff
 # add dumb locus tags
-LOCUS=1
+LOCUS=0
 while read j; do
     newline=`echo $j | sed -e "s/Name=/locus\_tag=${BASENAME}${LOCUS}\;Name=/"`
     for k in {1..8}; do # for each of the first 8 spaces, convert to tab

@@ -227,7 +227,7 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
         logger.error("coords are not increasing!")
         sys.exit(1)
     smallest_feature = min([y[1] - y[0] for y in [x[1] for x in coords]])
-    if smallest_feature < (minimum):
+    if smallest_feature < (minimum) and replace:
         print("invalid minimum of {0}! cannot exceed half of smallest " +
               "feature, which is {1} in this case".format(
                   minimum, smallest_feature))

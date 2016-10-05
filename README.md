@@ -2,9 +2,22 @@
 ## Description
 RiboSeed is an supplemental assembly method to try to address the issue of multiple 16s copies in a genome.  It takes advantage of the fact that while each 16S is identical, the regions flanking are unique, and therfore should be able to be used to seed an alignment.
 
-The pipeline (currently) consists of two main stages:
+The pipeline (currently) consists of optional preprocessing and two main stages:
+#### 0: Preprocessing with scanScaffolds.sh
+This is an (ever-growing) shell script to preprocess seqeuencees straight from DNA fasta.  The issue with many legacy annotations, assemblies, and scaffold collections is they are often poorly annotated at best, and unannoated at worst.  This is a quick way to happiness without using the full Prokka annotation path.  It requires barrnap [cite] and seqret [cite] to be availible in your path.
+##### Usage
+Move your data to its own directory, whether it is a single fasta genome or multiple fasta scaffolds.  For each file it finds in this dir with a given extension, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a genbank file that contains just annotated rRNA features. the last step is a concatenation which, whether or not there are multiple files, makes a single (possiby multi-entry) genbank file ripe for riboseeding.
+* argument 1 is directory containing contig fastas with the prefix given by arg 2
+*    ( must end with sep "/")
+* argument 2 is suffix, such as .fa or .fna, etc
+* argument 3 is the desired output directory
+* argument 4 is kingdom: bac  euk mito arc
+* argument 5 is threshold [float 0-1], where 1 is 100% identity
+* output scanScaffolds_combined.gb in current directory
 
-### Selection and extraction
+### 1: Selection and extraction
+
+
 For generalized selection and extraction of a feature type:
 
 * `otherSelect` [under development]
@@ -24,6 +37,8 @@ CM000577.1 FGSG_20075:FGSG_20074
 ```
 
 * `riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file.  Outputs a directory with a fasta file for each clustered region (and a log file).
+
+### 2: Seeded Assebly
 
 * `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.
 
