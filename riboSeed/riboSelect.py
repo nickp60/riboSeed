@@ -52,6 +52,10 @@ def get_args():
                          help="overwrite previous output filesy" +\
                          "default: %(default)s", action='store_true',
                         default=False, dest="clobber")
+    parser.add_argument("--nocluster",
+                         help="do not bother clustering; treat all occurances on a sequence as a cluster" +\
+                         "default: %(default)s", action='store_true',
+                        default=False, dest="nocluster")
     parser.add_argument("-c", "--clusters",
                         help="number of rDNA clusters;" +
                         "if submitting multiple records, must be a " +\
@@ -77,6 +81,7 @@ def multisplit(delimiters, string, maxsplit=0):
     returns a list of split string
     """
     import re
+    assert type(delimiters) is list
     regexPattern = '|'.join(map(re.escape, delimiters))
     return(re.split(regexPattern, string, maxsplit))
 
@@ -99,7 +104,9 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     #    raise("Error! this function can only accept a list of records" +
     #          "simply put your genbank record in brackets if you only " +
     #          "have a single record")
-    TMI = verbose
+    TMI = verbose # probably should rename this to just verbose
+    assert (type(genome_seq_records) is list),\
+        'must pass list of genomes to function, even if single genome '
     if specific_features is None:
         all_feature = True
     else:
