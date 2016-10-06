@@ -837,6 +837,7 @@ if __name__ == "__main__":
             run_quast(contigs=output_contigs,
                       output=os.path.join(results_dir, str("quast_" + j)),
                       quast_exe=args.quast_exe,
+                      threads=args.cores,
                       ref=args.reference_genome,
                       logger=logger)
     # Report that we've finished
