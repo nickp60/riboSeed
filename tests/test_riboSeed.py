@@ -65,6 +65,8 @@ class utils3_5TestCase(unittest.TestCase):
                                                  "est_distance.sam")
         self.map_results_prefix = os.path.join(self.test_dir,
                                                "test_mapping")
+        self.fastq_results_prefix = os.path.join(self.test_dir,
+                                                 "test_mapping_fastq")
         # self.ref_disctance
         # self.pileup
         pass
@@ -119,11 +121,10 @@ class utils3_5TestCase(unittest.TestCase):
         ####
         #TODO make actual tests;  best way to do that?
 
-
-    # def test_convert_bams_to_fastq(self):
-    #     convert_bams_to_fastq(map_results_prefix,
-    #                           fastq_results_prefix,
-    #                           keep_unmapped)
+    def test_convert_bams_to_fastq(self):
+        convert_bams_to_fastq(self.map_results_prefix,
+                              self.fastq_results_prefix,
+                              keep_unmapped=False)
 
     # def test_run_spades(self):
     #     run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',

@@ -1,4 +1,4 @@
-/tests/output_riboseed_tests/*
+/tests/output_riboseed_tests/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
