@@ -715,11 +715,12 @@ if __name__ == "__main__":
         logger.error("'smalt' only method currently supported")
         sys.exit(1)
     logger.debug("checking for installations of all required external tools")
-    check_installed_tools([args.smalt_exe, args.samtools_exe,
-                           args.spades_exe, args.quast_exe], logger=logger)
+    executables = [args.smalt_exe, args.samtools_exe,
+                           args.spades_exe, args.quast_exe]
+    test_ex = [check_installed_tools(x, logger=logger) for x in executables]
     # check bambamc is installed proper
     check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
-    # check equal length fastq
+    # check equal length fastq.  This doesnt actually check propper pairs
     if file_len(args.fastq1) != file_len(args.fastq2):
         logger.error("Input Fastq's are of unequal length! Try " +
                      "fixing with this script: https://github.com/enormandeau/Scripts/blob/master/fastqCombinePairedEnd.py")
@@ -729,22 +730,15 @@ if __name__ == "__main__":
         make_outdir(i)
     average_read_length = get_ave_read_len_from_fastq(args.fastq1,
                                                       N=36, logger=logger)
-#    map_results_prefix = os.path.join(map_output_dir, args.exp_name)
     fastq_results_prefix = os.path.join(results_dir, args.exp_name)
 
-    #TODO make this with listdirs
     fastas = [x for x in os.listdir(os.path.join(args.seed_dir, "")) if \
                                     x.endswith('.fasta')]
     if len(fastas) == 0:
         logger.error("no files found in {0} ending with " +
                      "'.fsata'".format(args.seed_dir))
 
-    # fastas = subprocess.run("ls %s*.fasta" % os.path.join(args.seed_dir, ""),
-    #                         shell=sys.platform != "win32",
-    #                         stderr=subprocess.PIPE,
-    #                         stdout=subprocess.PIPE,
-    #                         check=True).stdout.decode().strip().split("\n")
-    nfastas = len(fastas)
+        nfastas = len(fastas)
     logger.debug(fastas)
     ### if using smalt (which you are), check for mapped reference
     if args.method == 'smalt':
