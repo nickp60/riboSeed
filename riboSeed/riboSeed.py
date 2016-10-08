@@ -210,36 +210,42 @@ def check_smalt_full_install(smalt_exe, logger=None):
     os.remove(str(index + ".smi"))
 
 
-def estimate_distances_smalt(outputfile, smalt_exe, ref_genome,
-                             fastq1, fastq2, logger):
+def estimate_distances_smalt(outfile, smalt_exe, cores, ref_genome,
+                             fastq1, fastq2, logger=None):
     """Given fastq pair and a reference, returns path to distance estimations
     used by smalt to help later with mapping.  if one already exists,
     return path to it.
     """
     if not os.path.exists(outfile):
         # Index reference for sampling to get PE distances
-        logger.info("Estimating insert distances with SMALT")
+        if logger:
+            logger.info("Estimating insert distances with SMALT")
         # index with default params for genome-sized sequence
         refindex_cmd = str(smalt_exe + " index -k {0} -s {1} {2} " +
-                           "{2}").format(20, 10, args.reference_genome)
+                           "{2}").format(20, 10, ref_genome)
         refsample_cmd = str(smalt_exe + " sample -n {0} -o {1} {2} {3} " +
                             "{4}").format(cores,
-                                          outputfile,
+                                          outfile,
                                           ref_genome,
                                           fastq1,
                                           fastq2)
+        if logger:
             logger.info("Sampling and indexing {0}".format(
                 ref_genome))
-            for cmd in [refindex_cmd, refsample_cmd]:
+        for cmd in [refindex_cmd, refsample_cmd]:
+            if logger:
                 logger.debug("\t command:\n\t {0}".format(cmd))
-                subprocess.run(cmd,
-                               shell=sys.platform != "win32",
-                               stderr=subprocess.PIPE,
-                               stdout=subprocess.PIPE,
-                               check=True)
+            subprocess.run(cmd,
+                           shell=sys.platform != "win32",
+                           stderr=subprocess.PIPE,
+                           stdout=subprocess.PIPE,
+                           check=True)
     else:
-        logger.info("using existing reference file")
-    return(outputfile)
+        if logger:
+            logger.info("using existing reference file")
+        pass
+    return(outfile)
+
 
 def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
                      distance_results,
@@ -256,12 +262,12 @@ def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
     logger.debug(str("mapping with smalt using a score min of " +
                      "{0}").format(score_min))
     cmdindex = str("{3} index -k {0} -s {1} {2} {2}").format(
-        k, step, ref, args.smalt_exe)
+        k, step, ref, smalt_exe)
     cmdmap = str('{7} map -l pe -S {8} ' +
                  '-m {0} -n {1} -g {2} -f bam -o {3}_pe.bam {4} {5} ' +
                  '{6}').format(score_min, cores, distance_results,
                                map_results_prefix, ref, fastq_read1,
-                               fastq_read2, args.smalt_exe, scoring)
+                               fastq_read2, smalt_exe, scoring)
     # cmdview = str('{0} view -bhS {1}.sam > {1}_pe.bam').format(
     #     samtools_exe, map_results_prefix)
     # smaltcommands = [cmdindex, cmdmap, cmdview]
@@ -297,13 +303,13 @@ def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
     if fastq_readS != '':
         logger.info(str("Singleton mapped reads: " +
                     get_number_mapped(str(map_results_prefix + "S.bam"),
-                                      samtools_exe=args.samtools_exe)))
+                                      samtools_exe=samtools_exe)))
     logger.info(str("PE mapped reads: " +
                     get_number_mapped(str(map_results_prefix + "_pe.bam"),
-                                      samtools_exe=args.samtools_exe)))
+                                      samtools_exe=samtools_exe)))
     logger.info(str("Combined mapped reads: " +
                     get_number_mapped(str(map_results_prefix + ".bam"),
-                                      samtools_exe=args.samtools_exe)))
+                                      samtools_exe=samtools_exe)))
 
 
 def convert_bams_to_fastq(map_results_prefix,
@@ -489,7 +495,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
     if logger is None:
         print("Logger needed for the 'reconstruct_seqs' function!")
         sys.exit(1)
-    logger.warning("This function is sketchy at best. Here be dragons!"
+    logger.warning("This function is sketchy at best. Here be dragons!")
     if verbose:
         logger.debug(str("reconstucting consensus sequence " +
                        "from {0} and pileup").format(refpath))
@@ -803,7 +809,7 @@ if __name__ == "__main__":
         #                        check=True)
         # else:
         #     logger.info("using existing reference file")
-        mapping_dist = estimate_distances_smalt(outputfile=os.path.join(results_dir,
+        mapping_dist = estimate_distances_smalt(outfile=os.path.join(results_dir,
                                                                         mapped_genome_sam),
                                                 smalt_exe=args.smalt_exe, ref_genome=args.reference,
                                                 fastq1=args.fastq1, fastq2=args.fastq2,
