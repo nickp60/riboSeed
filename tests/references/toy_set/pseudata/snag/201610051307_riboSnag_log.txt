@@ -1,0 +1,1309 @@
+2016-10-05 13:07:42,928 - INFO - Initializing logger
+2016-10-05 13:07:42,929 - DEBUG - logging at level 1
+2016-10-05 13:07:42,930 - INFO - Reading genbank file...
+2016-10-05 13:07:42,951 - INFO - clustered loci list:
+2016-10-05 13:07:42,951 - INFO - [['toy_genome', ['combined_colapsed.fa7', 'combined_colapsed.fa8', 'combined_colapsed.fa9']], ['toy_genome', ['combined_colapsed.fa13', 'combined_colapsed.fa14', 'combined_colapsed.fa15']], ['toy_genome', ['combined_colapsed.fa1', 'combined_colapsed.fa2', 'combined_colapsed.fa3']], ['toy_genome', ['combined_colapsed.fa10', 'combined_colapsed.fa11', 'combined_colapsed.fa12']], ['toy_genome', ['combined_colapsed.fa4', 'combined_colapsed.fa5', 'combined_colapsed.fa6']], ['toy_genome', ['combined_colapsed.fa20', 'combined_colapsed.fa21', 'combined_colapsed.fa22']], ['toy_genome', ['combined_colapsed.fa16', 'combined_colapsed.fa17', 'combined_colapsed.fa18', 'combined_colapsed.fa19']]]
+2016-10-05 13:07:42,951 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [5000:6538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa1']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,952 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [6895:9797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa2']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,952 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [9894:10005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa3']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,952 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20000:20111](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa4']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,953 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20208:23108](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa5']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,953 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [23465:25003](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa6']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,954 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [35000:36538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa7']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,954 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [36895:39797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa8']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,955 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [39894:40005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa9']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,955 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [50000:51538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa10']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,956 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [51987:54887](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa11']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,956 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [54984:55095](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa12']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,957 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [65060:66598](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa13']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,957 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [67047:69949](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa14']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,957 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [70046:70157](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa15']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,958 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80120:80231](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa16']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,958 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80365:80476](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa17']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,959 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80573:83473](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa18']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,959 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [83922:85460](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa19']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,959 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [95420:96958](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa20']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,960 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [97315:100217](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa21']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,960 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [100314:100425](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa22']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,960 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2016-10-05 13:07:42,961 - DEBUG - [[0, [35001, 36538], 1, ['16S ribosomal RNA'], 'combined_colapsed.fa7', 'toy_genome'], [1, [36896, 39797], 1, ['23S ribosomal RNA'], 'combined_colapsed.fa8', 'toy_genome'], [2, [39895, 40005], 1, ['5S ribosomal RNA'], 'combined_colapsed.fa9', 'toy_genome']]
+2016-10-05 13:07:42,961 - DEBUG - Start_list: [35001, 36896, 39895]
+2016-10-05 13:07:42,962 - DEBUG - stitching together the following coords:
+2016-10-05 13:07:42,962 - DEBUG - [0, [35001, 36538], 1, ['16S ribosomal RNA'], 'combined_colapsed.fa7', 'toy_genome']
+2016-10-05 13:07:42,962 - DEBUG - [1, [36896, 39797], 1, ['23S ribosomal RNA'], 'combined_colapsed.fa8', 'toy_genome']
+2016-10-05 13:07:42,963 - DEBUG - [2, [39895, 40005], 1, ['5S ribosomal RNA'], 'combined_colapsed.fa9', 'toy_genome']
+2016-10-05 13:07:42,963 - INFO - 
+exp length 6405 
+act length 6405
+2016-10-05 13:07:42,963 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [5000:6538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa1']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,964 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [6895:9797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa2']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,964 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [9894:10005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa3']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,965 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20000:20111](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa4']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,965 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20208:23108](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa5']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,966 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [23465:25003](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa6']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,966 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [35000:36538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa7']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,966 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [36895:39797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa8']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,967 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [39894:40005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa9']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,967 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [50000:51538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa10']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,968 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [51987:54887](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa11']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,968 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [54984:55095](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa12']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,968 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [65060:66598](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa13']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,969 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [67047:69949](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa14']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,969 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [70046:70157](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa15']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,969 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80120:80231](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa16']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,970 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80365:80476](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa17']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,970 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80573:83473](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa18']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,970 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [83922:85460](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa19']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,971 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [95420:96958](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa20']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,971 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [97315:100217](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa21']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,972 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [100314:100425](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa22']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,972 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2016-10-05 13:07:42,972 - DEBUG - [[0, [65061, 66598], 1, ['16S ribosomal RNA'], 'combined_colapsed.fa13', 'toy_genome'], [1, [67048, 69949], 1, ['23S ribosomal RNA'], 'combined_colapsed.fa14', 'toy_genome'], [2, [70047, 70157], 1, ['5S ribosomal RNA'], 'combined_colapsed.fa15', 'toy_genome']]
+2016-10-05 13:07:42,973 - DEBUG - Start_list: [65061, 67048, 70047]
+2016-10-05 13:07:42,973 - DEBUG - stitching together the following coords:
+2016-10-05 13:07:42,973 - DEBUG - [0, [65061, 66598], 1, ['16S ribosomal RNA'], 'combined_colapsed.fa13', 'toy_genome']
+2016-10-05 13:07:42,974 - DEBUG - [1, [67048, 69949], 1, ['23S ribosomal RNA'], 'combined_colapsed.fa14', 'toy_genome']
+2016-10-05 13:07:42,974 - DEBUG - [2, [70047, 70157], 1, ['5S ribosomal RNA'], 'combined_colapsed.fa15', 'toy_genome']
+2016-10-05 13:07:42,974 - INFO - 
+exp length 6497 
+act length 6497
+2016-10-05 13:07:42,975 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [5000:6538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa1']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,976 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [6895:9797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa2']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,976 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [9894:10005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa3']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,977 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20000:20111](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa4']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,977 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20208:23108](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa5']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,978 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [23465:25003](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa6']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,978 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [35000:36538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa7']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,978 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [36895:39797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa8']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,979 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [39894:40005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa9']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,979 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [50000:51538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa10']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,980 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [51987:54887](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa11']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,980 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [54984:55095](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa12']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,981 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [65060:66598](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa13']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,981 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [67047:69949](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa14']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,982 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [70046:70157](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa15']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,982 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80120:80231](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa16']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,982 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80365:80476](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa17']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,983 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80573:83473](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa18']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,984 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [83922:85460](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa19']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,985 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [95420:96958](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa20']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,986 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [97315:100217](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa21']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,986 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [100314:100425](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa22']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,987 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2016-10-05 13:07:42,988 - DEBUG - [[0, [5001, 6538], 1, ['16S ribosomal RNA'], 'combined_colapsed.fa1', 'toy_genome'], [1, [6896, 9797], 1, ['23S ribosomal RNA'], 'combined_colapsed.fa2', 'toy_genome'], [2, [9895, 10005], 1, ['5S ribosomal RNA'], 'combined_colapsed.fa3', 'toy_genome']]
+2016-10-05 13:07:42,988 - DEBUG - Start_list: [5001, 6896, 9895]
+2016-10-05 13:07:42,988 - DEBUG - stitching together the following coords:
+2016-10-05 13:07:42,989 - DEBUG - [0, [5001, 6538], 1, ['16S ribosomal RNA'], 'combined_colapsed.fa1', 'toy_genome']
+2016-10-05 13:07:42,989 - DEBUG - [1, [6896, 9797], 1, ['23S ribosomal RNA'], 'combined_colapsed.fa2', 'toy_genome']
+2016-10-05 13:07:42,989 - DEBUG - [2, [9895, 10005], 1, ['5S ribosomal RNA'], 'combined_colapsed.fa3', 'toy_genome']
+2016-10-05 13:07:42,990 - INFO - 
+exp length 6405 
+act length 6405
+2016-10-05 13:07:42,990 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [5000:6538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa1']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,991 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [6895:9797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa2']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,991 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [9894:10005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa3']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,992 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20000:20111](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa4']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,992 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20208:23108](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa5']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,993 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [23465:25003](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa6']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,993 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [35000:36538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa7']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,994 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [36895:39797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa8']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,994 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [39894:40005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa9']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,994 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [50000:51538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa10']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,995 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [51987:54887](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa11']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,995 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [54984:55095](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa12']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,996 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [65060:66598](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa13']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,996 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [67047:69949](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa14']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,997 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [70046:70157](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa15']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,997 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80120:80231](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa16']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,998 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80365:80476](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa17']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,998 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80573:83473](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa18']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,999 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [83922:85460](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa19']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,999 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [95420:96958](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa20']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:42,999 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [97315:100217](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa21']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:42,999 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [100314:100425](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa22']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:42,999 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2016-10-05 13:07:43,000 - DEBUG - [[0, [50001, 51538], 1, ['16S ribosomal RNA'], 'combined_colapsed.fa10', 'toy_genome'], [1, [51988, 54887], 1, ['23S ribosomal RNA'], 'combined_colapsed.fa11', 'toy_genome'], [2, [54985, 55095], 1, ['5S ribosomal RNA'], 'combined_colapsed.fa12', 'toy_genome']]
+2016-10-05 13:07:43,000 - DEBUG - Start_list: [50001, 51988, 54985]
+2016-10-05 13:07:43,000 - DEBUG - stitching together the following coords:
+2016-10-05 13:07:43,000 - DEBUG - [0, [50001, 51538], 1, ['16S ribosomal RNA'], 'combined_colapsed.fa10', 'toy_genome']
+2016-10-05 13:07:43,000 - DEBUG - [1, [51988, 54887], 1, ['23S ribosomal RNA'], 'combined_colapsed.fa11', 'toy_genome']
+2016-10-05 13:07:43,000 - DEBUG - [2, [54985, 55095], 1, ['5S ribosomal RNA'], 'combined_colapsed.fa12', 'toy_genome']
+2016-10-05 13:07:43,001 - INFO - 
+exp length 6495 
+act length 6495
+2016-10-05 13:07:43,001 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [5000:6538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa1']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,001 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [6895:9797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa2']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,001 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [9894:10005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa3']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,002 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20000:20111](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa4']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,002 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20208:23108](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa5']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,002 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [23465:25003](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa6']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,002 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [35000:36538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa7']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,003 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [36895:39797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa8']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,003 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [39894:40005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa9']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,003 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [50000:51538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa10']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,003 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [51987:54887](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa11']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,004 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [54984:55095](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa12']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,004 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [65060:66598](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa13']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,004 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [67047:69949](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa14']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,004 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [70046:70157](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa15']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,004 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80120:80231](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa16']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,005 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80365:80476](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa17']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,005 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80573:83473](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa18']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,005 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [83922:85460](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa19']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,005 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [95420:96958](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa20']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,006 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [97315:100217](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa21']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,006 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [100314:100425](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa22']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,006 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2016-10-05 13:07:43,006 - DEBUG - [[0, [20001, 20111], -1, ['5S ribosomal RNA'], 'combined_colapsed.fa4', 'toy_genome'], [1, [20209, 23108], -1, ['23S ribosomal RNA'], 'combined_colapsed.fa5', 'toy_genome'], [2, [23466, 25003], -1, ['16S ribosomal RNA'], 'combined_colapsed.fa6', 'toy_genome']]
+2016-10-05 13:07:43,006 - DEBUG - Start_list: [20001, 20209, 23466]
+2016-10-05 13:07:43,006 - DEBUG - stitching together the following coords:
+2016-10-05 13:07:43,007 - DEBUG - [0, [20001, 20111], -1, ['5S ribosomal RNA'], 'combined_colapsed.fa4', 'toy_genome']
+2016-10-05 13:07:43,007 - DEBUG - [1, [20209, 23108], -1, ['23S ribosomal RNA'], 'combined_colapsed.fa5', 'toy_genome']
+2016-10-05 13:07:43,007 - DEBUG - [2, [23466, 25003], -1, ['16S ribosomal RNA'], 'combined_colapsed.fa6', 'toy_genome']
+2016-10-05 13:07:43,007 - INFO - 
+exp length 6403 
+act length 6403
+2016-10-05 13:07:43,007 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [5000:6538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa1']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,008 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [6895:9797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa2']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,008 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [9894:10005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa3']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,008 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20000:20111](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa4']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,008 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20208:23108](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa5']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,008 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [23465:25003](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa6']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,009 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [35000:36538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa7']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,009 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [36895:39797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa8']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,009 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [39894:40005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa9']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,009 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [50000:51538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa10']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,010 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [51987:54887](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa11']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,010 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [54984:55095](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa12']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,010 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [65060:66598](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa13']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,010 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [67047:69949](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa14']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,011 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [70046:70157](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa15']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,011 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80120:80231](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa16']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,011 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80365:80476](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa17']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,012 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80573:83473](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa18']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,012 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [83922:85460](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa19']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,012 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [95420:96958](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa20']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,012 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [97315:100217](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa21']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,013 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [100314:100425](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa22']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,013 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2016-10-05 13:07:43,013 - DEBUG - [[0, [95421, 96958], 1, ['16S ribosomal RNA'], 'combined_colapsed.fa20', 'toy_genome'], [1, [97316, 100217], 1, ['23S ribosomal RNA'], 'combined_colapsed.fa21', 'toy_genome'], [2, [100315, 100425], 1, ['5S ribosomal RNA'], 'combined_colapsed.fa22', 'toy_genome']]
+2016-10-05 13:07:43,013 - DEBUG - Start_list: [95421, 97316, 100315]
+2016-10-05 13:07:43,013 - DEBUG - stitching together the following coords:
+2016-10-05 13:07:43,014 - DEBUG - [0, [95421, 96958], 1, ['16S ribosomal RNA'], 'combined_colapsed.fa20', 'toy_genome']
+2016-10-05 13:07:43,014 - DEBUG - [1, [97316, 100217], 1, ['23S ribosomal RNA'], 'combined_colapsed.fa21', 'toy_genome']
+2016-10-05 13:07:43,014 - DEBUG - [2, [100315, 100425], 1, ['5S ribosomal RNA'], 'combined_colapsed.fa22', 'toy_genome']
+2016-10-05 13:07:43,014 - INFO - 
+exp length 6405 
+act length 6405
+2016-10-05 13:07:43,014 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [5000:6538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa1']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,015 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [6895:9797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa2']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,015 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [9894:10005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa3']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,015 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20000:20111](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa4']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,015 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [20208:23108](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa5']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,015 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [23465:25003](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa6']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,016 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [35000:36538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa7']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,016 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [36895:39797](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa8']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,016 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [39894:40005](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa9']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,016 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [50000:51538](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa10']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,016 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [51987:54887](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa11']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,017 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [54984:55095](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa12']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,017 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [65060:66598](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa13']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,017 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [67047:69949](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa14']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,017 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [70046:70157](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa15']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,017 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80120:80231](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa16']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,018 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80365:80476](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa17']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,018 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [80573:83473](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa18']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,018 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [83922:85460](-)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa19']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,018 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [95420:96958](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa20']
+    Key: note, Value: ['*Name 16S_rRNA']
+    Key: product, Value: ['16S ribosomal RNA']
+
+2016-10-05 13:07:43,018 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [97315:100217](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa21']
+    Key: note, Value: ['*Name 23S_rRNA']
+    Key: product, Value: ['23S ribosomal RNA']
+
+2016-10-05 13:07:43,019 - DEBUG - found rRNA in the following feature : 
+type: rRNA
+location: [100314:100425](+)
+qualifiers:
+    Key: locus_tag, Value: ['combined_colapsed.fa22']
+    Key: note, Value: ['*Name 5S_rRNA']
+    Key: product, Value: ['5S ribosomal RNA']
+
+2016-10-05 13:07:43,019 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2016-10-05 13:07:43,019 - DEBUG - [[0, [80121, 80231], -1, ['5S ribosomal RNA'], 'combined_colapsed.fa16', 'toy_genome'], [1, [80366, 80476], -1, ['5S ribosomal RNA'], 'combined_colapsed.fa17', 'toy_genome'], [2, [80574, 83473], -1, ['23S ribosomal RNA'], 'combined_colapsed.fa18', 'toy_genome'], [3, [83923, 85460], -1, ['16S ribosomal RNA'], 'combined_colapsed.fa19', 'toy_genome']]
+2016-10-05 13:07:43,019 - DEBUG - Start_list: [80121, 80366, 80574, 83923]
+2016-10-05 13:07:43,019 - DEBUG - stitching together the following coords:
+2016-10-05 13:07:43,020 - DEBUG - [0, [80121, 80231], -1, ['5S ribosomal RNA'], 'combined_colapsed.fa16', 'toy_genome']
+2016-10-05 13:07:43,020 - DEBUG - [1, [80366, 80476], -1, ['5S ribosomal RNA'], 'combined_colapsed.fa17', 'toy_genome']
+2016-10-05 13:07:43,020 - DEBUG - [2, [80574, 83473], -1, ['23S ribosomal RNA'], 'combined_colapsed.fa18', 'toy_genome']
+2016-10-05 13:07:43,020 - DEBUG - [3, [83923, 85460], -1, ['16S ribosomal RNA'], 'combined_colapsed.fa19', 'toy_genome']
+2016-10-05 13:07:43,020 - INFO - 
+exp length 6740 
+act length 6740
+2016-10-05 13:07:43,020 - DEBUG - [SeqRecord(seq=Seq('TTCGCGGTCGCGGTAAAACCATCCCTTTTGCCGTTAACGTTTTGACCGCTTCGC...TTG', IUPACAmbiguousDNA()), id='toy_genome_34301..40705', name='<unknown name>', description='<unknown description>', dbxrefs=[]), SeqRecord(seq=Seq('TGAATTCGATGCCGAGCGCGTTTTACTCCGTAAACCTGGTGGCGCGTAAACCGG...ATG', IUPACAmbiguousDNA()), id='toy_genome_64361..70857', name='<unknown name>', description='<unknown description>', dbxrefs=[]), SeqRecord(seq=Seq('CTGGATGCACTAAAACGTATCCTACGCCCGTGGTTAAGAATGAAAGAGCCGCCA...GTA', IUPACAmbiguousDNA()), id='toy_genome_4301..10705', name='<unknown name>', description='<unknown description>', dbxrefs=[]), SeqRecord(seq=Seq('CCGAGATGTCGATCTGGATGGTATCTATTATTGCCCGCATCATCCGCAGGGTAG...ATT', IUPACAmbiguousDNA()), id='toy_genome_49301..55795', name='<unknown name>', description='<unknown description>', dbxrefs=[]), SeqRecord(seq=Seq('TGCCGGAGCCCACGTACCGATTGTTTCATAACCAGGCAAACAGGCGATTACCAG...AAT', IUPACAmbiguousDNA()), id='toy_genome_19301..25703', name='<unknown name>', description='<unknown description>', dbxrefs=[]), SeqRecord(seq=Seq('AAGTGCCTGGGCGAATTCGACGATACCGGCTTTGTCAGAAACACTGAGCAGAGC...TAT', IUPACAmbiguousDNA()), id='toy_genome_94721..101125', name='<unknown name>', description='<unknown description>', dbxrefs=[]), SeqRecord(seq=Seq('ATCTCTTCCCTCATCTGACCGTTCTACAGAACTGTACCCTGGCACCGATTTGGG...AAC', IUPACAmbiguousDNA()), id='toy_genome_79421..86160', name='<unknown name>', description='<unknown description>', dbxrefs=[])]
