@@ -733,11 +733,17 @@ if __name__ == "__main__":
     fastq_results_prefix = os.path.join(results_dir, args.exp_name)
 
     #TODO make this with listdirs
-    fastas = subprocess.run("ls %s*.fasta" % os.path.join(args.seed_dir, ""),
-                            shell=sys.platform != "win32",
-                            stderr=subprocess.PIPE,
-                            stdout=subprocess.PIPE,
-                            check=True).stdout.decode().strip().split("\n")
+    fastas = [x for x in os.listdir(os.path.join(args.seed_dir, "")) if \
+                                    x.endswith('.fasta')]
+    if len(fastas) == 0:
+        logger.error("no files found in {0} ending with " +
+                     "'.fsata'".format(args.seed_dir))
+
+    # fastas = subprocess.run("ls %s*.fasta" % os.path.join(args.seed_dir, ""),
+    #                         shell=sys.platform != "win32",
+    #                         stderr=subprocess.PIPE,
+    #                         stdout=subprocess.PIPE,
+    #                         check=True).stdout.decode().strip().split("\n")
     nfastas = len(fastas)
     logger.debug(fastas)
     ### if using smalt (which you are), check for mapped reference
