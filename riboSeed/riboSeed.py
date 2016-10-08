@@ -46,7 +46,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
 #################################### functions ###############################
 
 
-def get_args(DEBUG=False):
+def get_args():
     parser = argparse.ArgumentParser(
         description="Given regions from riboSnag, assembles the mapped reads")
     parser.add_argument("seed_dir", action="store",
@@ -114,10 +114,11 @@ def get_args(DEBUG=False):
                         "SPAdes will treat as --untrusted-contig. if '', " +
                         "seeds will not be used during assembly. " +
                         "See SPAdes docs; default: %(default)s")
-    parser.add_argument("--temps", dest='temps', action="store_true",
+    parser.add_argument("--no_temps", dest='no_temps', action="store_true",
                         default=False,
-                        help="if --temps, intermediate files will be " +
-                        "kept; default: %(default)s")
+                        help="if --no_temps, mapping files will be " +
+                        "removed after all iterations completed; " +
+                        " default: %(default)s")
     parser.add_argument("--skip_control", dest='skip_control',
                         action="store_true",
                         default=False,
@@ -556,7 +557,8 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
 def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
          reference_genome, fastq1, fastq2, fastqS, ave_read_length, cores,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
-         paired_inference, smalt_scoring, min_growth, max_iterations, kmers):
+         paired_inference, smalt_scoring, min_growth, max_iterations, kmers,
+         no_temps):
     """
     essentially a 'main' function,  to parallelize time comsuming parts
     """
@@ -564,26 +566,24 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
     logger.info("\nITEM %s of %s\n" % (str(fastas.index(fasta) + 1), nfastas))
     spades_dir = str(results_dir + "SPAdes_" +
                      os.path.split(fasta)[1].split(".fasta")[0])
-    quast_dir = str(results_dir + "QUAST_" +
-                    os.path.split(fasta)[1].split(".fasta")[0])
+    # quast_dir = str(results_dir + "QUAST_" +
+    #                 os.path.split(fasta)[1].split(".fasta")[0])
     mapping_dir = str(map_output_dir + "mapping_" +
                       os.path.split(fasta)[1].split(".fasta")[0])
     logger.debug(str("this fasta's output dirs: " +
-                     "\n{0}\n{1}\n{2}").format(spades_dir, quast_dir,
+                     "\n{0}\n{1}").format(spades_dir,
                                                mapping_dir))
-    for i in [spades_dir, quast_dir, mapping_dir]:
+    #  make appropriate output directories
+    for i in [spades_dir, mapping_dir]:
         if not os.path.isdir(i):
             os.makedirs(i)
-    # if not os.path.isdir(quast_dir):
-    #     os.makedirs(quast_dir)
-    # if not os.path.isdir(mapping_dir):
-    #     os.makedirs(mapping_dir)
     map_results_prefix = os.path.join(
         mapping_dir, str(exp_name + "_" +
                          os.path.split(fasta)[1].split(".fasta")[0]))
     fastq_results_prefix = os.path.join(
         results_dir, str(exp_name + "_" +
                          os.path.split(fasta)[1].split(".fasta")[0]))
+    logger.debug("copying seed file to mapping directory")
     new_reference = copy_file(current_file=fasta, dest_dir=mapping_dir,
                               name='', overwrite=False, logger=logger)
     this_iteration = 1  # counter for iterations.
@@ -616,6 +616,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                                        samtools_exe=args.samtools_exe,
                                        keep_unmapped=keep_unmapped_reads,
                                        logger=logger)
+
         logger.info("Converting mapped results to fastqs")
         new_fastq1, new_fastq2, new_fastqS, \
             mapped_fastq1, mapped_fastq2, mapped_fastqS = \
@@ -626,15 +627,16 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
             logger.warning("using reduced reads with next iteration")
             fastq1, fastq2, fastqS = new_fastq1, new_fastq2, new_fastqS
         logger.info("Running SPAdes")
-        last_time_through = False
-        if this_iteration == args.iterations:
-            last_time_through = True
+        # last_time_through = False
+        # if this_iteration == args.iterations:
+        #     last_time_through = True
         contigs_path, proceed = \
             run_spades(pe1_1=mapped_fastq1, pe1_2=mapped_fastq2,
                        pe1_s=mapped_fastqS, prelim=True,
                        as_paired=paired_inference,
                        groom_contigs="keep_first",
-                       output=spades_dir, keep_best=last_time_through,
+                       output=spades_dir, keep_best=True,
+                       # output=spades_dir, keep_best=last_time_through,
                        ref=new_reference, ref_as_contig=ref_as_contig,
                        k=kmers,
                        seqname=fasta, spades_exe=args.spades_exe)
@@ -654,6 +656,8 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         # skip future iterations
         if contig_length_diff > 0 and contig_length_diff < min_growth and \
            min_growth != 0:  # ie, ignore by default
+            logger.info("the length of the new contig was only 0bp changed " +
+                        "from previous iteration; skipping future iterations")
             this_iteration = max_iterations
         else:
             this_iteration = this_iteration + 1
@@ -671,7 +675,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                                      logger=logger)
     except:
         logger.warning("no contigs moved! {0}".format(fasta))
-    if not args.temps:
+    if no_temps:
         logger.info("removing temporary files from {0}".format(mapping_dir))
         clean_temp_dir(mapping_dir)
         # clean_temp_dir(mapping_dir, logger=logger)
@@ -683,7 +687,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
 
 #%%
 if __name__ == "__main__":
-    args = get_args(DEBUG=False)
+    args = get_args()
     mapped_genome_sam = "genome_distance_est.sam"
     # allow user to give rel path
     output_root = os.path.abspath(os.path.expanduser(args.output))
@@ -714,12 +718,16 @@ if __name__ == "__main__":
     if args.method != "smalt":
         logger.error("'smalt' only method currently supported")
         sys.exit(1)
+
     logger.debug("checking for installations of all required external tools")
     executables = [args.smalt_exe, args.samtools_exe,
                            args.spades_exe, args.quast_exe]
     test_ex = [check_installed_tools(x, logger=logger) for x in executables]
+    if all(test_ex):
+        logger.debug("All needed system executables found!")
     # check bambamc is installed proper
     check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
+
     # check equal length fastq.  This doesnt actually check propper pairs
     if file_len(args.fastq1) != file_len(args.fastq2):
         logger.error("Input Fastq's are of unequal length! Try " +
@@ -785,7 +793,8 @@ if __name__ == "__main__":
                  smalt_scoring=args.smalt_scoring,
                  min_growth=args.min_growth,
                  max_iterations=args.iterations,
-                 kmers=args.pre_kmers)
+                 kmers=args.pre_kmers,
+                 no_temps=args.no_temps)
     else:
         pool = multiprocessing.Pool(processes=args.cores)
         # cores_per_process =
@@ -809,7 +818,8 @@ if __name__ == "__main__":
                                      "smalt_scoring": args.smalt_scoring,
                                      "min_growth": args.min_growth,
                                      "max_iterations": args.iterations,
-                                     "kmers": args.pre_kmers})
+                                     "kmers": args.pre_kmers,
+                                     "no_temps": args.no_temps})
                    for fasta in fastas]
         pool.close()
         pool.join()
