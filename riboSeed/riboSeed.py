@@ -118,6 +118,11 @@ def get_args(DEBUG=False):
                         default=False,
                         help="if --temps, intermediate files will be " +
                         "kept; default: %(default)s")
+    parser.add_argument("--skip_control", dest='skip_control',
+                        action="store_true",
+                        default=False,
+                        help="if --skip_control, no SPAdes-only de novo " +
+                        "assembly will be done; default: %(default)s")
     parser.add_argument("-i", "--iterations", dest='iterations',
                         action="store",
                         default=2, type=int,
@@ -699,6 +704,7 @@ if __name__ == "__main__":
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
                      "{2}\n").format(output_root, map_output_dir, results_dir))
+
     # check cases of switch-typ args
     if args.ref_as_contig not in ["", 'trusted', 'untrusted']:
         logger.error(str("--ref_as_contig can only be 'trusted', " +
@@ -725,6 +731,7 @@ if __name__ == "__main__":
                                                       N=36, logger=logger)
 #    map_results_prefix = os.path.join(map_output_dir, args.exp_name)
     fastq_results_prefix = os.path.join(results_dir, args.exp_name)
+
     #TODO make this with listdirs
     fastas = subprocess.run("ls %s*.fasta" % os.path.join(args.seed_dir, ""),
                             shell=sys.platform != "win32",
@@ -815,7 +822,11 @@ if __name__ == "__main__":
     logger.info("Combined Seed Contigs: {0}".format(new_contig_file))
     logger.info("Time taken to run seeding: %.2fs" % (time.time() - t0))
     logger.info("\n\n Starting Final Assemblies\n\n")
-    for j in "de_novo", "de_fere_novo":
+    if not args.skip_control:
+        final_list = ["de_novo", "de_fere_novo"]
+    else:
+        final_list = ["de_fere_novo"]
+    for j in final_list:
         logging.info("\n\nRunning %s SPAdes \n" % j)
         if j == "de_novo":
             assembly_ref = ''
@@ -824,7 +835,8 @@ if __name__ == "__main__":
             assembly_ref = new_contig_file
             assembly_ref_as_contig = 'trusted'
         else:
-            raise ValueError("onl valid cases are de novo and de fere novo")
+            logger.error("Only valid cases are de novo and de fere novo!")
+            sys.exit(1)
         output_contigs, \
             final_success = run_spades(pe1_1=args.fastq1, pe1_2=args.fastq2,
                                        output=os.path.join(results_dir, j),
