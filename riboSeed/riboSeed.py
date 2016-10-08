@@ -811,7 +811,7 @@ if __name__ == "__main__":
         #     logger.info("using existing reference file")
         mapping_dist = estimate_distances_smalt(outfile=os.path.join(results_dir,
                                                                         mapped_genome_sam),
-                                                smalt_exe=args.smalt_exe, ref_genome=args.reference,
+                                                smalt_exe=args.smalt_exe, ref_genome=args.reference_genome,
                                                 fastq1=args.fastq1, fastq2=args.fastq2,
                                                 cores=args.cores, logger=logger)
     else:
