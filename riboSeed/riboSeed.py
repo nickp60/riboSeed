@@ -373,7 +373,7 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
             str("{4}  --only-assembler --cov-cutoff off --sc --careful -k" +
                 " {0} {1} {2} -o {3}").format(kmers, reads, alt_contig,
                                               output, spades_exe)
-        logger.info("Running the following command:\n{0}".format(prelim_cmd))
+        logger.info("Running SPAdes command:\n{0}".format(prelim_cmd))
         subprocess.run(prelim_cmd,
                        shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
@@ -455,14 +455,12 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
     check samtools pileup, and a reference fasta, this reconstructs ambiguous
     regions
     """
-    if verbose and logger:
-        log_status = logger.info
-    elif verbose or veryverb:
-        log_status = print
-    else:
-        pass
+    if logger is None:
+        print("Logger needed for the 'reconstruct_seqs' function!")
+        sys.exit(1)
+    logger.warning("This function is sketchy at best. Here be dragons!"
     if verbose:
-        log_status(str("reconstucting consensus sequence " +
+        logger.debug(str("reconstucting consensus sequence " +
                        "from {0} and pileup").format(refpath))
     seqfile = SeqIO.parse(open(refpath, "r"), "fasta")
     for i in seqfile:
@@ -478,16 +476,16 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
     for i in range(0, len(ref)):  # counter for ref index
         if veryverb and verbose:
             try:
-                log_status("ref. index: %i\n pile index: %i" % (i, j))
-                log_status(ref[i])
-                log_status(pileup[j])
+                logger.debug("ref. index: %i\n pile index: %i" % (i, j))
+                logger.debug(ref[i])
+                logger.debug(pileup[j])
             except:
                 pass
         # This is how we handle deletions; decrement skip, and next iteration
         if skip > 0:
             skip = skip - 1
             if verbose:
-                log_status("skipping {0}".format(i))
+                logger.debug("skipping {0}".format(i))
         # if j is greater then length of pileup, go with ref.
         # This should avoid out of range issues
         elif j > len(pileup) - 1:
@@ -496,7 +494,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
         # note because the reference is now zero base, no correction needed
         elif i != int((pileup[j][1])):
             if verbose:
-                log_status("no entry in pileup for %i" % i)
+                logger.debug("no entry in pileup for %i" % i)
             new = "".join([new, ref[i]])
             # this should keep pileup counter the same when
             j = j - 1
@@ -516,7 +514,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
             all([hits == re.findall(insert, pileup[j][4])[0] for hits in \
                  re.findall(insert, pileup[j][4])]):
             if verbose:
-                log_status("found insert!")
+                logger.debug("found insert!")
             insert_seq = re.search('[ACGTNacgtn]+', pileup[j][4]).group(0)
             insert_N = int(re.search('[0-9]+', pileup[j][4]).group(0))
             if not len(insert_seq) == insert_N:
@@ -529,7 +527,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
             all([hits == re.findall(insert, pileup[j][4])[0] for hits in \
                  re.findall(insert, pileup[j][4])]):
             if verbose:
-                log_status("found deletion! {0}".format(pileup[j][4]))
+                logger.debug("found deletion! {0}".format(pileup[j][4]))
             delete_N = int(re.search('[0-9]+', pileup[j][4]).group(0))
             skip = delete_N
             indels = indels + delete_N
@@ -538,15 +536,15 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
         elif pileup[j][4][0] in [",", ".", "^", "$"] or \
             not all(x == pileup[j][4][0] for x in list(pileup[j][4])):
             if verbose:
-                log_status("using ref")
+                logger.debug("using ref")
             new = "".join([new, ref[i]])
         else:
             if verbose:
-                log_status("Case Not covered!")
+                logger.debug("Case Not covered!")
             sys.exit(1)
         j = j + 1  # increment the pileup counter
     if verbose:
-        log_status(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: " +
+        logger.info(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: " +
                        "{2}").format(indels, N_deletions, N_insertions))
     else:
         print(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: " +
@@ -599,8 +597,8 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                                                "_iter_" + str(this_iteration) +
                                                ".fasta"),
                                       overwrite=True, logger=logger)
-        logger.info("Iteration {0} for {1}, item {2} out of {3}".format(
-            this_iteration,
+        logger.info("Iteration {0} of {1} for {2}, item {3} out of {4}".format(
+            this_iteration, max_iterations,
             os.path.basename(fasta), fastas.index(fasta) + 1, len(fastas)))
         map_to_ref_smalt(ref=new_reference, ref_genome=reference_genome,
                          fastq_read1=fastq1, fastq_read2=fastq2,
@@ -674,7 +672,8 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                                               str(this_iteration) + ".fasta"),
                                      logger=logger)
     except:
-        logger.warning("no contigs moved! {0}".format(fasta))
+        logger.warning("no contigs moved for {0}!  Check the SPAdes log " +
+                       "in the results directory if worried".format(fasta))
     if no_temps:
         logger.info("removing temporary files from {0}".format(mapping_dir))
         clean_temp_dir(mapping_dir)
