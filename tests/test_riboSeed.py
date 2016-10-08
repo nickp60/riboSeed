@@ -36,7 +36,7 @@ sys.dont_write_bytecode = True
 from pyutilsnrw.utils3_5 import make_output_prefix, check_installed_tools,\
     copy_file, get_ave_read_len_from_fastq, get_number_mapped,\
     extract_mapped_and_mappedmates, keep_only_first_contig, md5,\
-    combine_contigs, clean_temp_dir
+    combine_contigs, clean_temp_dir, md5
 
 from riboSeed.riboseed import  check_smalt_full_install,\
     map_to_ref_smalt, convert_bams_to_fastq
@@ -48,16 +48,56 @@ from riboSeed.riboseed import  check_smalt_full_install,\
                  " with less than python 3.5")
 class utils3_5TestCase(unittest.TestCase):
     def setUp(self):
-        self.ref_gb
-        self.ref_fasta
-        self.ref_Ffastq
-        self.ref_Rfastq
+        self.testdirname = os.path.join(os.path.dirname(__file__),
+                                        "output_riboseed_tests")
+        self.ref_fasta  = os.path.join(os.path.dirname(__file__),
+                                       str("references" + os.path.sep +
+                                           'cluster1.fasta'))
+
+        self.ref_Ffastq  = os.path.join(os.path.dirname(__file__),
+                                        str("references" + os.path.sep +
+                                            'toy_reads1.fq'))
+        self.ref_Rfastq  = os.path.join(os.path.dirname(__file__),
+                                        str("references" + os.path.sep +
+                                            'toy_reads1.fq'))
+
         self.ref_disctance
         self.pileup
         pass
 
+    def test_make_testing_dir(self):
+        if not os.path.exists(self.testdirname):
+            os.makedirs(self.testdirname)
+        self.assertTrue(os.path.exists(self.testdirname))
+
+    # def test_references_md5(self):
+    #     """ is this paranoia, as well as bad testing?
+    #     """
+    #     test_pairs = [["3ba332f8a3b5d935ea6c4e410ccdf44b",
+    #                    "references/combined_contigs_reference.fa"],
+    #                   ["939fbf2c282091aec0dfa278b05e94ec",
+    #                    "references/mapping_reference.bam"],
+    #                   ["27944249bf064ba54576be83053e82b0",
+    #                    "references/mapping_reference_mapped.sam"],
+    #                   ["ac80c75f468011ba11e72ddee8560b33",
+    #                    "references/md5_a.txt"],
+    #                   ["ac80c75f468011ba11e72ddee8560b33",
+    #                    "references/md5_b.txt"],
+    #                   ["92fc8592819173343a75a40874d86144",
+    #                    "references/md5_fail.txt"],
+    #                   ["d6b0e5b28d0b4de431f10a03042ff37b",
+    #                    "references/reads_reference.fastq"],
+    #                   ["40ac496ec5b221636db81ce09e04c1d9",
+    #                    "references/test_multiseqs_reference.fasta"],
+    #                   ["920b5c9dc69fb2a9fed50b18f3e92895",
+    #                    "references/test_only_first_reference.fasta"]]
+    #     for i in test_pairs:
+    #         self.assertEqual(i[0],
+    #                          md5(os.path.join(os.path.dirname(__file__),
+    #                                           i[1])))
+
     def test_map_to_ref_smalt(self):
-        map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
+        map_to_ref_smalt(ref, fastq_read1, fastq_read2,
                          distance_results,
                          map_results_prefix, cores, samtools_exe,
                          smalt_exe, fastq_readS="",

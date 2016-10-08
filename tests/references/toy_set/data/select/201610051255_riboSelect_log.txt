@@ -1,0 +1,8 @@
+2016-10-05 12:55:56,727 - INFO - Initializing logger
+2016-10-05 12:55:56,728 - DEBUG - logging at level 1
+2016-10-05 12:55:56,729 - INFO - Current usage:
+
+2016-10-05 12:55:56,729 - INFO - ./data/scanned/ -o ./data/select/ --clobber -v 1
+
+2016-10-05 12:55:56,730 - INFO - removing existing output file
+

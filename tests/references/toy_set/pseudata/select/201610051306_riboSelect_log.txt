@@ -1,0 +1,61 @@
+2016-10-05 13:06:52,263 - INFO - Initializing logger
+2016-10-05 13:06:52,264 - DEBUG - logging at level 1
+2016-10-05 13:06:52,264 - INFO - Current usage:
+
+2016-10-05 13:06:52,264 - INFO - ./pseudata/scanned/scanScaffolds_combined.gb -o ./pseudata/select/ --clobber -v 1
+
+2016-10-05 13:06:52,302 - DEBUG - search ['toy_genome'] for rRNA features containing ['16S', '23S', '5S'] in the product annotation
+2016-10-05 13:06:52,303 - DEBUG - scanning toy_genome
+2016-10-05 13:06:52,306 - DEBUG - All loci:
+2016-10-05 13:06:52,306 - DEBUG - ('toy_genome', 51988)	[10, 'toy_genome', 'combined_colapsed.fa11', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,307 - DEBUG - ('toy_genome', 20001)	[3, 'toy_genome', 'combined_colapsed.fa4', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,308 - DEBUG - ('toy_genome', 80366)	[16, 'toy_genome', 'combined_colapsed.fa17', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,308 - DEBUG - ('toy_genome', 80121)	[15, 'toy_genome', 'combined_colapsed.fa16', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,308 - DEBUG - ('toy_genome', 9895)	[2, 'toy_genome', 'combined_colapsed.fa3', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,309 - DEBUG - ('toy_genome', 35001)	[6, 'toy_genome', 'combined_colapsed.fa7', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,309 - DEBUG - ('toy_genome', 83923)	[18, 'toy_genome', 'combined_colapsed.fa19', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,310 - DEBUG - ('toy_genome', 65061)	[12, 'toy_genome', 'combined_colapsed.fa13', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,310 - DEBUG - ('toy_genome', 50001)	[9, 'toy_genome', 'combined_colapsed.fa10', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,311 - DEBUG - ('toy_genome', 6896)	[1, 'toy_genome', 'combined_colapsed.fa2', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,311 - DEBUG - ('toy_genome', 95421)	[19, 'toy_genome', 'combined_colapsed.fa20', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,312 - DEBUG - ('toy_genome', 39895)	[8, 'toy_genome', 'combined_colapsed.fa9', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,313 - DEBUG - ('toy_genome', 100315)	[21, 'toy_genome', 'combined_colapsed.fa22', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,313 - DEBUG - ('toy_genome', 36896)	[7, 'toy_genome', 'combined_colapsed.fa8', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,314 - DEBUG - ('toy_genome', 5001)	[0, 'toy_genome', 'combined_colapsed.fa1', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,314 - DEBUG - ('toy_genome', 70047)	[14, 'toy_genome', 'combined_colapsed.fa15', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,315 - DEBUG - ('toy_genome', 97316)	[20, 'toy_genome', 'combined_colapsed.fa21', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,316 - DEBUG - ('toy_genome', 20209)	[4, 'toy_genome', 'combined_colapsed.fa5', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,316 - DEBUG - ('toy_genome', 80574)	[17, 'toy_genome', 'combined_colapsed.fa18', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,316 - DEBUG - ('toy_genome', 23466)	[5, 'toy_genome', 'combined_colapsed.fa6', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,317 - DEBUG - ('toy_genome', 54985)	[11, 'toy_genome', 'combined_colapsed.fa12', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,317 - DEBUG - ('toy_genome', 67048)	[13, 'toy_genome', 'combined_colapsed.fa14', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,318 - INFO - Processing toy_genome
+
+2016-10-05 13:06:52,318 - DEBUG - Subset loci:
+2016-10-05 13:06:52,319 - DEBUG - ('toy_genome', 51988)	[10, 'toy_genome', 'combined_colapsed.fa11', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,319 - DEBUG - ('toy_genome', 20001)	[3, 'toy_genome', 'combined_colapsed.fa4', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,319 - DEBUG - ('toy_genome', 80366)	[16, 'toy_genome', 'combined_colapsed.fa17', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,320 - DEBUG - ('toy_genome', 35001)	[6, 'toy_genome', 'combined_colapsed.fa7', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,320 - DEBUG - ('toy_genome', 9895)	[2, 'toy_genome', 'combined_colapsed.fa3', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,321 - DEBUG - ('toy_genome', 80121)	[15, 'toy_genome', 'combined_colapsed.fa16', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,321 - DEBUG - ('toy_genome', 83923)	[18, 'toy_genome', 'combined_colapsed.fa19', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,322 - DEBUG - ('toy_genome', 65061)	[12, 'toy_genome', 'combined_colapsed.fa13', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,322 - DEBUG - ('toy_genome', 50001)	[9, 'toy_genome', 'combined_colapsed.fa10', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,322 - DEBUG - ('toy_genome', 6896)	[1, 'toy_genome', 'combined_colapsed.fa2', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,323 - DEBUG - ('toy_genome', 95421)	[19, 'toy_genome', 'combined_colapsed.fa20', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,323 - DEBUG - ('toy_genome', 39895)	[8, 'toy_genome', 'combined_colapsed.fa9', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,323 - DEBUG - ('toy_genome', 100315)	[21, 'toy_genome', 'combined_colapsed.fa22', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,324 - DEBUG - ('toy_genome', 36896)	[7, 'toy_genome', 'combined_colapsed.fa8', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,324 - DEBUG - ('toy_genome', 5001)	[0, 'toy_genome', 'combined_colapsed.fa1', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,324 - DEBUG - ('toy_genome', 70047)	[14, 'toy_genome', 'combined_colapsed.fa15', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,325 - DEBUG - ('toy_genome', 97316)	[20, 'toy_genome', 'combined_colapsed.fa21', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,325 - DEBUG - ('toy_genome', 20209)	[4, 'toy_genome', 'combined_colapsed.fa5', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,325 - DEBUG - ('toy_genome', 80574)	[17, 'toy_genome', 'combined_colapsed.fa18', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,326 - DEBUG - ('toy_genome', 23466)	[5, 'toy_genome', 'combined_colapsed.fa6', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,326 - DEBUG - ('toy_genome', 54985)	[11, 'toy_genome', 'combined_colapsed.fa12', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,326 - DEBUG - ('toy_genome', 67048)	[13, 'toy_genome', 'combined_colapsed.fa14', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+2016-10-05 13:06:52,326 - INFO - hits in toy_genome
+
+2016-10-05 13:06:52,327 - DEBUG - centers: [0]
+2016-10-05 13:06:52,327 - DEBUG - nfeat_simple: {'toy_genome': [7, 7, 8]}
+2016-10-05 13:06:52,328 - DEBUG - rec_nfeat: [7, 7, 8]

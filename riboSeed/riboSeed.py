@@ -210,7 +210,38 @@ def check_smalt_full_install(smalt_exe, logger=None):
     os.remove(str(index + ".smi"))
 
 
-def map_to_ref_smalt(ref, ref_genome, fastq_read1, fastq_read2,
+def estimate_distances_smalt(outputfile, smalt_exe, ref_genome,
+                             fastq1, fastq2, logger):
+    """Given fastq pair and a reference, returns path to distance estimations
+    used by smalt to help later with mapping.  if one already exists,
+    return path to it.
+    """
+    if not os.path.exists(outfile):
+        # Index reference for sampling to get PE distances
+        logger.info("Estimating insert distances with SMALT")
+        # index with default params for genome-sized sequence
+        refindex_cmd = str(smalt_exe + " index -k {0} -s {1} {2} " +
+                           "{2}").format(20, 10, args.reference_genome)
+        refsample_cmd = str(smalt_exe + " sample -n {0} -o {1} {2} {3} " +
+                            "{4}").format(cores,
+                                          outputfile,
+                                          ref_genome,
+                                          fastq1,
+                                          fastq2)
+            logger.info("Sampling and indexing {0}".format(
+                ref_genome))
+            for cmd in [refindex_cmd, refsample_cmd]:
+                logger.debug("\t command:\n\t {0}".format(cmd))
+                subprocess.run(cmd,
+                               shell=sys.platform != "win32",
+                               stderr=subprocess.PIPE,
+                               stdout=subprocess.PIPE,
+                               check=True)
+    else:
+        logger.info("using existing reference file")
+    return(outputfile)
+
+def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
                      distance_results,
                      map_results_prefix, cores, samtools_exe,
                      smalt_exe, fastq_readS="",
@@ -600,7 +631,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         logger.info("Iteration {0} of {1} for {2}, item {3} out of {4}".format(
             this_iteration, max_iterations,
             os.path.basename(fasta), fastas.index(fasta) + 1, len(fastas)))
-        map_to_ref_smalt(ref=new_reference, ref_genome=reference_genome,
+        map_to_ref_smalt(ref=new_reference, #  ref_genome=reference_genome,
                          fastq_read1=fastq1, fastq_read2=fastq2,
                          fastq_readS=fastqS, read_len=average_read_length,
                          map_results_prefix=map_results_prefix, cores=cores,
@@ -749,29 +780,34 @@ if __name__ == "__main__":
     logger.debug(fastas)
     ### if using smalt (which you are), check for mapped reference
     if args.method == 'smalt':
-        if not os.path.exists(os.path.join(results_dir, mapped_genome_sam)):
-            # Index reference for sampling to get PE distances
-            logger.info("Estimating insert distances with SMALT")
-            # index with default params for genome-sized sequence
-            refindex_cmd = str(args.smalt_exe + " index -k {0} -s {1} {2} " +
-                               "{2}").format(20, 10, args.reference_genome)
-            refsample_cmd = \
-                str(args.smalt_exe + " sample -n {0} -o {1} {2} {3} " +
-                    "{4}").format(args.cores,
-                                  os.path.join(results_dir, mapped_genome_sam),
-                                  args.reference_genome,
-                                  args.fastq1, args.fastq2)
-            logger.info("Sampling and indexing {0}".format(
-                args.reference_genome))
-            for cmd in [refindex_cmd, refsample_cmd]:
-                logger.debug("\t command:\n\t {0}".format(cmd))
-                subprocess.run(cmd,
-                               shell=sys.platform != "win32",
-                               stderr=subprocess.PIPE,
-                               stdout=subprocess.PIPE,
-                               check=True)
-        else:
-            logger.info("using existing reference file")
+        # if not os.path.exists(os.path.join(results_dir, mapped_genome_sam)):
+        #     # Index reference for sampling to get PE distances
+        #     logger.info("Estimating insert distances with SMALT")
+        #     # index with default params for genome-sized sequence
+        #     refindex_cmd = str(args.smalt_exe + " index -k {0} -s {1} {2} " +
+        #                        "{2}").format(20, 10, args.reference_genome)
+        #     refsample_cmd = \
+        #         str(args.smalt_exe + " sample -n {0} -o {1} {2} {3} " +
+        #             "{4}").format(args.cores,
+        #                           os.path.join(results_dir, mapped_genome_sam),
+        #                           args.reference_genome,
+        #                           args.fastq1, args.fastq2)
+        #     logger.info("Sampling and indexing {0}".format(
+        #         args.reference_genome))
+        #     for cmd in [refindex_cmd, refsample_cmd]:
+        #         logger.debug("\t command:\n\t {0}".format(cmd))
+        #         subprocess.run(cmd,
+        #                        shell=sys.platform != "win32",
+        #                        stderr=subprocess.PIPE,
+        #                        stdout=subprocess.PIPE,
+        #                        check=True)
+        # else:
+        #     logger.info("using existing reference file")
+        mapping_dist = estimate_distances_smalt(outputfile=os.path.join(results_dir,
+                                                                        mapped_genome_sam),
+                                                smalt_exe=args.smalt_exe, ref_genome=args.reference,
+                                                fastq1=args.fastq1, fastq2=args.fastq2,
+                                                cores=args.cores, logger=logger)
     else:
         logger.error("As of v 0.88, only supported mapper is 'smalt'")
         sys.exit(1)
