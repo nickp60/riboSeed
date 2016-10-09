@@ -349,7 +349,7 @@ if __name__ == "__main__":
                                                      time.strftime("%Y%m%d%H%M"))),
                             name=__name__)
 
-    print("Usage:\n{0}\n".format(str(" ".join([x for x in sys.argv]))))
+    logger.debug("Usage:\n{0}\n".format(str(" ".join([x for x in sys.argv]))))
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
     # if not os.path.isdir(args.output):
     #     os.mkdir(args.output)

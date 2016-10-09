@@ -262,13 +262,12 @@ if __name__ == "__main__":
                             name=__name__)
 
     # log = sys.stderr.write  # to keep streaming clean if this goes that route
-    logger.info("Current usage:\n")
-    logger.info(" ".join(sys.argv[1:]) + "\n")
+    logger.info("Current usage:\n{0}\n".format(" ".join(sys.argv[1:])))
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
 
     # Check if output file exists; if so, remove it
     output_path = os.path.join(args.output,
-                               str(date + "_riboSelect_grouped_loci.txt"))
+                               str("riboSelect_grouped_loci.txt"))
     if os.path.exists(output_path):
         if args.clobber:
             logger.info("removing existing output file\n")
@@ -377,6 +376,7 @@ if __name__ == "__main__":
 
         # indexClusters should be like { "1": [3,4,6], "2": [66,45,63]}
         with open(output_path, "a") as outfile:
+            outfile.write("# Generated on {0}".format(date))
             for k, v in indexClusters.items():
                 # for each k:v, this replaces the index in v with the locus tag
                 # from subset, and writes it out in the way that plays nice
