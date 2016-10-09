@@ -30,6 +30,6 @@ mkdir ${OUTDIR}
 ## RiboSelect
 riboSelect.py ${GB} -o ${OUTDIR}select/
 ## RiboSnag
-riboSnag.py ${GB} ${OUTDIR}select/
+riboSnag.py ${GB} ${OUTDIR}select/riboSelect_grouped_loci.txt -o ${OUTDIR}snag/ -l $FLANK
 # RiboSeed
-riboSeed.py ./pseudata/snag/ -F ./toy_reads1.fq -R toy_reads2.fq -r ./data/littlegenome.fa -v 1 -i 3 --ref_as_contig trusted -c 4 -o ./pseudata/seed7777/
+riboSeed.py ${OUTDIR}snag/ -F ${READ1} -R ${READ2} -r ${FASTA} -v 1 -i ${ITERATIONS} -c 4 -o ${OUTDIR}seed/
