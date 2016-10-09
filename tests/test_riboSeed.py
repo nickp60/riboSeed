@@ -152,5 +152,7 @@ if __name__ == '__main__':
     smalt_exe = "smalt"
     if not check_installed_tools(smalt_exe, hard=False):
         print("Error! Cannot test without install of SMALT in PATH")
+    if not check_installed_tools(samtools_exe, hard=False):
+        print("Error! Cannot test without install of samtools in PATH")
     logger=logging
     unittest.main()

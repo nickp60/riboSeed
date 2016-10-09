@@ -593,7 +593,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
          reference_genome, fastq1, fastq2, fastqS, ave_read_length, cores,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
          paired_inference, smalt_scoring, min_growth, max_iterations, kmers,
-         no_temps):
+         no_temps, distance_estimation):
     """
     essentially a 'main' function,  to parallelize time comsuming parts
     """
@@ -642,8 +642,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                          fastq_readS=fastqS, read_len=average_read_length,
                          map_results_prefix=map_results_prefix, cores=cores,
                          step=3, k=5,
-                         distance_results=os.path.join(results_dir,
-                                                       mapped_genome_sam),
+                         distance_results=distance_estimation,
                          scoring=smalt_scoring, smalt_exe=args.smalt_exe,
                          samtools_exe=args.samtools_exe, logger=logger)
         extract_mapped_and_mappedmates(map_results_prefix,
@@ -776,13 +775,14 @@ if __name__ == "__main__":
                                                       N=36, logger=logger)
     fastq_results_prefix = os.path.join(results_dir, args.exp_name)
 
-    fastas = [x for x in os.listdir(os.path.join(args.seed_dir, "")) if \
-                                    x.endswith('.fasta')]
+    fastas = [os.path.join(args.seed_dir, x) for \
+                         x in os.listdir(os.path.join(args.seed_dir, "")) if \
+                         x.endswith('.fasta')]
     if len(fastas) == 0:
         logger.error("no files found in {0} ending with " +
-                     "'.fsata'".format(args.seed_dir))
+                     "'.fasta'".format(args.seed_dir))
 
-        nfastas = len(fastas)
+    nfastas = len(fastas)
     logger.debug(fastas)
     ### if using smalt (which you are), check for mapped reference
     if args.method == 'smalt':
@@ -809,23 +809,33 @@ if __name__ == "__main__":
         #                        check=True)
         # else:
         #     logger.info("using existing reference file")
-        mapping_dist = estimate_distances_smalt(outfile=os.path.join(results_dir,
-                                                                        mapped_genome_sam),
-                                                smalt_exe=args.smalt_exe, ref_genome=args.reference_genome,
-                                                fastq1=args.fastq1, fastq2=args.fastq2,
-                                                cores=args.cores, logger=logger)
+        dist_est = estimate_distances_smalt(outfile=os.path.join(results_dir,
+                                                                 mapped_genome_sam),
+                                            smalt_exe=args.smalt_exe,
+                                            ref_genome=args.reference_genome,
+                                            fastq1=args.fastq1,
+                                            fastq2=args.fastq2,
+                                            cores=args.cores, logger=logger)
     else:
         logger.error("As of v 0.88, only supported mapper is 'smalt'")
         sys.exit(1)
+
     ### Main function call
     if args.DEBUG_multiprocessing:
         logger.warning("running without multiprocessing!")
         for i in fastas:
-            main(fasta=i, results_dir=results_dir, exp_name=args.exp_name,
-                 mauve_path=mauve_dir, map_output_dir=map_output_dir,
-                 method=args.method, reference_genome=args.reference_genome,
-                 fastq1=args.fastq1, fastq2=args.fastq2, fastqS=args.fastqS,
-                 ave_read_length=average_read_length, cores=args.cores,
+            main(fasta=i,
+                 results_dir=results_dir,
+                 exp_name=args.exp_name,
+                 mauve_path=mauve_dir,
+                 map_output_dir=map_output_dir,
+                 method=args.method,
+                 reference_genome=args.reference_genome,
+                 fastq1=args.fastq1,
+                 fastq2=args.fastq2,
+                 fastqS=args.fastqS,
+                 ave_read_length=average_read_length,
+                 cores=args.cores,
                  subtract_reads=args.subtract,
                  ref_as_contig=args.ref_as_contig,
                  fetch_mates=args.paired_inference,
@@ -835,7 +845,8 @@ if __name__ == "__main__":
                  min_growth=args.min_growth,
                  max_iterations=args.iterations,
                  kmers=args.pre_kmers,
-                 no_temps=args.no_temps)
+                 no_temps=args.no_temps,
+                 distance_estimation=dist_est)
     else:
         pool = multiprocessing.Pool(processes=args.cores)
         # cores_per_process =
@@ -860,12 +871,14 @@ if __name__ == "__main__":
                                      "min_growth": args.min_growth,
                                      "max_iterations": args.iterations,
                                      "kmers": args.pre_kmers,
-                                     "no_temps": args.no_temps})
+                                     "no_temps": args.no_temps,
+                                     "disance_estimation": dist_est})
                    for fasta in fastas]
         pool.close()
         pool.join()
         logger.info(results)
         logger.info(sum([r.get() for r in results]))
+
     logging.info("combinging contigs from %s" % mauve_dir)
     new_contig_file = combine_contigs(contigs_dir=mauve_dir,
                                       contigs_name="riboSeedContigs",
