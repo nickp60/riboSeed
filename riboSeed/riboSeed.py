@@ -872,7 +872,7 @@ if __name__ == "__main__":
                                      "max_iterations": args.iterations,
                                      "kmers": args.pre_kmers,
                                      "no_temps": args.no_temps,
-                                     "disance_estimation": dist_est})
+                                     "distance_estimation": dist_est})
                    for fasta in fastas]
         pool.close()
         pool.join()

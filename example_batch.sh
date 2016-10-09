@@ -6,7 +6,7 @@
 # output scanScaffolds_combined.gb in current directory
 echo 'USAGE: /path/to/genome.gb path/to/genome.fasta path/to/read1 path/to/read2 /path/to/outdir/ iterations'
 echo 'example: $ barrnap'
-if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3"] || [ -z "$4"]|| [ -z "$5"] ||[ -z "$6"] ||[ -z "$7"]
+if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3"] || [ -z "$4"] || [ -z "$5"] || [ -z "$6"] || [ -z "$7"]
 then
     echo "mandatory arguments: genome.fasta,genome.gb, read1, read2, output_dir, iterations, and flanking_width"
     exit 1
@@ -28,8 +28,8 @@ FLANK="$7"
 mkdir ${OUTDIR}
 
 ## RiboSelect
-python3.5 riboSelect.py ${GB} -o ${OUTDIR}select/
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${GB} -o ${OUTDIR}select/
 ## RiboSnag
-python3.5 riboSnag.py ${GB} ${OUTDIR}select/riboSelect_grouped_loci.txt -o ${OUTDIR}snag/ -l $FLANK
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSnag.py ${GB} ${OUTDIR}select/riboSelect_grouped_loci.txt -o ${OUTDIR}snag/ -l $FLANK
 # RiboSeed
-python3.5 riboSeed.py ${OUTDIR}snag/ -F ${READ1} -R ${READ2} -r ${FASTA} -v 1 -i ${ITERATIONS} -c 4 -o ${OUTDIR}seed/
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py ${OUTDIR}snag/ -F ${READ1} -R ${READ2} -r ${FASTA} -v 1 -i ${ITERATIONS} -c 4 -o ${OUTDIR}seed/
