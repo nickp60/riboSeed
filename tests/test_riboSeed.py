@@ -53,6 +53,9 @@ class utils3_5TestCase(unittest.TestCase):
     def setUp(self):
         self.test_dir = os.path.join(os.path.dirname(__file__),
                                         "output_riboseed_tests")
+        self.spades_dir = os.path.join(os.path.dirname(__file__),
+                                        "output_riboseed_tests",
+                                       "SPAdes_results")
         self.ref_dir = os.path.join(os.path.dirname(__file__), "references")
         self.ref_fasta = os.path.join(self.ref_dir,
                                        'cluster1.fasta')
@@ -126,18 +129,24 @@ class utils3_5TestCase(unittest.TestCase):
                               self.fastq_results_prefix,
                               keep_unmapped=False)
 
-    # def test_run_spades(self):
-    #     run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
-    #                as_paired=True, keep_best=True, prelim=False,
-    #                groom_contigs='keep_first',
-    #                k="21,33,55,77,99", seqname='', spades_exe="spades.py")
+    def test_run_spades(self):
+        spades_success = run_spades(output=self.spades_dir,
+                                    ref=self.ref_fasta,
+                                    ref_as_contig="trusted",
+                                    pe1_1=self.ref_Ffasta,
+                                    pe1_2=self.ref_Rfasta, pe1_s='',
+                                    as_paired=True, keep_best=True,
+                                    prelim=False,
+                                    groom_contigs='keep_first',
+                                    k="21,33,55", seqname='',
+                                    spades_exe="spades.py")
 
-    # def test_check_samtools_pileup(self):
-    #     check_samtools_pileup(self.pileup)
+    def test_check_samtools_pileup(self):
+        check_samtools_pileup(self.pileup)
 
-    # def test_reconstruct_seq(self):
-    #     reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
-    #                 logger=None)
+    def test_reconstruct_seq(self):
+        reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
+                    logger=None)
 
     def tearDown(self):
         # test_estimation_file = os.path.join(self.test_dir,
@@ -148,11 +157,10 @@ class utils3_5TestCase(unittest.TestCase):
         pass
 
 if __name__ == '__main__':
-    samtools_exe = "samtools"
-    smalt_exe = "smalt"
-    if not check_installed_tools(smalt_exe, hard=False):
-        print("Error! Cannot test without install of SMALT in PATH")
-    if not check_installed_tools(samtools_exe, hard=False):
-        print("Error! Cannot test without install of samtools in PATH")
+    tools_needed = ["samtools", "smalt", "spades.py"]
+    for i in tools_needed:
+        if not check_installed_tools(smalt_exe, hard=False):
+            print("Error! Can't run without install of {0} in PATH".format(i)))
+            sys.exit(1)
     logger=logging
     unittest.main()
