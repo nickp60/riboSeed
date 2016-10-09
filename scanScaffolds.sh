@@ -28,7 +28,7 @@ if [ -d "$3" ]; then
 fi
 NFILES=$(ls $1*$2  -1 | wc -l) # count files that you will process
 ## check args
-if "$4"!="euk" and "$4"!="bac"
+if "$4"!="euk" && "$4"!="bac"
 then
     echo "invalid kindom argument! Cannot give threshold without a kingdom"
     exit 1
@@ -36,7 +36,7 @@ fi
 
 ###
 ### handle optional arguments
-if [ -z "$5" ] and [ -z "$4" ]
+if [ -z "$5" ] && [ -z "$4" ]
 then
     echo "using default threshold of .5 identity"
     THRESH=.5
