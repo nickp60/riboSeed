@@ -738,7 +738,7 @@ if __name__ == "__main__":
     results_dir = os.path.join(output_root, 'results', "")
     mauve_dir = os.path.join(output_root, 'results', "mauve", "")
     t0 = time.time()
-    log_path = os.path.joing(output_root,
+    log_path = os.path.join(output_root,
                              str("{0}_riboSeed_log.txt".format(
                                  time.strftime("%Y%m%d%H%M"))))
     logger = set_up_logging(verbosity=args.verbosity,

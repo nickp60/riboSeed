@@ -68,7 +68,7 @@ def get_args():
                         help="length of flanking regions, can be colon-" +
                         "separated to give separate upstream and " +
                         "downstream flanking regions; default: %(default)s",
-                        default='700', type=str, dest="flanking")
+                        default='1000', type=str, dest="flanking")
     parser.add_argument("-r", "--replace",
                         help="replace sequence with N's; default: %(default)s",
                         default=False, action="store_true", dest="replace")
@@ -344,7 +344,7 @@ if __name__ == "__main__":
             sys.exit(1)
         else:
             print("# continuing, and risking potential loss of data")
-    log_path = os.path.joing(output_root,
+    log_path = os.path.join(output_root,
                              str("{0}_riboSnag_log.txt".format(
                                  time.strftime("%Y%m%d%H%M"))))
     logger = set_up_logging(verbosity=args.verbosity,
