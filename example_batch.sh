@@ -6,7 +6,7 @@
 # output scanScaffolds_combined.gb in current directory
 echo 'USAGE: /path/to/genome.gb path/to/genome.fasta path/to/read1 path/to/read2 /path/to/outdir/ iterations'
 echo 'example: $ barrnap'
-if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3"] || [ -z "$4"] || [ -z "$5"] || [ -z "$6"] || [ -z "$7"]
+if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ] || [ -z "$6" ] || [ -z "$7" ]
 then
     echo "mandatory arguments: genome.fasta,genome.gb, read1, read2, output_dir, iterations, and flanking_width"
     exit 1
