@@ -756,10 +756,12 @@ if __name__ == "__main__":
 
     logger.debug("checking for installations of all required external tools")
     executables = [args.smalt_exe, args.samtools_exe,
-                           args.spades_exe, args.quast_exe]
+                   args.spades_exe, args.quast_exe]
+    logger.debug(str(executables))
     test_ex = [check_installed_tools(x, logger=logger) for x in executables]
     if all(test_ex):
         logger.debug("All needed system executables found!")
+
     # check bambamc is installed proper
     check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
 
