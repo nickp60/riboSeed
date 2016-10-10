@@ -589,6 +589,10 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
     return(new[1:])  # [1:] gets rid of starting dollar character
 
 
+def make_quast_quick_report():
+    pass
+
+
 def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
          reference_genome, fastq1, fastq2, fastqS, ave_read_length, cores,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
@@ -601,13 +605,11 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
     logger.info("\nITEM %s of %s\n" % (str(fastas.index(fasta) + 1), nfastas))
     spades_dir = str(results_dir + "SPAdes_" +
                      os.path.split(fasta)[1].split(".fasta")[0])
-    # quast_dir = str(results_dir + "QUAST_" +
-    #                 os.path.split(fasta)[1].split(".fasta")[0])
     mapping_dir = str(map_output_dir + "mapping_" +
                       os.path.split(fasta)[1].split(".fasta")[0])
     logger.debug(str("this fasta's output dirs: " +
                      "\n{0}\n{1}").format(spades_dir,
-                                               mapping_dir))
+                                          mapping_dir))
     #  make appropriate output directories
     for i in [spades_dir, mapping_dir]:
         if not os.path.isdir(i):
@@ -637,7 +639,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         logger.info("Iteration {0} of {1} for {2}, item {3} out of {4}".format(
             this_iteration, max_iterations,
             os.path.basename(fasta), fastas.index(fasta) + 1, len(fastas)))
-        map_to_ref_smalt(ref=new_reference, #  ref_genome=reference_genome,
+        map_to_ref_smalt(ref=new_reference,  # ref_genome=reference_genome,
                          fastq_read1=fastq1, fastq_read2=fastq2,
                          fastq_readS=fastqS, read_len=average_read_length,
                          map_results_prefix=map_results_prefix, cores=cores,
@@ -661,6 +663,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
             logger.warning("using reduced reads with next iteration")
             fastq1, fastq2, fastqS = new_fastq1, new_fastq2, new_fastqS
         logger.info("Running SPAdes")
+        #TODO improve heuristic that once was the following lines if needed
         # last_time_through = False
         # if this_iteration == args.iterations:
         #     last_time_through = True
@@ -710,6 +713,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
     except:
         logger.warning("no contigs moved for {0}!  Check the SPAdes log " +
                        "in the results directory if worried".format(fasta))
+    logger.debug("moving {0} to {1}".format(contigs_path, contigs_new_path))
     if no_temps:
         logger.info("removing temporary files from {0}".format(mapping_dir))
         clean_temp_dir(mapping_dir)
@@ -734,11 +738,11 @@ if __name__ == "__main__":
     results_dir = os.path.join(output_root, 'results', "")
     mauve_dir = os.path.join(output_root, 'results', "mauve", "")
     t0 = time.time()
-
+    log_path = os.path.joing(output_root,
+                             str("{0}_riboSeed_log.txt".format(
+                                 time.strftime("%Y%m%d%H%M"))))
     logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=str("%s_riboSeed_log.txt" %
-                                        os.path.join(output_root,
-                                                     time.strftime("%Y%m%d%H%M"))),
+                            outfile=log_path,
                             name=__name__)
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
@@ -768,7 +772,8 @@ if __name__ == "__main__":
     # check equal length fastq.  This doesnt actually check propper pairs
     if file_len(args.fastq1) != file_len(args.fastq2):
         logger.error("Input Fastq's are of unequal length! Try " +
-                     "fixing with this script: https://github.com/enormandeau/Scripts/blob/master/fastqCombinePairedEnd.py")
+                     "fixing with this script: " +
+                     "github.com/enormandeau/Scripts/fastqCombinePairedEnd.py")
         sys.exit(1)
 
     for i in [map_output_dir, results_dir, mauve_dir]:
@@ -788,29 +793,6 @@ if __name__ == "__main__":
     logger.debug(fastas)
     ### if using smalt (which you are), check for mapped reference
     if args.method == 'smalt':
-        # if not os.path.exists(os.path.join(results_dir, mapped_genome_sam)):
-        #     # Index reference for sampling to get PE distances
-        #     logger.info("Estimating insert distances with SMALT")
-        #     # index with default params for genome-sized sequence
-        #     refindex_cmd = str(args.smalt_exe + " index -k {0} -s {1} {2} " +
-        #                        "{2}").format(20, 10, args.reference_genome)
-        #     refsample_cmd = \
-        #         str(args.smalt_exe + " sample -n {0} -o {1} {2} {3} " +
-        #             "{4}").format(args.cores,
-        #                           os.path.join(results_dir, mapped_genome_sam),
-        #                           args.reference_genome,
-        #                           args.fastq1, args.fastq2)
-        #     logger.info("Sampling and indexing {0}".format(
-        #         args.reference_genome))
-        #     for cmd in [refindex_cmd, refsample_cmd]:
-        #         logger.debug("\t command:\n\t {0}".format(cmd))
-        #         subprocess.run(cmd,
-        #                        shell=sys.platform != "win32",
-        #                        stderr=subprocess.PIPE,
-        #                        stdout=subprocess.PIPE,
-        #                        check=True)
-        # else:
-        #     logger.info("using existing reference file")
         dist_est = estimate_distances_smalt(outfile=os.path.join(results_dir,
                                                                  mapped_genome_sam),
                                             smalt_exe=args.smalt_exe,
@@ -851,7 +833,6 @@ if __name__ == "__main__":
                  distance_estimation=dist_est)
     else:
         pool = multiprocessing.Pool(processes=args.cores)
-        # cores_per_process =
         results = [pool.apply_async(main, (fasta,),
                                     {"results_dir": results_dir,
                                      "map_output_dir": map_output_dir,
@@ -861,7 +842,7 @@ if __name__ == "__main__":
                                      "fastq1": args.fastq1,
                                      "fastq2": args.fastq2,
                                      "fastqS": args.fastqS,
-                                     "cores": 4,  # cores": args.cores,
+                                     "cores": args.cores,  # cores": args.cores,
                                      "mauve_path": mauve_dir,
                                      "ave_read_length": average_read_length,
                                      "fetch_mates": args.paired_inference,
@@ -918,6 +899,12 @@ if __name__ == "__main__":
                       threads=args.cores,
                       ref=args.reference_genome,
                       logger=logger)
+
+    if not args.skip_control:
+        final_list = ["de_novo", "de_fere_novo"]
+    else:
+        final_list = ["de_fere_novo"]
+
     # Report that we've finished
     logger.info("Done: %s." % time.asctime())
     logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
