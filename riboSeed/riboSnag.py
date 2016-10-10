@@ -87,7 +87,7 @@ def get_args():
                         default=os.getcwd(),
                         type=str, dest="output")
     parser.add_argument("--clobber",
-                        help="overwrite previous output files" +\
+                        help="overwrite previous output files" +
                         "default: %(default)s", action='store_true',
                         default=False, dest="clobber")
     args = parser.parse_args()
@@ -185,11 +185,12 @@ def get_genbank_rec_from_multigb(recordID, genbank_record_list):
     print("no record found matching record id!")
     sys.exit(1)
 
+
 def strictly_increasing(L):
     """from 6502: http://stackoverflow.com/questions/4983258/
     python-how-to-check-list-monotonicity
     """
-    return(all(x<y for x, y in zip(L, L[1:])))
+    return(all(x < y for x, y in zip(L, L[1: ])))
 
 
 def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
@@ -273,9 +274,9 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
 
         try:
             # make sure the sequence is correct length, corrected for zero-index
-            assert(global_end - global_start, len(full_seq))
+            assert global_end - global_start, len(full_seq)
             # make sure replacement didnt change seq length
-            assert(len(full_seq), len(seq_with_ns))
+            assert len(full_seq), len(seq_with_ns)
         except:
             logger.error("There appears to be an error with the seqeuence " +
                          "coordinate  calculation!")
@@ -343,10 +344,11 @@ if __name__ == "__main__":
             sys.exit(1)
         else:
             print("# continuing, and risking potential loss of data")
+    log_path = os.path.joing(output_root,
+                             str("{0}_riboSnag_log.txt".format(
+                                 time.strftime("%Y%m%d%H%M"))))
     logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=str("%s_riboSnag_log.txt" %
-                                        os.path.join(output_root,
-                                                     time.strftime("%Y%m%d%H%M"))),
+                            outfile=log_path,
                             name=__name__)
 
     logger.debug("Usage:\n{0}\n".format(str(" ".join([x for x in sys.argv]))))
