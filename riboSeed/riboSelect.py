@@ -376,7 +376,8 @@ if __name__ == "__main__":
 
         # indexClusters should be like { "1": [3,4,6], "2": [66,45,63]}
         with open(output_path, "a") as outfile:
-            outfile.write("# Generated on {0}".format(date))
+            outfile.write("# Generated cluters for on {1}\n".format(
+                i, date))
             for k, v in indexClusters.items():
                 # for each k:v, this replaces the index in v with the locus tag
                 # from subset, and writes it out in the way that plays nice
