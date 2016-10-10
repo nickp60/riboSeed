@@ -734,11 +734,11 @@ if __name__ == "__main__":
     results_dir = os.path.join(output_root, 'results', "")
     mauve_dir = os.path.join(output_root, 'results', "mauve", "")
     t0 = time.time()
-
+    log_path = os.path.joing(output_root,
+                             str("{0}_riboSeed_log.txt".format(
+                                 time.strftime("%Y%m%d%H%M"))))
     logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=str("%s_riboSeed_log.txt" %
-                                        os.path.join(output_root,
-                                                     time.strftime("%Y%m%d%H%M"))),
+                            outfile=log_path,
                             name=__name__)
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
@@ -768,7 +768,8 @@ if __name__ == "__main__":
     # check equal length fastq.  This doesnt actually check propper pairs
     if file_len(args.fastq1) != file_len(args.fastq2):
         logger.error("Input Fastq's are of unequal length! Try " +
-                     "fixing with this script: https://github.com/enormandeau/Scripts/blob/master/fastqCombinePairedEnd.py")
+                     "fixing with this script: " +
+                     "github.com/enormandeau/Scripts/fastqCombinePairedEnd.py")
         sys.exit(1)
 
     for i in [map_output_dir, results_dir, mauve_dir]:
@@ -788,29 +789,6 @@ if __name__ == "__main__":
     logger.debug(fastas)
     ### if using smalt (which you are), check for mapped reference
     if args.method == 'smalt':
-        # if not os.path.exists(os.path.join(results_dir, mapped_genome_sam)):
-        #     # Index reference for sampling to get PE distances
-        #     logger.info("Estimating insert distances with SMALT")
-        #     # index with default params for genome-sized sequence
-        #     refindex_cmd = str(args.smalt_exe + " index -k {0} -s {1} {2} " +
-        #                        "{2}").format(20, 10, args.reference_genome)
-        #     refsample_cmd = \
-        #         str(args.smalt_exe + " sample -n {0} -o {1} {2} {3} " +
-        #             "{4}").format(args.cores,
-        #                           os.path.join(results_dir, mapped_genome_sam),
-        #                           args.reference_genome,
-        #                           args.fastq1, args.fastq2)
-        #     logger.info("Sampling and indexing {0}".format(
-        #         args.reference_genome))
-        #     for cmd in [refindex_cmd, refsample_cmd]:
-        #         logger.debug("\t command:\n\t {0}".format(cmd))
-        #         subprocess.run(cmd,
-        #                        shell=sys.platform != "win32",
-        #                        stderr=subprocess.PIPE,
-        #                        stdout=subprocess.PIPE,
-        #                        check=True)
-        # else:
-        #     logger.info("using existing reference file")
         dist_est = estimate_distances_smalt(outfile=os.path.join(results_dir,
                                                                  mapped_genome_sam),
                                             smalt_exe=args.smalt_exe,
@@ -851,7 +829,6 @@ if __name__ == "__main__":
                  distance_estimation=dist_est)
     else:
         pool = multiprocessing.Pool(processes=args.cores)
-        # cores_per_process =
         results = [pool.apply_async(main, (fasta,),
                                     {"results_dir": results_dir,
                                      "map_output_dir": map_output_dir,
@@ -861,7 +838,7 @@ if __name__ == "__main__":
                                      "fastq1": args.fastq1,
                                      "fastq2": args.fastq2,
                                      "fastqS": args.fastqS,
-                                     "cores": 4,  # cores": args.cores,
+                                     "cores": args.cores,  # cores": args.cores,
                                      "mauve_path": mauve_dir,
                                      "ave_read_length": average_read_length,
                                      "fetch_mates": args.paired_inference,
