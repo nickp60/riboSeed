@@ -81,7 +81,7 @@ def get_args():
                           default="riboSeed", type=str)
     optional.add_argument("-m", "--method_for_map", dest='method',
                           action="store",
-                          help="availible mappers: smalt; default: %(default)s",
+                          help="available mappers: smalt; default: %(default)s",
                           default='smalt', type=str)
     optional.add_argument("-c", "--cores", dest='cores', action="store",
                           default=1, type=int,
@@ -117,7 +117,8 @@ def get_args():
                           help="if --keep_unmapped fastqs are generated " +
                           "containing the unmapped reads; default: %(default)s")
     optional.add_argument("--ref_as_contig", dest='ref_as_contig',
-                          action="store", default="", type=str,
+                          action="store", default="untrusted", type=str,
+                          choices=["None", "trusted", "untrusted"],
                           help="if 'trusted', SPAdes will  use the seed " +
                           "sequences as a --trusted-contig; if 'untrusted', " +
                           "SPAdes will treat as --untrusted-contig. if '', " +
@@ -153,7 +154,10 @@ def get_args():
                           help="if set, iterations will continue until seeded " +
                           "contigs reach this length. or maximum iterations (" +
                           "set by --iterations) have been completed. Set as " +
-                          "decimal of original seed length; not used by default")
+                          "fraction of original seed length by giving a " +
+                          "decimal between 0 and 5, or set as an absolute " +
+                          "number of base pairs by giving an integer greater" +
+                          " than 50. Not used by default")
     optional.add_argument("--DEBUG", dest='DEBUG', action="store_true",
                           default=False,
                           help="if --DEBUG, test data will be " +
@@ -411,7 +415,7 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
     kmers = k  # .split[","]
     success = False
     #  prepare reference, if being used
-    if not ref_as_contig == "":
+    if not ref_as_contig is None:
         alt_contig = str("--%s-contigs %s" % (ref_as_contig, ref))
     else:
         alt_contig = ''
@@ -435,7 +439,7 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
             str("{4}  --only-assembler --cov-cutoff off --sc --careful -k" +
                 " {0} {1} {2} -o {3}").format(kmers, reads, alt_contig,
                                               output, spades_exe)
-        logger.info("Running SPAdes command:\n{0}".format(prelim_cmd))
+        logger.debug("Running SPAdes command:\n{0}".format(prelim_cmd))
         subprocess.run(prelim_cmd,
                        shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
@@ -652,7 +656,15 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
     seed_len = get_fasta_lengths(fasta)[0]
     # set proceed_to_target params
     if proceed_to_target:
-        target_seed_len = int(target_len * seed_len)
+        if target_len > 0 and 5 > target_len:
+            target_seed_len = int(target_len * seed_len)
+        elif target_len > 50:
+            target_seed_len = int(target_len)
+        else:
+            logger.error("invalid taget length provided; can either be given" +
+                         " as fraction of total length or as an absolute " +
+                         "number of base pairs greater than 50")
+            sys.exit(1)
     else:
         pass
 
@@ -712,12 +724,22 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         if not proceed:
             logger.warning("Assembly failed: no spades output for {0}".format(
                            os.path.basename(fasta)))
+
         # compare lengths of reference and freshly assembled contig
         contig_len = get_fasta_lengths(contigs_path)[0]
-        contig_length_diff = get_fasta_lengths(contigs_path)[0] - \
-                             get_fasta_lengths(new_reference)[0]
+        ref_len = get_fasta_lengths(new_reference)[0]
+        contig_length_diff = contig_len - ref_len
+        logger.info("Seed length: {0}".format(seed_len))
+        if proceed_to_target:
+            logger.info("Target length: {0}".format(target_seed_len))
+        if this_iteration != 1:
+            logger.info("Length of previous longest contig: {0}".format(
+                ref_len))
+        logger.info("Length of this iteration's longest contig: {0}".format(
+            contig_len))
         logger.info("The new contig differs from the reference (or previous " +
                     "iteration) by {0} bases".format(contig_length_diff))
+
         #  This is a feature that is supposed to help skip unneccesary
         # iterations. Ixf the difference is negative (new contig is shorter)
         # continue, as this may happen (especially in first mapping if
@@ -725,15 +747,15 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         # If the contig length increases, but not as much as min_growth,
         # skip future iterations
         if contig_length_diff > 0 and contig_length_diff < min_growth and \
-           min_growth != 0:  # ie, ignore by default
+           min_growth > 0:  # ie, ignore by default
             logger.info("the length of the new contig was only 0bp changed " +
                         "from previous iteration; skipping future iterations")
-            this_iteration = max_iterations
-        # if continuing til reaching the initial seed length
-        elif proceed_to_target and contig_len >= seed_len:
+            this_iteration = max_iterations + 1  # skip remaining iterations
+        # if continuing til reaching the target lenth of the seed
+        elif proceed_to_target and contig_len >= target_seed_len:
             logger.info("target length threshold! has been reached; " +
                         "skipping future iterations")
-            this_iteration = max_iterations
+            this_iteration = max_iterations + 1  # skip remaining iterations
         else:
             this_iteration = this_iteration + 1
 
@@ -786,12 +808,11 @@ if __name__ == "__main__":
     logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
                      "{2}\n").format(output_root, map_output_dir, results_dir))
 
-    # check cases of switch-typ args
-    if args.ref_as_contig not in ["", 'trusted', 'untrusted']:
-        logger.error(str("--ref_as_contig can only be 'trusted', " +
-                         "'untrusted', or unused, defaulting to ignoring " +
-                         " the reference during assembly. See Spades docs."))
-        sys.exit(1)
+    # check cases of switch-typ args, and coerce if needed;
+    # CAnnot set Nonetype objects via commandline,
+    # so here we convert 'None' to None
+    if args.ref_as_contig == 'None':
+        args.ref_as_contig = None
     if args.method != "smalt":
         logger.error("'smalt' only method currently supported")
         sys.exit(1)
@@ -816,14 +837,16 @@ if __name__ == "__main__":
 
     # if the target_len is set. set needed params
     if args.target_len is not None :
-        if not args.target_len > 0 or not isinstance(args.target_len, float):
+        if not args.target_len > 0  or not isinstance(args.target_len, float):
             logger.error("--target_len is set to invalid value! Must be a " +
                          "decimal greater than zero, ie where 1.1 would be " +
                          "110% of the original sequence length.")
             sys.exit(1)
-        elif args.target_len > 5:
+        elif args.target_len > 5 and 50 > args.target_len:
             logger.error("We dont reccommend seeding to lengths greater than" +
-                         "5x original seed length. Try between .5 and 1.5")
+                         "5x original seed length. Try between 0.5 and 1.5."+
+                         "  If you were setting a target number of bases, it "+
+                         " must be greater than 50")
             sys.exit(1)
         else:
             proceed_to_target = True
