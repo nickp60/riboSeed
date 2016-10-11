@@ -263,6 +263,9 @@ if __name__ == "__main__":
 
     # log = sys.stderr.write  # to keep streaming clean if this goes that route
     logger.info("Current usage:\n{0}\n".format(" ".join(sys.argv[1:])))
+    logger.debug("All settings used:")
+    for k,v in sorted(vars(args).items()):
+        logger.debug("{0}: {1}".format(k,v))
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
 
     # Check if output file exists; if so, remove it
