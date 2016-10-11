@@ -47,131 +47,146 @@ from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
 
 def get_args():
     parser = argparse.ArgumentParser(
-        description="Given regions from riboSnag, assembles the mapped reads")
+        description="Given regions from riboSnag, assembles the mapped reads",
+        add_help=False)  # to allow for custom help
     parser.add_argument("seed_dir", action="store",
                         help="path to roboSnag results directory")
-    parser.add_argument("-F", "--fastq1", dest='fastq1', action="store",
-                        help="forward fastq reads, can be compressed",
-                        type=str, default="")
-    parser.add_argument("-R", "--fastq2", dest='fastq2', action="store",
-                        help="reverse fastq reads, can be compressed",
-                        type=str, default="")
-    parser.add_argument("-S", "--fastq_single", dest='fastqS', action="store",
-                        help="single fastq reads", type=str, default="")
-    parser.add_argument("-n", "--experiment_name", dest='exp_name',
-                        action="store",
-                        help="prefix for results files; default: %(default)s",
-                        default="riboSeed", type=str)
-    parser.add_argument("-m", "--method_for_map", dest='method',
-                        action="store",
-                        help="availible mappers: smalt; default: %(default)s",
-                        default='smalt', type=str)
-    parser.add_argument("-c", "--cores", dest='cores', action="store",
-                        default=1, type=int,
-                        help="cores for multiprocessing workers" +
-                        "; default: %(default)s")
-    parser.add_argument("-k", "--kmers", dest='kmers', action="store",
-                        default="21,33,55,77,99,127", type=str,
-                        help="kmers used for final assembly" +
-                        ", separated by commas; default: %(default)s")
-    parser.add_argument("-p", "--pre_kmers", dest='pre_kmers', action="store",
-                        default="21,33,55", type=str,
-                        help="kmers used during seeding assemblies, " +
-                        "separated bt commas" +
-                        "; default: %(default)s")
-    parser.add_argument("-g", "--min_growth", dest='min_growth',
-                        action="store",
-                        default=0, type=int,
-                        help="skip remaining iterations if contig doesnt " +
-                        "extend by --min_growth. if 0, ignore" +
-                        "; default: %(default)s")
-    parser.add_argument("-r", "--reference_genome", dest='reference_genome',
-                        action="store", default='', type=str,
-                        help="fasta reference genome, used for estimating " +
-                        "insert sizes, QUAST, and SPAdes")
-    parser.add_argument("-o", "--output", dest='output', action="store",
-                        help="output directory; " +
-                        "default: %(default)s", default=os.getcwd(), type=str)
-    parser.add_argument("--paired_inference", dest='paired_inference',
-                        action="store_true", default=False,
-                        help="if --paired_inference, mapped read's " +
-                        "pairs are included; default: %(default)s")
-    parser.add_argument("--subtract", dest='subtract', action="store_true",
-                        default=False,
-                        help="if --subtract, reads aligned " +
-                        "to each reference will not be aligned to future " +
-                        "iterations.  Probably you shouldnt do this" +
-                        "unless you really happen to want to")
-    parser.add_argument("--keep_unmapped", dest='keep_unmapped',
-                        action="store_true", default=False,
-                        help="if --keep_unmapped fastqs are generated " +
-                        "containing the unmapped reads; default: %(default)s")
-    parser.add_argument("--ref_as_contig", dest='ref_as_contig',
-                        action="store", default="", type=str,
-                        help="if 'trusted', SPAdes will  use the seed " +
-                        "sequences as a --trusted-contig; if 'untrusted', " +
-                        "SPAdes will treat as --untrusted-contig. if '', " +
-                        "seeds will not be used during assembly. " +
-                        "See SPAdes docs; default: %(default)s")
-    parser.add_argument("--no_temps", dest='no_temps', action="store_true",
-                        default=False,
-                        help="if --no_temps, mapping files will be " +
-                        "removed after all iterations completed; " +
-                        " default: %(default)s")
-    parser.add_argument("--skip_control", dest='skip_control',
-                        action="store_true",
-                        default=False,
-                        help="if --skip_control, no SPAdes-only de novo " +
-                        "assembly will be done; default: %(default)s")
-    parser.add_argument("-i", "--iterations", dest='iterations',
-                        action="store",
-                        default=3, type=int,
-                        help="if iterations>1, multiple seedings will " +
-                        "occur after assembly of seed regions; " +
-                        "if setting --target_len, seedings will continue " +
-                        "until either --iterations are completed or target_len"
-                        " is matched or exceeded; " +
-                        "default: %(default)s")
-    parser.add_argument("-v", "--verbosity", dest='verbosity', action="store",
-                        default=2, type=int,
-                        help="Logger always write debug to file; this sets " +
-                        "verbosity level sent to stderr. " +
-                        " 1 = debug(), 2 = info(), 3 = warning(), " +
-                        "4 = error() and 5 = critical(); default: %(default)s")
-    parser.add_argument("--target_len", dest='verbosity', action="store",
-                        default=None, type=float,
-                        help="if set, iterations will continue until seeded " +
-                        "contigs reach this length. or maximum iterations (" +
-                        "set by --iterations) have been completed. Set as " +
-                        "decimal of original seed length; not used by default")
-    parser.add_argument("--DEBUG", dest='DEBUG', action="store_true",
-                        default=False,
-                        help="if --DEBUG, test data will be " +
-                        "used; default: %(default)s")
-    parser.add_argument("--DEBUG_multi", dest='DEBUG_multiprocessing',
-                        action="store_true",
-                        default=False,
-                        help="if --DEBUG_multiprocessing, runs processes in " +
-                        "single loop instead of a multiprocessing pool" +
-                        ": %(default)s")
-    parser.add_argument("--smalt_scoring", dest='smalt_scoring',
-                        action="store",
-                        default="match=1,subst=-4,gapopen=-4,gapext=-3",
-                        help="submit custom smalt scoring via the smalt -S " +
-                        "scorespec option; default: %(default)s")
+    # taking a hint from http://stackoverflow.com/questions/24180527
+    requiredNamed = parser.add_argument_group('required named arguments')
+    requiredNamed.add_argument("-F", "--fastq1", dest='fastq1', action="store",
+                               help="forward fastq reads, can be compressed",
+                               type=str, default="", required=True)
+    requiredNamed.add_argument("-R", "--fastq2", dest='fastq2', action="store",
+                               help="reverse fastq reads, can be compressed",
+                               type=str, default="", required=True)
+    requiredNamed.add_argument("-r", "--reference_genome",
+                               dest='reference_genome',
+                               action="store", default='', type=str,
+                               help="fasta reference, used to estimate " +
+                               "insert sizes, and compare with QUAST",
+                               required=True)
+    requiredNamed.add_argument("-o", "--output", dest='output', action="store",
+                               help="output directory; " +
+                               "default: %(default)s", default=os.getcwd(),
+                               type=str, required=True)
+    # had to make this faux "optional" parse so that the named required ones
+    # above get listed first
+    optional = parser.add_argument_group('optional arguments')
+    optional.add_argument("-S", "--fastq_single", dest='fastqS',
+                          action="store",
+                          help="single fastq reads", type=str, default="")
+    optional.add_argument("-n", "--experiment_name", dest='exp_name',
+                          action="store",
+                          help="prefix for results files; default: %(default)s",
+                          default="riboSeed", type=str)
+    optional.add_argument("-m", "--method_for_map", dest='method',
+                          action="store",
+                          help="availible mappers: smalt; default: %(default)s",
+                          default='smalt', type=str)
+    optional.add_argument("-c", "--cores", dest='cores', action="store",
+                          default=1, type=int,
+                          help="cores for multiprocessing workers" +
+                          "; default: %(default)s")
+    optional.add_argument("-k", "--kmers", dest='kmers', action="store",
+                          default="21,33,55,77,99,127", type=str,
+                          help="kmers used for final assembly" +
+                          ", separated by commas; default: %(default)s")
+    optional.add_argument("-p", "--pre_kmers", dest='pre_kmers', action="store",
+                          default="21,33,55", type=str,
+                          help="kmers used during seeding assemblies, " +
+                          "separated bt commas" +
+                          "; default: %(default)s")
+    optional.add_argument("-g", "--min_growth", dest='min_growth',
+                          action="store",
+                          default=0, type=int,
+                          help="skip remaining iterations if contig doesnt " +
+                          "extend by --min_growth. if 0, ignore" +
+                          "; default: %(default)s")
+    optional.add_argument("--paired_inference", dest='paired_inference',
+                          action="store_true", default=False,
+                          help="if --paired_inference, mapped read's " +
+                          "pairs are included; default: %(default)s")
+    optional.add_argument("--subtract", dest='subtract', action="store_true",
+                          default=False,
+                          help="if --subtract, reads aligned " +
+                          "to each reference will not be aligned to future " +
+                          "iterations.  Probably you shouldnt do this" +
+                          "unless you really happen to want to")
+    optional.add_argument("--keep_unmapped", dest='keep_unmapped',
+                          action="store_true", default=False,
+                          help="if --keep_unmapped fastqs are generated " +
+                          "containing the unmapped reads; default: %(default)s")
+    optional.add_argument("--ref_as_contig", dest='ref_as_contig',
+                          action="store", default="", type=str,
+                          help="if 'trusted', SPAdes will  use the seed " +
+                          "sequences as a --trusted-contig; if 'untrusted', " +
+                          "SPAdes will treat as --untrusted-contig. if '', " +
+                          "seeds will not be used during assembly. " +
+                          "See SPAdes docs; default: %(default)s")
+    optional.add_argument("--no_temps", dest='no_temps', action="store_true",
+                          default=False,
+                          help="if --no_temps, mapping files will be " +
+                          "removed after all iterations completed; " +
+                          " default: %(default)s")
+    optional.add_argument("--skip_control", dest='skip_control',
+                          action="store_true",
+                          default=False,
+                          help="if --skip_control, no SPAdes-only de novo " +
+                          "assembly will be done; default: %(default)s")
+    optional.add_argument("-i", "--iterations", dest='iterations',
+                          action="store",
+                          default=3, type=int,
+                          help="if iterations>1, multiple seedings will " +
+                          "occur after assembly of seed regions; " +
+                          "if setting --target_len, seedings will continue " +
+                          "until either --iterations are completed or target_len"
+                          " is matched or exceeded; " +
+                          "default: %(default)s")
+    optional.add_argument("-v", "--verbosity", dest='verbosity', action="store",
+                          default=2, type=int, choices=[1, 2, 3, 4, 5],
+                          help="Logger always write debug to file; this sets " +
+                          "verbosity level sent to stderr. " +
+                          " 1 = debug(), 2 = info(), 3 = warning(), " +
+                          "4 = error() and 5 = critical(); default: %(default)s")
+    optional.add_argument("--target_len", dest='target_len', action="store",
+                          default=None, type=float,
+                          help="if set, iterations will continue until seeded " +
+                          "contigs reach this length. or maximum iterations (" +
+                          "set by --iterations) have been completed. Set as " +
+                          "decimal of original seed length; not used by default")
+    optional.add_argument("--DEBUG", dest='DEBUG', action="store_true",
+                          default=False,
+                          help="if --DEBUG, test data will be " +
+                          "used; default: %(default)s")
+    optional.add_argument("--DEBUG_multi", dest='DEBUG_multiprocessing',
+                          action="store_true",
+                          default=False,
+                          help="if --DEBUG_multiprocessing, runs processes in " +
+                          "single loop instead of a multiprocessing pool" +
+                          ": %(default)s")
+    optional.add_argument("--smalt_scoring", dest='smalt_scoring',
+                          action="store",
+                          default="match=1,subst=-4,gapopen=-4,gapext=-3",
+                          help="submit custom smalt scoring via the smalt -S " +
+                          "scorespec option; default: %(default)s")
+    # had to make this explicitly to call it a faux optional arg
+    optional.add_argument("-h", "--help",
+                          action="help", default=argparse.SUPPRESS,
+                          help="Displays this help message")
+
     ##TODO  Make these check a config file
-    parser.add_argument("--spades_exe", dest="spades_exe",
-                        action="store", default="spades.py",
-                        help="Path to spades executable; default: %(default)s")
-    parser.add_argument("--samtools_exe", dest="samtools_exe",
-                        action="store", default="samtools",
-                        help="Path to bwa executable; default: %(default)s")
-    parser.add_argument("--smalt_exe", dest="smalt_exe",
-                        action="store", default="smalt",
-                        help="Path to smalt executable; default: %(default)s")
-    parser.add_argument("--quast_exe", dest="quast_exe",
-                        action="store", default="quast.py",
-                        help="Path to quast executable; default: %(default)s")
+    optional.add_argument("--spades_exe", dest="spades_exe",
+                          action="store", default="spades.py",
+                          help="Path to spades executable; default: %(default)s")
+    optional.add_argument("--samtools_exe", dest="samtools_exe",
+                          action="store", default="samtools",
+                          help="Path to bwa executable; default: %(default)s")
+    optional.add_argument("--smalt_exe", dest="smalt_exe",
+                          action="store", default="smalt",
+                          help="Path to smalt executable; default: %(default)s")
+    optional.add_argument("--quast_exe", dest="quast_exe",
+                          action="store", default="quast.py",
+                          help="Path to quast executable; default: %(default)s")
     args = parser.parse_args()
     return(args)
 
