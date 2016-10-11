@@ -805,6 +805,9 @@ if __name__ == "__main__":
                             outfile=log_path,
                             name=__name__)
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
+    logger.debug("All settings used:")
+    for k,v in sorted(vars(args).items()):
+        logger.debug("{0}: {1}".format(k,v))
     logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
                      "{2}\n").format(output_root, map_output_dir, results_dir))
 

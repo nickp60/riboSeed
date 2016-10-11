@@ -352,6 +352,9 @@ if __name__ == "__main__":
                             name=__name__)
 
     logger.debug("Usage:\n{0}\n".format(str(" ".join([x for x in sys.argv]))))
+    logger.debug("All settings used:")
+    for k,v in sorted(vars(args).items()):
+        logger.debug("{0}: {1}".format(k,v))
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
     # if not os.path.isdir(args.output):
     #     os.mkdir(args.output)
