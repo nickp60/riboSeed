@@ -2,11 +2,10 @@
 #-*- coding: utf-8 -*-
 
 """
-version 0.9.3
+version 0.9.4
 
 Minor Version Revisions:
- - added min improvement option
-
+ - added option to proceed till maximum number of iterations or target length
 Created on Sun Jul 24 19:33:37 2016
 The goal of this script will be to use a small fasta sequence to build indices
 and use as references for BWA. Mapped sequences will be outputted from BWA
@@ -126,14 +125,25 @@ def get_args():
                         "assembly will be done; default: %(default)s")
     parser.add_argument("-i", "--iterations", dest='iterations',
                         action="store",
-                        default=2, type=int,
+                        default=3, type=int,
                         help="if iterations>1, multiple seedings will " +
                         "occur after assembly of seed regions; " +
+                        "if setting --target_len, seedings will continue " +
+                        "until either --iterations are completed or target_len"
+                        " is matched or exceeded; " +
                         "default: %(default)s")
     parser.add_argument("-v", "--verbosity", dest='verbosity', action="store",
                         default=2, type=int,
-                        help="1 = debug(), 2 = info(), 3 = warning(), " +
+                        help="Logger always write debug to file; this sets " +
+                        "verbosity level sent to stderr. " +
+                        " 1 = debug(), 2 = info(), 3 = warning(), " +
                         "4 = error() and 5 = critical(); default: %(default)s")
+    parser.add_argument("--target_len", dest='verbosity', action="store",
+                        default=None, type=float,
+                        help="if set, iterations will continue until seeded " +
+                        "contigs reach this length. or maximum iterations (" +
+                        "set by --iterations) have been completed. Set as " +
+                        "decimal of original seed length; not used by default")
     parser.add_argument("--DEBUG", dest='DEBUG', action="store_true",
                         default=False,
                         help="if --DEBUG, test data will be " +
@@ -597,7 +607,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
          reference_genome, fastq1, fastq2, fastqS, ave_read_length, cores,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
          paired_inference, smalt_scoring, min_growth, max_iterations, kmers,
-         no_temps, distance_estimation):
+         no_temps, distance_estimation, proceed_to_target, target_len):
     """
     essentially a 'main' function,  to parallelize time comsuming parts
     """
@@ -623,6 +633,14 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
     logger.debug("copying seed file to mapping directory")
     new_reference = copy_file(current_file=fasta, dest_dir=mapping_dir,
                               name='', overwrite=False, logger=logger)
+
+    seed_len = get_fasta_lengths(fasta)[0]
+    # set proceed_to_target params
+    if proceed_to_target:
+        target_seed_len = int(target_len * seed_len)
+    else:
+        pass
+
     this_iteration = 1  # counter for iterations.
     # perform iterative mapping
     proceed = True  # this is set to false in while loop if spades fails
@@ -657,8 +675,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         new_fastq1, new_fastq2, new_fastqS, \
             mapped_fastq1, mapped_fastq2, mapped_fastqS = \
             convert_bams_to_fastq(map_results_prefix, fastq_results_prefix,
-                                  keep_unmapped=keep_unmapped_reads,
-                                  )
+                                  keep_unmapped=keep_unmapped_reads)
         if subtract_reads and keep_unmapped_reads:
             logger.warning("using reduced reads with next iteration")
             fastq1, fastq2, fastqS = new_fastq1, new_fastq2, new_fastqS
@@ -681,12 +698,13 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
             logger.warning("Assembly failed: no spades output for {0}".format(
                            os.path.basename(fasta)))
         # compare lengths of reference and freshly assembled contig
+        contig_len = get_fasta_lengths(contigs_path)[0]
         contig_length_diff = get_fasta_lengths(contigs_path)[0] - \
                              get_fasta_lengths(new_reference)[0]
         logger.info("The new contig differs from the reference (or previous " +
                     "iteration) by {0} bases".format(contig_length_diff))
         #  This is a feature that is supposed to help skip unneccesary
-        # iterations.  If the difference is negative (new contig is shorter)
+        # iterations. Ixf the difference is negative (new contig is shorter)
         # continue, as this may happen (especially in first mapping if
         # reference is not closely related to Sample), continue to map.
         # If the contig length increases, but not as much as min_growth,
@@ -695,6 +713,11 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
            min_growth != 0:  # ie, ignore by default
             logger.info("the length of the new contig was only 0bp changed " +
                         "from previous iteration; skipping future iterations")
+            this_iteration = max_iterations
+        # if continuing til reaching the initial seed length
+        elif proceed_to_target and contig_len >= seed_len:
+            logger.info("target length threshold! has been reached; " +
+                        "skipping future iterations")
             this_iteration = max_iterations
         else:
             this_iteration = this_iteration + 1
@@ -776,6 +799,22 @@ if __name__ == "__main__":
                      "github.com/enormandeau/Scripts/fastqCombinePairedEnd.py")
         sys.exit(1)
 
+    # if the target_len is set. set needed params
+    if args.target_len is not None :
+        if not args.target_len > 0 or not isinstance(args.target_len, float):
+            logger.error("--target_len is set to invalid value! Must be a " +
+                         "decimal greater than zero, ie where 1.1 would be " +
+                         "110% of the original sequence length.")
+            sys.exit(1)
+        elif args.target_len > 5:
+            logger.error("We dont reccommend seeding to lengths greater than" +
+                         "5x original seed length. Try between .5 and 1.5")
+            sys.exit(1)
+        else:
+            proceed_to_target = True
+    else:
+        proceed_to_target = False
+
     for i in [map_output_dir, results_dir, mauve_dir]:
         make_outdir(i)
     average_read_length = get_ave_read_len_from_fastq(args.fastq1,
@@ -783,8 +822,8 @@ if __name__ == "__main__":
     fastq_results_prefix = os.path.join(results_dir, args.exp_name)
 
     fastas = [os.path.join(args.seed_dir, x) for \
-                         x in os.listdir(os.path.join(args.seed_dir, "")) if \
-                         x.endswith('.fasta')]
+              x in os.listdir(os.path.join(args.seed_dir, "")) if \
+              x.endswith('.fasta')]
     if len(fastas) == 0:
         logger.error("no files found in {0} ending with " +
                      "'.fasta'".format(args.seed_dir))
@@ -830,7 +869,10 @@ if __name__ == "__main__":
                  max_iterations=args.iterations,
                  kmers=args.pre_kmers,
                  no_temps=args.no_temps,
-                 distance_estimation=dist_est)
+                 distance_estimation=dist_est,
+                 proceed_to_target=proceed_to_target,
+                 target_len=args.target_len)
+
     else:
         pool = multiprocessing.Pool(processes=args.cores)
         results = [pool.apply_async(main, (fasta,),
@@ -855,7 +897,9 @@ if __name__ == "__main__":
                                      "max_iterations": args.iterations,
                                      "kmers": args.pre_kmers,
                                      "no_temps": args.no_temps,
-                                     "distance_estimation": dist_est})
+                                     "distance_estimation": dist_est,
+                                     "proceed_to_target": proceed_to_target,
+                                     "target_len": args.target_len})
                    for fasta in fastas]
         pool.close()
         pool.join()
