@@ -69,6 +69,13 @@ def get_args():
                         "separated to give separate upstream and " +
                         "downstream flanking regions; default: %(default)s",
                         default='1000', type=str, dest="flanking")
+    parser.add_argument("-n", "--n_rotate",
+                        help="if the genome is known to be circular, and " +
+                        "an region of interest (including flanking bits) " +
+                        "extends over the chromosome end, this will rotate " +
+                        "the chromosome origin forward by x bp; " +
+                        " default: %(default)s",
+                        default=None, type=int, dest="rotate")
     parser.add_argument("-r", "--replace",
                         help="replace sequence with N's; default: %(default)s",
                         default=False, action="store_true", dest="replace")
