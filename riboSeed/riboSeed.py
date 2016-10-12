@@ -618,8 +618,62 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
     return(new[1:])  # [1:] gets rid of starting dollar character
 
 
-def make_quast_quick_report():
-    pass
+def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
+    """This skips any fields not in first report, for better or worse...
+    """
+    if not isinstance(pathlist, list):
+        if logger:
+            logger.warning("paths for quast reports must be in a list!")
+        return(None)
+    filelist = pathlist
+    print(filelist)
+    mainDict = {}
+    counter = 0
+    for i in filelist:
+        if counter == 0:
+            with open(i, "r") as handle:
+                for dex, line in enumerate(handle):
+                    row, val = line.strip().split("\t")
+                    if dex in [0]:
+                        continue  # skip header
+                    else:
+                        mainDict[row] = [val]
+        else:
+            report_list = []
+            with open(i, "r") as handle:
+                for dex, line in enumerate(handle):
+                    row, val = line.strip().split("\t")
+                    report_list.append([row, val])
+                logger.debug(report_list)
+                for k, v in mainDict.items():
+                    if k in [x[0] for x in report_list]:
+                        mainDict[k].append(str([x[1] for x in report_list if x[0]==k][0]))
+                    else:
+                        mainDict[k].append("XX")
+                    # if dex in [0]:
+                    #     continue  # skip header
+                    # else:
+                    #     try:
+                    #         mainDict[row].append(val)
+                    #     except KeyError:
+                    #         # make dummy entry for all preceeding
+                    #         mainDict[row] = ["XX"] * counter
+                    #         mainDict[row].append(val)
+        counter = counter + 1
+    logger.info(str(mainDict))
+    if write:
+        if writedir is None:
+            if logger:
+                logger.warning("no output dir, cannot write!")
+            return(mainDict)
+        with open(os.path.join(writedir,
+                               "combined_quast_report.tsv"), "w") as outfile:
+            for k, v in sorted(mainDict.items()):
+                if logger:
+                    logger.debug("{0}\t{1}\n".format(k, str("\t".join(v))))
+                outfile.write("{0}\t{1}\n".format(str(k), str("\t".join(v))))
+
+    return(mainDict)
 
 
 def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
@@ -777,7 +831,6 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
     if no_temps:
         logger.info("removing temporary files from {0}".format(mapping_dir))
         clean_temp_dir(mapping_dir)
-        # clean_temp_dir(mapping_dir, logger=logger)
     if proceed:
         return(0)
     else:
@@ -787,8 +840,9 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
 #%%
 if __name__ == "__main__":
     args = get_args()
+    # smalt checks this to estimate PE distance; see estimate_smalt_distances
     mapped_genome_sam = "genome_distance_est.sam"
-    # allow user to give rel path
+    # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
         os.makedirs(output_root)
@@ -954,6 +1008,8 @@ if __name__ == "__main__":
     logger.info("Combined Seed Contigs: {0}".format(new_contig_file))
     logger.info("Time taken to run seeding: %.2fs" % (time.time() - t0))
     logger.info("\n\n Starting Final Assemblies\n\n")
+
+    quast_reports = []
     if not args.skip_control:
         final_list = ["de_novo", "de_fere_novo"]
     else:
@@ -962,13 +1018,14 @@ if __name__ == "__main__":
         logging.info("\n\nRunning %s SPAdes \n" % j)
         if j == "de_novo":
             assembly_ref = ''
-            assembly_ref_as_contig = ''
+            assembly_ref_as_contig = None
         elif j == "de_fere_novo":
             assembly_ref = new_contig_file
             assembly_ref_as_contig = 'trusted'
         else:
             logger.error("Only valid cases are de novo and de fere novo!")
             sys.exit(1)
+        logger.info("Running %s SPAdes" % j )
         output_contigs, \
             final_success = run_spades(pe1_1=args.fastq1, pe1_2=args.fastq2,
                                        output=os.path.join(results_dir, j),
@@ -977,19 +1034,24 @@ if __name__ == "__main__":
                                        prelim=False, keep_best=False,
                                        k=args.kmers)
         if final_success:
-            logger.info("\n\nRunning %s QUAST" % j )
+            logger.info("Running %s QUAST" % j )
             run_quast(contigs=output_contigs,
                       output=os.path.join(results_dir, str("quast_" + j)),
                       quast_exe=args.quast_exe,
                       threads=args.cores,
                       ref=args.reference_genome,
                       logger=logger)
+        quast_reports.append(os.path.join(results_dir, str("quast_" + j),
+                                          "report.tsv"))
 
     if not args.skip_control:
-        final_list = ["de_novo", "de_fere_novo"]
-    else:
-        final_list = ["de_fere_novo"]
-
+        logger.debug("writing combined quast reports")
+        quast_comp = make_quick_quast_table(quast_reports,
+                                            write=True, writedir=results_dir,
+                                            logger=logger)
+        logger.info("Comparing de novo and de fere novo assemblies:")
+        for k, v in quast_comp.items():
+            logger.info("{0}: {1}".format(k, "  ".join(v)))
     # Report that we've finished
     logger.info("Done: %s." % time.asctime())
     logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
