@@ -7,14 +7,8 @@ version 0.9.4
 Minor Version Revisions:
  - added option to proceed till maximum number of iterations or target length
 Created on Sun Jul 24 19:33:37 2016
-The goal of this script will be to use a small fasta sequence to build indices
-and use as references for BWA. Mapped sequences will be outputted from BWA
- including the paired-end overhanging regions. The reads will be alligned
- de-novo, and the resulting consensus will be outputted.  This make be done
- iteratively, where the consensus is then indexed and used with BWA. In the
- ideal world, the outputted sequences will be the size of the original sequence
- plus twice the length of the reads, as it should have tails on either side.
-@author: nicholas, but I stole some stuff from github/x/stx_subtyping
+
+See README.md for more info and usage
 
 """
 import gzip
