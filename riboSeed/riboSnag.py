@@ -69,22 +69,29 @@ def get_args():
                         "separated to give separate upstream and " +
                         "downstream flanking regions; default: %(default)s",
                         default='1000', type=str, dest="flanking")
-    parser.add_argument("-n", "--n_rotate",
-                        help="if the genome is known to be circular, and " +
-                        "an region of interest (including flanking bits) " +
-                        "extends over the chromosome end, this will rotate " +
-                        "the chromosome origin forward by x bp; " +
-                        " default: %(default)s",
-                        default=None, type=int, dest="rotate")
+    # parser.add_argument("-n", "--rotate",
+    #                     help="if the genome is known to be circular, and " +
+    #                     "an region of interest (including flanking bits) " +
+    #                     "extends over the chromosome end, this will rotate " +
+    #                     "the chromosome origin forward by x bp; " +
+    #                     " default: %(default)s",
+    #                     default=None, type=int, dest="rotate")
     parser.add_argument("-r", "--replace",
                         help="replace sequence with N's; default: %(default)s",
                         default=False, action="store_true", dest="replace")
-    parser.add_argument("-p", "--per_contig",
-                        help="if genome is not small or nearly completed, " +
-                        "use --per_contigs. This searches for loci cluster " +
-                        "on a per-contig  basis as opposed to globally " +
-                        "searching for loci; default: %(default)s",
-                        default=False, action="store_true", dest="per_contig")
+    parser.add_argument("-c", "--circular",
+                        help="if the genome is known to be circular, and " +
+                        "an region of interest (including flanking bits) " +
+                        "extends over the chromosome end, this extends the " +
+                        "seqence past the chromosome origin forward by 5kb; " +
+                        " default: %(default)s",
+                        default=False, dest="circular", action="store_true")
+    parser.add_argument("-p", "--padding", dest='padding', action="store",
+                        default=5000, type=int,
+                        help="if treating as --circular, this controls the " +
+                        "length of sequence added to the 5' and 3' ends " +
+                        "to allow for selecting regions that cross the " +
+                        "chromosom's origin; default: %(default)s")
     parser.add_argument("-v", "--verbosity", dest='verbosity', action="store",
                         default=2, type=int,
                         help="1 = debug(), 2 = info(), 3 = warning(), " +
@@ -193,6 +200,31 @@ def get_genbank_rec_from_multigb(recordID, genbank_record_list):
     sys.exit(1)
 
 
+def pad_genbank_sequence(record, old_coords, padding, logger=None):
+    """coords in coords list should be the 1st list item, with the index
+    being 0th. THis takes a genbank record and a coord_list and returns a seq
+    padded on both ends by --padding bp, and returns a coord_list with coords
+    adjusted accordingly
+    """
+    ### take care of the cordinates
+    logger.info("adjusting coordinates by {0} to account for padding".format(
+        padding))
+    old_seq = record.seq
+    new_coords = []
+    for i in old_coords:
+        temp = i
+        start, end = i[1][0], i[1][1]
+        temp[1] = [start + padding, end + padding]
+        new_coords.append(temp)
+    ### take care of the sequence
+    if padding > len(old_seq):
+        logger.error("padding ammount cannot be greater" +
+                     " than the length of the sequence!")
+        sys.exit(1)
+    new_seq = str(old_seq[padding: ] +old_seq +  old_seq[0:padding])
+    return(new_coords, new_seq)
+
+
 def strictly_increasing(L):
     """from 6502: http://stackoverflow.com/questions/4983258/
     python-how-to-check-list-monotonicity
@@ -247,16 +279,23 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
     #  This works as long as coords are never in reverse order
     global_start = min([y[0] for y in [x[1] for x in coords]]) - flank[0]
     #
-    # if start is negative, just use 0, the beginning of the sequence
+    # if start is negative, just use 1, the beginning of the sequence
     if global_start < 1:
         logger.warning("Caution! Cannot retrieve full flanking region, as " +\
-                       "the 5' flanking region extends past start of sequence")
+                       "the 5' flanking region extends past start of " +
+                       "sequence. If this is a problem, try using a smaller " +
+                       "--flanking region, and/or if  appropriate, run with "+
+                       "--circular.")
         global_start = 1
     global_end = max([y[1] for y in [x[1] for x in coords]]) + flank[1]
     if global_end > len(genome_sequence):
         logger.warning("Caution! Cannot retrieve full flanking region, as " +\
-                       "the 3' flanking region extends past end of sequence")
+                       "the 5' flanking region extends past start of " +
+                       "sequence. If this is a problem, try using a smaller " +
+                       "--flanking region, and/or if  appropriate, run with "+
+                       "--circular.")
         global_end = len(genome_sequence)
+
     #  the minus one makes things go from 1 based to zeor based
     full_seq = genome_sequence[global_start-1 : global_end]
     seq_with_ns = str(full_seq)
@@ -304,7 +343,8 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
     return(seqrec)
 
 
-def main(clusteredList, genome_records, logger, verbose, within, flanking, replace, output):
+def main(clusteredList, genome_records, logger, verbose, within,
+         flanking, replace, output):
     for i in clusteredList:
         locus_tag_list = i[1]
         recID = i[0]
@@ -314,8 +354,17 @@ def main(clusteredList, genome_records, logger, verbose, within, flanking, repla
         coord_list = extract_coords_from_locus(record=genbank_rec,
                                                locus_tag_list=locus_tag_list,
                                                verbose=True, logger=logger)
-        regions.append(stitch_together_target_regions(genbank_rec.seq,
-                                                      coords=coord_list,
+        logger.info(coord_list)
+        if args.circular:
+            coords, sequence = pad_genbank_sequence(record=genbank_rec,
+                                                    old_coords=coord_list,
+                                                    padding=args.padding,
+                                                    logger=logger)
+        else:
+            coords, sequence = coord_list, genbank_rec.seq
+
+        regions.append(stitch_together_target_regions(sequence,
+                                                      coords=coords,
                                                       within=args.within,
                                                       minimum=args.minimum,
                                                       flanking=args.flanking,
