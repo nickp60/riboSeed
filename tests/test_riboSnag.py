@@ -38,8 +38,9 @@ sys.dont_write_bytecode = True
 from pyutilsnrw.utils3_5 import get_genbank_seq, get_genbank_record
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
-    extract_coords_from_locus,\
-    stitch_together_target_regions, get_genbank_rec_from_multigb
+    extract_coords_from_locus, strictly_increasing, \
+    stitch_together_target_regions, get_genbank_rec_from_multigb,\
+    pad_genbank_sequence
 
 
 
@@ -100,6 +101,30 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(strand, 1)
         self.assertEqual(coords, [3692, 4978])
         self.assertEqual(seqid, 'NC_011751.1')
+
+    def test_pad_genbank_sequence(self):
+        """Just tests the function, later we wll test that the same
+        sequence is extracted padded and otherwise
+        """
+        padding_val = 50
+        records = get_genbank_record(self.test_gb_file)
+        old_list = extract_coords_from_locus(record=records[0],
+                                               locus_tag_list=["ECUMN_0004"],
+                                               feature="CDS",
+                                               verbose=True, logger=logger)
+        coords, seq = pad_genbank_sequence(record=records[0],
+                                           old_coords=old_list,
+                                           padding=padding_val, logger=None)
+        self.assertEqual(old_list[0][1][0], coords[0][1][0] - padding_val)
+        self.assertEqual(old_list[0][1][0], coords[0][1][0])
+        self.assertEqual(9, 0)
+
+    def test_strictly_increasing(self):
+        self.assertTrue(strictly_increasing([1,5,5.5,10, 10], dup_ok=True))
+        with self.assertRaises(ValueError):
+            strictly_increasing([1,5,5.5,10, 10], dup_ok=False)
+        self.assertFalse(strictly_increasing([1,10,5.5,7, 9], dup_ok=False,
+                                             verbose=False))
 
     def test_stitching(self):
         """  This is actually the thing needing the most testing, most likely

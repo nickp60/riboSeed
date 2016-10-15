@@ -69,13 +69,6 @@ def get_args():
                         "separated to give separate upstream and " +
                         "downstream flanking regions; default: %(default)s",
                         default='1000', type=str, dest="flanking")
-    # parser.add_argument("-n", "--rotate",
-    #                     help="if the genome is known to be circular, and " +
-    #                     "an region of interest (including flanking bits) " +
-    #                     "extends over the chromosome end, this will rotate " +
-    #                     "the chromosome origin forward by x bp; " +
-    #                     " default: %(default)s",
-    #                     default=None, type=int, dest="rotate")
     parser.add_argument("-r", "--replace",
                         help="replace sequence with N's; default: %(default)s",
                         default=False, action="store_true", dest="replace")
@@ -202,34 +195,57 @@ def get_genbank_rec_from_multigb(recordID, genbank_record_list):
 
 def pad_genbank_sequence(record, old_coords, padding, logger=None):
     """coords in coords list should be the 1st list item, with the index
-    being 0th. THis takes a genbank record and a coord_list and returns a seq
+    being 0th. This takes a genbank record and a coord_list and returns a seq
     padded on both ends by --padding bp, and returns a coord_list with coords
     adjusted accordingly
     """
     ### take care of the cordinates
-    logger.info("adjusting coordinates by {0} to account for padding".format(
-        padding))
-    old_seq = record.seq
+    print(old_coords)
+    if logger:
+        logger.info("adjusting coordinates by {0} to account for " +
+                    "padding".format(padding))
     new_coords = []
     for i in old_coords:
         temp = i
-        start, end = i[1][0], i[1][1]
+        print(temp)
+        start, end = temp[1][0], temp[1][1]
         temp[1] = [start + padding, end + padding]
         new_coords.append(temp)
+        print(i)
+    print("done")
+    print(old_coords)
     ### take care of the sequence
+    old_seq = record.seq
     if padding > len(old_seq):
-        logger.error("padding ammount cannot be greater" +
-                     " than the length of the sequence!")
+        if logger:
+            logger.error("padding ammount cannot be greater" +
+                         " than the length of the sequence!")
         sys.exit(1)
-    new_seq = str(old_seq[padding: ] +old_seq +  old_seq[0:padding])
+    new_seq = str(old_seq[padding: ] + old_seq + old_seq[0: padding])
+    print(old_coords)
+    print(new_coords)
     return(new_coords, new_seq)
 
 
-def strictly_increasing(L):
+def strictly_increasing(L, dup_ok=False, verbose=False):
     """from 6502: http://stackoverflow.com/questions/4983258/
     python-how-to-check-list-monotonicity
+    returns fails if
     """
-    return(all(x < y for x, y in zip(L, L[1: ])))
+    items = []
+    for i in L:
+        if i in items:
+            if not dup_ok:
+                raise ValueError("list contains duplicates!")
+            else:
+                # L.pop(i)
+                pass
+        else:
+            items.append(i)
+    if verbose:
+        print(L)
+        print(items)
+    return(all(x < y for x, y in zip(items, items[1: ])))
 
 
 def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
