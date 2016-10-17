@@ -79,15 +79,6 @@ class utils3_5TestCase(unittest.TestCase):
             os.makedirs(self.test_dir)
         self.assertTrue(os.path.exists(self.test_dir))
 
-    # def test_references_md5(self):
-    #     """ is this paranoia, as well as bad testing?
-    #     """
-    #     test_pairs = [["3ba332f8a3b5d935ea6c4e410ccdf44b",
-    #                    "references/combined_contigs_reference.fa"]]
-    #     for i in test_pairs:
-    #         self.assertEqual(i[0],
-    #                          md5(os.path.join(os.path.dirname(__file__),
-    #                                           i[1])))
 
     def test_estimate_distances_smalt(self):
         # test_estimation_file = os.path.join(self.test_dir,
