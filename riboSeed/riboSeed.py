@@ -46,6 +46,7 @@ def get_args():
         add_help=False)  # to allow for custom help
     parser.add_argument("seed_dir", action="store",
                         help="path to roboSnag results directory")
+
     # taking a hint from http://stackoverflow.com/questions/24180527
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument("-F", "--fastq1", dest='fastq1', action="store",
@@ -64,6 +65,7 @@ def get_args():
                                help="output directory; " +
                                "default: %(default)s", default=os.getcwd(),
                                type=str, required=True)
+
     # had to make this faux "optional" parse so that the named required ones
     # above get listed first
     optional = parser.add_argument_group('optional arguments')
@@ -97,6 +99,12 @@ def get_args():
                           help="skip remaining iterations if contig doesnt " +
                           "extend by --min_growth. if 0, ignore" +
                           "; default: %(default)s")
+    optional.add_argument("-s", "--min_score_SMALT", dest='min_score_SMALT',
+                          action="store",
+                          default=None, type=int,
+                          help="min score forsmalt mapping; inferred from " +
+                          "read length" +
+                          "; default: inferred")
     optional.add_argument("--paired_inference", dest='paired_inference',
                           action="store_true", default=False,
                           help="if --paired_inference, mapped read's " +
@@ -274,7 +282,7 @@ def estimate_distances_smalt(outfile, smalt_exe, cores, ref_genome,
 def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
                      distance_results,
                      map_results_prefix, cores, samtools_exe,
-                     smalt_exe, fastq_readS="",
+                     smalt_exe, score_minimum=None, fastq_readS="",
                      read_len=100, step=3, k=5,
                      scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                      logger=None):
@@ -282,7 +290,10 @@ def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
-    score_min = int(read_len * .3)
+    if score_minimum is None:
+        score_min = int(read_len * .3)
+    else:
+        score_min = score_min
     logger.debug(str("mapping with smalt using a score min of " +
                      "{0}").format(score_min))
     cmdindex = str("{3} index -k {0} -s {1} {2} {2}").format(
