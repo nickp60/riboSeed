@@ -200,20 +200,16 @@ def pad_genbank_sequence(record, old_coords, padding, logger=None):
     adjusted accordingly
     """
     ### take care of the cordinates
-    print(old_coords)
     if logger:
         logger.info("adjusting coordinates by {0} to account for " +
                     "padding".format(padding))
     new_coords = []
     for i in old_coords:
         temp = i
-        print(temp)
         start, end = temp[1][0], temp[1][1]
         temp[1] = [start + padding, end + padding]
         new_coords.append(temp)
-        print(i)
     print("done")
-    print(old_coords)
     ### take care of the sequence
     old_seq = record.seq
     if padding > len(old_seq):
@@ -222,8 +218,6 @@ def pad_genbank_sequence(record, old_coords, padding, logger=None):
                          " than the length of the sequence!")
         sys.exit(1)
     new_seq = str(old_seq[padding: ] + old_seq + old_seq[0: padding])
-    print(old_coords)
-    print(new_coords)
     return(new_coords, new_seq)
 
 

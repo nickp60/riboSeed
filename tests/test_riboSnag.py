@@ -109,21 +109,25 @@ class riboSnag_TestCase(unittest.TestCase):
         padding_val = 50
         records = get_genbank_record(self.test_gb_file)
         old_list = extract_coords_from_locus(record=records[0],
-                                               locus_tag_list=["ECUMN_0004"],
-                                               feature="CDS",
-                                               verbose=True, logger=logger)
+                                             locus_tag_list=["ECUMN_0004"],
+                                             feature="CDS",
+                                             verbose=True, logger=logger)
+        old_list_backup = old_list
+        print("pre pad")
+        print(old_list)
         coords, seq = pad_genbank_sequence(record=records[0],
                                            old_coords=old_list,
                                            padding=padding_val, logger=None)
+        print("post pad")
+        print(old_list)
+        print(old_list_backup)
         self.assertEqual(old_list[0][1][0], coords[0][1][0] - padding_val)
-        self.assertEqual(old_list[0][1][0], coords[0][1][0])
-        self.assertEqual(9, 0)
 
     def test_strictly_increasing(self):
-        self.assertTrue(strictly_increasing([1,5,5.5,10, 10], dup_ok=True))
+        self.assertTrue(strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=True))
         with self.assertRaises(ValueError):
-            strictly_increasing([1,5,5.5,10, 10], dup_ok=False)
-        self.assertFalse(strictly_increasing([1,10,5.5,7, 9], dup_ok=False,
+            strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=False)
+        self.assertFalse(strictly_increasing([1, 10, 5.5, 7, 9], dup_ok=False,
                                              verbose=False))
 
     def test_stitching(self):
