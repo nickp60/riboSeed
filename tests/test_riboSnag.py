@@ -43,7 +43,6 @@ from riboSeed.riboSnag import parse_clustered_loci_file, \
     pad_genbank_sequence
 
 
-
 logger = logging
 
 
@@ -112,16 +111,12 @@ class riboSnag_TestCase(unittest.TestCase):
                                              locus_tag_list=["ECUMN_0004"],
                                              feature="CDS",
                                              verbose=True, logger=logger)
-        old_list_backup = old_list
-        print("pre pad")
-        print(old_list)
+        old_start = old_list[0][1][0]
         coords, seq = pad_genbank_sequence(record=records[0],
                                            old_coords=old_list,
                                            padding=padding_val, logger=None)
-        print("post pad")
-        print(old_list)
-        print(old_list_backup)
-        self.assertEqual(old_list[0][1][0], coords[0][1][0] - padding_val)
+        new_start = coords[0][1][0]
+        self.assertEqual(old_start, new_start - padding_val)
 
     def test_strictly_increasing(self):
         self.assertTrue(strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=True))
@@ -152,10 +147,56 @@ class riboSnag_TestCase(unittest.TestCase):
                                                          verbose=False)
         with open(self.test_cluster1, 'r') as ref:
             ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
-        print(ref_rec)
-        print(stitched_record)
         self.assertEqual(ref_rec.seq, stitched_record.seq)
         #TODO write test ccase with replacement
+
+    def test_stitching_integration(self):
+        """  Integration of several things
+        """
+        ex_padding = 1000 # an example padding amount
+        records = get_genbank_record(self.test_gb_file)
+        clusters = parse_clustered_loci_file(self.test_loci_file,
+                                             logger=logger)
+        record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
+                                              genbank_record_list=records)
+        coord_list = extract_coords_from_locus(record=record,
+                                               locus_tag_list=clusters[0][1],
+                                               feature="rRNA",
+                                               verbose=True, logger=logger)
+        stitched_record = \
+            stitch_together_target_regions(genome_sequence=\
+                                           record.seq,
+                                           coords=coord_list,
+                                           flanking="700:700",
+                                           within=50, minimum=50,
+                                           replace=False,
+                                           logger=logger,
+                                           verbose=False)
+        with open(self.test_cluster1, 'r') as ref:
+            ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
+        old_start = coord_list[0][1][0]
+        self.assertEqual(ref_rec.seq, stitched_record.seq)
+        padded_coords, padded_seq = pad_genbank_sequence(record=record,
+                                                         old_coords=coord_list,
+                                                         padding=ex_padding,
+                                                         logger=None)
+
+        new_start = padded_coords[0][1][0]
+        # checks that the the sequence is properly padded
+        self.assertEqual(record.seq,
+                         padded_seq[ex_padding: -ex_padding])
+        stitched_padded_record = \
+            stitch_together_target_regions(genome_sequence=\
+                                           padded_seq,
+                                           coords=padded_coords,
+                                           flanking="700:700",
+                                           within=50, minimum=50,
+                                           replace=False,
+                                           logger=logger,
+                                           verbose=False)
+        # check the extracted sequences are still the same, which verifies the
+        # coords were accuratly adjusted
+        self.assertEqual(stitched_record.seq, stitched_padded_record.seq)
 
     def tearDown(self):
         pass

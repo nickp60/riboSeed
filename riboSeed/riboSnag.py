@@ -209,15 +209,17 @@ def pad_genbank_sequence(record, old_coords, padding, logger=None):
         start, end = temp[1][0], temp[1][1]
         temp[1] = [start + padding, end + padding]
         new_coords.append(temp)
-    print("done")
     ### take care of the sequence
     old_seq = record.seq
     if padding > len(old_seq):
         if logger:
             logger.error("padding ammount cannot be greater" +
                          " than the length of the sequence!")
-        sys.exit(1)
-    new_seq = str(old_seq[padding: ] + old_seq + old_seq[0: padding])
+        raise ValueError("padding cannot be greater than length of sequence")
+    new_seq = str(old_seq[-padding: ] + old_seq + old_seq[0: padding])
+    if len(new_seq) != len(old_seq) + (2 * padding):
+        raise ValueError("Error within function! new seq should be len of " +
+                         "seq plus 2x padding")
     return(new_coords, new_seq)
 
 
