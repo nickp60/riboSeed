@@ -293,7 +293,7 @@ def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
     if score_minimum is None:
         score_min = int(read_len * .3)
     else:
-        score_min = score_min
+        score_min = score_minimum
     logger.debug(str("mapping with smalt using a score min of " +
                      "{0}").format(score_min))
     cmdindex = str("{3} index -k {0} -s {1} {2} {2}").format(
@@ -686,7 +686,8 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
          reference_genome, fastq1, fastq2, fastqS, ave_read_length, cores,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
          paired_inference, smalt_scoring, min_growth, max_iterations, kmers,
-         no_temps, distance_estimation, proceed_to_target, target_len):
+         no_temps, distance_estimation, proceed_to_target, target_len,
+         score_minimum):
     """
     essentially a 'main' function,  to parallelize time comsuming parts
     """
@@ -750,6 +751,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                          map_results_prefix=map_results_prefix, cores=cores,
                          step=3, k=5,
                          distance_results=distance_estimation,
+                         score_minimum=score_minimum,
                          scoring=smalt_scoring, smalt_exe=args.smalt_exe,
                          samtools_exe=args.samtools_exe, logger=logger)
         extract_mapped_and_mappedmates(map_results_prefix,
@@ -972,7 +974,8 @@ if __name__ == "__main__":
                  no_temps=args.no_temps,
                  distance_estimation=dist_est,
                  proceed_to_target=proceed_to_target,
-                 target_len=args.target_len)
+                 target_len=args.target_len,
+                 score_minimum=args.min_score_SMALT)
 
     else:
         pool = multiprocessing.Pool(processes=args.cores)
@@ -1000,7 +1003,8 @@ if __name__ == "__main__":
                                      "no_temps": args.no_temps,
                                      "distance_estimation": dist_est,
                                      "proceed_to_target": proceed_to_target,
-                                     "target_len": args.target_len})
+                                     "target_len": args.target_len,
+                                     "score_minimum": args.min_score_SMALT})
                    for fasta in fastas]
         pool.close()
         pool.join()
