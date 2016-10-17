@@ -245,7 +245,7 @@ def check_smalt_full_install(smalt_exe, logger=None):
 def estimate_distances_smalt(outfile, smalt_exe, cores, ref_genome,
                              fastq1, fastq2, logger=None):
     """Given fastq pair and a reference, returns path to distance estimations
-    used by smalt to help later with mapping.  if one already exists,
+    used by smalt to help later with mapping. if one already exists,
     return path to it.
     """
     if not os.path.exists(outfile):
@@ -254,11 +254,11 @@ def estimate_distances_smalt(outfile, smalt_exe, cores, ref_genome,
             logger.info("Estimating insert distances with SMALT")
         # index with default params for genome-sized sequence
         refindex_cmd = str(smalt_exe + " index -k {0} -s {1} {2} " +
-                           "{2}").format(20, 10, ref_genome)
+                           "{3}").format(20, 10, outfile, ref_genome)
         refsample_cmd = str(smalt_exe + " sample -n {0} -o {1} {2} {3} " +
                             "{4}").format(cores,
                                           outfile,
-                                          ref_genome,
+                                          outfile,
                                           fastq1,
                                           fastq2)
         if logger:
@@ -322,9 +322,6 @@ def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
         # smaltcommands.extend([cmdindexS, cmdmapS, cmdviewS, cmdmergeS])
         smaltcommands.extend([cmdindexS, cmdmapS, cmdmergeS])
     else:
-        #  is there a better. safer way than using mv -f?
-        # cmdmerge = str("cp -f {0}_pe.bam " +
-        #                "{0}.bam").format(map_results_prefix)
         cmdmerge = str("{0} view -bh {1}_pe.bam >" +
                        "{1}.bam").format(samtools_exe, map_results_prefix)
         smaltcommands.extend([cmdmerge])
@@ -349,9 +346,8 @@ def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
 
 def convert_bams_to_fastq(map_results_prefix,
                           fastq_results_prefix,
-                          keep_unmapped):
+                          keep_unmapped, samtools_exe, logger=None):
     """ return 6 paths: unmapped F, R, S and mapped F, R. S
-    new version with samtools.  Why didnt I do this before?
     given the prefix for the mapped bam files, write out mapped (and optionally
     unmapped) reads to fasta files
     """
@@ -362,27 +358,26 @@ def convert_bams_to_fastq(map_results_prefix,
             if i == '_unmapped' and not keep_unmapped:
                 continue
             else:
-                logger.error(str("No {0}{1}.bam file" +
-                                 "found").format(map_results_prefix, i))
-                sys.exit(1)
+                if logger:
+                    logger.error(str("No {0}{1}.bam file" +
+                                     "found").format(map_results_prefix, i))
+                    sys.exit(1)
+                else:
+                    raise FileNotFoundError("Cannot find bam mapping; files" +
+                                            "must have '_mapped.bam' prefix")
         samfilter = \
-            str(args.samtools_exe + " fastq {0}{1}.bam -1 {2}{1}1.fastq -2 " +
+            str(samtools_exe + " fastq {0}{1}.bam -1 {2}{1}1.fastq -2 " +
                 "{2}{1}2.fastq -s {2}{1}S.fastq").format(map_results_prefix, i,
                                                          fastq_results_prefix)
         convert_cmds.append(samfilter)
-    logger.debug("running the following commands to extract reads:")
+    if logger:
+        logger.debug("running the following commands to extract reads:")
     for i in convert_cmds:
-        logger.debug(i)
+        if logger:
+            logger.debug(i)
         subprocess.run(i, shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, check=True)
-    # if keep_unmapped:
-    #     return("%s%s1.fastq" % (fastq_results_prefix, bams[0]),  # unmapped fwd
-    #            "%s%s2.fastq" % (fastq_results_prefix, bams[0]),  # unmapped rev
-    #            "%s%sS.fastq" % (fastq_results_prefix, bams[0]),  # unmapped s
-    #            "%s%s1.fastq" % (fastq_results_prefix, bams[1]),  # mapped fwd
-    #            "%s%s2.fastq" % (fastq_results_prefix, bams[1]),  # mapped rev
-    #            "%s%sS.fastq" % (fastq_results_prefix, bams[1]))  # mapped s
     if keep_unmapped:
         fnames = []
         for bam_idx in (0, 1):
@@ -764,7 +759,9 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         new_fastq1, new_fastq2, new_fastqS, \
             mapped_fastq1, mapped_fastq2, mapped_fastqS = \
             convert_bams_to_fastq(map_results_prefix, fastq_results_prefix,
-                                  keep_unmapped=keep_unmapped_reads)
+                                  keep_unmapped=keep_unmapped_reads,
+                                  logger=logger,
+                                  samtools_exe=args.samtools_exe)
         if subtract_reads and keep_unmapped_reads:
             logger.warning("using reduced reads with next iteration")
             fastq1, fastq2, fastqS = new_fastq1, new_fastq2, new_fastqS
