@@ -1,15 +1,8 @@
 #!/usr/bin/env python
 """
-version 0.8.6
+version 0.8.8
 Minor version changes:
- - refactored so that extract coords looks at a single genbank
-   record, not looping through all
-#TODO:
-- set up logging
-- Make this less awful
-- Make this work with multiple scaffolds.  Should just mean
-    wrapping certain looks in another for rec in record bit
-- Maybe use percentage based exclusion, rather than a "within" arg?
+ - cleaned up
 Input:
 - genbank file
 - dictionary
@@ -133,7 +126,7 @@ def parse_clustered_loci_file(file, logger=None):
     if os.path.splitext(file)[1] in ["gb", "genbank", "gbk"]:
         logger.error("Hmm, this cluster file looks like genbank; " +
                      "it ends in {0}".format(os.path.splitext(file)[1]))
-        sys.exit(1)
+        raise FileNotFoundError
     try:
         with open(file, "r") as f:
             for line in f:
@@ -145,10 +138,10 @@ def parse_clustered_loci_file(file, logger=None):
                 clusters.append([seqname, loci_list])
     except:
         logger.error("Cluster file could not be parsed!")
-        sys.exit(1)
+        raise FileNotFoundError
     if len(clusters) == 0:
         logger.error("Cluster file could not be parsed!")
-        sys.exit(1)
+        raise FileNotFoundError
     return(clusters)
 
 
@@ -177,7 +170,7 @@ def extract_coords_from_locus(record, locus_tag_list=[],
             logger.error(str("found a feature ({0}), but there is no" +\
                              "locus tag associated with it!").format(
                                  feat))
-            sys.exit(1)
+            raise ValueError
 
         if locus_tag in locus_tag_list:
             #  SeqIO makes coords 0-based; the +1 below undoes that
@@ -194,7 +187,7 @@ def extract_coords_from_locus(record, locus_tag_list=[],
     if not loc_number > 0:
         logger.error("no hits found in any record! Double " +
                      "check your genbank file")
-        sys.exit(1)
+        raise ValueError
     logger.debug("Here are the detected region,coords, strand, product, " +
                  "locus tag, subfeatures and sequence id of the results:")
     logger.debug(loc_list)
@@ -386,15 +379,21 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
 
 def main(clusteredList, genome_records, logger, verbose, within,
          flanking, replace, output, padding, circular):
-    for i in clusteredList:
+    for i in clusteredList:  # for each cluster of loci
         locus_tag_list = i[1]
-        recID = i[0]
+        recID = i[0]  # which sequence cluster is from
+        # get seq record that cluster is  from
         genbank_rec = \
             get_genbank_rec_from_multigb(recordID=recID,
                                          genbank_record_list=genome_records)
-        coord_list = extract_coords_from_locus(record=genbank_rec,
-                                               locus_tag_list=locus_tag_list,
-                                               verbose=True, logger=logger)
+        # make coord list
+        try:
+            coord_list = extract_coords_from_locus(record=genbank_rec,
+                                                   locus_tag_list=locus_tag_list,
+                                                   verbose=True, logger=logger)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
         logger.info(coord_list)
         if args.circular:
             coords, sequence = pad_genbank_sequence(record=genbank_rec,
@@ -403,7 +402,7 @@ def main(clusteredList, genome_records, logger, verbose, within,
                                                     logger=logger)
         else:
             coords, sequence = coord_list, genbank_rec.seq
-
+        #  given coords and a sequnce, extract the region as a SeqRecord
         regions.append(stitch_together_target_regions(sequence,
                                                       coords=coords,
                                                       within=args.within,
@@ -414,7 +413,7 @@ def main(clusteredList, genome_records, logger, verbose, within,
                                                       logger=logger,
                                                       padding=padding,
                                                       circular=circular))
-
+    # after each cluster has been extracted, write out results
     logger.debug(regions)
     output_index = 1
     for i in regions:
@@ -457,13 +456,15 @@ if __name__ == "__main__":
         logger.debug("{0}: {1}".format(k, v))
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
     # parse cluster file
-    clusteredList = parse_clustered_loci_file(args.clustered_loci,
-                                              logger=logger)
+    try:
+        clusteredList = parse_clustered_loci_file(args.clustered_loci,
+                                                  logger=logger)
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
     # parse genbank records
     with open(args.genbank_genome) as fh:
         genome_records = list(SeqIO.parse(fh, 'genbank'))
-    # genome_records = get_genbank_record(args.genbank_genome, first_only=False,
-    #                                     logger=logger)
     regions = []
     logger.info("clustered loci list:")
     logger.info(clusteredList)
