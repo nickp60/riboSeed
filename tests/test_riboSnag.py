@@ -143,6 +143,7 @@ class riboSnag_TestCase(unittest.TestCase):
                                                          flanking="700:700",
                                                          within=50, minimum=50,
                                                          replace=False,
+                                                         padding=0,  # un-used
                                                          logger=logger,
                                                          verbose=False)
         with open(self.test_cluster1, 'r') as ref:
@@ -171,6 +172,7 @@ class riboSnag_TestCase(unittest.TestCase):
                                            within=50, minimum=50,
                                            replace=False,
                                            logger=logger,
+                                           padding=ex_padding,
                                            verbose=False)
         with open(self.test_cluster1, 'r') as ref:
             ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
@@ -193,7 +195,9 @@ class riboSnag_TestCase(unittest.TestCase):
                                            within=50, minimum=50,
                                            replace=False,
                                            logger=logger,
-                                           verbose=False)
+                                           verbose=False,
+                                           padding=ex_padding,
+                                           circular=True)
         # check the extracted sequences are still the same, which verifies the
         # coords were accuratly adjusted
         self.assertEqual(stitched_record.seq, stitched_padded_record.seq)

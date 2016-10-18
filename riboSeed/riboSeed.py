@@ -74,11 +74,13 @@ def get_args():
                           help="single fastq reads", type=str, default="")
     optional.add_argument("-n", "--experiment_name", dest='exp_name',
                           action="store",
-                          help="prefix for results files; default: %(default)s",
+                          help="prefix for results files; " +
+                          "default: %(default)s",
                           default="riboSeed", type=str)
     optional.add_argument("-m", "--method_for_map", dest='method',
                           action="store",
-                          help="available mappers: smalt; default: %(default)s",
+                          help="available mappers: smalt; " +
+                          "default: %(default)s",
                           default='smalt', type=str)
     optional.add_argument("-c", "--cores", dest='cores', action="store",
                           default=1, type=int,
@@ -88,7 +90,8 @@ def get_args():
                           default="21,33,55,77,99,127", type=str,
                           help="kmers used for final assembly" +
                           ", separated by commas; default: %(default)s")
-    optional.add_argument("-p", "--pre_kmers", dest='pre_kmers', action="store",
+    optional.add_argument("-p", "--pre_kmers", dest='pre_kmers',
+                          action="store",
                           default="21,33,55", type=str,
                           help="kmers used during seeding assemblies, " +
                           "separated bt commas" +
@@ -196,7 +199,8 @@ def get_args():
                           "default: %(default)s")
     optional.add_argument("--samtools_exe", dest="samtools_exe",
                           action="store", default="samtools",
-                          help="Path to bwa executable; default: %(default)s")
+                          help="Path to samtools executable; " +
+                          "default: %(default)s")
     optional.add_argument("--smalt_exe", dest="smalt_exe",
                           action="store", default="smalt",
                           help="Path to smalt executable;" +
@@ -415,7 +419,7 @@ def convert_bams_to_fastq(map_results_prefix,
         fnames = []
         for bam_idx in (0, 1):
             for suffix in ('1', '2', 'S'):
-                fnames.append("{0}{1}{2}.fastq".format(fast_results_prefix,
+                fnames.append("{0}{1}{2}.fastq".format(fastq_results_prefix,
                                                        bams[bam_idx], suffix))
             return(fnames)
     else:
@@ -501,6 +505,8 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                                        name=str("backedup_contigs.fasta"),
                                        overwrite=True, logger=logger)
 
+            logger.debug("copying {0} to {0} as a backup to self-test " +
+                         " consensus".format(ref, contigs_backup))
             # make pileup
             pileupcmd = str("smalt index {0} {0} ; smalt map {0} {1} | " +
                             "samtools sort - | samtools mpileup -f {0} - -o " +
@@ -845,11 +851,15 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
 
         # This cuts failing assemblies short
         if this_iteration == 1 and min_contig_len > contig_len:
-            logger.error("The first iteration's assembly's best contig" +
-                         " is not greater than length set by " +
-                         "--min_assembly_len. Assembly will likely fail if" +
-                         " the contig does not meet the length of the seed")
-            sys.exit(1)
+            logger.warning("The first iteration's assembly's best contig" +
+                           " is not greater than length set by " +
+                           "--min_assembly_len. Assembly will likely fail if" +
+                           " the contig does not meet the length of the seed")
+            logger.warning("Continuing, but if this occurs for more than " +
+                           "one seed, we reccommend that you abort and " +
+                           "retry with longer seeds, a different reference, " +
+                           "or re-examine the riboSnag clustering")
+            this_iteration = max_iterations + 1  # skip remaining iterations
         else:
             pass
         #  This is a feature that is supposed to help skip unneccesary
@@ -911,15 +921,15 @@ if __name__ == "__main__":
     mauve_dir = os.path.join(output_root, 'results', "mauve", "")
     t0 = time.time()
     log_path = os.path.join(output_root,
-                             str("{0}_riboSeed_log.txt".format(
-                                 time.strftime("%Y%m%d%H%M"))))
+                            str("{0}_riboSeed_log.txt".format(
+                                time.strftime("%Y%m%d%H%M"))))
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug("All settings used:")
-    for k,v in sorted(vars(args).items()):
-        logger.debug("{0}: {1}".format(k,v))
+    for k, v in sorted(vars(args).items()):
+        logger.debug("{0}: {1}".format(k, v))
     logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
                      "{2}\n").format(output_root, map_output_dir, results_dir))
 
@@ -964,16 +974,16 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # if the target_len is set. set needed params
-    if args.target_len is not None :
-        if not args.target_len > 0  or not isinstance(args.target_len, float):
+    if args.target_len is not None:
+        if not args.target_len > 0 or not isinstance(args.target_len, float):
             logger.error("--target_len is set to invalid value! Must be a " +
                          "decimal greater than zero, ie where 1.1 would be " +
                          "110% of the original sequence length.")
             sys.exit(1)
         elif args.target_len > 5 and 50 > args.target_len:
             logger.error("We dont reccommend seeding to lengths greater than" +
-                         "5x original seed length. Try between 0.5 and 1.5."+
-                         "  If you were setting a target number of bases, it "+
+                         "5x original seed length. Try between 0.5 and 1.5." +
+                         "  If you are setting a target number of bases, it " +
                          " must be greater than 50")
             sys.exit(1)
         else:
@@ -998,8 +1008,8 @@ if __name__ == "__main__":
     logger.debug(fastas)
     ### if using smalt (which you are), check for mapped reference
     if args.method == 'smalt':
-        dist_est = estimate_distances_smalt(outfile=os.path.join(results_dir,
-                                                                 mapped_genome_sam),
+        path_to_distance_file = os.path.join(results_dir, mapped_genome_sam)
+        dist_est = estimate_distances_smalt(outfile=path_to_distance_file,
                                             smalt_exe=args.smalt_exe,
                                             ref_genome=args.reference_genome,
                                             fastq1=args.fastq1,
@@ -1052,7 +1062,7 @@ if __name__ == "__main__":
                                      "fastq1": args.fastq1,
                                      "fastq2": args.fastq2,
                                      "fastqS": args.fastqS,
-                                     "cores": args.cores,  # cores": args.cores,
+                                     "cores": args.cores,
                                      "mauve_path": mauve_dir,
                                      "ave_read_length": average_read_length,
                                      "fetch_mates": args.paired_inference,
