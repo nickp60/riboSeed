@@ -105,6 +105,14 @@ def get_args():
                           help="min score forsmalt mapping; inferred from " +
                           "read length" +
                           "; default: inferred")
+    optional.add_argument("-a", "--min_assembly_len", dest='min_assembly_len',
+                          action="store",
+                          default=4000, type=int,
+                          help="if initial SPAdes assembly largest contig " +
+                          "is not at least as long as --min_assembly_len, " +
+                          "exit. Set this to the length of the seed " +
+                          "sequence; if it is not achieved, seeding across " +
+                          "regions will likely fail; default: %(default)s")
     optional.add_argument("--paired_inference", dest='paired_inference',
                           action="store_true", default=False,
                           help="if --paired_inference, mapped read's " +
@@ -117,8 +125,8 @@ def get_args():
                           "unless you really happen to want to")
     optional.add_argument("--keep_unmapped", dest='keep_unmapped',
                           action="store_true", default=False,
-                          help="if --keep_unmapped fastqs are generated " +
-                          "containing the unmapped reads; default: %(default)s")
+                          help="if --keep_unmapped, fastqs are generated " +
+                          "containing unmapped reads; default: %(default)s")
     optional.add_argument("--ref_as_contig", dest='ref_as_contig',
                           action="store", default="untrusted", type=str,
                           choices=["None", "trusted", "untrusted"],
@@ -168,13 +176,13 @@ def get_args():
     optional.add_argument("--DEBUG_multi", dest='DEBUG_multiprocessing',
                           action="store_true",
                           default=False,
-                          help="if --DEBUG_multiprocessing, runs processes in " +
+                          help="if --DEBUG_multiprocessing, runs seeding in " +
                           "single loop instead of a multiprocessing pool" +
                           ": %(default)s")
     optional.add_argument("--smalt_scoring", dest='smalt_scoring',
                           action="store",
                           default="match=1,subst=-4,gapopen=-4,gapext=-3",
-                          help="submit custom smalt scoring via the smalt -S " +
+                          help="submit custom smalt scoring via smalt -S " +
                           "scorespec option; default: %(default)s")
     # had to make this explicitly to call it a faux optional arg
     optional.add_argument("-h", "--help",
@@ -184,16 +192,19 @@ def get_args():
     ##TODO  Make these check a config file
     optional.add_argument("--spades_exe", dest="spades_exe",
                           action="store", default="spades.py",
-                          help="Path to spades executable; default: %(default)s")
+                          help="Path to SPAdes executable; " +
+                          "default: %(default)s")
     optional.add_argument("--samtools_exe", dest="samtools_exe",
                           action="store", default="samtools",
                           help="Path to bwa executable; default: %(default)s")
     optional.add_argument("--smalt_exe", dest="smalt_exe",
                           action="store", default="smalt",
-                          help="Path to smalt executable; default: %(default)s")
+                          help="Path to smalt executable;" +
+                          " default: %(default)s")
     optional.add_argument("--quast_exe", dest="quast_exe",
                           action="store", default="quast.py",
-                          help="Path to quast executable; default: %(default)s")
+                          help="Path to quast executable; " +
+                          "default: %(default)s")
     args = parser.parse_args()
     return(args)
 
@@ -201,7 +212,7 @@ def get_args():
 def check_smalt_full_install(smalt_exe, logger=None):
     smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                 "sample_data",
-                                "smalt_test","")
+                                "smalt_test", "")
     if logger:
         logger.debug("looking for smalt test dir: {0}".format(
             smalttestdir))
@@ -232,9 +243,9 @@ def check_smalt_full_install(smalt_exe, logger=None):
                            check=True)
         except:
             if logger:
-                logger.error("Error running test to check bambamc library is " +\
-                             "installed! See https://github.com/gt1/bambamc " +\
-                             "and the smalt install guide for more details." +\
+                logger.error("Error running test to check bambamc lib is " +
+                             "installed! See github.com/gt1/bambamc " +
+                             "and the smalt install guide for more details." +
                              "https://sourceforge.net/projects/smalt/files/")
             sys.exit(1)
     os.remove(test_bam)
@@ -277,6 +288,28 @@ def estimate_distances_smalt(outfile, smalt_exe, cores, ref_genome,
             logger.info("using existing reference file")
         pass
     return(outfile)
+
+# TODO reimplement bwa, but use BWA-SW instead of MEM
+# def map_to_ref_map_mem(ref, fastq_read1, fastq_read2, map_results_prefix,
+#                        cores, stdout, stderr, kseed=19):
+#     """outputs in bam format to play nice with alternative option, bwa aln
+#         Since 0.5:
+#         -- removed unpaired penalty (for obvious reasons)|| -U def 9, now 0
+#         -- increased mismatch penalty || -B def 4, now 8
+#         -- open gap penalty decrease from 6 to 0
+#     """
+#     print('######  Running BWA MEM...' + str(datetime.time(datetime.now())).split('.')[0])
+#     subprocess.call('bwa index %s' % ref, shell=True, stdout=stdout, stderr=stderr)
+#     try:
+#         kseed = int(kseed)
+#     except ValueError:
+#         raise("k must be numeric")
+#     subprocess.call('bwa mem -A 1 -d 20  -U 0 -L 100 -B 100 -a -O 6 -t %s -k %i %s %s %s > %s.sam' %
+#                     (cores, kseed, ref, fastq_read1, fastq_read2, map_results_prefix),
+#                     stdout=stdout, stderr=stderr, shell=True)
+#     subprocess.call('samtools view -bhS %s.sam > %s.bam' %
+#                     (map_results_prefix, map_results_prefix), shell=True,
+#                     stdout=stdout, stderr=stderr)
 
 
 def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
@@ -382,7 +415,8 @@ def convert_bams_to_fastq(map_results_prefix,
         fnames = []
         for bam_idx in (0, 1):
             for suffix in ('1', '2', 'S'):
-                fnames.append("{0}{1}{2}.fastq".format(fast_results_prefix, bams[bam_idx], suffix))
+                fnames.append("{0}{1}{2}.fastq".format(fast_results_prefix,
+                                                       bams[bam_idx], suffix))
             return(fnames)
     else:
         return(None,  # unmapped forward
@@ -396,7 +430,8 @@ def convert_bams_to_fastq(map_results_prefix,
 def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                as_paired=True, keep_best=True, prelim=False,
                groom_contigs='keep_first',
-               k="21,33,55,77,99", seqname='', spades_exe="spades.py"):
+               k="21,33,55,77,99", seqname='', spades_exe="spades.py",
+               logger=None):
     """return path to contigs
     wrapper for common spades setting for long illumina reads
     ref_as_contig should be either blank, 'trusted', or 'untrusted'
@@ -407,6 +442,9 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
     but that is changed with each iteration. This should probably be addressed
     before next major version change
     """
+    if logger is None:
+        print("this must be used with a logger!")
+        sys.exit(1)
     if groom_contigs not in ['keep_first', 'consensus']:
         logger.error("groom_contigs option must be either keep first or " +
                      "consensus")
@@ -449,9 +487,14 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                                                              "contigs.fasta"))
         if groom_contigs == "keep_first" and success:
             logger.info("reserving first contig")
-            keep_only_first_contig(str(os.path.join(output, "contigs.fasta")),
-                                   newname=os.path.splitext(
-                                       os.path.basename(seqname))[0])
+            try:
+                keep_only_first_contig(str(os.path.join(output,
+                                                        "contigs.fasta")),
+                                       newname=os.path.splitext(
+                                           os.path.basename(seqname))[0])
+            except Exception as e:
+                logger.error(e.message)
+                sys.exit(1)
         elif success and groom_contigs == "consensus":
             # get consensus; copy ref for starters to double check later
             contigs_backup = copy_file(current_file=ref, dest_dir=output,
@@ -485,7 +528,7 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
         else:
             logger.warning("No output from SPAdes this time around")
     else:
-        spades_cmd = str(args.spades_exe + " --careful -k {0} {1} {2} -o " +
+        spades_cmd = str(spades_exe + " --careful -k {0} {1} {2} -o " +
                          "{3}").format(kmers, reads, alt_contig, output)
         logger.info("Running the following command:\n{0}".format(spades_cmd))
         subprocess.run(spades_cmd,
@@ -612,7 +655,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
         j = j + 1  # increment the pileup counter
     if verbose:
         logger.info(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: " +
-                       "{2}").format(indels, N_deletions, N_insertions))
+                        "{2}").format(indels, N_deletions, N_insertions))
     else:
         print(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: " +
                   "{2}").format(indels, N_deletions, N_insertions))
@@ -648,7 +691,8 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
                 logger.debug(report_list)
                 for k, v in mainDict.items():
                     if k in [x[0] for x in report_list]:
-                        mainDict[k].append(str([x[1] for x in report_list if x[0]==k][0]))
+                        mainDict[k].append(str([x[1] for x in \
+                                                report_list if x[0] == k][0]))
                     else:
                         mainDict[k].append("XX")
                     # if dex in [0]:
@@ -682,7 +726,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
          paired_inference, smalt_scoring, min_growth, max_iterations, kmers,
          no_temps, distance_estimation, proceed_to_target, target_len,
-         score_minimum):
+         score_minimum, min_contig_len):
     """
     essentially a 'main' function,  to parallelize time comsuming parts
     """
@@ -778,7 +822,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                        output=spades_dir, keep_best=True,
                        # output=spades_dir, keep_best=last_time_through,
                        ref=new_reference, ref_as_contig=ref_as_contig,
-                       k=kmers,
+                       k=kmers, logger=logger,
                        seqname=fasta, spades_exe=args.spades_exe)
         if not proceed:
             logger.warning("Assembly failed: no spades output for {0}".format(
@@ -799,6 +843,15 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         logger.info("The new contig differs from the reference (or previous " +
                     "iteration) by {0} bases".format(contig_length_diff))
 
+        # This cuts failing assemblies short
+        if this_iteration == 1 and min_contig_len > contig_len:
+            logger.error("The first iteration's assembly's best contig" +
+                         " is not greater than length set by " +
+                         "--min_assembly_len. Assembly will likely fail if" +
+                         " the contig does not meet the length of the seed")
+            sys.exit(1)
+        else:
+            pass
         #  This is a feature that is supposed to help skip unneccesary
         # iterations. Ixf the difference is negative (new contig is shorter)
         # continue, as this may happen (especially in first mapping if
@@ -871,24 +924,37 @@ if __name__ == "__main__":
                      "{2}\n").format(output_root, map_output_dir, results_dir))
 
     # check cases of switch-typ args, and coerce if needed;
-    # CAnnot set Nonetype objects via commandline,
-    # so here we convert 'None' to None
+    # Cannot set Nonetype objects via commandline directly and I dont want None
+    # to be default dehaviour, so here we convert 'None' to None.
+    # I have not moral compass
     if args.ref_as_contig == 'None':
         args.ref_as_contig = None
-    if args.method != "smalt":
+    # TODO Look into resupporting bwa, as it plays better with BAM files,
+    # though smalt beats it on the overhangs.  The main issue is that BWA mem
+    # doesnt work with overhangs well, and bwasw is slower than smalt.
+    # if args.method is not in  ["smalt", "bwa"]:
+    #     logger.error("'smalt' and  'bwa' only methods currently supported")
+    #     sys.exit(1)
+    if args.method not in ["smalt"]:
         logger.error("'smalt' only method currently supported")
         sys.exit(1)
-
     logger.debug("checking for installations of all required external tools")
-    executables = [args.smalt_exe, args.samtools_exe,
-                   args.spades_exe, args.quast_exe]
+    executables = [args.samtools_exe, args.spades_exe, args.quast_exe]
+    if args.method == "smalt":
+        executables.append(args.smalt_exe)
+    # elif args.method == "bwa":
+    #     executables.append(args.bwa_exe)
+    else:
+        logger.error("Mapping method not found!")
+        sys.exit(1)
     logger.debug(str(executables))
     test_ex = [check_installed_tools(x, logger=logger) for x in executables]
     if all(test_ex):
         logger.debug("All needed system executables found!")
 
-    # check bambamc is installed proper
-    check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
+    # check bambamc is installed proper if using smalt
+    if args.method == "smalt":
+        check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
 
     # check equal length fastq.  This doesnt actually check propper pairs
     if file_len(args.fastq1) != file_len(args.fastq2):
@@ -972,7 +1038,8 @@ if __name__ == "__main__":
                  distance_estimation=dist_est,
                  proceed_to_target=proceed_to_target,
                  target_len=args.target_len,
-                 score_minimum=args.min_score_SMALT)
+                 score_minimum=args.min_score_SMALT,
+                 min_contig_len=args.min_assembly_len)
 
     else:
         pool = multiprocessing.Pool(processes=args.cores)
@@ -1001,7 +1068,8 @@ if __name__ == "__main__":
                                      "distance_estimation": dist_est,
                                      "proceed_to_target": proceed_to_target,
                                      "target_len": args.target_len,
-                                     "score_minimum": args.min_score_SMALT})
+                                     "score_minimum": args.min_score_SMALT,
+                                     "min_contig_len": args.min_assembly_len})
                    for fasta in fastas]
         pool.close()
         pool.join()
@@ -1039,7 +1107,7 @@ if __name__ == "__main__":
                                        ref=assembly_ref,
                                        ref_as_contig=assembly_ref_as_contig,
                                        prelim=False, keep_best=False,
-                                       k=args.kmers)
+                                       k=args.kmers, logger=logger)
         if final_success:
             logger.info("Running %s QUAST" % j )
             run_quast(contigs=output_contigs,
