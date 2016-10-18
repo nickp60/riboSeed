@@ -42,7 +42,8 @@ from pyutilsnrw.utils3_5 import make_output_prefix, check_installed_tools,\
     combine_contigs, clean_temp_dir, file_len
 
 from riboSeed.riboSeed import  check_smalt_full_install,\
-    map_to_ref_smalt, convert_bams_to_fastq, estimate_distances_smalt
+    map_to_ref_smalt, convert_bams_to_fastq, estimate_distances_smalt,\
+    run_spades
 
 
 
@@ -130,30 +131,60 @@ class utils3_5TestCase(unittest.TestCase):
                          score_minimum=40,
                          scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                          logger=logger)
-        wc_cmds = ["samtools view -S {0} |wc".format(self.map_results_prefix + "_pe.bam")]
-        wc_res = subprocess.run(wc_cmds, shell=sys.platform != "win32",
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, check=True)
+        wc_cmds = ["samtools view -S {0} |wc".format(self.map_results_prefix +
+                                                     "_pe.bam")]
+        wcres = subprocess.run(wc_cmds, shell=sys.platform != "win32",
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, check=True)
         # lines and words determinied manually.
         # Bytes change depending on cline call
-        lines_and_words = ["36350","", "472550"]  #wc returns "lines\swords\s\sbytes
+        # wc returns "lines\swords\s\sbyte
+        lines_and_words = ["36350", "", "472550"]
         for i in range(0, 3):
-            self.assertEqual(wc_res.stdout.decode("utf-8").strip().split(" ")[i],
+            parse_results = wcres.stdout.decode("utf-8").strip().split(" ")
+            self.assertEqual(parse_results[i],
                              lines_and_words[i])
 
-
-
-    # def test_run_spades(self):
-    #     spades_success = run_spades(output=self.spades_dir,
-    #                                 ref=self.ref_fasta,
-    #                                 ref_as_contig="trusted",
-    #                                 pe1_1=self.ref_Ffasta,
-    #                                 pe1_2=self.ref_Rfasta, pe1_s='',
-    #                                 as_paired=True, keep_best=True,
-    #                                 prelim=False,
-    #                                 groom_contigs='keep_first',
-    #                                 k="21,33,55", seqname='',
-    #                                 spades_exe="spades.py")
+    def test_run_spades(self):
+        """The tests a 'prelim' and non 'prelim' assembly against manually
+        determined md5sums of the resulting contig files
+        """
+        contigs_ref1 ="68829130b1405e9108a02f4cd414f057"
+        """PARAMS FOR CONTIGS1:
+        spades.py -k 21,33,55 --trusted-contigs tests/references/cluster1.fasta
+        --pe1-1 ./toy_reads1.fq --pe1-2 ./toy_reads2.fq -o spadesman --careful
+        """
+        contigs_ref2 = "740310315e5547e25c7aca012d198c65"
+        """PARAMS FOR CONTIGS1:
+        spades.py -k 21,33,55 --trusted-contigs tests/references/cluster1.fasta
+        --pe1-1 ./toy_reads1.fq --pe1-2 ./toy_reads2.fq -o spadesman
+        --only-assembler --cov-cutoff off --sc --careful
+        manually select just the first contig NODE1..
+        """
+        contigs1, success = run_spades(output=os.path.join(self.spades_dir,
+                                                           "test1"),
+                                       ref=self.ref_fasta,
+                                       ref_as_contig="trusted",
+                                       pe1_1=self.ref_Ffastq,
+                                       pe1_2=self.ref_Rfastq, pe1_s='',
+                                       as_paired=True, keep_best=True,
+                                       prelim=False,
+                                       groom_contigs='keep_first',
+                                       k="21,33,55", seqname='',
+                                       spades_exe="spades.py", logger=logger)
+        contigs2, success = run_spades(output=os.path.join(self.spades_dir,
+                                                           "test2"),
+                                       ref=self.ref_fasta,
+                                       ref_as_contig="trusted",
+                                       pe1_1=self.ref_Ffastq,
+                                       pe1_2=self.ref_Rfastq, pe1_s='',
+                                       as_paired=True, keep_best=True,
+                                       prelim=True,
+                                       groom_contigs='keep_first',
+                                       k="21,33,55", seqname='',
+                                       spades_exe="spades.py", logger=logger)
+        self.assertEqual(contigs_ref1, md5(contigs1))
+        self.assertEqual(contigs_ref2, md5(contigs2))
 
     # def test_check_samtools_pileup(self):
     #     check_samtools_pileup(self.pileup)
