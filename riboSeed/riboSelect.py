@@ -1,12 +1,9 @@
 #!/usr/bin/env python3.5
 """
-version 0.8.7
+version 0.8.8
 Minor version changes:
  - smoothed out the kinks of analyzung
 
-#TODO:
-- set up logging
-- This would be cool to make this stream friendly
 Input:
 - genbank file
 - location:  rRNA (or RRNA, or something similar)
@@ -66,9 +63,9 @@ def get_args():
     #                       default=False, dest="nocluster")
     optional.add_argument("-c", "--clusters",
                           help="number of rDNA clusters;" +
-                          "if submitting multiple records, must be a " +\
-                          "colon:separated list that matches number " +\
-                          "of genbank records.  Default is inferred from " +\
+                          "if submitting multiple records, must be a " + \
+                          "colon:separated list that matches number " + \
+                          "of genbank records.  Default is inferred from " + \
                           "specific feature with fewest hits", default='',
                           type=str, dest="clusters")
     optional.add_argument("-v", "--verbosity",
@@ -81,16 +78,6 @@ def get_args():
                           help="Enable debug messages")
     args = parser.parse_args()
     return(args)
-
-# moved to utils 20161018
-# def multisplit(delimiters, string, maxsplit=0):
-#     """from SO. takes a list of delimiters and a string, and
-#     returns a list of split string
-#     """
-#     import re
-#     assert type(delimiters) is list
-#     regexPattern = '|'.join(map(re.escape, delimiters))
-#     return(re.split(regexPattern, string, maxsplit))
 
 
 def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
@@ -111,7 +98,7 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     #    raise("Error! this function can only accept a list of records" +
     #          "simply put your genbank record in brackets if you only " +
     #          "have a single record")
-    TMI = verbose # probably should rename this to just verbose
+    TMI = verbose  # probably should rename this to just verbose
     assert (type(genome_seq_records) is list),\
         'must pass list of genomes to function, even if single genome '
     if specific_features is None:
@@ -241,7 +228,8 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
         os.remove(os.path.join(os.getcwd(), "km_script.R"))
     cast_dict = {}
     if kind not in [int, str, float]:
-        raise(TypeError)
+        raise TypeError("can only attempt coersion to int, str, and float; " +
+                        "cant coerce to {0}.".format(kind))
     for k, v in indexClusterDict.items():
         cast_dict[k] = [kind(x) for x in v]
     return(cast_dict)
