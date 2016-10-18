@@ -30,60 +30,67 @@ import sys
 from Bio import SeqIO
 import time
 from pyutilsnrw.utils3_5 import get_genbank_record, check_single_scaffold, \
-    set_up_logging
+    set_up_logging, multisplit
 
 def get_args():
     parser = argparse.ArgumentParser(description="This is used to extract" +
                                      " rRNA regions from a gb file, returns" +
                                      "a text file with the clusters")
     parser.add_argument("genbank_genome", help="Genbank file (WITH SEQUENCE)")
-    parser.add_argument("-f", "--feature",
-                        help="Feature, rRNA or RRNA; default: %(default)s",
-                        default='rRNA', type=str)
-    parser.add_argument("-s", "--specific_features",
-                        help="colon:separated -- specific features" +\
-                        "; default: %(default)s",
-                        default='16S:23S:5S', type=str)
-    parser.add_argument("--keep_temps",
-                         help="view intermediate clustering files" +\
-                         "default: %(default)s", action='store_true',
-                        default=False, dest="keep_temps")
-    parser.add_argument("--clobber",
-                         help="overwrite previous output filesy" +\
-                         "default: %(default)s", action='store_true',
-                        default=False, dest="clobber")
-    parser.add_argument("--nocluster",
-                         help="do not bother clustering; treat all occurances on a sequence as a cluster" +\
-                         "default: %(default)s", action='store_true',
-                        default=False, dest="nocluster")
-    parser.add_argument("-c", "--clusters",
-                        help="number of rDNA clusters;" +
-                        "if submitting multiple records, must be a " +\
-                        "colon:separated list that matches number " +\
-                        "of genbank records.  Default is inferred from " +\
-                        "specific feature with fewest hits", default='',
-                        type=str, dest="clusters")
-    parser.add_argument("-v", "--verbosity", dest='verbosity', action="store",
-                        default=2, type=int,
-                        help="1 = debug(), 2 = info(), 3 = warning(), " +
-                        "4 = error() and 5 = critical(); default: %(default)s")
-    parser.add_argument("-o", "--output",
-                        help="output directory; default: %(default)s",
-                        default=os.getcwd(), type=str, dest="output")
-    parser.add_argument("--debug", dest="debug", action="store_true",
-                        help="Enable debug messages")
+    requiredNamed = parser.add_argument_group('required named arguments')
+    requiredNamed.add_argument("-o", "--output",
+                               help="output directory; default: %(default)s",
+                               default=os.getcwd(),
+                               type=str, dest="output")
+    optional = parser.add_argument_group('optional arguments')
+    optional.add_argument("-f", "--feature",
+                          help="Feature, rRNA or RRNA; default: %(default)s",
+                          default='rRNA', type=str)
+    optional.add_argument("-s", "--specific_features",
+                          help="colon:separated -- specific features" +\
+                          "; default: %(default)s",
+                          default='16S:23S:5S', type=str)
+    optional.add_argument("--keep_temps",
+                          help="view intermediate clustering files" +\
+                          "default: %(default)s", action='store_true',
+                          default=False, dest="keep_temps")
+    optional.add_argument("--clobber",
+                          help="overwrite previous output filesy" +\
+                          "default: %(default)s", action='store_true',
+                          default=False, dest="clobber")
+    # TODO Implement this for work with really fragmented genomes
+    # optional.add_argument("--nocluster",
+    #                       help="do not bother clustering; treat all " +
+    #                       "occurances on a sequence as a cluster" +\
+    #                       "default: %(default)s", action='store_true',
+    #                       default=False, dest="nocluster")
+    optional.add_argument("-c", "--clusters",
+                          help="number of rDNA clusters;" +
+                          "if submitting multiple records, must be a " +\
+                          "colon:separated list that matches number " +\
+                          "of genbank records.  Default is inferred from " +\
+                          "specific feature with fewest hits", default='',
+                          type=str, dest="clusters")
+    optional.add_argument("-v", "--verbosity",
+                          dest='verbosity', action="store",
+                          default=2, type=int,
+                          help="1 = debug(), 2 = info(), 3 = warning(), " +
+                          "4 = error() and 5 = critical(); " +
+                          "default: %(default)s")
+    optional.add_argument("--debug", dest="debug", action="store_true",
+                          help="Enable debug messages")
     args = parser.parse_args()
     return(args)
 
-
-def multisplit(delimiters, string, maxsplit=0):
-    """from SO. takes a list of delimiters and a string, and
-    returns a list of split string
-    """
-    import re
-    assert type(delimiters) is list
-    regexPattern = '|'.join(map(re.escape, delimiters))
-    return(re.split(regexPattern, string, maxsplit))
+# moved to utils 20161018
+# def multisplit(delimiters, string, maxsplit=0):
+#     """from SO. takes a list of delimiters and a string, and
+#     returns a list of split string
+#     """
+#     import re
+#     assert type(delimiters) is list
+#     regexPattern = '|'.join(map(re.escape, delimiters))
+#     return(re.split(regexPattern, string, maxsplit))
 
 
 def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
@@ -140,10 +147,10 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
                     all_feature:
                     # key is start coord
                     locus_tag_dict[(record.id, coords[0])] = [loc_number,
-                                                 record.id,
-                                                 locustag,
-                                                 feat.type,
-                                                 product_list]
+                                                              record.id,
+                                                              locustag,
+                                                              feat.type,
+                                                              product_list]
                 else:
                     if TMI:
                         logger.debug("Whoa! not adding this feat to " +

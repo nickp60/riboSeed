@@ -41,77 +41,99 @@ from pyutilsnrw.utils3_5 import get_genbank_seq, get_genbank_record, \
 def get_args():
     parser = argparse.ArgumentParser(description="Use to extract regions " +
                                      "of interest based on supplied locus " +
-                                     " tags.")
+                                     " tags.", add_help=False)
     parser.add_argument("genbank_genome", help="Genbank file (WITH SEQUENCE)")
     parser.add_argument("clustered_loci", help="output from riboSelect")
+
+    requiredNamed = parser.add_argument_group('required named arguments')
+    requiredNamed.add_argument("-o", "--output",
+                               help="output directory; default: %(default)s",
+                               default=os.getcwd(),
+                               type=str, dest="output")
+
+    # had to make this faux "optional" parse so that the named required ones
+    # above get listed first
+    optional = parser.add_argument_group('optional arguments')
     parser.add_argument("-f", "--feature", help="Feature, such as CDS,tRNA, " +
                         "rRNA; default: %(default)s",
                         default='rRNA', dest="feature",
                         action="store", type=str)
-    parser.add_argument("-s", "--specific_features", help="colon:separated " +
-                        "-- specific features to be grepped from product, " +
-                        "such as 16S or tRNA-Ala; default: %(default)s",
-                        default='16S:23S', type=str, dest="specific_features",
-                        action="store")
-    parser.add_argument("-w", "--within_feature_length",
-                        help="bp's to include within the region; " +
-                        "default: %(default)s",
-                        default=0, dest="within", action="store", type=int)
-    parser.add_argument("-m", "--minimum_feature_length",
-                        help="if --replace, and a sequence is shorter than " +
-                        " 2x --within_feature_length, --within will be " +
-                        " modified so that only -m bp of sequnece are" +
-                        "turned to N's " +
-                        "default: %(default)s",
-                        default=100, dest="minimum", action="store", type=int)
-    parser.add_argument("-l", "--flanking_length",
-                        help="length of flanking regions, can be colon-" +
-                        "separated to give separate upstream and " +
-                        "downstream flanking regions; default: %(default)s",
-                        default='1000', type=str, dest="flanking")
-    parser.add_argument("-r", "--replace",
-                        help="replace sequence with N's; default: %(default)s",
-                        default=False, action="store_true", dest="replace")
-    parser.add_argument("-c", "--circular",
-                        help="if the genome is known to be circular, and " +
-                        "an region of interest (including flanking bits) " +
-                        "extends over the chromosome end, this extends the " +
-                        "seqence past the chromosome origin forward by 5kb; " +
-                        " default: %(default)s",
-                        default=False, dest="circular", action="store_true")
-    parser.add_argument("-p", "--padding", dest='padding', action="store",
-                        default=5000, type=int,
-                        help="if treating as --circular, this controls the " +
-                        "length of sequence added to the 5' and 3' ends " +
-                        "to allow for selecting regions that cross the " +
-                        "chromosom's origin; default: %(default)s")
-    parser.add_argument("-v", "--verbosity", dest='verbosity', action="store",
-                        default=2, type=int,
-                        help="1 = debug(), 2 = info(), 3 = warning(), " +
-                        "4 = error() and 5 = critical(); default: %(default)s")
-    parser.add_argument("-o", "--output",
-                        help="output directory; default: %(default)s",
-                        default=os.getcwd(),
-                        type=str, dest="output")
-    parser.add_argument("--clobber",
-                        help="overwrite previous output files" +
-                        "default: %(default)s", action='store_true',
-                        default=False, dest="clobber")
+    optional.add_argument("-s", "--specific_features",
+                          help="colon:separated " +
+                          "-- specific features to be grepped from product, " +
+                          "such as 16S or tRNA-Ala; default: %(default)s",
+                          default='16S:23S', type=str,
+                          dest="specific_features",
+                          action="store")
+    optional.add_argument("-w", "--within_feature_length",
+                          help="bp's to include within the region; " +
+                          "default: %(default)s",
+                          default=0, dest="within", action="store", type=int)
+    optional.add_argument("-m", "--minimum_feature_length",
+                          help="if --replace, and sequence is shorter than " +
+                          " 2x --within_feature_length, --within will be " +
+                          " modified so that only -m bp of sequnece are" +
+                          "turned to N's " +
+                          "default: %(default)s",
+                          default=100, dest="minimum",
+                          action="store", type=int)
+    optional.add_argument("-l", "--flanking_length",
+                          help="length of flanking regions, can be colon-" +
+                          "separated to give separate upstream and " +
+                          "downstream flanking regions; default: %(default)s",
+                          default='1000', type=str, dest="flanking")
+    optional.add_argument("-r", "--replace",
+                          help="replace sequence with N's; " +
+                          "default: %(default)s",
+                          default=False, action="store_true", dest="replace")
+    optional.add_argument("-c", "--circular",
+                          help="if the genome is known to be circular, and " +
+                          "an region of interest (including flanking bits) " +
+                          "extends past chromosome end, this extends the " +
+                          "seqence past chromosome origin forward by 5kb; " +
+                          " default: %(default)s",
+                          default=False, dest="circular", action="store_true")
+    optional.add_argument("-p", "--padding", dest='padding', action="store",
+                          default=5000, type=int,
+                          help="if treating as circular, this controls the " +
+                          "length of sequence added to the 5' and 3' ends " +
+                          "to allow for selecting regions that cross the " +
+                          "chromosom's origin; default: %(default)s")
+    optional.add_argument("-v", "--verbosity",
+                          dest='verbosity', action="store",
+                          default=2, type=int,
+                          help="1 = debug(), 2 = info(), 3 = warning(), " +
+                          "4 = error() and 5 = critical(); " +
+                          "default: %(default)s")
+    optional.add_argument("--clobber",
+                          help="overwrite previous output files" +
+                          "default: %(default)s", action='store_true',
+                          default=False, dest="clobber")
+    # had to make this explicitly to call it a faux optional arg
+    optional.add_argument("-h", "--help",
+                          action="help", default=argparse.SUPPRESS,
+                          help="Displays this help message")
     args = parser.parse_args()
     return(args)
 
 
 def parse_clustered_loci_file(file, logger=None):
-    """changed this to return a list, cause multiple clusters
-    can be on the smae contig, which makes for duplicated
-    dict keys, and those dont work
+    """Given a file from riboSelect or manually created (see specs in README)
+    this parses the clusters and returns a list where [0] is sequence name
+    and [1] is a list of loci in that cluster
     """
     if logger is None:
         raise ValueError("logging must be used!")
-    if not os.path.exists(file):
+    if not (os.path.isfile(file) and  os.path.getsize(file) > 0):
         logger.error("Cluster File not found!")
         sys.exit(1)
     clusters = []
+    # this covers comon case where user submits genbank and cluster file
+    # in the wrong order.
+    if os.path.splitext(file)[1] in ["gb", "genbank", "gbk"]:
+        logger.error("Hmm, this cluster file looks like genbank; " +
+                     "it ends in {0}".format(os.path.splitext(file)[1]))
+        sys.exit(1)
     try:
         with open(file, "r") as f:
             for line in f:
@@ -133,7 +155,8 @@ def parse_clustered_loci_file(file, logger=None):
 def extract_coords_from_locus(record, locus_tag_list=[],
                               feature="rRNA", verbose=True, logger=None):
     """given a list of locus_tags, return a list of
-    loc_number,coords, strand, product
+    [loc_number,[start_coord, end_coord], strand, product,
+    locus_tag, record.id]
     """
     if logger is None:
         raise ValueError("logging must be used!")
@@ -188,18 +211,18 @@ def get_genbank_rec_from_multigb(recordID, genbank_record_list):
             return(record)
         else:
             pass
-    # if none found, this block is executed
+    # if none found, complain
     print("no record found matching record id!")
     sys.exit(1)
 
 
 def pad_genbank_sequence(record, old_coords, padding, logger=None):
     """coords in coords list should be the 1st list item, with the index
-    being 0th. This takes a genbank record and a coord_list and returns a seq
+    being 0th. Given a genbank record and a coord_list. this returns a seq
     padded on both ends by --padding bp, and returns a coord_list with coords
-    adjusted accordingly
+    adjusted accordingly.  Used to capture regions across origin.
     """
-    ### take care of the cordinates
+    ### take care of the coordinates
     if logger:
         logger.info("adjusting coordinates by {0} to account for " +
                     "padding".format(padding))
@@ -226,7 +249,8 @@ def pad_genbank_sequence(record, old_coords, padding, logger=None):
 def strictly_increasing(L, dup_ok=False, verbose=False):
     """from 6502: http://stackoverflow.com/questions/4983258/
     python-how-to-check-list-monotonicity
-    returns fails if
+    given list L, this check to see if items are ascending. if de_dup, this
+    removes duplicates from the list temporarily and then tests the unique list
     """
     items = []
     for i in L:
@@ -234,7 +258,6 @@ def strictly_increasing(L, dup_ok=False, verbose=False):
             if not dup_ok:
                 raise ValueError("list contains duplicates!")
             else:
-                # L.pop(i)
                 pass
         else:
             items.append(i)
@@ -244,13 +267,14 @@ def strictly_increasing(L, dup_ok=False, verbose=False):
     return(all(x < y for x, y in zip(items, items[1: ])))
 
 
-def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
+def stitch_together_target_regions(genome_sequence, coords, padding,
+                                   flanking="500:500",
                                    within=50, minimum=50, replace=True,
-                                   logger=None, verbose=True):
+                                   logger=None, verbose=True, circular=False):
     """
     given a list from get_coords, usually of length 3 (16,5,and 23 rRNAs),
     return a string with the sequence of the region, replacing coding
-    sequences with N's (or not, replace=False), and including the flanking
+    sequences with N's (or not, if replace=False), and including the flanking
     regions upstream and down.
 
     revamped 20161004
@@ -293,23 +317,23 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
     #
     # if start is negative, just use 1, the beginning of the sequence
     if global_start < 1:
-        logger.warning("Caution! Cannot retrieve full flanking region, as " +\
+        logger.warning("Caution! Cannot retrieve full flanking region, as " +
                        "the 5' flanking region extends past start of " +
                        "sequence. If this is a problem, try using a smaller " +
-                       "--flanking region, and/or if  appropriate, run with "+
+                       "--flanking region, and/or if  appropriate, run with " +
                        "--circular.")
         global_start = 1
     global_end = max([y[1] for y in [x[1] for x in coords]]) + flank[1]
     if global_end > len(genome_sequence):
-        logger.warning("Caution! Cannot retrieve full flanking region, as " +\
+        logger.warning("Caution! Cannot retrieve full flanking region, as " +
                        "the 5' flanking region extends past start of " +
                        "sequence. If this is a problem, try using a smaller " +
-                       "--flanking region, and/or if  appropriate, run with "+
+                       "--flanking region, and/or if  appropriate, run with " +
                        "--circular.")
         global_end = len(genome_sequence)
 
     #  the minus one makes things go from 1 based to zeor based
-    full_seq = genome_sequence[global_start-1 : global_end]
+    full_seq = genome_sequence[global_start - 1: global_end]
     seq_with_ns = str(full_seq)
     #
     # loop to mask actual coding regions with N's
@@ -331,7 +355,7 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
                               seq_with_ns[rel_end: ])
 
         try:
-            # make sure the sequence is correct length, corrected for zero-index
+            # make sure the sequence is proper length, corrected for zero-index
             assert global_end - global_start, len(full_seq)
             # make sure replacement didnt change seq length
             assert len(full_seq), len(seq_with_ns)
@@ -348,15 +372,20 @@ def stitch_together_target_regions(genome_sequence, coords, flanking="500:500",
             print(str(full_seq[i * lb: lb + (i * lb)] ))
             print(str(seq_with_ns[i * lb: lb + (i * lb)] ))
             print()
+    if not circular:
+        seq_id = str(coords[0][5] + "_" + str(global_start) +
+                     ".." + str(global_end))
+    else:  # correct for padding
+        seq_id = str(coords[0][5] + "_" + str(global_start - padding) +
+                     ".." + str(global_end - padding))
+
     seqrec = SeqRecord(Seq(seq_with_ns, IUPAC.IUPACAmbiguousDNA()),
-                       id=str(coords[0][5] + "_" +
-                              str(global_start) +
-                              ".." + str(global_end)))
+                       id=seq_id)
     return(seqrec)
 
 
 def main(clusteredList, genome_records, logger, verbose, within,
-         flanking, replace, output):
+         flanking, replace, output, padding, circular):
     for i in clusteredList:
         locus_tag_list = i[1]
         recID = i[0]
@@ -380,9 +409,11 @@ def main(clusteredList, genome_records, logger, verbose, within,
                                                       within=args.within,
                                                       minimum=args.minimum,
                                                       flanking=args.flanking,
-                                                      replace=args.replace,
+                                                      replace=replace,
                                                       verbose=False,
-                                                      logger=logger))
+                                                      logger=logger,
+                                                      padding=padding,
+                                                      circular=circular))
 
     logger.debug(regions)
     output_index = 1
@@ -391,6 +422,7 @@ def main(clusteredList, genome_records, logger, verbose, within,
         with open(os.path.join(args.output,
                                str(date + "_" + filename + "_riboSnag.fasta")),
                   "w") as outfile:
+            #TODO make discription work when writing seqrecord
             # i.description = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
             #                           output_index, args.flanking, args.within))
             SeqIO.write(i, outfile, "fasta")
@@ -413,25 +445,25 @@ if __name__ == "__main__":
         else:
             print("# continuing, and risking potential loss of data")
     log_path = os.path.join(output_root,
-                             str("{0}_riboSnag_log.txt".format(
-                                 time.strftime("%Y%m%d%H%M"))))
+                            str("{0}_riboSnag_log.txt".format(
+                                time.strftime("%Y%m%d%H%M"))))
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
 
     logger.debug("Usage:\n{0}\n".format(str(" ".join([x for x in sys.argv]))))
     logger.debug("All settings used:")
-    for k,v in sorted(vars(args).items()):
-        logger.debug("{0}: {1}".format(k,v))
+    for k, v in sorted(vars(args).items()):
+        logger.debug("{0}: {1}".format(k, v))
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
-    # if not os.path.isdir(args.output):
-    #     os.mkdir(args.output)
+    # parse cluster file
     clusteredList = parse_clustered_loci_file(args.clustered_loci,
                                               logger=logger)
-    # genome_sequences = get_genbank_seq(args.genbank_genome, first_only=False)
-    genome_records = get_genbank_record(args.genbank_genome, first_only=False,
-                                        logger=logger)
-    # print(genome_sequences)
+    # parse genbank records
+    with open(args.genbank_genome) as fh:
+        genome_records = list(SeqIO.parse(fh, 'genbank'))
+    # genome_records = get_genbank_record(args.genbank_genome, first_only=False,
+    #                                     logger=logger)
     regions = []
     logger.info("clustered loci list:")
     logger.info(clusteredList)
@@ -441,4 +473,6 @@ if __name__ == "__main__":
          verbose=False, within=args.within,
          flanking=args.flanking,
          replace=args.replace,
-         output=args.output)
+         output=args.output,
+         padding=args.padding,
+         circular=args.circular)

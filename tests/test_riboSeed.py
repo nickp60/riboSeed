@@ -194,11 +194,13 @@ class utils3_5TestCase(unittest.TestCase):
     #                     logger=None)
 
     def tearDown(self):
-        # # test_estimation_file = os.path.join(self.test_dir,
-        # #                                     "est_distance.sam")
-        # if os.path.exists(self.test_estimation_file):
-        #     print("removing test distance estimation file")
-        #     os.remove(self.test_estimation_file)
+        if all([x is None for x in sys.exc_info()]):
+            if os.path.exists(self.test_estimation_file):
+                print("removing test distance estimation file")
+                os.remove(self.test_estimation_file)
+        else:
+            print("leaving testing files in test_output directory; "
+                  "some tests failed")
         pass
 
 if __name__ == '__main__':

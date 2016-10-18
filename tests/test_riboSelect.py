@@ -17,7 +17,8 @@ from riboSeed.riboSelect import multisplit, get_filtered_locus_tag_dict, \
     pure_python_kmeans
 
 
-from pyutilsnrw.utils3_5 import get_genbank_record, check_installed_tools
+from pyutilsnrw.utils3_5 import get_genbank_record, check_installed_tools,\
+    multisplit
 
 
 logger = logging
@@ -40,18 +41,18 @@ class riboSelect_TestCase(unittest.TestCase):
         self.test_loci_file = os.path.join(os.path.dirname(__file__),
                                            str("references" + os.path.sep +
                                                'grouped_loci_reference.txt'))
-
-    def test_multisplit(self):
-        test_string = "look_this+is+a locus_that_is+multi-delimited"
-        list_of_things = multisplit(["-", "_", "+", " "], test_string)
-        test_other_string = "look_this+is+a\faillocus_that_is+multi-delimited"
-        list_of_other_things = multisplit(["-", "_", "+", " "],
-                                          test_other_string)
-        self.assertEqual(list_of_things, ["look", "this", "is", "a", "locus",
-                                          "that", "is", "multi", "delimited"])
-        self.assertNotEqual(list_of_other_things, ["look", "this", "is", "a",
-                                                   "locus", "that", "is",
-                                                   "multi", "delimited"])
+    # moved to utisl 20161018
+    # def test_multisplit(self):
+    #     test_string = "look_this+is+a locus_that_is+multi-delimited"
+    #     list_of_things = multisplit(["-", "_", "+", " "], test_string)
+    #     test_other_string = "look_this+is+a\faillocus_that_is+multi-delimited"
+    #     list_of_other_things = multisplit(["-", "_", "+", " "],
+    #                                       test_other_string)
+    #     self.assertEqual(list_of_things, ["look", "this", "is", "a", "locus",
+    #                                       "that", "is", "multi", "delimited"])
+    #     self.assertNotEqual(list_of_other_things, ["look", "this", "is", "a",
+    #                                                "locus", "that", "is",
+    #                                                "multi", "delimited"])
 
     def test_get_filtered_locus_tag_dict(self):
         # test single genbank record
@@ -88,7 +89,7 @@ class riboSelect_TestCase(unittest.TestCase):
         #TODO
 
     def test_dopey_kmeans_function(self):
-        r_is_installed = check_installed_tools(["R"],
+        r_is_installed = check_installed_tools("R",
                                                hard=False, logger=logger)
         if r_is_installed:
             test_for_clustering = [4, 5, 5, 6, 10, 3, 18, 34, 44, 38]
