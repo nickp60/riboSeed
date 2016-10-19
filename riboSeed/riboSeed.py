@@ -154,19 +154,21 @@ def get_args():
                           help="if iterations>1, multiple seedings will " +
                           "occur after assembly of seed regions; " +
                           "if setting --target_len, seedings will continue " +
-                          "until either --iterations are completed or target_len"
+                          "until --iterations are completed or target_len"
                           " is matched or exceeded; " +
                           "default: %(default)s")
-    optional.add_argument("-v", "--verbosity", dest='verbosity', action="store",
+    optional.add_argument("-v", "--verbosity", dest='verbosity',
+                          action="store",
                           default=2, type=int, choices=[1, 2, 3, 4, 5],
-                          help="Logger always write debug to file; this sets " +
-                          "verbosity level sent to stderr. " +
+                          help="Logger writes debug to file in output dir; " +
+                          "this sets verbosity level sent to stderr. " +
                           " 1 = debug(), 2 = info(), 3 = warning(), " +
-                          "4 = error() and 5 = critical(); default: %(default)s")
+                          "4 = error() and 5 = critical(); " +
+                          "default: %(default)s")
     optional.add_argument("--target_len", dest='target_len', action="store",
                           default=None, type=float,
-                          help="if set, iterations will continue until seeded " +
-                          "contigs reach this length. or maximum iterations (" +
+                          help="if set, iterations will continue until " +
+                          "contigs reach this length, or max iterations (" +
                           "set by --iterations) have been completed. Set as " +
                           "fraction of original seed length by giving a " +
                           "decimal between 0 and 5, or set as an absolute " +
@@ -221,10 +223,8 @@ def check_smalt_full_install(smalt_exe, logger=None):
         logger.debug("looking for smalt test dir: {0}".format(
             smalttestdir))
     if not os.path.exists(smalttestdir):
-        if logger:
-            logger.error("cannot find smalt_test dir containing " +\
-                         "files to verify bambamc install!")
-            sys.exit(1)
+        raise FileNotFoundError("cannot find smalt_test dir containing " +
+                                "files to verify bambamc install!")
     ref = os.path.join(smalttestdir, "ref_to_test_bambamc.fasta")
     index = os.path.join(smalttestdir, "test_index")
     test_bam = os.path.join(smalttestdir, "test_mapping.bam")
@@ -246,12 +246,10 @@ def check_smalt_full_install(smalt_exe, logger=None):
                            stderr=subprocess.PIPE,
                            check=True)
         except:
-            if logger:
-                logger.error("Error running test to check bambamc lib is " +
+            raise ValueError("Error running test to check bambamc lib is " +
                              "installed! See github.com/gt1/bambamc " +
                              "and the smalt install guide for more details." +
                              "https://sourceforge.net/projects/smalt/files/")
-            sys.exit(1)
     os.remove(test_bam)
     os.remove(str(index + ".sma"))
     os.remove(str(index + ".smi"))
@@ -398,10 +396,8 @@ def convert_bams_to_fastq(map_results_prefix,
                 if logger:
                     logger.error(str("No {0}{1}.bam file" +
                                      "found").format(map_results_prefix, i))
-                    sys.exit(1)
-                else:
-                    raise FileNotFoundError("Cannot find bam mapping; files" +
-                                            "must have '_mapped.bam' prefix")
+                raise FileNotFoundError("Cannot find bam mapping; files" +
+                                        "must have '_mapped.bam' prefix")
         samfilter = \
             str(samtools_exe + " fastq {0}{1}.bam -1 {2}{1}1.fastq -2 " +
                 "{2}{1}2.fastq -s {2}{1}S.fastq").format(map_results_prefix, i,
@@ -447,12 +443,10 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
     before next major version change
     """
     if logger is None:
-        print("this must be used with a logger!")
-        sys.exit(1)
+        raise ValueError("this must be used with a logger!")
     if groom_contigs not in ['keep_first', 'consensus']:
-        logger.error("groom_contigs option must be either keep first or " +
-                     "consensus")
-        sys.exit(1)
+        raise ValueError("groom_contigs option must be either 'keep_first' " +
+                         "or 'consensus'")
     if seqname == '':
         seqname = ref
     kmers = k  # .split[","]
@@ -496,9 +490,9 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                                                         "contigs.fasta")),
                                        newname=os.path.splitext(
                                            os.path.basename(seqname))[0])
-            except Exception as e:
-                logger.error(e.message)
-                sys.exit(1)
+            except Exception as f:
+                logger.error(f)
+                raise f
         elif success and groom_contigs == "consensus":
             # get consensus; copy ref for starters to double check later
             contigs_backup = copy_file(current_file=ref, dest_dir=output,
@@ -520,12 +514,21 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
             # test pileup
-            pileup = check_samtools_pileup(os.path.join(output,
+            try:
+                pileup = check_samtools_pileup(os.path.join(output,
                                                         'contigs_pileup.txt'))
+            except Exception as e:
+                logger.error(e)
+                sys.exit(1)
             # parse pileup
-            consensus = reconstruct_seq(refpath=ref, pileup=pileup,
-                                        verbose=False, veryverb=False,
-                                        logger=logger)
+            try:
+                consensus = reconstruct_seq(refpath=ref, pileup=pileup,
+                                            verbose=False, veryverb=False,
+                                            logger=logger)
+            except Exception as e:
+                logger.error(e)
+                sys.exit(1)
+
             with open(os.path.join(output, 'contigs.fasta'), 'w') as new_seqs:
                 seqrec = Seq(consensus, IUPAC.IUPACAmbiguousDNA())
                 SeqIO.write(SeqRecord(seqrec,
@@ -572,8 +575,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
     regions
     """
     if logger is None:
-        print("Logger needed for the 'reconstruct_seqs' function!")
-        sys.exit(1)
+        raise ValueError("Logger needed for the 'reconstruct_seqs' function!")
     logger.warning("This function is sketchy at best. Here be dragons!")
     if verbose:
         logger.debug(str("reconstucting consensus sequence " +
@@ -655,9 +657,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
                 logger.debug("using ref")
             new = "".join([new, ref[i]])
         else:
-            if verbose:
-                logger.debug("Case Not covered!")
-            sys.exit(1)
+            raise ValueError("Error parsing pileup: Case Not covered!")
         j = j + 1  # increment the pileup counter
     if verbose:
         logger.info(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: " +
@@ -701,15 +701,6 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
                                                 report_list if x[0] == k][0]))
                     else:
                         mainDict[k].append("XX")
-                    # if dex in [0]:
-                    #     continue  # skip header
-                    # else:
-                    #     try:
-                    #         mainDict[row].append(val)
-                    #     except KeyError:
-                    #         # make dummy entry for all preceeding
-                    #         mainDict[row] = ["XX"] * counter
-                    #         mainDict[row].append(val)
         counter = counter + 1
     logger.info(str(mainDict))
     if write:
@@ -734,7 +725,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
          no_temps, distance_estimation, proceed_to_target, target_len,
          score_minimum, min_contig_len):
     """
-    essentially a 'main' function,  to parallelize time comsuming parts
+    process each fasta seed to parallelize time comsuming parts
     """
     logger.info("processing {0}".format(fasta))
     logger.info("\nITEM %s of %s\n" % (str(fastas.index(fasta) + 1), nfastas))
@@ -806,30 +797,34 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                                        logger=logger)
 
         logger.info("Converting mapped results to fastqs")
-        new_fastq1, new_fastq2, new_fastqS, \
-            mapped_fastq1, mapped_fastq2, mapped_fastqS = \
-            convert_bams_to_fastq(map_results_prefix, fastq_results_prefix,
-                                  keep_unmapped=keep_unmapped_reads,
-                                  logger=logger,
-                                  samtools_exe=args.samtools_exe)
+        try:
+            new_fastq1, new_fastq2, new_fastqS, \
+                mapped_fastq1, mapped_fastq2, mapped_fastqS = \
+                    convert_bams_to_fastq(map_results_prefix,
+                                          fastq_results_prefix,
+                                          keep_unmapped=keep_unmapped_reads,
+                                          logger=logger,
+                                          samtools_exe=args.samtools_exe)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
         if subtract_reads and keep_unmapped_reads:
             logger.warning("using reduced reads with next iteration")
             fastq1, fastq2, fastqS = new_fastq1, new_fastq2, new_fastqS
         logger.info("Running SPAdes")
-        #TODO improve heuristic that once was the following lines if needed
-        # last_time_through = False
-        # if this_iteration == args.iterations:
-        #     last_time_through = True
-        contigs_path, proceed = \
-            run_spades(pe1_1=mapped_fastq1, pe1_2=mapped_fastq2,
-                       pe1_s=mapped_fastqS, prelim=True,
-                       as_paired=paired_inference,
-                       groom_contigs="keep_first",
-                       output=spades_dir, keep_best=True,
-                       # output=spades_dir, keep_best=last_time_through,
-                       ref=new_reference, ref_as_contig=ref_as_contig,
-                       k=kmers, logger=logger,
-                       seqname=fasta, spades_exe=args.spades_exe)
+        try:
+            contigs_path, proceed = \
+                run_spades(pe1_1=mapped_fastq1, pe1_2=mapped_fastq2,
+                           pe1_s=mapped_fastqS, prelim=True,
+                           as_paired=paired_inference,
+                           groom_contigs="keep_first",
+                           output=spades_dir, keep_best=True,
+                           ref=new_reference, ref_as_contig=ref_as_contig,
+                           k=kmers, logger=logger,
+                           seqname=fasta, spades_exe=args.spades_exe)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
         if not proceed:
             logger.warning("Assembly failed: no spades output for {0}".format(
                            os.path.basename(fasta)))
@@ -964,8 +959,11 @@ if __name__ == "__main__":
 
     # check bambamc is installed proper if using smalt
     if args.method == "smalt":
-        check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
-
+        try:
+            check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
     # check equal length fastq.  This doesnt actually check propper pairs
     if file_len(args.fastq1) != file_len(args.fastq2):
         logger.error("Input Fastq's are of unequal length! Try " +

@@ -81,7 +81,7 @@ class riboSnag_TestCase(unittest.TestCase):
     def test_get_genbank_seq_matching_id(self):
         records = get_genbank_record(self.test_gb_file)
         record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
-                                              genbank_record_list=records)
+                                              genbank_records=records)
         self.assertEqual(records[0].seq, record.seq)
 
     def test_extract_coords_from_locus(self):
@@ -132,7 +132,7 @@ class riboSnag_TestCase(unittest.TestCase):
         clusters = parse_clustered_loci_file(self.test_loci_file,
                                              logger=logger)
         record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
-                                              genbank_record_list=records)
+                                              genbank_records=records)
         coord_list = extract_coords_from_locus(record=record,
                                                locus_tag_list=clusters[0][1],
                                                feature="rRNA",
@@ -143,7 +143,7 @@ class riboSnag_TestCase(unittest.TestCase):
                                                          flanking="700:700",
                                                          within=50, minimum=50,
                                                          replace=False,
-                                                         padding=0,  # un-used
+                                                         padding=0, # unused
                                                          logger=logger,
                                                          verbose=False)
         with open(self.test_cluster1, 'r') as ref:
@@ -159,7 +159,7 @@ class riboSnag_TestCase(unittest.TestCase):
         clusters = parse_clustered_loci_file(self.test_loci_file,
                                              logger=logger)
         record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
-                                              genbank_record_list=records)
+                                              genbank_records=records)
         coord_list = extract_coords_from_locus(record=record,
                                                locus_tag_list=clusters[0][1],
                                                feature="rRNA",

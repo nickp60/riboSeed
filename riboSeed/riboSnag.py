@@ -118,8 +118,7 @@ def parse_clustered_loci_file(file, logger=None):
     if logger is None:
         raise ValueError("logging must be used!")
     if not (os.path.isfile(file) and  os.path.getsize(file) > 0):
-        logger.error("Cluster File not found!")
-        sys.exit(1)
+        raise ValueError("Cluster File not found!")
     clusters = []
     # this covers comon case where user submits genbank and cluster file
     # in the wrong order.
@@ -194,19 +193,18 @@ def extract_coords_from_locus(record, locus_tag_list=[],
     return(loc_list)
 
 
-def get_genbank_rec_from_multigb(recordID, genbank_record_list):
-    """ given a list of loci and genbank records, return sequence of
+def get_genbank_rec_from_multigb(recordID, genbank_records):
+    """ given a record ID and and list of genbank records, return sequence of
     genbank record that has all the loci.
     If on different sequences, return error
     """
-    for record in genbank_record_list:
+    for record in genbank_records:
         if recordID == record.id:
             return(record)
         else:
             pass
-    # if none found, complain
-    print("no record found matching record id!")
-    sys.exit(1)
+    # if none found, raise error
+    raise ValueError("no record found matching record id!")
 
 
 def pad_genbank_sequence(record, old_coords, padding, logger=None):
@@ -273,34 +271,29 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
     revamped 20161004
     """
     if logger is None:
-        logger.error("Must have logger for this function")
-        sys.exit(1)
+        raise ValueError("Must have logger for this function")
     if replace is True:
-        logger.error("MWe got rid of the replace option; it just wasnt useful")
-        sys.exit(1)
+        raise ValueError("--replace no longer supported")
     try:
         flank = [int(x) for x in flanking.split(":")]
         if len(flank) == 1:  # if only one value use for both up and downstream
             flank.append(flank[0])
         assert(len(flank) == 2)
     except:
-        logger.error("Error parsing flanking value; must either be " +
-                     " integer or two colon-seapred integers")
-        sys.exit(1)
+        raise ValueError("Error parsing flanking value; must either be " +
+                         "integer or two colon-seapred integers")
 
     #TODO : make this safer. coord list is constructed sequentially but this
     # is a backup. Throws sort of a cryptic error. but as I said, its a backup
     start_list = [y[0] for y in [x[1] for x in coords]]
     logger.debug("Start_list: {0}".format(start_list))
     if not strictly_increasing([x for x in start_list]):
-        logger.error("coords are not increasing!")
-        sys.exit(1)
+        raise ValueError("coords are not increasing!")
     smallest_feature = min([y[1] - y[0] for y in [x[1] for x in coords]])
     if smallest_feature < (minimum) and replace:
-        print("invalid minimum of {0}! cannot exceed half of smallest " +
-              "feature, which is {1} in this case".format(
-                  minimum, smallest_feature))
-        sys.exit(1)
+        raise ValueError("invalid minimum of {0}! cannot exceed half of " +
+                         "smallest feature, which is {1} in this case".format(
+                             minimum, smallest_feature))
 
     logger.debug("stitching together the following coords:")
     for i in coords:
@@ -383,9 +376,13 @@ def main(clusteredList, genome_records, logger, verbose, within,
         locus_tag_list = i[1]
         recID = i[0]  # which sequence cluster is from
         # get seq record that cluster is  from
-        genbank_rec = \
-            get_genbank_rec_from_multigb(recordID=recID,
-                                         genbank_record_list=genome_records)
+        try:
+            genbank_rec = \
+                get_genbank_rec_from_multigb(recordID=recID,
+                                             genbank_records=genome_records)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
         # make coord list
         try:
             coord_list = extract_coords_from_locus(record=genbank_rec,
@@ -403,16 +400,21 @@ def main(clusteredList, genome_records, logger, verbose, within,
         else:
             coords, sequence = coord_list, genbank_rec.seq
         #  given coords and a sequnce, extract the region as a SeqRecord
-        regions.append(stitch_together_target_regions(sequence,
-                                                      coords=coords,
-                                                      within=args.within,
-                                                      minimum=args.minimum,
-                                                      flanking=args.flanking,
-                                                      replace=replace,
-                                                      verbose=False,
-                                                      logger=logger,
-                                                      padding=padding,
-                                                      circular=circular))
+        try:
+            regions.append(
+                stitch_together_target_regions(sequence,
+                                               coords=coords,
+                                               within=args.within,
+                                               minimum=args.minimum,
+                                               flanking=args.flanking,
+                                               replace=replace,
+                                               verbose=False,
+                                               logger=logger,
+                                               padding=padding,
+                                               circular=circular))
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
     # after each cluster has been extracted, write out results
     logger.debug(regions)
     output_index = 1
