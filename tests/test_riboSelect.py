@@ -41,18 +41,6 @@ class riboSelect_TestCase(unittest.TestCase):
         self.test_loci_file = os.path.join(os.path.dirname(__file__),
                                            str("references" + os.path.sep +
                                                'grouped_loci_reference.txt'))
-    # moved to utisl 20161018
-    # def test_multisplit(self):
-    #     test_string = "look_this+is+a locus_that_is+multi-delimited"
-    #     list_of_things = multisplit(["-", "_", "+", " "], test_string)
-    #     test_other_string = "look_this+is+a\faillocus_that_is+multi-delimited"
-    #     list_of_other_things = multisplit(["-", "_", "+", " "],
-    #                                       test_other_string)
-    #     self.assertEqual(list_of_things, ["look", "this", "is", "a", "locus",
-    #                                       "that", "is", "multi", "delimited"])
-    #     self.assertNotEqual(list_of_other_things, ["look", "this", "is", "a",
-    #                                                "locus", "that", "is",
-    #                                                "multi", "delimited"])
 
     def test_get_filtered_locus_tag_dict(self):
         # test single genbank record

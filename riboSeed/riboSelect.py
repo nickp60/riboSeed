@@ -94,10 +94,6 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     if specific features is None, return all with type == feature
     Changed from having index used for clustering to using the first coord
     """
-    #if not isinstance(genome_seq_records, list):
-    #    raise("Error! this function can only accept a list of records" +
-    #          "simply put your genbank record in brackets if you only " +
-    #          "have a single record")
     TMI = verbose  # probably should rename this to just verbose
     assert (type(genome_seq_records) is list),\
         'must pass list of genomes to function, even if single genome '
@@ -219,10 +215,9 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
                 else:
                     indexClusterDict[row[1]] = [row[0]]
             except:
-                print("error constructing dictionary from csv; " +
-                      "possibly due to type casting? adjust the 'kind' " +
-                      "arg to string if in doubt")
-                sys.exit(1)
+                raise ImportError("error constructing dictionary from csv; " +
+                                  "possibly due to type casting? adjust the "+
+                                  " 'kind' arg to string if in doubt")
     if not DEBUG:
         os.remove(os.path.join(os.getcwd(), "list.csv"))
         os.remove(os.path.join(os.getcwd(), "km_script.R"))
@@ -300,7 +295,7 @@ if __name__ == "__main__":
             centers = [int(x) for x in args.clusters.split(":")]
             logger.info(str(centers))
         except:
-            logger.error("cannot coerce --clusters to integer after " +\
+            logger.error("cannot coerce --clusters to integer after " +
                          "splitting on colons!\n")
             sys.exit(1)
     else:
@@ -310,7 +305,7 @@ if __name__ == "__main__":
     # logger.info clusters for accession for user to verify
     if len(genome_records) != len(centers):
         logger.error("centers must be the same length as number" +
-            " of genbank records!\n")
+                     " of genbank records!\n")
         sys.exit(1)
 
     #####
@@ -352,27 +347,32 @@ if __name__ == "__main__":
         rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
                            genome_records[i].id in k }.values())[0]
         logger.debug("rec_nfeat: {0}".format(rec_nfeat))
-        # logger.debug([x[1] for x in list(subset)])
-        indexes = [x[1] for x in list(subset)] # get index back from tuple key
-
+        indexes = [x[1] for x in list(subset)]  # get index back from tuple key
+        ## if centers[i] is 0, try max and min sequentially; if that fails skip
         if centers[i] == 0:
             if min(rec_nfeat) == 0:
-                best_shot_centers = max(rec_nfeat)
+                current_centers = max(rec_nfeat)
             else:
-                best_shot_centers = min(rec_nfeat)
-            if best_shot_centers == 0:
+                current_centers = min(rec_nfeat)
+            if current_centers == 0:
                 logger.info("skipping the clustering for {0}\n".format(i))
                 continue
             # indexClusters = pure_python_kmeans(subset.keys(),
             indexClusters = pure_python_kmeans(indexes,
-                                               centers=best_shot_centers,
+                                               centers=current_centers,
                                                DEBUG=args.keep_temps)
         else:
+            ## if centers[i] is not 0, use it
+            current_centers = centers[i]
+        # Perform actual clustering
+        try:
+            # indexClusters should be like { "1": [3,4,6], "2": [66,45,63]}
             indexClusters = pure_python_kmeans(indexes,
-                                               centers=centers[i],
+                                               centers=current_centers,
                                                DEBUG=args.keep_temps)
-
-        # indexClusters should be like { "1": [3,4,6], "2": [66,45,63]}
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
         with open(output_path, "a") as outfile:
             outfile.write("# Generated cluters for on {1}\n".format(
                 i, date))
