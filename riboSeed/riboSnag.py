@@ -134,7 +134,7 @@ def parse_clustered_loci_file(file, logger=None):
                 if line.startswith("#"):
                     continue
                 seqname = line.strip("\n").split(" ")[0]
-                loci_list = [x for x in \
+                loci_list = [x for x in
                              line.strip("\n").split(" ")[1].split(":")]
                 clusters.append([seqname, loci_list])
     except:
@@ -168,9 +168,8 @@ def extract_coords_from_locus(record, locus_tag_list,
         try:
             locus_tag = feat.qualifiers.get("locus_tag")[0]
         except:
-            logger.error(str("found a feature ({0}), but there is no" +\
-                             "locus tag associated with it!").format(
-                                 feat))
+            logger.error(str("found a feature ({0}), but there is no" +
+                             "locus tag associated with it!").format(feat))
             raise ValueError
 
         if locus_tag in locus_tag_list:
@@ -232,7 +231,7 @@ def pad_genbank_sequence(record, old_coords, padding, logger=None):
             logger.error("padding ammount cannot be greater" +
                          " than the length of the sequence!")
         raise ValueError("padding cannot be greater than length of sequence")
-    new_seq = str(old_seq[-padding: ] + old_seq + old_seq[0: padding])
+    new_seq = str(old_seq[-padding:] + old_seq + old_seq[0: padding])
     if len(new_seq) != len(old_seq) + (2 * padding):
         raise ValueError("Error within function! new seq should be len of " +
                          "seq plus 2x padding")
@@ -257,7 +256,7 @@ def strictly_increasing(L, dup_ok=False, verbose=False):
     if verbose:
         print(L)
         print(items)
-    return(all(x < y for x, y in zip(items, items[1: ])))
+    return(all(x < y for x, y in zip(items, items[1:])))
 
 
 def stitch_together_target_regions(genome_sequence, coords, padding,
@@ -340,7 +339,7 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
             rel_end = (i[1][1] - this_within) - global_start
             seq_with_ns = str(seq_with_ns[0:rel_start] +
                               str("N" * region_length) +
-                              seq_with_ns[rel_end: ])
+                              seq_with_ns[rel_end:])
 
         try:
             # make sure the sequence is proper length, corrected for zero-index
