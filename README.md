@@ -24,11 +24,12 @@ Move your data to its own directory, whether it is a single fasta genome or mult
 ## 1: Selection and Extraction
 
 
-For generalized selection and extraction of a feature type:
+For extracting other conserved regions for use in seeded assembly:
 
 * `otherSelect` [under development]
 
-For extracting other conserved regions for use in seeded assembly
+
+For extracting ribosomal regions for use in seeded assembly
 
 * `riboSelect.py` searches the genome for rRNA annotations, clusters them into likely ribosomal groups, and outputs a colon-separated list of clustered rRNA locus tags by record id.
 
@@ -294,7 +295,9 @@ Installing with pip3.5 will be the easiest way, but prior to release, clone this
 
 Must have bambamc installed! If you get an error as follows,
 
-```Error running test to check bambamc lib is installed!
+```
+Error running test to check bambamc lib is installed!
+
 ```
 
 it means that SMALT was installed without the bambamc library.  To install properly, see the install link below.  in short,
