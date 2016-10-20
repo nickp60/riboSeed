@@ -135,10 +135,11 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     """
     assert isinstance(genome_seq_records, list), \
         'must pass list of genomes to function, even if single genome '
-    if specific_features is None:
-        all_feature = True
-    else:
-        all_feature = False
+    # if specific_features is None:
+    #     all_feature = True
+    # else:
+    #     all_feature = False
+    if specific_features is not None:
         specific_features = specific_features.split(":")
     locus_tag_dict = {}  # recipient structure
     # loop through records
@@ -155,16 +156,14 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
                     continue
                 product_list = multisplit([",", " ", "-", "_"],
                                           feat.qualifiers.get("product")[0])
-                if verbose:
-                    logger.debug(product_list)
                 coords = [feat.location.start.position + 1,
                           feat.location.end.position]
-                if verbose:
-                    logger.debug(coords)
+                logger.debug(product_list)
+                logger.debug(coords)
                 # if either specific feature is found in product or
                 # only interested in all features, add locus to dict
-                if (all_feature or
-                    (not all_feature and
+                if (specific_features is None or
+                    (specific_features is not None and
                      any([x in specific_features for x in product_list]))):
                     # key is start coord
                     locus_tag_dict[(record.id, coords[0])] = [loc_number,
@@ -173,14 +172,12 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
                                                               feat.type,
                                                               product_list]
                 else:
-                    if verbose:
-                        logger.debug("Whoa! not adding this feat to " +
-                                     "list: %s", feat)
+                    logger.debug("Not adding this feat to " +
+                                 "list: %s", feat)
                     pass
                 loc_number = loc_number + 1  # increment index after feature
             else:
-                if verbose:
-                    logger.dubug("skipping: %s", feat)
+                logger.dubug("skipping: %s", feat)
                 loc_number = loc_number + 1  # increment index after feature
         # this is a soft warning, as we want to be able to loop
         # through all records before worrying
@@ -196,10 +193,11 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
 
     # count the occuraces of each feature per genbank record
     nfeatures_occur, \
-        nfeat_simple = count_feature_hits(all_feature,
-                                          genome_seq_records,
-                                          specific_features,
-                                          locus_tag_dict)
+        nfeat_simple = count_feature_hits(
+            all_feature=specific_features is None,
+            genome_seq_records=genome_seq_records,
+            specific_features=specific_features,
+            locus_tag_dict=locus_tag_dict)
     return(locus_tag_dict, nfeatures_occur, nfeat_simple)
 
 
@@ -294,12 +292,13 @@ if __name__ == "__main__":
 
     # get list of loci matching feature and optionally specific features
     # also returns nfeat, a dict of feature count by genbank id
-    logger.debug(str(
-        "searching {0} for {1} features containing {2} in the " +
-        "product annotation").format(
-        str([x.id for x in genome_records]),
-        args.feature,
-        str([x for x in args.specific_features.split(":")])))
+    logger.debug(
+        str(
+            "searching {0} for {1} features containing {2} in the " +
+            "product annotation").format(
+            str([x.id for x in genome_records]),
+            args.feature,
+            str([x for x in args.specific_features.split(":")])))
     lociDict, nfeat, nfeat_simple = \
         get_filtered_locus_tag_dict(genome_seq_records=genome_records,
                                     feature=args.feature,
@@ -393,7 +392,7 @@ if __name__ == "__main__":
             logger.error(e)
             sys.exit(1)
         with open(output_path, "a") as outfile:
-            outfile.write("# Generated cluters for on {1}\n".format(
+            outfile.write("# Generated cluters for {0} on {1}\n".format(
                 i, date))
             for k, v in indexClusters.items():
                 # for each k:v, this replaces the index in v with the locus tag
