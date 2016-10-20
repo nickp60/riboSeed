@@ -1,3 +1,4 @@
 Biopython==1.68
 coverage==4.2
+pyutilsnrw==0.0.72
 #nosetests

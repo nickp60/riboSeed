@@ -51,13 +51,13 @@ def get_args():
                         "rRNA; default: %(default)s",
                         default='rRNA', dest="feature",
                         action="store", type=str)
-    optional.add_argument("-s", "--specific_features",
-                          help="colon:separated " +
-                          "-- specific features to be grepped from product, " +
-                          "such as 16S or tRNA-Ala; default: %(default)s",
-                          default='16S:23S', type=str,
-                          dest="specific_features",
-                          action="store")
+    # optional.add_argument("-s", "--specific_features",
+    #                       help="colon:separated " +
+    #                       "-- specific features to be grepped from product, " +
+    #                       "such as 16S or tRNA-Ala; default: %(default)s",
+    #                       default='16S:23S', type=str,
+    #                       dest="specific_features",
+    #                       action="store")
     optional.add_argument("-w", "--within_feature_length",
                           help="bp's to include within the region; " +
                           "default: %(default)s",
@@ -117,7 +117,7 @@ def parse_clustered_loci_file(file, logger=None):
     """
     if logger is None:
         raise ValueError("logging must be used!")
-    if not (os.path.isfile(file) and  os.path.getsize(file) > 0):
+    if not (os.path.isfile(file) and os.path.getsize(file) > 0):
         raise ValueError("Cluster File not found!")
     clusters = []
     # this covers comon case where user submits genbank and cluster file

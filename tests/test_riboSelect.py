@@ -52,14 +52,14 @@ class riboSelect_TestCase(unittest.TestCase):
                                         specific_features="16S",
                                         verbose=False,
                                         logger=logger)
-        self.assertTrue([len(x) == 0 for x in \
+        self.assertTrue([len(x) == 0 for x in
                          [bum_nfeat, bum_nfeat_simple, bum_coords]])
         bum_coords2, bum_nfeat2, bum_nfeat_simple2 = \
             get_filtered_locus_tag_dict([record], feature="rRNA",
                                         specific_features="18S",
                                         verbose=False,
                                         logger=logger)
-        self.assertTrue([len(x) == 0 for x in \
+        self.assertTrue([len(x) == 0 for x in
                          [bum_nfeat, bum_nfeat_simple, bum_coords]])
 
         filtered, nfeat, nfeat_simple =\

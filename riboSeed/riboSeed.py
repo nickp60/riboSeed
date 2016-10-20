@@ -857,8 +857,8 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
             this_iteration = max_iterations + 1  # skip remaining iterations
         else:
             pass
-        #  This is a feature that is supposed to help skip unneccesary
-        # iterations. Ixf the difference is negative (new contig is shorter)
+        # This is a feature that is supposed to help skip unneccesary
+        # iterations. If the difference is negative (new contig is shorter)
         # continue, as this may happen (especially in first mapping if
         # reference is not closely related to Sample), continue to map.
         # If the contig length increases, but not as much as min_growth,

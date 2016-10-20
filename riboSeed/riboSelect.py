@@ -48,11 +48,11 @@ def get_args():
                           "; default: %(default)s",
                           default='16S:23S:5S', type=str)
     optional.add_argument("--keep_temps",
-                          help="view intermediate clustering files" +\
+                          help="view intermediate clustering files " +\
                           "default: %(default)s", action='store_true',
                           default=False, dest="keep_temps")
     optional.add_argument("--clobber",
-                          help="overwrite previous output filesy" +\
+                          help="overwrite previous output files: " +\
                           "default: %(default)s", action='store_true',
                           default=False, dest="clobber")
     # TODO Implement this for work with really fragmented genomes
