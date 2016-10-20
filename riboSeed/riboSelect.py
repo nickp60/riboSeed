@@ -1,8 +1,8 @@
 #!/usr/bin/env python3.5
 """
-version 0.8.8
+version 0.8.9
 Minor version changes:
- - smoothed out the kinks of analyzung
+ - smoothed out the kinks, shooting for pylint score of 7
 
 Input:
 - genbank file
@@ -15,21 +15,25 @@ NC33352.5  ECUMN_23S_3:ECUMN_16S_3:ECUMN_5S_4
 
 
 USAGE:
- $ python riboSnag.py genome.gbk --features rRNA --output /path/to/output
+ $ python3.5 riboSelect.py genome.gbk --output /path/to/output
 """
-import re
 import os
 import csv
 import subprocess
 import datetime
 import argparse
 import sys
-from Bio import SeqIO
 import time
-from pyutilsnrw.utils3_5 import get_genbank_record, check_single_scaffold, \
+from Bio import SeqIO
+
+from pyutilsnrw.utils3_5 import check_single_scaffold, \
     set_up_logging, multisplit
 
+
 def get_args():
+    """get the arguments as a main parser with subparsers
+    for named required arguments and optional arguments
+    """
     parser = argparse.ArgumentParser(description="This is used to extract" +
                                      " rRNA regions from a gb file, returns" +
                                      "a text file with the clusters")
@@ -77,89 +81,17 @@ def get_args():
     optional.add_argument("--debug", dest="debug", action="store_true",
                           help="Enable debug messages")
     args = parser.parse_args()
-    return(args)
+    return args
 
 
-def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
-                                specific_features="16S:23S",
-                                verbose=True, logger=None):
-    """ Given a LIST (as of 20160927) or genbank records,
-    returns dictionary of index:locus_tag id pairs for all
-    "feature"  entries.  This then gets clustered.
-    requires having locus tag in your genbank file.  Non-negitable.
-    should be prokka-friendly, so if you have a gb file with legacy
-    annotations, just run through prokka (with an rRNA caller)
-    20160922 This was changed to add checking for rRNA type from
-    ribosome product annoation, not ht locus tag.
-    if specific features is None, return all with type == feature
-    Changed from having index used for clustering to using the first coord
+def count_feature_hits(all_feature, genome_seq_records,
+                       specific_features, locus_tag_dict):
+    """ given genome seq records, specific_features, and a
+    locus_tag_dict from get_filtered_locus_tag_dict, return two structures:
+    - nfeatures_occur [record.id, [[16s, 5],[23s, 4],[5s,6]]]
+    - nfeatures_simple [record.id [record.id, [5,4,6]]
     """
-    TMI = verbose  # probably should rename this to just verbose
-    assert (type(genome_seq_records) is list),\
-        'must pass list of genomes to function, even if single genome '
-    if specific_features is None:
-        all_feature = True
-    else:
-        all_feature = False
-        specific_features = specific_features.split(":")
-    locus_tag_dict = {}  # recipient structure
-    # loop through records
-    for record in genome_seq_records:
-        loc_number = 0  # counter that for index of hits; this is clustered
-        logger.debug("scanning {0}".format(record.id))
-        for feat in record.features:
-            if feat.type in feature:
-                try:
-                    locustag = feat.qualifiers.get("locus_tag")[0]
-                except TypeError:
-                    if TMI:
-                        logger.debug("no locus tag for this feature!")
-                    continue
-                product_list = multisplit([",", " ", "-", "_"],
-                                          feat.qualifiers.get("product")[0])
-                if TMI:
-                    logger.debug(product_list)
-                coords = [feat.location.start.position + 1,
-                          feat.location.end.position]
-                if TMI:
-                    logger.debug(coords)
-                # if either specific feature is found in product or
-                # only interested in all features, add locus to dict
-                if (not all_feature and \
-                    any([x in specific_features for x in product_list])) or \
-                    all_feature:
-                    # key is start coord
-                    locus_tag_dict[(record.id, coords[0])] = [loc_number,
-                                                              record.id,
-                                                              locustag,
-                                                              feat.type,
-                                                              product_list]
-                else:
-                    if TMI:
-                        logger.debug("Whoa! not adding this feat to " +
-                                     "list: {0}".format(feat))
-                    pass
-                loc_number = loc_number + 1  # increment index after feature
-            else:
-                if TMI:
-                    logger.dubug("skipping: {0}".format(feat))
-                loc_number = loc_number + 1  # increment index after feature
-        # this is a soft warning, as we want to be able to loop
-        # through all records before worrying
-        if len(locus_tag_dict) < 1 and logger:
-            logger.info(str("no locus tags found in {0} for " +
-                            "{1} features with annotated products matching " +
-                            "{2}!\n").format(record.id,
-                                             feature, specific_features))
-    locus_tag_dict = locus_tag_dict
-    if verbose and logger:
-        for key in sorted(locus_tag_dict):
-                logger.debug("%s: %s;" % (key, locus_tag_dict[key]))
-
-    locus_tag_dict = locus_tag_dict
     #  This bit counts the number of hits per specific feature.
-    # It should probably be offloaded
-    # to the main loop above, but it works.
     if not all_feature:
         nfeatures_occur = {}  # makes  {genome : [['18S', 5],['28S',3]]}
         nfeat_simple = {}  # makes  {genome : [5, 3]}
@@ -182,10 +114,94 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
             nfeat_simple[record.id] = hit_list_simple
     else:
         nfeatures_occur, nfeat_simple = None, None
+    return(nfeatures_occur, nfeat_simple)
+
+
+def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
+                                specific_features="16S:23S",
+                                verbose=True, logger=None):
+    """ Given a LIST (as of 20160927) or genbank records,
+    returns dictionary of index:locus_tag id pairs for all
+    "feature"  entries.  This then gets clustered.
+    requires having locus tag in your genbank file.  Non-negitable.
+    should be prokka-friendly, so if you have a gb file with legacy
+    annotations, just run through prokka (with an rRNA caller)
+    20160922 This was changed to add checking for rRNA type from
+    ribosome product annoation, not ht locus tag.
+    if specific features is None, return all with type == feature
+    Changed from having index used for clustering to using the first coord
+    """
+    assert isinstance(genome_seq_records, list), \
+        'must pass list of genomes to function, even if single genome '
+    if specific_features is None:
+        all_feature = True
+    else:
+        all_feature = False
+        specific_features = specific_features.split(":")
+    locus_tag_dict = {}  # recipient structure
+    # loop through records
+    for record in genome_seq_records:
+        loc_number = 0  # counter that for index of hits; this is clustered
+        logger.debug("scanning %s", record.id)
+        for feat in record.features:
+            if feat.type in feature:
+                try:
+                    locustag = feat.qualifiers.get("locus_tag")[0]
+                except TypeError:
+                    if verbose:
+                        logger.debug("no locus tag for this feature!")
+                    continue
+                product_list = multisplit([",", " ", "-", "_"],
+                                          feat.qualifiers.get("product")[0])
+                if verbose:
+                    logger.debug(product_list)
+                coords = [feat.location.start.position + 1,
+                          feat.location.end.position]
+                if verbose:
+                    logger.debug(coords)
+                # if either specific feature is found in product or
+                # only interested in all features, add locus to dict
+                if (all_feature or
+                    (not all_feature and
+                     any([x in specific_features for x in product_list]))):
+                    # key is start coord
+                    locus_tag_dict[(record.id, coords[0])] = [loc_number,
+                                                              record.id,
+                                                              locustag,
+                                                              feat.type,
+                                                              product_list]
+                else:
+                    if verbose:
+                        logger.debug("Whoa! not adding this feat to " +
+                                     "list: %s", feat)
+                    pass
+                loc_number = loc_number + 1  # increment index after feature
+            else:
+                if verbose:
+                    logger.dubug("skipping: %s", feat)
+                loc_number = loc_number + 1  # increment index after feature
+        # this is a soft warning, as we want to be able to loop
+        # through all records before worrying
+        if len(locus_tag_dict) < 1 and logger:
+            logger.info(str("no locus tags found in {0} for " +
+                            "{1} features with annotated products matching " +
+                            "{2}!\n").format(record.id,
+                                             feature, specific_features))
+    locus_tag_dict = locus_tag_dict
+    if verbose and logger:
+        for key in sorted(locus_tag_dict):
+            logger.debug("%s: %s;", key, locus_tag_dict[key])
+
+    # count the occuraces of each feature per genbank record
+    nfeatures_occur, \
+        nfeat_simple = count_feature_hits(all_feature,
+                                          genome_seq_records,
+                                          specific_features,
+                                          locus_tag_dict)
     return(locus_tag_dict, nfeatures_occur, nfeat_simple)
 
 
-def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
+def pure_python_kmeans(data, centers=3, kind=int, DEBUG=True):
     """giveb 1d list of numberic data and number of centers, returns a
     csv with the data and cluster, and LP's disapointment
     """
@@ -215,8 +231,8 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
                 else:
                     indexClusterDict[row[1]] = [row[0]]
             except:
-                raise ImportError("error constructing dictionary from csv; " +
-                                  "possibly due to type casting? adjust the "+
+                raise ImportError("error constructing dictionary from csv; "
+                                  "possibly due to type casting? adjust the "
                                   " 'kind' arg to string if in doubt")
     if not DEBUG:
         os.remove(os.path.join(os.getcwd(), "list.csv"))
@@ -227,7 +243,7 @@ def pure_python_kmeans(data, group_by=None, centers=3, kind=int, DEBUG=True):
                         "cant coerce to {0}.".format(kind))
     for k, v in indexClusterDict.items():
         cast_dict[k] = [kind(x) for x in v]
-    return(cast_dict)
+    return cast_dict
 
 
 if __name__ == "__main__":
@@ -254,8 +270,8 @@ if __name__ == "__main__":
     # log = sys.stderr.write  # to keep streaming clean if this goes that route
     logger.info("Current usage:\n{0}\n".format(" ".join(sys.argv[1:])))
     logger.debug("All settings used:")
-    for k,v in sorted(vars(args).items()):
-        logger.debug("{0}: {1}".format(k,v))
+    for k, v in sorted(vars(args).items()):
+        logger.debug("%s: %s", k, v)
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
 
     # Check if output file exists; if so, remove it
@@ -319,11 +335,11 @@ if __name__ == "__main__":
         logger.info("Processing {0}\n".format(genome_records[i].id))
         # if user gives clusters, make sure it matches the length:
         if args.clusters:
-            logger.info("using {0} clusters for {1}\n".format(
-                centers[i], genome_records[i].id))
+            logger.info("using %s clusters for %s\n",
+                        centers[i], genome_records[i].id)
         # get subset of lociDict for that id
-        subset = {key: value for key, value in lociDict.items() if \
-                  genome_records[i].id in value }
+        subset = {key: value for key, value in lociDict.items() if
+                  genome_records[i].id in value}
         # skip if that doesnt have any hits
         logger.debug("Subset loci:")
         for k, v in subset.items():
@@ -344,8 +360,8 @@ if __name__ == "__main__":
                          "submit the desired number of clusters with the  " +
                          "--clusters argument!\n")
             sys.exit(1)
-        rec_nfeat  = list({k: v for k, v in nfeat_simple.items() if \
-                           genome_records[i].id in k }.values())[0]
+        rec_nfeat = list({k: v for k, v in nfeat_simple.items() if
+                          genome_records[i].id in k}.values())[0]
         logger.debug("rec_nfeat: {0}".format(rec_nfeat))
         indexes = [x[1] for x in list(subset)]  # get index back from tuple key
         ## if centers[i] is 0, try max and min sequentially; if that fails skip
@@ -380,8 +396,9 @@ if __name__ == "__main__":
                 # for each k:v, this replaces the index in v with the locus tag
                 # from subset, and writes it out in the way that plays nice
                 # riboSeed
-                outstr = str(genome_records[i].id + " " + \
-                             str(":".join([subset[(genome_records[i].id, int(x))][2] for x in v])) +
+                outstr = str(genome_records[i].id + " " +
+                             str(":".join([subset[(genome_records[i].id,
+                                                   int(x))][2] for x in v])) +
                              '\n')
                 outfile.write(outstr)
                 # this should be the only thing going to stdout.
