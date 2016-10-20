@@ -40,7 +40,8 @@ def get_args():
     parser.add_argument("genbank_genome", help="Genbank file (WITH SEQUENCE)")
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument("-o", "--output",
-                               help="output directory; default: %(default)s",
+                               help="output directory;"
+                               "default: %(default)s",
                                default=os.getcwd(),
                                type=str, dest="output")
     optional = parser.add_argument_group('optional arguments')
@@ -48,15 +49,16 @@ def get_args():
                           help="Feature, rRNA or RRNA; default: %(default)s",
                           default='rRNA', type=str)
     optional.add_argument("-s", "--specific_features",
-                          help="colon:separated -- specific features" +\
+                          help="colon:separated -- specific features"
                           "; default: %(default)s",
                           default='16S:23S:5S', type=str)
     optional.add_argument("--keep_temps",
-                          help="view intermediate clustering files " +\
-                          "default: %(default)s", action='store_true',
+                          help="view intermediate clustering files"
+                          "default: %(default)s",
+                          action='store_true',
                           default=False, dest="keep_temps")
     optional.add_argument("--clobber",
-                          help="overwrite previous output files: " +\
+                          help="overwrite previous output files: "
                           "default: %(default)s", action='store_true',
                           default=False, dest="clobber")
     # TODO Implement this for work with really fragmented genomes
@@ -66,17 +68,17 @@ def get_args():
     #                       "default: %(default)s", action='store_true',
     #                       default=False, dest="nocluster")
     optional.add_argument("-c", "--clusters",
-                          help="number of rDNA clusters;" +
-                          "if submitting multiple records, must be a " + \
-                          "colon:separated list that matches number " + \
-                          "of genbank records.  Default is inferred from " + \
+                          help="number of rDNA clusters;"
+                          "if submitting multiple records, must be a "
+                          "colon:separated list that matches number "
+                          "of genbank records.  Default is inferred from "
                           "specific feature with fewest hits", default='',
                           type=str, dest="clusters")
     optional.add_argument("-v", "--verbosity",
                           dest='verbosity', action="store",
                           default=2, type=int,
-                          help="1 = debug(), 2 = info(), 3 = warning(), " +
-                          "4 = error() and 5 = critical(); " +
+                          help="1 = debug(), 2 = info(), 3 = warning(), "
+                          "4 = error() and 5 = critical(); "
                           "default: %(default)s")
     optional.add_argument("--debug", dest="debug", action="store_true",
                           help="Enable debug messages")
@@ -100,7 +102,7 @@ def count_feature_hits(all_feature, genome_seq_records,
             hit_list_simple = []  # [count] list
             for i in specific_features:
                 hits = 0
-                subset = {k: v for k, v in locus_tag_dict.items() \
+                subset = {k: v for k, v in locus_tag_dict.items()
                           if record.id in v}
                 for k, v in subset.items():
                     # hint: v[-1] should be the product annotation
@@ -292,11 +294,12 @@ if __name__ == "__main__":
 
     # get list of loci matching feature and optionally specific features
     # also returns nfeat, a dict of feature count by genbank id
-    logger.debug(str("search {0} for {1} features containing {2} in the " +
-                     "product annotation").format(
-                         str([x.id for x in genome_records]),
-                         args.feature,
-                         str([x for x in args.specific_features.split(":")])))
+    logger.debug(str(
+        "searching {0} for {1} features containing {2} in the " +
+        "product annotation").format(
+        str([x.id for x in genome_records]),
+        args.feature,
+        str([x for x in args.specific_features.split(":")])))
     lociDict, nfeat, nfeat_simple = \
         get_filtered_locus_tag_dict(genome_seq_records=genome_records,
                                     feature=args.feature,
