@@ -11,32 +11,36 @@ Created on Sun Jul 24 19:33:37 2016
 See README.md for more info and usage
 
 """
-import gzip
+import argparse
+# import gzip
 import sys
 import time
 import re
-import errno
+# import errno
 import logging
-import traceback
+# import traceback
 import os
 import shutil
-import argparse
+# import argparse                 #
 import multiprocessing
 import subprocess
+# import glob
 
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
-import glob
 
-from pyutilsnrw import utils3_5
+# from pyutilsnrw import utils3_5
+
 from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
-    make_output_prefix, combine_contigs, run_quast, \
+    combine_contigs, run_quast, \
     copy_file, check_installed_tools, get_ave_read_len_from_fastq, \
     get_number_mapped, extract_mapped_and_mappedmates, clean_temp_dir, \
     output_from_subprocess_exists, keep_only_first_contig, get_fasta_lengths, \
     file_len
+    #    make_output_prefix,
+
 #################################### functions ###############################
 
 
@@ -212,7 +216,7 @@ def get_args():
                           help="Path to quast executable; " +
                           "default: %(default)s")
     args = parser.parse_args()
-    return(args)
+    return args
 
 
 def check_smalt_full_install(smalt_exe, logger=None):
@@ -289,7 +293,7 @@ def estimate_distances_smalt(outfile, smalt_exe, cores, ref_genome,
         if logger:
             logger.info("using existing reference file")
         pass
-    return(outfile)
+    return outfile
 
 # TODO reimplement bwa, but use BWA-SW instead of MEM
 # def map_to_ref_map_mem(ref, fastq_read1, fastq_read2, map_results_prefix,
@@ -300,14 +304,18 @@ def estimate_distances_smalt(outfile, smalt_exe, cores, ref_genome,
 #         -- increased mismatch penalty || -B def 4, now 8
 #         -- open gap penalty decrease from 6 to 0
 #     """
-#     print('######  Running BWA MEM...' + str(datetime.time(datetime.now())).split('.')[0])
-#     subprocess.call('bwa index %s' % ref, shell=True, stdout=stdout, stderr=stderr)
+#     print('######  Running BWA MEM...' +
+#           str(datetime.time(datetime.now())).split('.')[0])
+#     subprocess.call('bwa index %s' % ref, shell=True, stdout=stdout,
+#                      stderr=stderr)
 #     try:
 #         kseed = int(kseed)
 #     except ValueError:
 #         raise("k must be numeric")
-#     subprocess.call('bwa mem -A 1 -d 20  -U 0 -L 100 -B 100 -a -O 6 -t %s -k %i %s %s %s > %s.sam' %
-#                     (cores, kseed, ref, fastq_read1, fastq_read2, map_results_prefix),
+#     subprocess.call('bwa mem -A 1 -d 20  -U 0 -L 100 -B 100 -a -O 6 -t '+
+#                     '%s -k %i %s %s %s > %s.sam' %
+#                     (cores, kseed, ref, fastq_read1, fastq_read2,
+#                      map_results_prefix),
 #                     stdout=stdout, stderr=stderr, shell=True)
 #     subprocess.call('samtools view -bhS %s.sam > %s.bam' %
 #                     (map_results_prefix, map_results_prefix), shell=True,
@@ -369,8 +377,8 @@ def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
                        stderr=subprocess.PIPE, check=True)
     if fastq_readS != '':
         logger.info(str("Singleton mapped reads: " +
-                    get_number_mapped(str(map_results_prefix + "S.bam"),
-                                      samtools_exe=samtools_exe)))
+                        get_number_mapped(str(map_results_prefix + "S.bam"),
+                                          samtools_exe=samtools_exe)))
     logger.info(str("PE mapped reads: " +
                     get_number_mapped(str(map_results_prefix + "_pe.bam"),
                                       samtools_exe=samtools_exe)))
@@ -417,7 +425,7 @@ def convert_bams_to_fastq(map_results_prefix,
             for suffix in ('1', '2', 'S'):
                 fnames.append("{0}{1}{2}.fastq".format(fastq_results_prefix,
                                                        bams[bam_idx], suffix))
-            return(fnames)
+            return fnames
     else:
         return(None,  # unmapped forward
                None,  # unmapped reverse
@@ -515,8 +523,8 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
                            stderr=subprocess.PIPE)
             # test pileup
             try:
-                pileup = check_samtools_pileup(os.path.join(output,
-                                                        'contigs_pileup.txt'))
+                pileup = check_samtools_pileup(
+                    os.path.join(output, 'contigs_pileup.txt'))
             except Exception as e:
                 logger.error(e)
                 sys.exit(1)
@@ -565,7 +573,7 @@ def check_samtools_pileup(pileup):
                 res.append(f)
     except:
         raise ValueError("Error with reading pileup file")
-    return(res)
+    return res
 
 
 def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
@@ -579,7 +587,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
     logger.warning("This function is sketchy at best. Here be dragons!")
     if verbose:
         logger.debug(str("reconstucting consensus sequence " +
-                       "from {0} and pileup").format(refpath))
+                         "from {0} and pileup").format(refpath))
     seqfile = SeqIO.parse(open(refpath, "r"), "fasta")
     for i in seqfile:
         ref = str(i.seq)
@@ -623,13 +631,13 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
         # NOTE: lowercase letters converted to upper, because orientation
         #       is already handled by samtools.
         elif (ref[i] == "N" or pileup[j][4][0] != ref[i]) and \
-             (len(pileup[j][4]) == 1 or \
+             (len(pileup[j][4]) == 1 or
               all(x == pileup[j][4][0] for x in list(pileup[j][4]))) and \
             pileup[j][4][0] not in [",", ".", "^", "$"]:
             new = "".join([new, pileup[j][4][0].upper()])  # append  upper
         # This is tp handle insetions;  could use a lamda?
         elif re.match(insert, pileup[j][4]) is not None and \
-            all([hits == re.findall(insert, pileup[j][4])[0] for hits in \
+            all([hits == re.findall(insert, pileup[j][4])[0] for hits in
                  re.findall(insert, pileup[j][4])]):
             if verbose:
                 logger.debug("found insert!")
@@ -642,7 +650,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
             N_insertions = N_insertions + insert_N
         # deletions
         elif re.match(delete, pileup[j][4]) is not None and \
-            all([hits == re.findall(insert, pileup[j][4])[0] for hits in \
+            all([hits == re.findall(insert, pileup[j][4])[0] for hits in
                  re.findall(insert, pileup[j][4])]):
             if verbose:
                 logger.debug("found deletion! {0}".format(pileup[j][4]))
@@ -665,7 +673,7 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
     else:
         print(str("total indels: {0}\n\tdeletions {1}\n\tinsetions: " +
                   "{2}").format(indels, N_deletions, N_insertions))
-    return(new[1:])  # [1:] gets rid of starting dollar character
+    return new[1:]  # [1:] gets rid of starting dollar character
 
 
 def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
@@ -674,7 +682,7 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     if not isinstance(pathlist, list):
         if logger:
             logger.warning("paths for quast reports must be in a list!")
-        return(None)
+        return None
     filelist = pathlist
     print(filelist)
     mainDict = {}
@@ -697,7 +705,7 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
                 logger.debug(report_list)
                 for k, v in mainDict.items():
                     if k in [x[0] for x in report_list]:
-                        mainDict[k].append(str([x[1] for x in \
+                        mainDict[k].append(str([x[1] for x in
                                                 report_list if x[0] == k][0]))
                     else:
                         mainDict[k].append("XX")
@@ -707,7 +715,7 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
         if writedir is None:
             if logger:
                 logger.warning("no output dir, cannot write!")
-            return(mainDict)
+            return mainDict
         with open(os.path.join(writedir,
                                "combined_quast_report.tsv"), "w") as outfile:
             for k, v in sorted(mainDict.items()):
@@ -715,7 +723,7 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
                     logger.debug("{0}\t{1}\n".format(k, str("\t".join(v))))
                 outfile.write("{0}\t{1}\n".format(str(k), str("\t".join(v))))
 
-    return(mainDict)
+    return mainDict
 
 
 def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
@@ -827,7 +835,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
             sys.exit(1)
         if not proceed:
             logger.warning("Assembly failed: no spades output for {0}".format(
-                           os.path.basename(fasta)))
+                os.path.basename(fasta)))
 
         # compare lengths of reference and freshly assembled contig
         contig_len = get_fasta_lengths(contigs_path)[0]
@@ -888,16 +896,16 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                                               str(this_iteration) + ".fasta"),
                                      logger=logger)
     except:
-        logger.warning("no contigs moved for {0}!  Check the SPAdes log " +
-                       "in the results directory if worried".format(fasta))
+        logger.warning(str("no contigs moved for {0}!  Check the SPAdes log " +
+                           "in results directory if worried").format(fasta))
     logger.debug("moving {0} to {1}".format(contigs_path, contigs_new_path))
     if no_temps:
         logger.info("removing temporary files from {0}".format(mapping_dir))
         clean_temp_dir(mapping_dir)
     if proceed:
-        return(0)
+        return 0
     else:
-        return(1)
+        return 1
 
 
 #%%
@@ -995,12 +1003,12 @@ if __name__ == "__main__":
                                                       N=36, logger=logger)
     fastq_results_prefix = os.path.join(results_dir, args.exp_name)
 
-    fastas = [os.path.join(args.seed_dir, x) for \
-              x in os.listdir(os.path.join(args.seed_dir, "")) if \
+    fastas = [os.path.join(args.seed_dir, x) for
+              x in os.listdir(os.path.join(args.seed_dir, "")) if
               x.endswith('.fasta')]
     if len(fastas) == 0:
-        logger.error("no files found in {0} ending with " +
-                     "'.fasta'".format(args.seed_dir))
+        logger.error(str("no files found in {0} ending with " +
+                         "'.fasta'").format(args.seed_dir))
 
     nfastas = len(fastas)
     logger.debug(fastas)
@@ -1108,7 +1116,7 @@ if __name__ == "__main__":
         else:
             logger.error("Only valid cases are de novo and de fere novo!")
             sys.exit(1)
-        logger.info("Running %s SPAdes" % j )
+        logger.info("Running %s SPAdes" % j)
         output_contigs, \
             final_success = run_spades(pe1_1=args.fastq1, pe1_2=args.fastq2,
                                        output=os.path.join(results_dir, j),
@@ -1117,7 +1125,7 @@ if __name__ == "__main__":
                                        prelim=False, keep_best=False,
                                        k=args.kmers, logger=logger)
         if final_success:
-            logger.info("Running %s QUAST" % j )
+            logger.info("Running %s QUAST" % j)
             run_quast(contigs=output_contigs,
                       output=os.path.join(results_dir, str("quast_" + j)),
                       quast_exe=args.quast_exe,
