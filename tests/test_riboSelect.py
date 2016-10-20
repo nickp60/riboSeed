@@ -17,9 +17,7 @@ from riboSeed.riboSelect import multisplit, get_filtered_locus_tag_dict, \
     pure_python_kmeans
 
 
-from pyutilsnrw.utils3_5 import get_genbank_record, check_installed_tools,\
-    multisplit
-
+from pyutilsnrw.utils3_5 import get_genbank_record, check_installed_tools
 
 logger = logging
 
@@ -62,7 +60,8 @@ class riboSelect_TestCase(unittest.TestCase):
         self.assertTrue([len(x) == 0 for x in
                          [bum_nfeat, bum_nfeat_simple, bum_coords]])
 
-        filtered, nfeat, nfeat_simple =\
+        filtered, nfeat, \
+            nfeat_simple = \
                 get_filtered_locus_tag_dict([record], feature="rRNA",
                                             specific_features="16S",
                                             verbose=False,
@@ -80,9 +79,11 @@ class riboSelect_TestCase(unittest.TestCase):
         r_is_installed = check_installed_tools("R",
                                                hard=False, logger=logger)
         if r_is_installed:
-            test_for_clustering = [4, 5, 5, 6, 10, 3, 18, 34, 44, 38]
-            clusters = pure_python_kmeans(test_for_clustering, group_by=None,
-                                          centers=3, DEBUG=True, kind=int)
+            test_for_clustering = [4, 5, 5, 6, 10,
+                                   3, 18, 34, 44, 38]
+            clusters = pure_python_kmeans(test_for_clustering,
+                                          centers=3, DEBUG=True,
+                                          kind=int)
             ref_dict = {'2': [3, 4, 5, 5, 6, 10], '1': [34, 38, 44], '3': [18]}
             self.assertEqual(ref_dict, clusters)
 
