@@ -65,7 +65,7 @@ class utils3_5TestCase(unittest.TestCase):
         self.ref_Rfastq = os.path.join(self.ref_dir,
                                        'toy_reads2.fq')
         self.ref_bam_prefix = os.path.join(self.ref_dir,
-                                       'test_bam_to_fastq')
+                                           'test_bam_to_fastq')
         self.smalt_exe = "smalt"
         self.samtools_exe = "samtools"
         self.test_estimation_file = os.path.join(self.test_dir,
@@ -74,8 +74,6 @@ class utils3_5TestCase(unittest.TestCase):
                                                "test_mapping")
         self.fastq_results_prefix = os.path.join(self.test_dir,
                                                  "test_bam_to_fastq")
-        # self.ref_disctance
-        # self.pileup
         pass
 
     def test_make_testing_dir(self):
@@ -149,7 +147,7 @@ class utils3_5TestCase(unittest.TestCase):
         """The tests a 'prelim' and non 'prelim' assembly against manually
         determined md5sums of the resulting contig files
         """
-        contigs_ref1 ="68829130b1405e9108a02f4cd414f057"
+        contigs_ref1 = "68829130b1405e9108a02f4cd414f057"
         """PARAMS FOR CONTIGS1:
         spades.py -k 21,33,55 --trusted-contigs tests/references/cluster1.fasta
         --pe1-1 ./toy_reads1.fq --pe1-2 ./toy_reads2.fq -o spadesman --careful

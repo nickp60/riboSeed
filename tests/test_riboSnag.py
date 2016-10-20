@@ -107,6 +107,7 @@ class riboSnag_TestCase(unittest.TestCase):
         """
         padding_val = 50
         records = get_genbank_record(self.test_gb_file)
+        old_seq = records[0].seq
         old_list = extract_coords_from_locus(record=records[0],
                                              locus_tag_list=["ECUMN_0004"],
                                              feature="CDS",
@@ -116,7 +117,10 @@ class riboSnag_TestCase(unittest.TestCase):
                                            old_coords=old_list,
                                            padding=padding_val, logger=None)
         new_start = coords[0][1][0]
-        self.assertEqual(old_start, new_start - padding_val)
+        self.assertEqual(old_start, new_start - padding_val)  # check index
+        self.assertEqual(old_seq, seq[padding_val: -padding_val])  # full seq
+        self.assertEqual(old_seq[:padding_val], seq[-padding_val:])  # 3' pad
+        self.assertEqual(old_seq[-padding_val:], seq[:padding_val])  # 5' pad
 
     def test_strictly_increasing(self):
         self.assertTrue(strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=True))
@@ -154,7 +158,7 @@ class riboSnag_TestCase(unittest.TestCase):
     def test_stitching_integration(self):
         """  Integration of several things
         """
-        ex_padding = 1000 # an example padding amount
+        ex_padding = 1000  # an example padding amount
         records = get_genbank_record(self.test_gb_file)
         clusters = parse_clustered_loci_file(self.test_loci_file,
                                              logger=logger)
@@ -176,14 +180,12 @@ class riboSnag_TestCase(unittest.TestCase):
                                            verbose=False)
         with open(self.test_cluster1, 'r') as ref:
             ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
-        old_start = coord_list[0][1][0]
         self.assertEqual(ref_rec.seq, stitched_record.seq)
         padded_coords, padded_seq = pad_genbank_sequence(record=record,
                                                          old_coords=coord_list,
                                                          padding=ex_padding,
                                                          logger=None)
 
-        new_start = padded_coords[0][1][0]
         # checks that the the sequence is properly padded
         self.assertEqual(record.seq,
                          padded_seq[ex_padding: -ex_padding])
