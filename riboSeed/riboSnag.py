@@ -13,10 +13,10 @@ Output:
 -dir containing DNA fastas in their
 
 """
-import re
+# import re
 import os
-import csv
-import subprocess
+# import csv
+# import subprocess
 import datetime
 import time
 import argparse
@@ -27,11 +27,13 @@ from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
 
 #from pyutilsnrw import utils3_5
-from pyutilsnrw.utils3_5 import get_genbank_seq, get_genbank_record, \
-    set_up_logging
+from pyutilsnrw.utils3_5 import set_up_logging
 
 
 def get_args():
+    """get the arguments as a main parser with subparsers
+    for named required arguments and optional arguments
+    """
     parser = argparse.ArgumentParser(description="Use to extract regions " +
                                      "of interest based on supplied locus " +
                                      " tags.", add_help=False)
@@ -107,7 +109,7 @@ def get_args():
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
     args = parser.parse_args()
-    return(args)
+    return args
 
 
 def parse_clustered_loci_file(file, logger=None):
@@ -141,11 +143,11 @@ def parse_clustered_loci_file(file, logger=None):
     if len(clusters) == 0:
         logger.error("Cluster file could not be parsed!")
         raise FileNotFoundError
-    return(clusters)
+    return clusters
 
 
-def extract_coords_from_locus(record, locus_tag_list=[],
-                              feature="rRNA", verbose=True, logger=None):
+def extract_coords_from_locus(record, locus_tag_list,
+                              feature="rRNA", logger=None):
     """given a list of locus_tags, return a list of
     [loc_number,[start_coord, end_coord], strand, product,
     locus_tag, record.id]
@@ -190,7 +192,7 @@ def extract_coords_from_locus(record, locus_tag_list=[],
     logger.debug("Here are the detected region,coords, strand, product, " +
                  "locus tag, subfeatures and sequence id of the results:")
     logger.debug(loc_list)
-    return(loc_list)
+    return loc_list
 
 
 def get_genbank_rec_from_multigb(recordID, genbank_records):
@@ -200,7 +202,7 @@ def get_genbank_rec_from_multigb(recordID, genbank_records):
     """
     for record in genbank_records:
         if recordID == record.id:
-            return(record)
+            return record
         else:
             pass
     # if none found, raise error
@@ -278,7 +280,7 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
         flank = [int(x) for x in flanking.split(":")]
         if len(flank) == 1:  # if only one value use for both up and downstream
             flank.append(flank[0])
-        assert(len(flank) == 2)
+        assert len(flank) == 2
     except:
         raise ValueError("Error parsing flanking value; must either be " +
                          "integer or two colon-seapred integers")
@@ -353,10 +355,10 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
     logger.info(str("\nexp length {0} \nact length {1}".format(
         global_end - global_start + 1, len(full_seq))))
     if verbose:
-        lb = 70
+        lb = 70  # line break
         for i in range(0, int(len(seq_with_ns) / lb)):
-            print(str(full_seq[i * lb: lb + (i * lb)] ))
-            print(str(seq_with_ns[i * lb: lb + (i * lb)] ))
+            print(str(full_seq[i * lb: lb + (i * lb)]))
+            print(str(seq_with_ns[i * lb: lb + (i * lb)]))
             print()
     if not circular:
         seq_id = str(coords[0][5] + "_" + str(global_start) +
@@ -367,11 +369,11 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
 
     seqrec = SeqRecord(Seq(seq_with_ns, IUPAC.IUPACAmbiguousDNA()),
                        id=seq_id)
-    return(seqrec)
+    return seqrec
 
 
 def main(clusteredList, genome_records, logger, verbose, within,
-         flanking, replace, output, padding, circular):
+         flanking, replace, output, padding, circular, minimum):
     for i in clusteredList:  # for each cluster of loci
         locus_tag_list = i[1]
         recID = i[0]  # which sequence cluster is from
@@ -387,15 +389,15 @@ def main(clusteredList, genome_records, logger, verbose, within,
         try:
             coord_list = extract_coords_from_locus(record=genbank_rec,
                                                    locus_tag_list=locus_tag_list,
-                                                   verbose=True, logger=logger)
+                                                   logger=logger)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
         logger.info(coord_list)
-        if args.circular:
+        if circular:
             coords, sequence = pad_genbank_sequence(record=genbank_rec,
                                                     old_coords=coord_list,
-                                                    padding=args.padding,
+                                                    padding=padding,
                                                     logger=logger)
         else:
             coords, sequence = coord_list, genbank_rec.seq
@@ -404,9 +406,9 @@ def main(clusteredList, genome_records, logger, verbose, within,
             regions.append(
                 stitch_together_target_regions(sequence,
                                                coords=coords,
-                                               within=args.within,
-                                               minimum=args.minimum,
-                                               flanking=args.flanking,
+                                               within=within,
+                                               minimum=minimum,
+                                               flanking=flanking,
                                                replace=replace,
                                                verbose=False,
                                                logger=logger,
@@ -420,7 +422,7 @@ def main(clusteredList, genome_records, logger, verbose, within,
     output_index = 1
     for i in regions:
         filename = str("region_" + str(output_index))
-        with open(os.path.join(args.output,
+        with open(os.path.join(output,
                                str(date + "_" + filename + "_riboSnag.fasta")),
                   "w") as outfile:
             #TODO make discription work when writing seqrecord
@@ -478,4 +480,5 @@ if __name__ == "__main__":
          replace=args.replace,
          output=args.output,
          padding=args.padding,
-         circular=args.circular)
+         circular=args.circular,
+         minimum=args.minimum)

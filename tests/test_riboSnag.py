@@ -89,7 +89,7 @@ class riboSnag_TestCase(unittest.TestCase):
         coord_list = extract_coords_from_locus(record=records[0],
                                                locus_tag_list=["ECUMN_0004"],
                                                feature="CDS",
-                                               verbose=True, logger=logger)[0]
+                                               logger=logger)[0]
         loc_index = coord_list[0]
         locus_tag = coord_list[4]
         strand = coord_list[2]
@@ -111,7 +111,7 @@ class riboSnag_TestCase(unittest.TestCase):
         old_list = extract_coords_from_locus(record=records[0],
                                              locus_tag_list=["ECUMN_0004"],
                                              feature="CDS",
-                                             verbose=True, logger=logger)
+                                             logger=logger)
         old_start = old_list[0][1][0]
         coords, seq = pad_genbank_sequence(record=records[0],
                                            old_coords=old_list,
@@ -140,7 +140,7 @@ class riboSnag_TestCase(unittest.TestCase):
         coord_list = extract_coords_from_locus(record=record,
                                                locus_tag_list=clusters[0][1],
                                                feature="rRNA",
-                                               verbose=True, logger=logger)
+                                               logger=logger)
         stitched_record = stitch_together_target_regions(genome_sequence=\
                                                          record.seq,
                                                          coords=coord_list,
@@ -167,7 +167,7 @@ class riboSnag_TestCase(unittest.TestCase):
         coord_list = extract_coords_from_locus(record=record,
                                                locus_tag_list=clusters[0][1],
                                                feature="rRNA",
-                                               verbose=True, logger=logger)
+                                               logger=logger)
         stitched_record = \
             stitch_together_target_regions(genome_sequence=\
                                            record.seq,
