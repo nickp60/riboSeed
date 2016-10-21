@@ -26,24 +26,24 @@ import logging
 import subprocess
 import os
 import unittest
+
+from pyutilsnrw.utils3_5 import check_installed_tools, md5, file_len
+
+from riboSeed.riboSeed import check_smalt_full_install,\
+    map_to_ref_smalt, convert_bams_to_fastq, estimate_distances_smalt,\
+    run_spades
+
 sys.dont_write_bytecode = True
 
 logger = logging
-
-from pyutilsnrw.utils3_5 import make_output_prefix, check_installed_tools,\
-    copy_file, get_ave_read_len_from_fastq, get_number_mapped,\
-    extract_mapped_and_mappedmates, keep_only_first_contig, md5,\
-    combine_contigs, clean_temp_dir, file_len
-
-from riboSeed.riboSeed import  check_smalt_full_install,\
-    map_to_ref_smalt, convert_bams_to_fastq, estimate_distances_smalt,\
-    run_spades
 
 
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among otherthings wont run if you try this" +
                  " with less than python 3.5")
 class utils3_5TestCase(unittest.TestCase):
+    """ tests for riboSeed.py
+    """
     def setUp(self):
         self.test_dir = os.path.join(os.path.dirname(__file__),
                                      "output_riboseed_tests")
@@ -70,11 +70,15 @@ class utils3_5TestCase(unittest.TestCase):
         pass
 
     def test_make_testing_dir(self):
+        """ creates temp dir for all the files created in these tests
+        """
         if not os.path.exists(self.test_dir):
             os.makedirs(self.test_dir)
         self.assertTrue(os.path.exists(self.test_dir))
 
     def test_estimate_distances_smalt(self):
+        """ test estimate insert disances
+        """
         if os.path.exists(self.test_estimation_file):
             print("warning! existing distance esimation file!")
         est_file = estimate_distances_smalt(outfile=self.test_estimation_file,
@@ -92,6 +96,8 @@ class utils3_5TestCase(unittest.TestCase):
         self.assertEqual(ref_mapping_len, file_len(est_file))
 
     def test_convert_bams_to_fastq(self):
+        """ TODO still need to write md5 tests for this
+        """
         if not os.path.exists(self.fastq_results_prefix):
             os.makedirs(self.fastq_results_prefix)
         convert_bams_to_fastq(map_results_prefix=self.ref_bam_prefix,
@@ -136,22 +142,26 @@ class utils3_5TestCase(unittest.TestCase):
             self.assertEqual(parse_results[i],
                              lines_and_words[i])
 
+    def test_check_smalt_full_install(self):
+        """ TODO: how would I test this?
+        """
+        check_smalt_full_install(self.smalt_exe, logger=None)
+        pass
+
     def test_run_spades(self):
         """The tests a 'prelim' and non 'prelim' assembly against manually
         determined md5sums of the resulting contig files
-        """
-        contigs_ref1 = "68829130b1405e9108a02f4cd414f057"
-        """PARAMS FOR CONTIGS1:
+        PARAMS FOR CONTIGS1:
         spades.py -k 21,33,55 --trusted-contigs tests/references/cluster1.fasta
         --pe1-1 ./toy_reads1.fq --pe1-2 ./toy_reads2.fq -o spadesman --careful
-        """
-        contigs_ref2 = "740310315e5547e25c7aca012d198c65"
-        """PARAMS FOR CONTIGS1:
+        PARAMS FOR CONTIGS1:
         spades.py -k 21,33,55 --trusted-contigs tests/references/cluster1.fasta
         --pe1-1 ./toy_reads1.fq --pe1-2 ./toy_reads2.fq -o spadesman
         --only-assembler --cov-cutoff off --sc --careful
         manually select just the first contig NODE1..
         """
+        contigs_ref1 = "68829130b1405e9108a02f4cd414f057"
+        contigs_ref2 = "740310315e5547e25c7aca012d198c65"
         contigs1, success = run_spades(output=os.path.join(self.spades_dir,
                                                            "test1"),
                                        ref=self.ref_fasta,
@@ -163,17 +173,19 @@ class utils3_5TestCase(unittest.TestCase):
                                        groom_contigs='keep_first',
                                        k="21,33,55", seqname='',
                                        spades_exe="spades.py", logger=logger)
-        contigs2, success = run_spades(output=os.path.join(self.spades_dir,
-                                                           "test2"),
-                                       ref=self.ref_fasta,
-                                       ref_as_contig="trusted",
-                                       pe1_1=self.ref_Ffastq,
-                                       pe1_2=self.ref_Rfastq, pe1_s='',
-                                       as_paired=True, keep_best=True,
-                                       prelim=True,
-                                       groom_contigs='keep_first',
-                                       k="21,33,55", seqname='',
-                                       spades_exe="spades.py", logger=logger)
+        self.assertTrue(success)
+        contigs2, success2 = run_spades(output=os.path.join(self.spades_dir,
+                                                            "test2"),
+                                        ref=self.ref_fasta,
+                                        ref_as_contig="trusted",
+                                        pe1_1=self.ref_Ffastq,
+                                        pe1_2=self.ref_Rfastq, pe1_s='',
+                                        as_paired=True, keep_best=True,
+                                        prelim=True,
+                                        groom_contigs='keep_first',
+                                        k="21,33,55", seqname='',
+                                        spades_exe="spades.py", logger=logger)
+        self.assertTrue(success2)
         self.assertEqual(contigs_ref1, md5(contigs1))
         self.assertEqual(contigs_ref2, md5(contigs2))
 
@@ -185,6 +197,8 @@ class utils3_5TestCase(unittest.TestCase):
     #                     logger=None)
 
     def tearDown(self):
+        """ delete temp files if no errors
+        """
         if all([x is None for x in sys.exc_info()]):
             if os.path.exists(self.test_estimation_file):
                 print("removing test distance estimation file")
