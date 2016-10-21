@@ -844,13 +844,16 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         logger.info("Seed length: {0}".format(seed_len))
         if proceed_to_target:
             logger.info("Target length: {0}".format(target_seed_len))
+        logger.info("Length of this iteration's longest contig: {0}".format(
+            contig_len))
         if this_iteration != 1:
             logger.info("Length of previous longest contig: {0}".format(
                 ref_len))
-        logger.info("Length of this iteration's longest contig: {0}".format(
-            contig_len))
-        logger.info("The new contig differs from the reference (or previous " +
-                    "iteration) by {0} bases".format(contig_length_diff))
+            logger.info("The new contig differs from the previous " +
+                        "iteration by {0} bases".format(contig_length_diff))
+        else:
+            logger.info("The new contig differs from the reference " +
+                        "seed by {0} bases".format(contig_length_diff))
 
         # This cuts failing assemblies short
         if this_iteration == 1 and min_contig_len > contig_len:

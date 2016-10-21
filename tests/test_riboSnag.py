@@ -21,28 +21,21 @@ md5: 27944249bf064ba54576be83053e82b0
 
 """
 __version__ = "0.0.3"
-import time
 import sys
-import shutil
 import logging
-import subprocess
 import os
 import unittest
-import hashlib
-import glob
-import argparse
+
 from Bio import SeqIO
-sys.dont_write_bytecode = True
 
-
-from pyutilsnrw.utils3_5 import get_genbank_seq, get_genbank_record
+from pyutilsnrw.utils3_5 import get_genbank_record
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, strictly_increasing, \
     stitch_together_target_regions, get_genbank_rec_from_multigb,\
     pad_genbank_sequence
 
-
+sys.dont_write_bytecode = True
 logger = logging
 
 
@@ -50,6 +43,8 @@ logger = logging
                  "Subprocess.call among otherthings wont run if you try this" +
                  " with less than python 3.5")
 class riboSnag_TestCase(unittest.TestCase):
+    """ tests riboSnag
+    """
     def setUp(self):
         self.curdir = os.getcwd()
         self.testdirname = os.path.join(os.path.dirname(__file__),
@@ -69,7 +64,7 @@ class riboSnag_TestCase(unittest.TestCase):
         self.samtools_exe = "samtools"
 
     def test_parse_loci(self):
-        """
+        """this checks the parsing of riboSelect ouput
         """
         clusters = parse_clustered_loci_file(self.test_loci_file,
                                              logger=logger)
@@ -78,13 +73,17 @@ class riboSnag_TestCase(unittest.TestCase):
 
         self.assertEqual(clusters[0], ref_loci_list)
 
-    def test_get_genbank_seq_matching_id(self):
+    def test_genbank_match_id(self):
+        """ tests get_genbank_rec_from_multigb
+        """
         records = get_genbank_record(self.test_gb_file)
         record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
                                               genbank_records=records)
         self.assertEqual(records[0].seq, record.seq)
 
     def test_extract_coords_from_locus(self):
+        """todo: replace essentially unused get_genbank_record function
+        """
         records = get_genbank_record(self.test_gb_file)
         coord_list = extract_coords_from_locus(record=records[0],
                                                locus_tag_list=["ECUMN_0004"],
@@ -94,7 +93,7 @@ class riboSnag_TestCase(unittest.TestCase):
         locus_tag = coord_list[4]
         strand = coord_list[2]
         coords = coord_list[1]
-        seqid  = coord_list[5]
+        seqid = coord_list[5]
         self.assertEqual(loc_index, 0)
         self.assertEqual(locus_tag, "ECUMN_0004")
         self.assertEqual(strand, 1)
@@ -123,6 +122,9 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(old_seq[-padding_val:], seq[:padding_val])  # 5' pad
 
     def test_strictly_increasing(self):
+        """ I pulled this largely from SO, and it should check to
+        see if items are in an increasing order, with and without duplicates
+        """
         self.assertTrue(strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=True))
         with self.assertRaises(ValueError):
             strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=False)
@@ -153,7 +155,7 @@ class riboSnag_TestCase(unittest.TestCase):
         with open(self.test_cluster1, 'r') as ref:
             ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
         self.assertEqual(ref_rec.seq, stitched_record.seq)
-        #TODO write test ccase with replacement
+        # If reimplementing replacement write test cases here
 
     def test_stitching_integration(self):
         """  Integration of several things
@@ -169,8 +171,7 @@ class riboSnag_TestCase(unittest.TestCase):
                                                feature="rRNA",
                                                logger=logger)
         stitched_record = \
-            stitch_together_target_regions(genome_sequence=\
-                                           record.seq,
+            stitch_together_target_regions(genome_sequence=record.seq,
                                            coords=coord_list,
                                            flanking="700:700",
                                            within=50, minimum=50,
