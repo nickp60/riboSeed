@@ -934,6 +934,7 @@ if __name__ == "__main__":
     for k, v in sorted(vars(args).items()):
         logger.debug("{0}: {1}".format(k, v))
     if args.cores is not None:
+        args.cores = multiprocessing.cpu_count()
         logger.info("Using %i cores", multiprocessing.cpu_count())
     logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
                      "{2}\n").format(output_root, map_output_dir, results_dir))
