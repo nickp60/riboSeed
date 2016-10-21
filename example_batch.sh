@@ -1,5 +1,12 @@
 #!/bin/bash
-# version 0.0.1
+# version 0.0.2
+#$ -cwd
+#$ -j yes
+#$ -V
+
+echo "Hostname: $HOSTNAME"
+echo "Task started `date`"
+
 set -e # exit on error!
 # Runs a riboseed assembly with default settings
 

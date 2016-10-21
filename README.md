@@ -336,6 +336,7 @@ https://sourceforge.net/projects/smalt/files/
 ## Suggested Running
 There are a lot of commandline options for these, so it can help to run concurrently as  script. The included `example_batch.sh` script is run as follows:
 
+
 ```
 USAGE: /path/to/genome.gb path/to/genome.fasta path/to/read1 path/to/read2 /path/to/outdir/ n_iterations n_flanking n_cores
 All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iterations, flanking_width, and n_cores
@@ -344,5 +345,5 @@ example:
 
 ./example_batch.sh ./sample_data/NC_011751.1.gb ./sample_data/NC_011751.1.fasta ./sample_data/toy_set/toy_reads1.fq  ./sample_data/toy_set/toy_reads2.fq ./results_dir/ 3 1000 4
 
-
 ```
+We reccommend copying this file to your project directory, and customizing it as needed.

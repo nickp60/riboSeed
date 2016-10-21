@@ -87,7 +87,7 @@ def get_args():
                           "default: %(default)s",
                           default='smalt', type=str)
     optional.add_argument("-c", "--cores", dest='cores', action="store",
-                          default=1, type=int,
+                          default=None, type=int,
                           help="cores for multiprocessing workers" +
                           "; default: %(default)s")
     optional.add_argument("-k", "--kmers", dest='kmers', action="store",
@@ -933,6 +933,8 @@ if __name__ == "__main__":
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
         logger.debug("{0}: {1}".format(k, v))
+    if args.cores is not None:
+        logger.info("Using %i cores", multiprocessing.cpu_count())
     logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
                      "{2}\n").format(output_root, map_output_dir, results_dir))
 
@@ -1058,6 +1060,7 @@ if __name__ == "__main__":
                  min_contig_len=args.min_assembly_len)
 
     else:
+        #  default is now to get cores available for worker and
         pool = multiprocessing.Pool(processes=args.cores)
         results = [pool.apply_async(main, (fasta,),
                                     {"results_dir": results_dir,
@@ -1068,7 +1071,7 @@ if __name__ == "__main__":
                                      "fastq1": args.fastq1,
                                      "fastq2": args.fastq2,
                                      "fastqS": args.fastqS,
-                                     "cores": args.cores,
+                                     "cores": 1,  # args.cores,
                                      "mauve_path": mauve_dir,
                                      "ave_read_length": average_read_length,
                                      "fetch_mates": args.paired_inference,

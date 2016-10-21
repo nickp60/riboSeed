@@ -141,15 +141,15 @@ class riboSnag_TestCase(unittest.TestCase):
                                                locus_tag_list=clusters[0][1],
                                                feature="rRNA",
                                                logger=logger)
-        stitched_record = stitch_together_target_regions(genome_sequence=\
-                                                         record.seq,
-                                                         coords=coord_list,
-                                                         flanking="700:700",
-                                                         within=50, minimum=50,
-                                                         replace=False,
-                                                         padding=0, # unused
-                                                         logger=logger,
-                                                         verbose=False)
+        stitched_record = \
+            stitch_together_target_regions(genome_sequence=record.seq,
+                                           coords=coord_list,
+                                           flanking="700:700",
+                                           within=50, minimum=50,
+                                           replace=False,
+                                           padding=0,  # unused
+                                           logger=logger,
+                                           verbose=False)
         with open(self.test_cluster1, 'r') as ref:
             ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
         self.assertEqual(ref_rec.seq, stitched_record.seq)
@@ -190,8 +190,7 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(record.seq,
                          padded_seq[ex_padding: -ex_padding])
         stitched_padded_record = \
-            stitch_together_target_regions(genome_sequence=\
-                                           padded_seq,
+            stitch_together_target_regions(genome_sequence=padded_seq,
                                            coords=padded_coords,
                                            flanking="700:700",
                                            within=50, minimum=50,

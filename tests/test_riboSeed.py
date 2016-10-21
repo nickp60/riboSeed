@@ -21,19 +21,13 @@ md5: 27944249bf064ba54576be83053e82b0
 
 """
 __version__ = "0.0.3"
-import time
 import sys
-import shutil
 import logging
 import subprocess
 import os
 import unittest
-import hashlib
-import glob
-import argparse
 sys.dont_write_bytecode = True
 
-import logging
 logger = logging
 
 from pyutilsnrw.utils3_5 import make_output_prefix, check_installed_tools,\
@@ -44,7 +38,6 @@ from pyutilsnrw.utils3_5 import make_output_prefix, check_installed_tools,\
 from riboSeed.riboSeed import  check_smalt_full_install,\
     map_to_ref_smalt, convert_bams_to_fastq, estimate_distances_smalt,\
     run_spades
-
 
 
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
