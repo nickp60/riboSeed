@@ -239,7 +239,7 @@ def pure_python_kmeans(data, centers=3, kind=int, DEBUG=True):
                                   "possibly due to type casting? adjust the "
                                   " 'kind' arg to string if in doubt")
     if not DEBUG:
-        os.remove(os.path.join(os.getcwd(), "list.csv"))
+        os.remove(os.path.join(os.getcwd(), "pure_python_kmeans_list.csv"))
         os.remove(os.path.join(os.getcwd(), "km_script.R"))
     cast_dict = {}
     if kind not in [int, str, float]:
