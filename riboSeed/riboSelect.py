@@ -205,6 +205,11 @@ def pure_python_kmeans(data, centers=3, kind=int, DEBUG=True):
     """giveb 1d list of numberic data and number of centers, returns a
     csv with the data and cluster, and LP's disapointment
     """
+    # handle single instance "clusters" when data is same or less than centers
+    if len(data) <= centers:
+        # {"index": [coord]}
+        return {str(i): [j] for i, j in enumerate(data)}
+
     with open(os.path.join(os.getcwd(),
                            "pure_python_kmeans_list.csv"), "w") as f:
         for i in data:
@@ -265,11 +270,12 @@ if __name__ == "__main__":
             sys.exit(1)
         else:
             print("# continuing, and risking potential loss of data")
-    logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=str("%s_riboSelect_log.txt" %
-                                        os.path.join(output_root,
-                                                     time.strftime("%Y%m%d%H%M"))),
-                            name=__name__)
+    logger = set_up_logging(
+        verbosity=args.verbosity,
+        outfile=str("%s_riboSelect_log.txt" %
+                    os.path.join(output_root,
+                                 time.strftime("%Y%m%d%H%M"))),
+        name=__name__)
 
     # log = sys.stderr.write  # to keep streaming clean if this goes that route
     logger.info("Current usage:\n{0}\n".format(" ".join(sys.argv[1:])))
@@ -395,6 +401,7 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error(e)
             sys.exit(1)
+
         with open(output_path, "a") as outfile:
             outfile.write("# Generated cluters for {0} on {1}\n".format(
                 i, date))

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 """
-version 0.8.8
 Minor version changes:
  - cleaned up
 Input:

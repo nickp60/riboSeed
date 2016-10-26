@@ -67,7 +67,6 @@ class utils3_5TestCase(unittest.TestCase):
                                                "test_mapping")
         self.fastq_results_prefix = os.path.join(self.test_dir,
                                                  "test_bam_to_fastq")
-        pass
 
     def test_make_testing_dir(self):
         """ creates temp dir for all the files created in these tests
