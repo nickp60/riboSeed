@@ -102,6 +102,12 @@ def get_args():
                           help="overwrite previous output files" +
                           "default: %(default)s", action='store_true',
                           default=False, dest="clobber")
+    optional.add_argument("--revcomp",
+                          help="if majority of regions on reverse strand, " +
+                          "reverse compliment" +
+                          "default: %(default)s",
+                          action='store_true',
+                          default=False, dest="revcomp")
     # had to make this explicitly to call it a faux optional arg
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
@@ -260,7 +266,8 @@ def strictly_increasing(L, dup_ok=False, verbose=False):
 def stitch_together_target_regions(genome_sequence, coords, padding,
                                    flanking="500:500",
                                    within=50, minimum=50, replace=True,
-                                   logger=None, verbose=True, circular=False):
+                                   logger=None, verbose=True, circular=False,
+                                   revcomp=False):
     """
     given a list from get_coords, usually of length 3 (16,5,and 23 rRNAs),
     return a string with the sequence of the region, replacing coding
@@ -318,7 +325,7 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
                        "--circular.")
         global_end = len(genome_sequence)
 
-    #  the minus one makes things go from 1 based to zeor based
+    #  the minus one makes things go from 1 based to zero based
     full_seq = genome_sequence[global_start - 1: global_end]
     seq_with_ns = str(full_seq)
     #
@@ -367,10 +374,16 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
 
     seqrec = SeqRecord(Seq(seq_with_ns, IUPAC.IUPACAmbiguousDNA()),
                        id=seq_id)
-    return seqrec
+    strand = [x[2] for x in coords]
+    if revcomp and \
+       (sum([x == -1 for x in strand]) > sum([x == 1 for x in strand])):
+        logger.info("returning the reverse compliment of the sequence")
+        return seqrec.reverse_complement()
+    else:
+        return seqrec
 
 
-def main(clusteredList, genome_records, logger, verbose, within,
+def main(clusteredList, genome_records, logger, verbose, within, revcomp,
          flanking, replace, output, padding, circular, minimum, prefix_name):
     for i in clusteredList:  # for each cluster of loci
         locus_tag_list = i[1]
@@ -411,7 +424,8 @@ def main(clusteredList, genome_records, logger, verbose, within,
                                                verbose=False,
                                                logger=logger,
                                                padding=padding,
-                                               circular=circular))
+                                               circular=circular,
+                                               revcomp=revcomp))
         except Exception as e:
             logger.error(e)
             sys.exit(1)
@@ -486,4 +500,5 @@ if __name__ == "__main__":
          padding=args.padding,
          circular=args.circular,
          minimum=args.minimum,
-         prefix_name=args.name)
+         prefix_name=args.name,
+         revcomp=args.revcomp)
