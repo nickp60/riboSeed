@@ -53,13 +53,6 @@ def get_args():
                         "rRNA; default: %(default)s",
                         default='rRNA', dest="feature",
                         action="store", type=str)
-    # optional.add_argument("-s", "--specific_features",
-    #                       help="colon:separated " +
-    #                       "-- specific features to be grepped from product, " +
-    #                       "such as 16S or tRNA-Ala; default: %(default)s",
-    #                       default='16S:23S', type=str,
-    #                       dest="specific_features",
-    #                       action="store")
     optional.add_argument("-w", "--within_feature_length",
                           help="bp's to include within the region; " +
                           "default: %(default)s",
@@ -72,6 +65,12 @@ def get_args():
                           "default: %(default)s",
                           default=100, dest="minimum",
                           action="store", type=int)
+    optional.add_argument("-n", "--name",
+                          help="rename the contigs with this prefix" +
+                          # "default: %(default)s",
+                          "default: date (YYYYMMDD)",
+                          default=None, dest="name",
+                          action="store", type=str)
     optional.add_argument("-l", "--flanking_length",
                           help="length of flanking regions, can be colon-" +
                           "separated to give separate upstream and " +
@@ -216,8 +215,8 @@ def pad_genbank_sequence(record, old_coords, padding, logger=None):
     """
     ### take care of the coordinates
     if logger:
-        logger.info("adjusting coordinates by {0} to account for " +
-                    "padding".format(padding))
+        logger.info(str("adjusting coordinates by {0} to account for " +
+                    "padding").format(padding))
     new_coords = []
     for i in old_coords:
         temp = i
@@ -274,7 +273,8 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
     if logger is None:
         raise ValueError("Must have logger for this function")
     if replace is True:
-        raise ValueError("--replace no longer supported")
+        # raise ValueError("--replace no longer supported")
+        logger.error("--replace no longer supported")
     try:
         flank = [int(x) for x in flanking.split(":")]
         if len(flank) == 1:  # if only one value use for both up and downstream
@@ -372,7 +372,7 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
 
 
 def main(clusteredList, genome_records, logger, verbose, within,
-         flanking, replace, output, padding, circular, minimum):
+         flanking, replace, output, padding, circular, minimum, prefix_name):
     for i in clusteredList:  # for each cluster of loci
         locus_tag_list = i[1]
         recID = i[0]  # which sequence cluster is from
@@ -420,11 +420,17 @@ def main(clusteredList, genome_records, logger, verbose, within,
     logger.debug(regions)
     output_index = 1
     for i in regions:
-        filename = str("region_" + str(output_index))
-        with open(os.path.join(output,
-                               str(date + "_" + filename + "_riboSnag.fasta")),
-                  "w") as outfile:
+        if prefix_name is None:
+            filename = str("{0}_region_{1}_{2}.fasta".format(date,
+                                                             output_index,
+                                                             "riboSnag"))
+        else:
+            filename = str("{0}_region_{1}_{2}.fasta".format(prefix_name,
+                                                             output_index,
+                                                             "riboSnag"))
+        with open(os.path.join(output, filename), "w") as outfile:
             #TODO make discription work when writing seqrecord
+            #TODO move date tag to fasta description?
             # i.description = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
             #                           output_index, args.flanking, args.within))
             SeqIO.write(i, outfile, "fasta")
@@ -480,4 +486,5 @@ if __name__ == "__main__":
          output=args.output,
          padding=args.padding,
          circular=args.circular,
-         minimum=args.minimum)
+         minimum=args.minimum,
+         prefix_name=args.name)

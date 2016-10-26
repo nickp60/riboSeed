@@ -2,10 +2,9 @@
 #-*- coding: utf-8 -*-
 
 """
-version 0.9.4
-
 Minor Version Revisions:
- - added option to proceed till maximum number of iterations or target length
+ - no more individual versions; all treated as pipeline from here on
+starting at version 0.0.940
 Created on Sun Jul 24 19:33:37 2016
 
 See README.md for more info and usage
@@ -38,7 +37,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
     copy_file, check_installed_tools, get_ave_read_len_from_fastq, \
     get_number_mapped, extract_mapped_and_mappedmates, clean_temp_dir, \
     output_from_subprocess_exists, keep_only_first_contig, get_fasta_lengths, \
-    file_len
+    file_len, check_version_from_init
     #    make_output_prefix,
 
 #################################### functions ###############################
@@ -932,6 +931,12 @@ if __name__ == "__main__":
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
+    package_init = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "__init__.py")
+    # check version of riboSeed
+    logger.info("riboSeed pipeine package version {0}".format(
+        check_version_from_init(init_file=package_init, min_version="0.0.0")))
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
