@@ -58,8 +58,8 @@ def get_args():
                           default=0, dest="within", action="store", type=int)
     optional.add_argument("-m", "--minimum_feature_length",
                           help="if --replace, and sequence is shorter than " +
-                          " 2x --within_feature_length, --within will be " +
-                          " modified so that only -m bp of sequnece are" +
+                          "2x --within_feature_length, --within will be " +
+                          "modified so that only -m bp of sequnece are" +
                           "turned to N's " +
                           "default: %(default)s",
                           default=100, dest="minimum",
@@ -84,7 +84,7 @@ def get_args():
                           "an region of interest (including flanking bits) " +
                           "extends past chromosome end, this extends the " +
                           "seqence past chromosome origin forward by 5kb; " +
-                          " default: %(default)s",
+                          "default: %(default)s",
                           default=False, dest="circular", action="store_true")
     optional.add_argument("-p", "--padding", dest='padding', action="store",
                           default=5000, type=int,
@@ -189,8 +189,8 @@ def extract_coords_from_locus(record, locus_tag_list,
         else:
             pass
     if not loc_number > 0:
-        logger.error("no hits found in any record! Double " +
-                     "check your genbank file")
+        logger.error("no hits found in any record with feature %s! Double " +
+                     "check your genbank file", feature)
         raise ValueError
     logger.debug("Here are the detected region,coords, strand, product, " +
                  "locus tag, subfeatures and sequence id of the results:")
@@ -325,6 +325,7 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
                        "--circular.")
         global_end = len(genome_sequence)
 
+    logger.debug("global start and end: %s %s", global_start, global_end)
     #  the minus one makes things go from 1 based to zero based
     full_seq = genome_sequence[global_start - 1: global_end]
     seq_with_ns = str(full_seq)
@@ -372,19 +373,21 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
         seq_id = str(coords[0][5] + "_" + str(global_start - padding) +
                      ".." + str(global_end - padding))
 
-    seqrec = SeqRecord(Seq(seq_with_ns, IUPAC.IUPACAmbiguousDNA()),
-                       id=seq_id)
     strand = [x[2] for x in coords]
     if revcomp and \
        (sum([x == -1 for x in strand]) > sum([x == 1 for x in strand])):
         logger.info("returning the reverse compliment of the sequence")
-        return seqrec.reverse_complement()
+        return SeqRecord(Seq(seq_with_ns,
+                             IUPAC.IUPACAmbiguousDNA()).reverse_complement(),
+                         id=str(seq_id + "_RC"))
     else:
-        return seqrec
+        return SeqRecord(Seq(seq_with_ns, IUPAC.IUPACAmbiguousDNA()),
+                         id=seq_id)
 
 
 def main(clusteredList, genome_records, logger, verbose, within, revcomp,
-         flanking, replace, output, padding, circular, minimum, prefix_name):
+         flanking, replace, output, padding, circular, minimum,
+         feature, prefix_name):
     for i in clusteredList:  # for each cluster of loci
         locus_tag_list = i[1]
         recID = i[0]  # which sequence cluster is from
@@ -398,9 +401,11 @@ def main(clusteredList, genome_records, logger, verbose, within, revcomp,
             sys.exit(1)
         # make coord list
         try:
-            coord_list = extract_coords_from_locus(record=genbank_rec,
-                                                   locus_tag_list=locus_tag_list,
-                                                   logger=logger)
+            coord_list = extract_coords_from_locus(
+                record=genbank_rec,
+                feature=feature,
+                locus_tag_list=locus_tag_list,
+                logger=logger)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
@@ -501,4 +506,5 @@ if __name__ == "__main__":
          circular=args.circular,
          minimum=args.minimum,
          prefix_name=args.name,
-         revcomp=args.revcomp)
+         revcomp=args.revcomp,
+         feature=args.feature)
