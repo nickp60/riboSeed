@@ -15,18 +15,20 @@ Output:
 # import re
 import os
 # import csv
-# import subprocess
+import subprocess
 import datetime
 import time
 import argparse
 import sys
+import math
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
 
 #from pyutilsnrw import utils3_5
-from pyutilsnrw.utils3_5 import set_up_logging
+from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
+    combine_contigs
 
 
 def get_args():
@@ -102,12 +104,31 @@ def get_args():
                           help="overwrite previous output files" +
                           "default: %(default)s", action='store_true',
                           default=False, dest="clobber")
-    optional.add_argument("--revcomp",
-                          help="if majority of regions on reverse strand, " +
-                          "reverse compliment" +
+    optional.add_argument("--no_revcomp",
+                          help="default returns reverse complimented seq " +
+                          "if majority of regions on reverse strand. if  " +
+                          "--no_revcomp, this is overwridden" +
                           "default: %(default)s",
                           action='store_true',
-                          default=False, dest="revcomp")
+                          default=False, dest="no_revcomp")
+    optional.add_argument("--skip_check",
+                          help="Dont bother calculating Shannon Entropy; " +
+                          "default: %(default)s",
+                          action='store_true',
+                          default=False, dest="skip_check")
+    optional.add_argument("--msa_tool", dest="msa_tool",
+                          choices=["mafft", "prank"],
+                          action="store", default="mafft",
+                          help="Path to PRANK executable; " +
+                          "default: %(default)s")
+    optional.add_argument("--prank_exe", dest="prank_exe",
+                          action="store", default="prank",
+                          help="Path to PRANK executable; " +
+                          "default: %(default)s")
+    optional.add_argument("--mafft_exe", dest="mafft_exe",
+                          action="store", default="mafft",
+                          help="Path to MAFFT executable; " +
+                          "default: %(default)s")
     # had to make this explicitly to call it a faux optional arg
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
@@ -385,9 +406,90 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
                          id=seq_id)
 
 
-def main(clusteredList, genome_records, logger, verbose, within, revcomp,
+def prepare_prank_cmd(outdir, combined_fastas, prank_exe,
+                      add_args="",outfile_name="best_MSA.fasta",
+                      clobber=False, logger=None):
+    """returns command line for constructing MSA with
+    PRANK and the path to results file
+    """
+    if not os.path.exists(outdir):
+        if logger:
+            logger.error("output directory not found!")
+        raise FileExistsError
+    prank_cmd = "{0} {1} -d={2} -o={3}".format(
+        prank_exe, add_args, combined_fastas,
+        os.path.join(outdir, outfile_name))
+    if logger:
+        logger.debug("PRANK command: \n %s", prank_cmd)
+    return (prank_cmd, os.path.join(outdir, outfile_name))
+
+
+def prepare_mafft_cmd(outdir, combined_fastas, mafft_exe,
+                      add_args="",outfile_name="best_MSA",
+                      clobber=False, logger=None):
+    """returns command line for constructing MSA with
+    PRANK and the path to results file
+    """
+    if not os.path.exists(outdir):
+        if logger:
+            logger.error("output directory not found!")
+        raise FileExistsError
+    mafft_cmd = "{0} {1} {2} > {3}".format(
+        mafft_exe, add_args, combined_fastas,
+        os.path.join(outdir, outfile_name))
+    if logger:
+        logger.debug("MAFFT command: \n %s", mafft_cmd)
+    return (mafft_cmd, os.path.join(outdir, outfile_name))
+
+
+def calc_Shannon_entropy(matrix):
+    """ $j$ has entropy $H(j)$ such that
+    $H(j) = -\sum_{i=(A,C,T,G)} p_i(j) \log p_i(j)$
+    """
+    entropies = []
+    for instance in matrix:
+        unique = set(instance)
+        proportions = {}
+        for i in unique:
+            proportions[i] = sum([x == i for x in instance]) / len(instance)
+        entropy = -sum([prob * (math.log(prob, math.e)) for
+                        prob in proportions.values()])
+        entropies.append(entropy)
+    return entropies
+
+
+def calc_entropy_msa(msa_path):
+    """givn a path to an MSA in FASTA format, this gets the
+    $j$ has entropy $H(j)$ such that
+    $H(j) = -\sum_{i=(A,C,T,G)} p_i(j) \log p_i(j)$
+    return list
+    """
+    batch_size = 1000  # read seequences in chunks this long
+    lengths = []
+    with open(msa_path) as fh:
+        msa_seqs = list(SeqIO.parse(fh, 'fasta'))
+    for rec in msa_seqs:
+        lengths.append(len(rec))
+    if not all([i == lengths[0] for i in lengths]):
+        raise ValueError("Sequences must all be the same length!")
+    entropies = []
+    for batch in range(0, (math.ceil(lengths[0] / batch_size))):
+        # get all sequences into an array
+        seq_array = []
+        for nseq, record in enumerate(msa_seqs):
+            seq_array.append(
+                [x for x in record.seq[(batch * batch_size):
+                                       ((batch + 1) * batch_size)]])
+        # transpose
+        tseq_array = list(map(list, zip(*seq_array)))
+        entropies.extend(calc_Shannon_entropy(tseq_array))
+    assert len(entropies) == lengths[0]
+    return entropies
+
+def main(clusteredList, genome_records, logger, verbose, within, no_revcomp,
          flanking, replace, output, padding, circular, minimum,
          feature, prefix_name):
+    get_rev_comp = no_revcomp is False  # kinda clunky
     for i in clusteredList:  # for each cluster of loci
         locus_tag_list = i[1]
         recID = i[0]  # which sequence cluster is from
@@ -417,6 +519,7 @@ def main(clusteredList, genome_records, logger, verbose, within, revcomp,
                                                     logger=logger)
         else:
             coords, sequence = coord_list, genbank_rec.seq
+
         #  given coords and a sequnce, extract the region as a SeqRecord
         try:
             regions.append(
@@ -430,7 +533,7 @@ def main(clusteredList, genome_records, logger, verbose, within, revcomp,
                                                logger=logger,
                                                padding=padding,
                                                circular=circular,
-                                               revcomp=revcomp))
+                                               revcomp=get_rev_comp))
         except Exception as e:
             logger.error(e)
             sys.exit(1)
@@ -463,6 +566,7 @@ if __name__ == "__main__":
     try:
         os.makedirs(args.output)
     except FileExistsError:
+        # '#' is needed in case streaming output eventually
         print("#Selected output directory %s exists" %
               args.output)
         if not args.clobber:
@@ -506,5 +610,56 @@ if __name__ == "__main__":
          circular=args.circular,
          minimum=args.minimum,
          prefix_name=args.name,
-         revcomp=args.revcomp,
+         no_revcomp=args.no_revcomp,
          feature=args.feature)
+
+    # make MSA and calculate entropy
+    if not args.skip_check:
+        if args.clobber:
+            logger.error("Cannot safely check SMA when --clobber is used!")
+            sys.exit(1)
+        unaligned_seqs = combine_contigs(contigs_dir=args.output,
+                                         pattern="*",
+                                         contigs_name="riboSnag_unaligned",
+                                         ext=".fasta", verbose=False,
+                                         logger=logger)
+        if args.msa_tool == "prank":
+            if check_installed_tools(executable=args.prank_exe,
+                                     hard=False,
+                                     logger=logger):
+                msa_cmd, results_path = prepare_prank_cmd(
+                    outdir=args.output,
+                    outfile_name="best_MSA",
+                    combined_fastas=unaligned_seqs,
+                    prank_exe=args.prank_exe,
+                    add_args="",
+                    clobber=False, logger=logger)
+            else:
+                logger.error("Construction of MSA skipped because " +
+                             "%s is not a valid executable!", args.prank_exe)
+                sys.exit(1)
+        elif args.msa_tool == "mafft":
+            if check_installed_tools(executable=args.mafft_exe,
+                                     hard=False,
+                                     logger=logger):
+                msa_cmd, results_path = prepare_mafft_cmd(
+                    outdir=args.output,
+                    outfile_name="best_MSA",
+                    combined_fastas=unaligned_seqs,
+                    mafft_exe=args.mafft_exe,
+                    add_args="",
+                    clobber=False, logger=logger)
+            else:
+                logger.error("Construction of MSA skipped because " +
+                             "%s is not a valid executable!", args.mafft)
+                sys.exit(1)
+        logger.info("Running %s for MSA", args.msa_tool)
+        subprocess.run(msa_cmd,
+                       shell=sys.platform != "win32",
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE,
+                       check=True)
+        seq_entropy = calc_entropy_msa(results_path)
+        sys.stdout.write("position, ent\n")
+        for pos, i in enumerate(seq_entropy):
+            sys.stdout.write(str(pos) + ", " + str(i) + "\n")

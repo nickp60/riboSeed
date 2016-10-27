@@ -25,15 +25,18 @@ import sys
 import logging
 import os
 import unittest
+import shutil
 
 from Bio import SeqIO
 
-from pyutilsnrw.utils3_5 import get_genbank_record
+from pyutilsnrw.utils3_5 import get_genbank_record, combine_contigs
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, strictly_increasing, \
     stitch_together_target_regions, get_genbank_rec_from_multigb,\
-    pad_genbank_sequence
+    pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd,\
+    calc_Shannon_entropy,\
+    calc_entropy_msa
 
 sys.dont_write_bytecode = True
 logger = logging
@@ -48,7 +51,10 @@ class riboSnag_TestCase(unittest.TestCase):
     def setUp(self):
         self.curdir = os.getcwd()
         self.testdirname = os.path.join(os.path.dirname(__file__),
-                                        "output_utils3_5_tests")
+                                        "output_riboSnag_tests")
+        self.test_snag_dir = os.path.join(os.path.dirname(__file__),
+                                          str("references" + os.path.sep +
+                                              "sample_snag_output"))
         self.test_loci_file = os.path.join(os.path.dirname(__file__),
                                            str("references" + os.path.sep +
                                                'grouped_loci_reference.txt'))
@@ -61,7 +67,16 @@ class riboSnag_TestCase(unittest.TestCase):
         self.test_cluster1 = os.path.join(os.path.dirname(__file__),
                                           str("references" + os.path.sep +
                                               'cluster1.fasta'))
+        self.test_prank_msa = os.path.join(os.path.dirname(__file__),
+                                           str("references" + os.path.sep +
+                                               "best_MSA.fasta.best.fas"))
+        self.test_smalt_msa = os.path.join(os.path.dirname(__file__),
+                                           str("references" + os.path.sep +
+                                               "mafft_msa.fasta"))
         self.samtools_exe = "samtools"
+        self.prank_exe = "prank"
+        self.maxDiff = None
+        self.to_be_removed = []
 
     def test_parse_loci(self):
         """this checks the parsing of riboSelect ouput
@@ -204,8 +219,58 @@ class riboSnag_TestCase(unittest.TestCase):
         # coords were accuratly adjusted
         self.assertEqual(stitched_record.seq, stitched_padded_record.seq)
 
+    def test_calc_Shannon(self):
+        test_matrix = [
+            ["A", "A", "A", "A", "A"],
+            ["A", "A", "A", "A", "G"],
+            ["A", "A", "A", "G", "G"],
+            ["A", "A", "G", "G", "G"],
+            ["A", "T", "G", "G", "G"],
+            ["T", "T", "G", "G", "G"],
+            ["A", "C", "G", "T", "-"]
+        ]
+        calc_Shannon_entropy(test_matrix)
+
+    def test_calc_entropy_from_seq(self):
+        """
+        """
+        # calc_Shannon_entropy(msa_path=self.test_prank_msa)
+        values = calc_entropy_msa(msa_path=self.test_smalt_msa)
+        for i in values:
+            print(i)
+
+    def test_prepare_prank_cmd(self):
+        """ test cases of prank command creation
+        """
+        for dir in [self.testdirname, self.test_snag_dir]:
+            try:
+                os.makedirs(self.testdirname)
+            except:
+                print("using existing {0} directory".format(dir))
+                pass
+        unaligned_seqs = combine_contigs(contigs_dir=self.test_snag_dir,
+                                         pattern="*",
+                                         contigs_name="riboSnag_unaligned",
+                                         ext=".fasta", verbose=False,
+                                         logger=logger)
+        prank_cmd_1, results_path = prepare_prank_cmd(
+            outdir=self.testdirname,
+            outfile_name="best_MSA.fasta",
+            combined_fastas=unaligned_seqs,
+            prank_exe=self.prank_exe,
+            add_args="-t=sometree",
+            clobber=False, logger=None)
+        idealprank = "prank -t=sometree -d={0} -o={1}".format(
+            unaligned_seqs, os.path.join(self.testdirname,
+                                         "best_MSA.fasta"))
+        self.assertEqual(idealprank, prank_cmd_1)
+        self.to_be_removed.append(unaligned_seqs)
+
     def tearDown(self):
-        pass
+        """ delete temp files if no errors
+        """
+        for filename in self.to_be_removed:
+            os.unlink(filename)
 
 if __name__ == '__main__':
     unittest.main()
