@@ -91,6 +91,8 @@ class riboSnag_TestCase(unittest.TestCase):
         """this checks the parsing of riboSelect ouput
         """
         clusters = parse_clustered_loci_file(self.test_loci_file,
+                                             padding=100,
+                                             circular=True,
                                              logger=logger)
         ref_seq_name = 'NC_011751.1'
         ref_loci_list = ['ECUMN_16S_6', 'ECUMN_23S_6', 'ECUMN_5S_7']
@@ -121,9 +123,8 @@ class riboSnag_TestCase(unittest.TestCase):
                                     global_start_coord=None,
                                     global_end_coord=None,
                                     replace=False)
-        records = get_genbank_record(self.test_gb_file)
+        test_cluster.SeqRecord = get_genbank_record(self.test_gb_file)[0]
         cluster_post_extract = extract_coords_from_locus(cluster=test_cluster,
-                                                         record=records[0],
                                                          feature="CDS",
                                                          logger=logger)
         self.assertEqual(cluster_post_extract.loci_list[0].index, 0)
@@ -138,26 +139,32 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(
             cluster_post_extract.loci_list[0].sequence, 'NC_011751.1')
 
-    # def test_pad_genbank_sequence(self):
-    #     """Just tests the function, later we wll test that the same
-    #     sequence is extracted padded and otherwise
-    #     """
-    #     padding_val = 50
-    #     records = get_genbank_record(self.test_gb_file)
-    #     old_seq = records[0].seq
-    #     old_list = extract_coords_from_locus(record=records[0],
-    #                                          locus_tag_list=["ECUMN_0004"],
-    #                                          feature="CDS",
-    #                                          logger=logger)
-    #     old_start = old_list[0][1][0]
-    #     coords, seq = pad_genbank_sequence(record=records[0],
-    #                                        old_coords=old_list,
-    #                                        padding=padding_val, logger=None)
-    #     new_start = coords[0][1][0]
-    #     self.assertEqual(old_start, new_start - padding_val)  # check index
-    #     self.assertEqual(old_seq, seq[padding_val: -padding_val])  # full seq
-    #     self.assertEqual(old_seq[:padding_val], seq[-padding_val:])  # 3' pad
-    #     self.assertEqual(old_seq[-padding_val:], seq[:padding_val])  # 5' pad
+    def test_pad_genbank_sequence(self):
+        """Just tests the function, later we wll test that the same
+        sequence is extracted padded and otherwise
+        """
+        padding_val = 50
+        test_cluster = loci_cluster(index=0, sequence='NC_011751.1',
+                                    loci_list=[locus(index=0,
+                                                     sequence='NC_011751.1',
+                                                     locus_tag="ECUMN_0004",
+                                                     strand=None,
+                                                     start_coord=None,
+                                                     end_coord=None,
+                                                     product=None)],
+                                    padding=padding_val,
+                                    global_start_coord=None,
+                                    global_end_coord=None,
+                                    replace=False)
+        test_cluster.SeqRecord = get_genbank_record(self.test_gb_file)[0]
+        cluster_post_extract = extract_coords_from_locus(cluster=test_cluster,
+                                                         feature="CDS",
+                                                         logger=logger)
+        old_seq = cluster_post_extract.SeqRecord
+        old_list = [[x.start_coord, x.end_coord] for
+                    x in cluster_post_extract.loci_list]
+        padded_cluster = pad_genbank_sequence(cluster_post_extract,
+                                              logger=logger)
 
     # def test_strictly_increasing(self):
     #     """ I pulled this largely from SO, and it should check to
