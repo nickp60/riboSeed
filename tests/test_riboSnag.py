@@ -32,7 +32,7 @@ from Bio import SeqIO
 from pyutilsnrw.utils3_5 import get_genbank_record, combine_contigs, md5
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
-    extract_coords_from_locus, strictly_increasing, \
+    extract_coords_from_locus, \
     stitch_together_target_regions, get_genbank_rec_from_multigb,\
     pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd,\
     calc_Shannon_entropy, calc_entropy_msa, pure_python_plotting
@@ -69,6 +69,9 @@ class riboSnag_TestCase(unittest.TestCase):
         self.test_cluster1 = os.path.join(os.path.dirname(__file__),
                                           str("references" + os.path.sep +
                                               'cluster1.fasta'))
+        self.test_cluster2 = os.path.join(os.path.dirname(__file__),
+                                          str("references" + os.path.sep +
+                                              'cluster2.fasta'))
         self.test_prank_msa = os.path.join(os.path.dirname(__file__),
                                            str("references" + os.path.sep +
                                                "best_MSA.fasta.best.fas"))
@@ -84,16 +87,18 @@ class riboSnag_TestCase(unittest.TestCase):
         self.samtools_exe = "samtools"
         self.prank_exe = "prank"
         self.mafft_exe = "mafft"
-        self.maxDiff = None
+        self.maxDiff = 1000
         self.to_be_removed = []
 
     def test_parse_loci(self):
         """this checks the parsing of riboSelect ouput
         """
-        clusters = parse_clustered_loci_file(self.test_loci_file,
-                                             padding=100,
-                                             circular=True,
-                                             logger=logger)
+        clusters = parse_clustered_loci_file(
+            filepath=self.test_loci_file,
+            gb_filepath=self.test_gb_file,
+            padding=100,
+            circular=True,
+            logger=logger)
         ref_seq_name = 'NC_011751.1'
         ref_loci_list = ['ECUMN_16S_6', 'ECUMN_23S_6', 'ECUMN_5S_7']
         test_locus_tags = [x.locus_tag for x in clusters[0].loci_list]
@@ -111,22 +116,24 @@ class riboSnag_TestCase(unittest.TestCase):
     def test_extract_coords_from_locus(self):
         """todo: replace essentially unused get_genbank_record function
         """
-        test_cluster = loci_cluster(index=0, sequence='NC_011751.1',
-                                    loci_list=[locus(index=0,
-                                                     sequence='NC_011751.1',
-                                                     locus_tag="ECUMN_0004",
-                                                     strand=None,
-                                                     start_coord=None,
-                                                     end_coord=None,
-                                                     product=None)],
-                                    padding=None,
-                                    global_start_coord=None,
-                                    global_end_coord=None,
-                                    replace=False)
+        test_cluster = loci_cluster(
+            index=0, sequence='NC_011751.1',
+            loci_list=[locus(index=0,
+                             sequence='NC_011751.1',
+                             locus_tag="ECUMN_0004",
+                             strand=None,
+                             start_coord=None,
+                             end_coord=None,
+                             product=None)],
+            padding=None,
+            global_start_coord=None,
+            global_end_coord=None,
+            replace=False)
         test_cluster.SeqRecord = get_genbank_record(self.test_gb_file)[0]
-        cluster_post_extract = extract_coords_from_locus(cluster=test_cluster,
-                                                         feature="CDS",
-                                                         logger=logger)
+        cluster_post_extract = extract_coords_from_locus(
+            cluster=test_cluster,
+            feature="CDS",
+            logger=logger)
         self.assertEqual(cluster_post_extract.loci_list[0].index, 0)
         self.assertEqual(
             cluster_post_extract.loci_list[0].locus_tag, "ECUMN_0004")
@@ -144,98 +151,111 @@ class riboSnag_TestCase(unittest.TestCase):
         sequence is extracted padded and otherwise
         """
         padding_val = 50
-        test_cluster = loci_cluster(index=0, sequence='NC_011751.1',
-                                    loci_list=[locus(index=0,
-                                                     sequence='NC_011751.1',
-                                                     locus_tag="ECUMN_0004",
-                                                     strand=None,
-                                                     start_coord=None,
-                                                     end_coord=None,
-                                                     product=None)],
-                                    padding=padding_val,
-                                    global_start_coord=None,
-                                    global_end_coord=None,
-                                    replace=False)
+        test_cluster = loci_cluster(
+            index=0, sequence='NC_011751.1',
+            loci_list=[locus(index=0,
+                             sequence='NC_011751.1',
+                             locus_tag="ECUMN_0004",
+                             strand=None,
+                             start_coord=None,
+                             end_coord=None,
+                             product=None)],
+            padding=padding_val,
+            global_start_coord=None,
+            global_end_coord=None,
+            replace=False)
         test_cluster.SeqRecord = get_genbank_record(self.test_gb_file)[0]
         cluster_post_extract = extract_coords_from_locus(cluster=test_cluster,
                                                          feature="CDS",
                                                          logger=logger)
         old_seq = cluster_post_extract.SeqRecord
-        old_list = [[x.start_coord, x.end_coord] for
-                    x in cluster_post_extract.loci_list]
+        # old_list = [[x.start_coord, x.end_coord] for
+        #             x in cluster_post_extract.loci_list]
         padded_cluster = pad_genbank_sequence(cluster_post_extract,
                                               logger=logger)
-        self.assertEqual(old_seq.seq,
-                         padded_cluster.SeqRecord.seq[padding_val: -padding_val])
+        self.assertEqual(str(old_seq.seq),
+                         str(padded_cluster.SeqRecord.seq[padding_val:
+                                                          -padding_val]))
 
-    def test_strictly_increasing(self):
-        """ I pulled this largely from SO, and it should check to
-        see if items are in an increasing order, with and without duplicates
-        """
-        self.assertTrue(strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=True))
-        with self.assertRaises(ValueError):
-            strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=False)
-        self.assertFalse(strictly_increasing([1, 10, 5.5, 7, 9], dup_ok=False,
-                                             verbose=False))
+    # def test_strictly_increasing(self):
+    #     """ I pulled this largely from SO, and it should check to
+    #     see if items are in an increasing order, with and without duplicates
+    #     """
+    #     self.assertTrue(strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=True))
+    #     with self.assertRaises(ValueError):
+    #         strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=False)
+    #     self.assertFalse(strictly_increasing([1, 10, 5.5, 7, 9], dup_ok=False,
+    #                                          verbose=False))
 
     def test_stitching(self):
         """  This is actually the thing needing the most testing, most likely
         """
-        padding_val = 50
-        clusters = parse_clustered_loci_file(self.test_loci_file,
-                                             padding=100,
-                                             circular=True,
-                                             logger=logger)
+        padding_val = 1000
+        clusters = parse_clustered_loci_file(
+            filepath=self.test_loci_file,
+            gb_filepath=self.test_gb_file,
+            padding=padding_val,
+            circular=True,
+            logger=logger)
         cluster = clusters[0]
-        cluster.SeqRecord = get_genbank_rec_from_multigb(recordID=cluster.
-                                                         genbank_records=records)
-        cluster_post_extract = extract_coords_from_locus(cluster=cluster,
-                                                         feature="CDS",
-                                                         logger=logger)
-        stitched_cluster = \
-            stitch_together_target_regions(cluster=cluster_post_extract,
-                                           flanking="500",
-                                           within=50, minimum=50, replace=True,
-                                           logger=None, verbose=False, circular=False,
-                                           revcomp=False)
-        with open(self.test_cluster1, 'r') as ref:
+        cluster_post_extract = extract_coords_from_locus(
+            cluster=cluster,
+            feature="rRNA",
+            logger=logger)
+        stitched_cluster = stitch_together_target_regions(
+            cluster=cluster_post_extract,
+            flanking="1000",
+            within=50, minimum=50,
+            replace=False,
+            logger=logger,
+            verbose=False,
+            circular=False,
+            revcomp=False)
+        with open(self.test_cluster2, 'r') as ref:
             ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
-        self.assertEqual(ref_rec.seq, stitched_cluster.extractedSeqRecord.seq)
+        self.assertEqual(str(ref_rec.seq),
+                         str(stitched_cluster.extractedSeqRecord.seq))
         # If reimplementing replacement write test cases here
 
     # def test_stitching_integration(self):
     #     """  Integration of several things
     #     """
     #     ex_padding = 1000  # an example padding amount
-    #     records = get_genbank_record(self.test_gb_file)
-    #     clusters = parse_clustered_loci_file(self.test_loci_file,
-    #                                          logger=logger)
-    #     record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
-    #                                           genbank_records=records)
-    #     coord_list = extract_coords_from_locus(record=record,
-    #                                            locus_tag_list=clusters[0][1],
-    #                                            feature="rRNA",
-    #                                            logger=logger)
-    #     stitched_record = \
-    #         stitch_together_target_regions(genome_sequence=record.seq,
-    #                                        coords=coord_list,
-    #                                        flanking="700:700",
-    #                                        within=50, minimum=50,
-    #                                        replace=False,
-    #                                        logger=logger,
-    #                                        padding=ex_padding,
-    #                                        verbose=False)
-    #     with open(self.test_cluster1, 'r') as ref:
+    #     clusters = parse_clustered_loci_file(
+    #         filepath=self.test_loci_file,
+    #         gb_filepath=self.test_gb_file,
+    #         padding=ex_padding,
+    #         circular=False,
+    #         logger=logger)
+    #     cluster = clusters[0]
+    #     cluster_post_extract = extract_coords_from_locus(
+    #         cluster=cluster,
+    #         feature="rRNA",
+    #         logger=logger)
+    #     stitched_cluster = stitch_together_target_regions(
+    #         cluster=cluster_post_extract,
+    #         flanking="1000:1000",
+    #         within=50, minimum=50,
+    #         replace=False,
+    #         logger=logger,
+    #         verbose=False,
+    #         circular=False,
+    #         revcomp=False)
+    #     with open(self.test_cluster2, 'r') as ref:
     #         ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
-    #     self.assertEqual(ref_rec.seq, stitched_record.seq)
-    #     padded_coords, padded_seq = pad_genbank_sequence(record=record,
-    #                                                      old_coords=coord_list,
-    #                                                      padding=ex_padding,
-    #                                                      logger=None)
+    #     self.assertEqual(str(ref_rec.seq),
+    #                      str(stitched_cluster.extractedSeqRecord.seq))
+
+    #     padded_cluster = pad_genbank_sequence(stiched_cluster,
+    #                                           logger=logger)
 
     #     # checks that the the sequence is properly padded
+    #     records = get_genbank_record(self.test_gb_file)
+    #     record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
+    #                                           genbank_records=records)
+
     #     self.assertEqual(record.seq,
-    #                      padded_seq[ex_padding: -ex_padding])
+    #                      padded_cluster.SeqRecord.seq[ex_padding: -ex_padding])
     #     stitched_padded_record = \
     #         stitch_together_target_regions(genome_sequence=padded_seq,
     #                                        coords=padded_coords,
@@ -264,7 +284,6 @@ class riboSnag_TestCase(unittest.TestCase):
             ["A", "C", "G", "T", "-"]
         ]
         entropies = calc_Shannon_entropy(test_matrix)
-        print(entropies)
         theoretical = [-0.0, 0.500402, 0.673012, 0.673012,
                        0.950271, 0.673012, 1.609438]
         for index, value in enumerate(entropies):
@@ -277,8 +296,6 @@ class riboSnag_TestCase(unittest.TestCase):
         values = calc_entropy_msa(msa_path=self.test_mafft_msa)
         with open(self.test_ent_seq, "r") as efile:
             for index, line in enumerate(efile):
-                print(line)
-                print(line.strip())
                 self.assertEqual(round(float(line.strip()), 7),
                                  round(values[index], 7))
 
@@ -289,7 +306,7 @@ class riboSnag_TestCase(unittest.TestCase):
             try:
                 os.makedirs(self.testdirname)
             except:
-                print("using existing {0} directory".format(dir))
+                print("\nusing existing {0} directory".format(dir))
                 pass
         unaligned_seqs = combine_contigs(contigs_dir=self.test_snag_dir,
                                          pattern="*",

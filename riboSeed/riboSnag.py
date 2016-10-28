@@ -21,6 +21,7 @@ import time
 import argparse
 import sys
 import math
+
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
@@ -31,7 +32,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
     combine_contigs
 
 
-class loci_cluster:
+class loci_cluster(object):
     """ organizes the clustering process instead of dealing with nested lists
     This holds the whole cluster of one to several individual loci
     """
@@ -65,12 +66,13 @@ class loci_cluster:
         #                          i[0], i[1])
 
 
-class locus(loci_cluster):
+class locus(object):
     """ this holds the info for each individual locus"
     """
     def __init__(self, index, sequence, locus_tag, strand=None,
                  start_coord=None, end_coord=None, rel_start_coord=None,
                  rel_end_coord=None, product=None):
+        # self.parent ??
         self.index = index
         self.sequence = sequence  # is this needed? I dont think so as long
         # as a locus is never decoupled from the loci_cluster
@@ -189,7 +191,22 @@ def get_args():
     return args
 
 
-def parse_clustered_loci_file(file, padding, circular,logger=None):
+def get_genbank_rec_from_multigb(recordID, genbank_records):
+    """ given a record ID and and list of genbank records, return sequence of
+    genbank record that has all the loci.
+    If on different sequences, return error
+    """
+    for record in genbank_records:
+        if recordID == record.id:
+            return record
+        else:
+            pass
+    # if none found, raise error
+    raise ValueError("no record found matching record id!")
+
+
+def parse_clustered_loci_file(filepath, gb_filepath,
+                              padding, circular, logger=None):
     """Given a file from riboSelect or manually created (see specs in README)
     this parses the clusters and returns a list where [0] is sequence name
     and [1] is a list of loci in that cluster
@@ -197,18 +214,18 @@ def parse_clustered_loci_file(file, padding, circular,logger=None):
     """
     if logger is None:
         raise ValueError("logging must be used!")
-    if not (os.path.isfile(file) and os.path.getsize(file) > 0):
+    if not (os.path.isfile(filepath) and os.path.getsize(filepath) > 0):
         raise ValueError("Cluster File not found!")
     clusters = []
     cluster_index = 0
-    # this covers comon case where user submits genbank and cluster file
+    # this covers common case where user submits genbank and cluster file
     # in the wrong order.
-    if os.path.splitext(file)[1] in ["gb", "genbank", "gbk"]:
+    if os.path.splitext(filepath)[1] in ["gb", "genbank", "gbk"]:
         logger.error("Hmm, this cluster file looks like genbank; " +
                      "it ends in {0}".format(os.path.splitext(file)[1]))
         raise FileNotFoundError
     try:
-        with open(file, "r") as f:
+        with open(filepath, "r") as f:
             for line in f:
                 if line.startswith("#"):
                     continue
@@ -235,6 +252,13 @@ def parse_clustered_loci_file(file, padding, circular,logger=None):
     if len(clusters) == 0:
         logger.error("Cluster file could not be parsed!")
         raise FileNotFoundError
+    # match up seqrecords
+    with open(gb_filepath) as fh:
+        gb_records = list(SeqIO.parse(fh, 'genbank'))
+    for clu in clusters:
+        clu.SeqRecord = get_genbank_rec_from_multigb(
+            recordID=clu.sequence,
+            genbank_records=gb_records)
     return clusters
 
 
@@ -248,11 +272,7 @@ def extract_coords_from_locus(cluster,
     if logger is None:
         raise ValueError("logging must be used!")
     loc_number = 0  # index for hits
-    # loc_list = []  # recipient structure
     locus_tags = [x.locus_tag for x in cluster.loci_list]
-    # for record in genome_seq_records:
-    #     logger.debug("searching {0} for loci in this list: {1}".format(
-    #         record.id, locus_tag_list))
     for feat in cluster.SeqRecord.features:
         if not feat.type in feature:
             continue
@@ -295,20 +315,6 @@ def extract_coords_from_locus(cluster,
     return cluster
 
 
-def get_genbank_rec_from_multigb(recordID, genbank_records):
-    """ given a record ID and and list of genbank records, return sequence of
-    genbank record that has all the loci.
-    If on different sequences, return error
-    """
-    for record in genbank_records:
-        if recordID == record.id:
-            return record
-        else:
-            pass
-    # if none found, raise error
-    raise ValueError("no record found matching record id!")
-
-
 def pad_genbank_sequence(cluster, logger=None):
     """coords in coords list should be the 1st list item, with the index
     being 0th. Given a genbank record and a coord_list. this returns a seq
@@ -320,7 +326,6 @@ def pad_genbank_sequence(cluster, logger=None):
     if logger:
         logger.info(str("adjusting coordinates by {0} to account for " +
                     "padding").format(cluster.padding))
-    new_coords = []
     for loc in cluster.loci_list:
         logger.debug("pre-padded")
         logger.debug(str(loc.__dict__))
@@ -343,25 +348,25 @@ def pad_genbank_sequence(cluster, logger=None):
     return cluster
 
 
-def strictly_increasing(L, dup_ok=False, verbose=False):
-    """from 6502: http://stackoverflow.com/questions/4983258/
-    python-how-to-check-list-monotonicity
-    given list L, this check to see if items are ascending. if de_dup, this
-    removes duplicates from the list temporarily and then tests the unique list
-    """
-    items = []
-    for i in L:
-        if i in items:
-            if not dup_ok:
-                raise ValueError("list contains duplicates!")
-            else:
-                pass
-        else:
-            items.append(i)
-    if verbose:
-        print(L)
-        print(items)
-    return(all(x < y for x, y in zip(items, items[1:])))
+# def strictly_increasing(L, dup_ok=False, verbose=False):
+#     """from 6502: http://stackoverflow.com/questions/4983258/
+#     python-how-to-check-list-monotonicity
+#     given list L, this check to see if items are ascending. if de_dup, this
+#     removes duplicates from the list temporarily and then tests the unique list
+#     """
+#     items = []
+#     for i in L:
+#         if i in items:
+#             if not dup_ok:
+#                 raise ValueError("list contains duplicates!")
+#             else:
+#                 pass
+#         else:
+#             items.append(i)
+#     if verbose:
+#         print(L)
+#         print(items)
+#     return(all(x < y for x, y in zip(items, items[1:])))
 
 
 def stitch_together_target_regions(cluster,
@@ -393,10 +398,14 @@ def stitch_together_target_regions(cluster,
 
     #TODO : make this safer. coord list is constructed sequentially but this
     # is a backup. Throws sort of a cryptic error. but as I said, its a backup
-    start_list = [x.start_coord for x in cluster.loci_list]
+    if sorted([x.start_coord for x in cluster.loci_list]) != \
+       [x.start_coord for x in cluster.loci_list]:
+        logger.warning("Coords are not in increasing order; " +
+                       "you've been warned")
+    start_list = sorted([x.start_coord for x in cluster.loci_list])
     logger.debug("Start_list: {0}".format(start_list))
-    if not strictly_increasing([x for x in start_list]):
-        raise ValueError("coords are not increasing!")
+    # if not strictly_increasing([x for x in start_list]):
+    #     raise ValueError("coords are not increasing!")
     smallest_feature = min([x.end_coord - x.start_coord for
                             x in cluster.loci_list])
     if smallest_feature < (minimum) and replace:
@@ -432,14 +441,14 @@ def stitch_together_target_regions(cluster,
     logger.debug("global start and end: %s %s", cluster.global_start_coord,
                  cluster.global_end_coord)
     #  the minus one makes things go from 1 based to zero based
-    seq_with_ns = str(cluster.SeqRecord[global_start_coord- 1:
-                                                   cluster.global_end_coord])
+    seq_with_ns = str(cluster.SeqRecord.seq[cluster.global_start_coord - 1:
+                                            cluster.global_end_coord])
     seq_len = len(seq_with_ns[:])
     #
     # loop to mask actual coding regions with N's
     #
     if replace:
-        for loc in cluster.coord_list:
+        for loc in cluster.loci_list:
             region_length = loc.end_coord - loc.start_coord - (2 * within)
             # if dealing with short sequences
             if region_length < (2 * within):
@@ -561,8 +570,10 @@ def calc_entropy_msa(msa_path):
     lengths = []
     with open(msa_path) as fh:
         msa_seqs = list(SeqIO.parse(fh, 'fasta'))
+    seq_names = []
     for rec in msa_seqs:
         lengths.append(len(rec))
+        seq_names.append(rec.id)
     if not all([i == lengths[0] for i in lengths]):
         raise ValueError("Sequences must all be the same length!")
     entropies = []
@@ -579,7 +590,7 @@ def calc_entropy_msa(msa_path):
         entropies.extend(calc_Shannon_entropy(tseq_array))
     # check length of sequence is the same as length of the entropies
     assert len(entropies) == lengths[0]
-    return entropies
+    return (entropies, seq_names)
 
 
 def pure_python_plotting(data, outdir, script_name="plot.R", name="",
@@ -616,6 +627,16 @@ def pure_python_plotting(data, outdir, script_name="plot.R", name="",
     if not DEBUG:
         os.remove(os.path.join(os.getcwd(), datafile))
         os.remove(os.path.join(os.getcwd(), script_name))
+
+
+def profile_string_kmers(string, size):
+    """ get kmer profile to supplement string identit
+    """
+    mers = [string[x: x + size] for x in range(0, len(string) - size + 1)]
+    count = []
+    for x in mers:
+        count.append(sum([x == y for y in mers]))
+    return(count)
 
 
 def main(clusters, genome_records, logger, verbose, within, no_revcomp,
@@ -686,6 +707,7 @@ def main(clusters, genome_records, logger, verbose, within, no_revcomp,
             SeqIO.write(i, outfile, "fasta")
             outfile.write('\n')
             output_index = output_index + 1
+    return regions
 
 
 if __name__ == "__main__":
@@ -718,6 +740,7 @@ if __name__ == "__main__":
     # parse cluster file
     try:
         clusters = parse_clustered_loci_file(args.clustered_loci,
+                                             gb_filepath=args.genbank_genome,
                                              padding=args.padding,
                                              circular=args.circular,
                                              logger=logger)
@@ -730,20 +753,21 @@ if __name__ == "__main__":
     regions = []
     logger.info("clusters:")
     logger.info(clusters)
-    main(clusters=clusters,
-         genome_records=genome_records,
-         logger=logger,
-         verbose=False, within=args.within,
-         flanking=args.flanking,
-         replace=args.replace,
-         output=args.output,
-         padding=args.padding,
-         circular=args.circular,
-         minimum=args.minimum,
-         prefix_name=args.name,
-         no_revcomp=args.no_revcomp,
-         feature=args.feature)
+    regions = main(clusters=clusters,
+                   genome_records=genome_records,
+                   logger=logger,
+                   verbose=False, within=args.within,
+                   flanking=args.flanking,
+                   replace=args.replace,
+                   output=args.output,
+                   padding=args.padding,
+                   circular=args.circular,
+                   minimum=args.minimum,
+                   prefix_name=args.name,
+                   no_revcomp=args.no_revcomp,
+                   feature=args.feature)
 
+    # profile_string_kmers(string, size)
     # make MSA and calculate entropy
     if not args.skip_check:
         if args.clobber:
@@ -790,7 +814,8 @@ if __name__ == "__main__":
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE,
                        check=True)
-        seq_entropy = calc_entropy_msa(results_path)
+        seq_entropy, names = calc_entropy_msa(results_path)
+
         pure_python_plotting(data=seq_entropy, script_name="plot.R",
                              outdir=args.output, name=genome_records[0].id,
                              outfile_prefix="entropy_plot", DEBUG=True)
