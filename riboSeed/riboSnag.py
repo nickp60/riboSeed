@@ -137,16 +137,51 @@ def get_args():
     return args
 
 
-def parse_clustered_loci_file(file, logger=None):
+class loci_cluster:
+    """ organizes the clustering process instead of dealing with nested lists
+    This holds the whole cluster of one to several individual loci
+    """
+    def __init__(self, index, sequence, loci_list, padding=None,
+                 global_start_coord=None, global_end_coord=None,
+                 SeqRecord=None, replace=False, circular=False):
+        self.index = index
+        self.sequence = sequence
+        self.loci_list = loci_list  # this holds the locus objects
+        self.global_start_coord = global_start_coord
+        self.global_end_coord = global_end_coord
+        self.padding = padding
+        self.replace = replace
+        self.circular = circular
+        self.SeqRecord = self.SeqRecord
+
+
+class locus(loci_cluster):
+    """ this holds the info for each individual locus"
+    """
+    def __init__(self, index, sequence, locus_tag, strand=None,
+                 start_coord=None, end_coord=None, product=None):
+        self.index = index
+        self.sequence = sequence  # is this needed? I dont think so as long
+        # as a locus is never decoupled from the loci_cluster
+        self.locus_tag = locus_tag
+        self.strand = strand
+        self.start_coord = start_coord
+        self.end_coord = end_coord
+        self.product = product
+
+
+def parse_clustered_loci_file(file, padding, circular,logger=None):
     """Given a file from riboSelect or manually created (see specs in README)
     this parses the clusters and returns a list where [0] is sequence name
     and [1] is a list of loci in that cluster
+    As of 20161028, this returns a list of loci_cluster objects!
     """
     if logger is None:
         raise ValueError("logging must be used!")
     if not (os.path.isfile(file) and os.path.getsize(file) > 0):
         raise ValueError("Cluster File not found!")
     clusters = []
+    cluster_index = 0
     # this covers comon case where user submits genbank and cluster file
     # in the wrong order.
     if os.path.splitext(file)[1] in ["gb", "genbank", "gbk"]:
@@ -159,10 +194,23 @@ def parse_clustered_loci_file(file, logger=None):
                 if line.startswith("#"):
                     continue
                 seqname = line.strip("\n").split(" ")[0]
-                loci_list = [x for x in
+                lt_list = [x for x in
                              line.strip("\n").split(" ")[1].split(":")]
-                clusters.append([seqname, loci_list])
+                # make and append the locus objects
+                loci_list = []
+                for i, loc in enumerate(lt_list):
+                    loci_list.append(locus(index=i,
+                                           locus_tag=loc,
+                                           sequence=seqname))
+                # make and append loci_cluster objects
+                clusters.append(loci_cluster(index=cluster_index,
+                                             sequence=seqname,
+                                             loci_list=loci_list,
+                                             padding=padding,
+                                             circular=circular))
+                cluster_index = cluster_index + 1
     except:
+        #  This is really broad, and I dont like it
         logger.error("Cluster file could not be parsed!")
         raise FileNotFoundError
     if len(clusters) == 0:
@@ -171,20 +219,22 @@ def parse_clustered_loci_file(file, logger=None):
     return clusters
 
 
-def extract_coords_from_locus(record, locus_tag_list,
+def extract_coords_from_locus(cluster, # record,  # locus_tag_list,
                               feature="rRNA", logger=None):
     """given a list of locus_tags, return a list of
     [loc_number,[start_coord, end_coord], strand, product,
     locus_tag, record.id]
+    20161028 returns a loci_cluster
     """
     if logger is None:
         raise ValueError("logging must be used!")
     loc_number = 0  # index for hits
-    loc_list = []  # recipient structure
+    # loc_list = []  # recipient structure
+    locus_tags = [x.locus_tag for x in cluster.loci_list]
     # for record in genome_seq_records:
     #     logger.debug("searching {0} for loci in this list: {1}".format(
     #         record.id, locus_tag_list))
-    for feat in record.features:
+    for feat in cluster.record.features:
         if not feat.type in feature:
             continue
         logger.debug("found {0} in the following feature : \n{1}".format(
@@ -194,18 +244,24 @@ def extract_coords_from_locus(record, locus_tag_list,
             locus_tag = feat.qualifiers.get("locus_tag")[0]
         except:
             logger.error(str("found a feature ({0}), but there is no" +
-                             "locus tag associated with it!").format(feat))
+                             "locus tag associated with it! Try formatting " +
+                             "it by running scanScaffolds.sh").format(feat))
             raise ValueError
 
-        if locus_tag in locus_tag_list:
+        # quick way of checking without using whole object
+        if locus_tag in locus_tags:
+            # make this_locus point to locus we are adding info to
+            this_locus = next((x for x in cluster.loci_list if x.locus_tag == locus_tag), None)
             #  SeqIO makes coords 0-based; the +1 below undoes that
-            coords = [feat.location.start.position + 1,
-                      feat.location.end.position]
-            strand = feat.strand
-            product = feat.qualifiers.get("product")
-            # locus_tag = feat.qualifiers.get("locus_tag")[0]
-            loc_list.append([loc_number, coords, strand,
-                             product, locus_tag, record.id])
+            this_locus.start_coord = feat.location.start.position + 1
+            this_locus.end_coord = feat.location.end.position
+            this_locus.strand = feat.strand
+            this_locus.product = feat.qualifiers.get("product")
+            assert record.id == this_locus.sequence
+            # loc_list.append([loc_number, coords, strand,
+            #                  product, locus_tag, record.id])
+            logger.debug("Added attributes for %s", this_locus.locus_tag)
+            logger.debug(str(this_locus.__dict__))
             loc_number = loc_number + 1
         else:
             pass
@@ -215,8 +271,8 @@ def extract_coords_from_locus(record, locus_tag_list,
         raise ValueError
     logger.debug("Here are the detected region,coords, strand, product, " +
                  "locus tag, subfeatures and sequence id of the results:")
-    logger.debug(loc_list)
-    return loc_list
+    logger.debug(str(cluster.__dict__))
+    return cluster
 
 
 def get_genbank_rec_from_multigb(recordID, genbank_records):
@@ -233,22 +289,25 @@ def get_genbank_rec_from_multigb(recordID, genbank_records):
     raise ValueError("no record found matching record id!")
 
 
-def pad_genbank_sequence(record, old_coords, padding, logger=None):
+def pad_genbank_sequence(record, cluster, logger=None):
     """coords in coords list should be the 1st list item, with the index
     being 0th. Given a genbank record and a coord_list. this returns a seq
     padded on both ends by --padding bp, and returns a coord_list with coords
     adjusted accordingly.  Used to capture regions across origin.
+    # as of 20161028, cluster object, not coord_list, is used
     """
     ### take care of the coordinates
     if logger:
         logger.info(str("adjusting coordinates by {0} to account for " +
                     "padding").format(padding))
     new_coords = []
-    for i in old_coords:
-        temp = i
-        start, end = temp[1][0], temp[1][1]
-        temp[1] = [start + padding, end + padding]
+    for loc in cluster.loci_list:
+        logger.debug("pre-padded")
+        logger.debug(str(loc.__dict__))
+        start, end = loc.start_coord, loc.end_coord
+        loc.start_coord, loc.end_coord = [start + padding, end + padding]
         new_coords.append(temp)
+        logger.debug()
     ### take care of the sequence
     old_seq = record.seq
     if padding > len(old_seq):
@@ -473,6 +532,7 @@ def calc_entropy_msa(msa_path):
     if not all([i == lengths[0] for i in lengths]):
         raise ValueError("Sequences must all be the same length!")
     entropies = []
+    # save memory by reading in chunks
     for batch in range(0, (math.ceil(lengths[0] / batch_size))):
         # get all sequences into an array
         seq_array = []
@@ -483,6 +543,7 @@ def calc_entropy_msa(msa_path):
         # transpose
         tseq_array = list(map(list, zip(*seq_array)))
         entropies.extend(calc_Shannon_entropy(tseq_array))
+    # check length of sequence is the same as length of the entropies
     assert len(entropies) == lengths[0]
     return entropies
 
@@ -523,37 +584,36 @@ def pure_python_plotting(data, outdir, script_name="plot.R", name="",
         os.remove(os.path.join(os.getcwd(), script_name))
 
 
-def main(clusteredList, genome_records, logger, verbose, within, no_revcomp,
+def main(clusters, genome_records, logger, verbose, within, no_revcomp,
          flanking, replace, output, padding, circular, minimum,
          feature, prefix_name):
     get_rev_comp = no_revcomp is False  # kinda clunky
-    for i in clusteredList:  # for each cluster of loci
-        locus_tag_list = i[1]
-        recID = i[0]  # which sequence cluster is from
+    for cluster in clusters:  # for each cluster of loci
+        # locus_tag_list = cluster[1]
         # get seq record that cluster is  from
         try:
-            genbank_rec = \
-                get_genbank_rec_from_multigb(recordID=recID,
+            cluster.SeqRecord = \
+                get_genbank_rec_from_multigb(recordID=cluster.sequence,
                                              genbank_records=genome_records)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
         # make coord list
         try:
-            coord_list = extract_coords_from_locus(
-                record=genbank_rec,
+            cluster_with_loci = extract_coords_from_locus(
+                cluster=cluster,
+                # record=genbank_rec,
                 feature=feature,
-                locus_tag_list=locus_tag_list,
+                # locus_tag_list=[x.locus_tag for x in i.loci_list],
                 logger=logger)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
-        logger.info(coord_list)
+        logger.info(str(cluster_with_loci.__dict__))
         if circular:
-            coords, sequence = pad_genbank_sequence(record=genbank_rec,
-                                                    old_coords=coord_list,
-                                                    padding=padding,
-                                                    logger=logger)
+            cluster_padded = pad_genbank_sequence(# record=genbank_rec,
+                                                  cluster=cluster_with_loci,
+                                                  logger=logger)
         else:
             coords, sequence = coord_list, genbank_rec.seq
 
@@ -625,8 +685,10 @@ if __name__ == "__main__":
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
     # parse cluster file
     try:
-        clusteredList = parse_clustered_loci_file(args.clustered_loci,
-                                                  logger=logger)
+        clusters = parse_clustered_loci_file(args.clustered_loci,
+                                             padding=args.padding,
+                                             circular=args.circular,
+                                             logger=logger)
     except Exception as e:
         logger.error(e)
         sys.exit(1)
@@ -634,9 +696,9 @@ if __name__ == "__main__":
     with open(args.genbank_genome) as fh:
         genome_records = list(SeqIO.parse(fh, 'genbank'))
     regions = []
-    logger.info("clustered loci list:")
-    logger.info(clusteredList)
-    main(clusteredList=clusteredList,
+    logger.info("clusters:")
+    logger.info(clusters)
+    main(clusters=clusters,
          genome_records=genome_records,
          logger=logger,
          verbose=False, within=args.within,
