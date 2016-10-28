@@ -31,6 +31,58 @@ from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
     combine_contigs
 
 
+class loci_cluster:
+    """ organizes the clustering process instead of dealing with nested lists
+    This holds the whole cluster of one to several individual loci
+    """
+    def __init__(self, index, sequence, loci_list, padding=None,
+                 global_start_coord=None, global_end_coord=None,
+                 SeqRecord=None, extractedSeqRecord=None, replace=False,
+                 circular=False):
+        self.index = index
+        self.sequence = sequence
+        self.loci_list = loci_list  # this holds the locus objects
+        self.global_start_coord = global_start_coord
+        self.global_end_coord = global_end_coord
+        self.padding = padding
+        self.replace = replace
+        self.circular = circular
+        self.SeqRecord = SeqRecord
+        self.extractedSeqRecord = extractedSeqRecord
+        # TODO protect types somehow
+        # allowed_types = [['self.index', int],
+        #                  ['self.sequence', str],
+        #                  ['self.loci_list', list],
+        #                  ['self.global_start_coord', int],
+        #                  ['self.global_end_coord', int],
+        #                  ['self.padding', int],
+        #                  ['self.replace', bool],
+        #                  ['self.circular', bool],
+        #                  ['self.SeqRecord', SeqRecord]]
+        # for i in allowed_types:
+        #     if not isinstance(eval(i[0]), i[1]):
+        #         raise ValueError("Cannot set loci_cluster.%s to a non-%s",
+        #                          i[0], i[1])
+
+
+class locus(loci_cluster):
+    """ this holds the info for each individual locus"
+    """
+    def __init__(self, index, sequence, locus_tag, strand=None,
+                 start_coord=None, end_coord=None, rel_start_coord=None,
+                 rel_end_coord=None, product=None):
+        self.index = index
+        self.sequence = sequence  # is this needed? I dont think so as long
+        # as a locus is never decoupled from the loci_cluster
+        self.locus_tag = locus_tag
+        self.strand = strand  # 1 is +, -1 is -
+        self.start_coord = start_coord
+        self.end_coord = end_coord
+        self.rel_start_coord = rel_start_coord  # start relative to length of region
+        self.rel_end_coord = rel_end_coord  # end relative to length of region
+        self.product = product
+
+
 def get_args():
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
@@ -137,39 +189,6 @@ def get_args():
     return args
 
 
-class loci_cluster:
-    """ organizes the clustering process instead of dealing with nested lists
-    This holds the whole cluster of one to several individual loci
-    """
-    def __init__(self, index, sequence, loci_list, padding=None,
-                 global_start_coord=None, global_end_coord=None,
-                 SeqRecord=None, replace=False, circular=False):
-        self.index = index
-        self.sequence = sequence
-        self.loci_list = loci_list  # this holds the locus objects
-        self.global_start_coord = global_start_coord
-        self.global_end_coord = global_end_coord
-        self.padding = padding
-        self.replace = replace
-        self.circular = circular
-        self.SeqRecord = self.SeqRecord
-
-
-class locus(loci_cluster):
-    """ this holds the info for each individual locus"
-    """
-    def __init__(self, index, sequence, locus_tag, strand=None,
-                 start_coord=None, end_coord=None, product=None):
-        self.index = index
-        self.sequence = sequence  # is this needed? I dont think so as long
-        # as a locus is never decoupled from the loci_cluster
-        self.locus_tag = locus_tag
-        self.strand = strand
-        self.start_coord = start_coord
-        self.end_coord = end_coord
-        self.product = product
-
-
 def parse_clustered_loci_file(file, padding, circular,logger=None):
     """Given a file from riboSelect or manually created (see specs in README)
     this parses the clusters and returns a list where [0] is sequence name
@@ -219,7 +238,7 @@ def parse_clustered_loci_file(file, padding, circular,logger=None):
     return clusters
 
 
-def extract_coords_from_locus(cluster, # record,  # locus_tag_list,
+def extract_coords_from_locus(cluster,
                               feature="rRNA", logger=None):
     """given a list of locus_tags, return a list of
     [loc_number,[start_coord, end_coord], strand, product,
@@ -234,7 +253,7 @@ def extract_coords_from_locus(cluster, # record,  # locus_tag_list,
     # for record in genome_seq_records:
     #     logger.debug("searching {0} for loci in this list: {1}".format(
     #         record.id, locus_tag_list))
-    for feat in cluster.record.features:
+    for feat in cluster.SeqRecord.features:
         if not feat.type in feature:
             continue
         logger.debug("found {0} in the following feature : \n{1}".format(
@@ -251,13 +270,14 @@ def extract_coords_from_locus(cluster, # record,  # locus_tag_list,
         # quick way of checking without using whole object
         if locus_tag in locus_tags:
             # make this_locus point to locus we are adding info to
-            this_locus = next((x for x in cluster.loci_list if x.locus_tag == locus_tag), None)
+            this_locus = next((x for x in cluster.loci_list if
+                               x.locus_tag == locus_tag), None)
             #  SeqIO makes coords 0-based; the +1 below undoes that
             this_locus.start_coord = feat.location.start.position + 1
             this_locus.end_coord = feat.location.end.position
             this_locus.strand = feat.strand
             this_locus.product = feat.qualifiers.get("product")
-            assert record.id == this_locus.sequence
+            # assert cluster.SeqRecord.id == this_locus.sequence # sanity check, probably not needed
             # loc_list.append([loc_number, coords, strand,
             #                  product, locus_tag, record.id])
             logger.debug("Added attributes for %s", this_locus.locus_tag)
@@ -289,7 +309,7 @@ def get_genbank_rec_from_multigb(recordID, genbank_records):
     raise ValueError("no record found matching record id!")
 
 
-def pad_genbank_sequence(record, cluster, logger=None):
+def pad_genbank_sequence(cluster, logger=None):
     """coords in coords list should be the 1st list item, with the index
     being 0th. Given a genbank record and a coord_list. this returns a seq
     padded on both ends by --padding bp, and returns a coord_list with coords
@@ -299,27 +319,28 @@ def pad_genbank_sequence(record, cluster, logger=None):
     ### take care of the coordinates
     if logger:
         logger.info(str("adjusting coordinates by {0} to account for " +
-                    "padding").format(padding))
+                    "padding").format(cluster.padding))
     new_coords = []
     for loc in cluster.loci_list:
         logger.debug("pre-padded")
         logger.debug(str(loc.__dict__))
         start, end = loc.start_coord, loc.end_coord
-        loc.start_coord, loc.end_coord = [start + padding, end + padding]
-        new_coords.append(temp)
-        logger.debug()
+        loc.start_coord, loc.end_coord = [start + cluster.padding,
+                                          end + cluster.padding]
+        logger.debug("post-padded")
+        logger.debug(str(loc.__dict__))
     ### take care of the sequence
-    old_seq = record.seq
-    if padding > len(old_seq):
-        if logger:
-            logger.error("padding ammount cannot be greater" +
-                         " than the length of the sequence!")
+    old_seq = cluster.SeqRecord.seq
+    if cluster.padding > len(old_seq):
         raise ValueError("padding cannot be greater than length of sequence")
-    new_seq = str(old_seq[-padding:] + old_seq + old_seq[0: padding])
-    if len(new_seq) != len(old_seq) + (2 * padding):
+    new_seq = str(old_seq[-cluster.padding:]
+                  + old_seq
+                  + old_seq[0: cluster.padding])
+    if len(new_seq) != len(old_seq) + (2 * cluster.padding):
         raise ValueError("Error within function! new seq should be len of " +
                          "seq plus 2x padding")
-    return(new_coords, new_seq)
+    cluster.SeqRecord = SeqRecord(Seq(new_seq))
+    return cluster
 
 
 def strictly_increasing(L, dup_ok=False, verbose=False):
@@ -343,7 +364,7 @@ def strictly_increasing(L, dup_ok=False, verbose=False):
     return(all(x < y for x, y in zip(items, items[1:])))
 
 
-def stitch_together_target_regions(genome_sequence, coords, padding,
+def stitch_together_target_regions(cluster,
                                    flanking="500:500",
                                    within=50, minimum=50, replace=True,
                                    logger=None, verbose=True, circular=False,
@@ -372,97 +393,110 @@ def stitch_together_target_regions(genome_sequence, coords, padding,
 
     #TODO : make this safer. coord list is constructed sequentially but this
     # is a backup. Throws sort of a cryptic error. but as I said, its a backup
-    start_list = [y[0] for y in [x[1] for x in coords]]
+    start_list = [x.start_coord for x in cluster.loci_list]
     logger.debug("Start_list: {0}".format(start_list))
     if not strictly_increasing([x for x in start_list]):
         raise ValueError("coords are not increasing!")
-    smallest_feature = min([y[1] - y[0] for y in [x[1] for x in coords]])
+    smallest_feature = min([x.end_coord - x.start_coord for
+                            x in cluster.loci_list])
     if smallest_feature < (minimum) and replace:
         raise ValueError("invalid minimum of {0}! cannot exceed half of " +
                          "smallest feature, which is {1} in this case".format(
                              minimum, smallest_feature))
 
     logger.debug("stitching together the following coords:")
-    for i in coords:
-        logger.debug(str(i))
+    for i in cluster.loci_list:
+        logger.debug(str(i.__dict__))
     #  This works as long as coords are never in reverse order
-    global_start = min([y[0] for y in [x[1] for x in coords]]) - flank[0]
+    cluster.global_start_coord = min([x.start_coord for
+                                      x in cluster.loci_list]) - flank[0]
     #
     # if start is negative, just use 1, the beginning of the sequence
-    if global_start < 1:
+    if cluster.global_start_coord < 1:
         logger.warning("Caution! Cannot retrieve full flanking region, as " +
                        "the 5' flanking region extends past start of " +
                        "sequence. If this is a problem, try using a smaller " +
                        "--flanking region, and/or if  appropriate, run with " +
                        "--circular.")
-        global_start = 1
-    global_end = max([y[1] for y in [x[1] for x in coords]]) + flank[1]
-    if global_end > len(genome_sequence):
+        cluster.global_start_coord = 1
+    cluster.global_end_coord = max([x.end_coord for
+                                    x in cluster.loci_list]) + flank[1]
+    if cluster.global_end_coord > len(cluster.SeqRecord):
         logger.warning("Caution! Cannot retrieve full flanking region, as " +
                        "the 5' flanking region extends past start of " +
                        "sequence. If this is a problem, try using a smaller " +
                        "--flanking region, and/or if  appropriate, run with " +
                        "--circular.")
-        global_end = len(genome_sequence)
+        cluster.global_end_coord = len(cluster.SeqRecord)
 
-    logger.debug("global start and end: %s %s", global_start, global_end)
+    logger.debug("global start and end: %s %s", cluster.global_start_coord,
+                 cluster.global_end_coord)
     #  the minus one makes things go from 1 based to zero based
-    full_seq = genome_sequence[global_start - 1: global_end]
-    seq_with_ns = str(full_seq)
+    seq_with_ns = str(cluster.SeqRecord[global_start_coord- 1:
+                                                   cluster.global_end_coord])
+    seq_len = len(seq_with_ns[:])
     #
     # loop to mask actual coding regions with N's
     #
     if replace:
-        for i in coords:
-            region_length = i[1][1] - i[1][0] - (2 * within)
+        for loc in cluster.coord_list:
+            region_length = loc.end_coord - loc.start_coord - (2 * within)
             # if dealing with short sequences
-            if (i[1][1] - i[1][0]) < (2 * within):
+            if region_length < (2 * within):
                 # set within to retain minimum sequence length
-                this_within = int((i[1][1] - i[1][0] - minimum) / 2)
+                this_within = int((region_length - minimum) / 2)
             else:
                 # use default if not
                 this_within = within
-            rel_start = (i[1][0] + this_within) - global_start
-            rel_end = (i[1][1] - this_within) - global_start
-            seq_with_ns = str(seq_with_ns[0:rel_start] +
+            loc.rel_start_coord = ((loc.start_coord + this_within) -
+                                   cluster.global_start_coord)
+            loc.rel_end_coord = ((loc.end_coord - this_within) -
+                                 cluster.global_start_coord)
+            seq_with_ns = str(seq_with_ns[0: loc.rel_start_coord] +
                               str("N" * region_length) +
-                              seq_with_ns[rel_end:])
+                              seq_with_ns[loc.rel_end_coord:])
 
         try:
             # make sure the sequence is proper length, corrected for zero-index
-            assert global_end - global_start, len(full_seq)
+            assert cluster.global_end_coord - cluster.global_start, seq_len
             # make sure replacement didnt change seq length
-            assert len(full_seq), len(seq_with_ns)
+            assert seq_len, len(seq_with_ns)
         except:
             logger.error("There appears to be an error with the seqeuence " +
                          "coordinate  calculation!")
     # again, plus 1 corrects for 0 index.
     # len("AAAA") = 4 vs AAAA[-1] - AAAA[0] = 3
     logger.info(str("\nexp length {0} \nact length {1}".format(
-        global_end - global_start + 1, len(full_seq))))
-    if verbose:
-        lb = 70  # line break
-        for i in range(0, int(len(seq_with_ns) / lb)):
-            print(str(full_seq[i * lb: lb + (i * lb)]))
-            print(str(seq_with_ns[i * lb: lb + (i * lb)]))
-            print()
+        cluster.global_end_coord - cluster.global_start_coord + 1, seq_len)))
+    # if verbose:
+    #     lb = 70  # line break
+    #     for i in range(0, int(len(seq_with_ns) / lb)):
+    #         print(str(full_seq[i * lb: lb + (i * lb)]))
+    #         print(str(seq_with_ns[i * lb: lb + (i * lb)]))
+    #         print()
     if not circular:
-        seq_id = str(coords[0][5] + "_" + str(global_start) +
-                     ".." + str(global_end))
+        seq_id = str(cluster.sequence + "_" + str(cluster.global_start_coord) +
+                     ".." + str(cluster.global_end_coord))
     else:  # correct for padding
-        seq_id = str(coords[0][5] + "_" + str(global_start - padding) +
-                     ".." + str(global_end - padding))
+        seq_id = str(cluster.sequence + "_" + str(cluster.global_start_coord -
+                                                  cluster.padding) +
+                     ".." + str(cluster.global_end_coord - cluster.padding))
 
-    strand = [x[2] for x in coords]
+    strands = [x.strand for x in cluster.loci_list]
+    # if most are on - strand, return sequence reverse complement
     if revcomp and \
-       (sum([x == -1 for x in strand]) > sum([x == 1 for x in strand])):
+       (sum([x == -1 for x in strands]) > sum([x == 1 for x in strands])):
         logger.info("returning the reverse compliment of the sequence")
-        return SeqRecord(Seq(seq_with_ns,
-                             IUPAC.IUPACAmbiguousDNA()).reverse_complement(),
-                         id=str(seq_id + "_RC"))
+        cluster.extractedSeqRecord = SeqRecord(
+            Seq(seq_with_ns,
+                IUPAC.IUPACAmbiguousDNA()).reverse_complement(),
+            id=str(seq_id + "_RC"))
     else:
-        return SeqRecord(Seq(seq_with_ns, IUPAC.IUPACAmbiguousDNA()),
-                         id=seq_id)
+        cluster.extractedSeqRecord = SeqRecord(
+            Seq(seq_with_ns,
+                IUPAC.IUPACAmbiguousDNA()),
+            id=seq_id)
+    return cluster
 
 
 def prepare_prank_cmd(outdir, combined_fastas, prank_exe,
@@ -611,29 +645,27 @@ def main(clusters, genome_records, logger, verbose, within, no_revcomp,
             sys.exit(1)
         logger.info(str(cluster_with_loci.__dict__))
         if circular:
-            cluster_padded = pad_genbank_sequence(# record=genbank_rec,
-                                                  cluster=cluster_with_loci,
-                                                  logger=logger)
+            cluster_post_pad = pad_genbank_sequence(cluster=cluster_with_loci,
+                                                    logger=logger)
         else:
-            coords, sequence = coord_list, genbank_rec.seq
+            cluster_post_pad = cluster_with_loci
 
         #  given coords and a sequnce, extract the region as a SeqRecord
         try:
-            regions.append(
-                stitch_together_target_regions(sequence,
-                                               coords=coords,
+            cluster_post_stitch =\
+                stitch_together_target_regions(cluster=cluster_post_pad,
                                                within=within,
                                                minimum=minimum,
                                                flanking=flanking,
                                                replace=replace,
                                                verbose=False,
                                                logger=logger,
-                                               padding=padding,
                                                circular=circular,
-                                               revcomp=get_rev_comp))
+                                               revcomp=get_rev_comp)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
+        regions.append(cluster_post_stitch.extractedSeqRecord)
     # after each cluster has been extracted, write out results
     logger.debug(regions)
     output_index = 1
