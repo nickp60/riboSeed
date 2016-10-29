@@ -22,6 +22,9 @@ import argparse
 import sys
 import math
 
+from collections import defaultdict  # for calculating kmer frequency
+from itertools import product  # for getting all possible kmers
+
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
@@ -527,7 +530,7 @@ def prepare_prank_cmd(outdir, combined_fastas, prank_exe,
 
 
 def prepare_mafft_cmd(outdir, combined_fastas, mafft_exe,
-                      add_args="",outfile_name="best_MSA",
+                      add_args="", outfile_name="best_MSA",
                       clobber=False, logger=None):
     """returns command line for constructing MSA with
     PRANK and the path to results file
@@ -629,14 +632,69 @@ def pure_python_plotting(data, outdir, script_name="plot.R", name="",
         os.remove(os.path.join(os.getcwd(), script_name))
 
 
-def profile_string_kmers(string, size):
-    """ get kmer profile to supplement string identit
+def get_all_kmers(alph="", length=3):
+    """Given an alphabet of charactars, return a list of all permuations
+    not actually used, I dont think I'll need this
     """
-    mers = [string[x: x + size] for x in range(0, len(string) - size + 1)]
-    count = []
-    for x in mers:
-        count.append(sum([x == y for y in mers]))
-    return(count)
+    mers = [''.join(p) for p in product(alph, repeat=length)]
+    return mers
+
+
+def profile_kmer_occurances(rec_list, alph, k, logger=None):
+    """ given a list of seq records, an alphabet, and a value k,
+    retrun counts of kmer occurances
+    """
+    counts = defaultdict(list)
+    names_list = []
+    # part 1: get all kmers from seqs so that we can have equal length lisst
+    all_mers = []
+    for rec in rec_list:
+        all_mers.extend([str(rec.seq).lower()[x: x + k] for
+                         x in range(0, len(rec.seq) - k + 1)])
+    # unique_mers = list(set().union(all_mers))
+    unique_mers = set(all_mers)
+    for i in unique_mers:
+        counts[i] = [] # initialixe counts dictionary with ker keys
+    # part two: count 'em
+    for n, rec in enumerate(rec_list):
+        logger.info("counting kmer occurances for %s", rec.id)
+        names_list.append(rec.id)
+        logger.debug("converting to lower")
+        string = str(rec.seq).lower()
+        logger.debug("getting %imers from seq", k)
+        string_mers = [string[x: x + k] for x in range(0, len(string) - k + 1)]
+        logger.debug("counting mer occurances")
+        # Add counts for those present
+        for value in set(string_mers):
+            counts[value].append(sum([value == mer for mer in string_mers]))
+        # filling in where not found
+        for missing in (unique_mers - set(string_mers)):
+            counts[missing].append(0)
+    return counts, names_list
+
+
+def pairwise_least_squares(counts, names_list):
+    results = {}
+    counts_list = []
+    for k,v in counts.items():
+        counts_list.append(v)
+    # this gives each an index and gets all the pairs
+    all_pairs = [[index, value] for index, value in
+                 enumerate(product(range(0, len(names_list)), repeat=2))]
+    print("len of all_pairs: %i", len(all_pairs))
+    for i in all_pairs:
+        if i[1][1] == i[1][0]:
+            all_pairs.remove(i)
+    print("len of all_pairs: %i", len(all_pairs))
+
+    for i in all_pairs:
+        this_pairs_diffs = []
+        for row in counts_list:
+            this_pairs_diffs.append((row[i[1][0]] - row[i[1][1]]) ** 2)
+        results[str(names_list[i[1][0]] + "_vs_" + names_list[i[1][1]])] = sum(
+            this_pairs_diffs)
+    print(results)
+
 
 
 def main(clusters, genome_records, logger, verbose, within, no_revcomp,
@@ -815,7 +873,17 @@ if __name__ == "__main__":
                        stderr=subprocess.PIPE,
                        check=True)
         seq_entropy, names = calc_entropy_msa(results_path)
+        with open(results_path, 'r') as resfile:
+            msa_seqs = list(SeqIO.parse(resfile, "fasta"))
+        counts, names = profile_kmer_occurances(msa_seqs,
+                                                alph='atcg-',
+                                                k=10,
+                                                logger=logger)
 
+        pairwise_least_squares(counts=counts, names_list=names)
+        sys.exit(1)
+        tseq_array = list(map(list, zip(*kmer_profiles)))
+        print(tseq_array)
         pure_python_plotting(data=seq_entropy, script_name="plot.R",
                              outdir=args.output, name=genome_records[0].id,
                              outfile_prefix="entropy_plot", DEBUG=True)
