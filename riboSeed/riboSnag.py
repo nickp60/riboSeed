@@ -186,6 +186,15 @@ def get_args():
                           action="store", default="mafft",
                           help="Path to MAFFT executable; " +
                           "default: %(default)s")
+    optional.add_argument("--barrnap_exe", dest="barrnap_exe",
+                          action="store", default="barrnap",
+                          help="Path to barrnap executable; " +
+                          "default: %(default)s")
+    optional.add_argument("--kingdom", dest="kingdom",
+                          action="store", default="bac",
+                          choices = ["mito", "euk", "arc", "bac"],
+                          help="kingdom for barrnap; " +
+                          "default: %(default)s")
     # had to make this explicitly to call it a faux optional arg
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
@@ -593,8 +602,42 @@ def calc_entropy_msa(msa_path):
         entropies.extend(calc_Shannon_entropy(tseq_array))
     # check length of sequence is the same as length of the entropies
     assert len(entropies) == lengths[0]
-    return (entropies, seq_names)
+    return (entropies, seq_names, tseq_array)
 
+
+def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe, kingdom):
+    """
+    """
+    consensus = []
+    for position in tseq_array:
+        if all([x == position[0] for x in position]):
+            consensus.append(position[0])
+        else:
+            max_count = 0
+            best_nuc = None
+            for nuc in set(position):
+                count = sum([nuc == z for z in position])
+                if count > max_count:
+                    max_count = count
+                    best_nuc = nuc
+                else:
+                    pass
+            consensus.append(best_nuc)
+    # if any are '-', replace with n's foor barnap
+    seq = str(''.join(consensus)).replace('-', 'n')
+    # annotate seq
+    with open(seq_file, 'w') as output:
+        SeqIO.write(SeqRecord(
+            Seq(seq,IUPAC.IUPACAmbiguousDNA())), output, "fasta"),
+    barrnap_cmd = "{0} --kingdom {1} {2}".format(barrnap_exe,
+                                                 kingdom, seq_file)
+    barrnap_gff = subprocess.run(barrnap_cmd
+                                 shell=sys.platform != "win32",
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 check=True)
+    results = flagstats.stdout.decode("utf-8").split("\n")
+    print(results)
 
 def pure_python_plotting(data, outdir, script_name="plot.R", name="",
                          outfile_prefix="entropy_plot", DEBUG=True):
@@ -654,7 +697,7 @@ def profile_kmer_occurances(rec_list, alph, k, logger=None):
     # unique_mers = list(set().union(all_mers))
     unique_mers = set(all_mers)
     for i in unique_mers:
-        counts[i] = [] # initialixe counts dictionary with ker keys
+        counts[i] = []  # initialixe counts dictionary with ker keys
     # part two: count 'em
     for n, rec in enumerate(rec_list):
         logger.info("counting kmer occurances for %s", rec.id)
@@ -676,7 +719,7 @@ def profile_kmer_occurances(rec_list, alph, k, logger=None):
 def pairwise_least_squares(counts, names_list):
     results = {}
     counts_list = []
-    for k,v in counts.items():
+    for k, v in counts.items():
         counts_list.append(v)
     # this gives each an index and gets all the pairs
     all_pairs = [[index, value] for index, value in
@@ -694,7 +737,6 @@ def pairwise_least_squares(counts, names_list):
         results[str(names_list[i[1][0]] + "_vs_" + names_list[i[1][1]])] = sum(
             this_pairs_diffs)
     print(results)
-
 
 
 def main(clusters, genome_records, logger, verbose, within, no_revcomp,
