@@ -1,6 +1,9 @@
 Biopython==1.68
 coverage==4.2
 pyutilsnrw==0.0.74
-ggplot==0.11.5
+#ggplot==0.11.5
+matplotlib
+mca==1.0
+pandas
 #seaborn==0.7.1
 #nosetests

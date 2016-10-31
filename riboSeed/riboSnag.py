@@ -21,9 +21,21 @@ import time
 import argparse
 import sys
 import math
+import re
 
 from collections import defaultdict  # for calculating kmer frequency
 from itertools import product  # for getting all possible kmers
+
+
+
+import mca
+import numpy as np
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+# import seaborn as sns
+import pandas as pd
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
@@ -86,6 +98,7 @@ class locus(object):
         self.rel_start_coord = rel_start_coord  # start relative to length of region
         self.rel_end_coord = rel_end_coord  # end relative to length of region
         self.product = product
+
 
 
 def get_args():
@@ -589,6 +602,7 @@ def calc_entropy_msa(msa_path):
     if not all([i == lengths[0] for i in lengths]):
         raise ValueError("Sequences must all be the same length!")
     entropies = []
+    tseq = []
     # save memory by reading in chunks
     for batch in range(0, (math.ceil(lengths[0] / batch_size))):
         # get all sequences into an array
@@ -599,16 +613,18 @@ def calc_entropy_msa(msa_path):
                                        ((batch + 1) * batch_size)]])
         # transpose
         tseq_array = list(map(list, zip(*seq_array)))
+        tseq.extend(tseq_array)
         entropies.extend(calc_Shannon_entropy(tseq_array))
     # check length of sequence is the same as length of the entropies
     assert len(entropies) == lengths[0]
-    return (entropies, seq_names, tseq_array)
+    return (entropies, seq_names, tseq)
 
 
 def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe, kingdom):
     """
     """
     consensus = []
+    print("len of tseq %i" % len(tseq_array))
     for position in tseq_array:
         if all([x == position[0] for x in position]):
             consensus.append(position[0])
@@ -628,16 +644,50 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe, kingdom):
     # annotate seq
     with open(seq_file, 'w') as output:
         SeqIO.write(SeqRecord(
-            Seq(seq,IUPAC.IUPACAmbiguousDNA())), output, "fasta"),
+            Seq(seq, IUPAC.IUPACAmbiguousDNA())), output, "fasta"),
     barrnap_cmd = "{0} --kingdom {1} {2}".format(barrnap_exe,
                                                  kingdom, seq_file)
-    barrnap_gff = subprocess.run(barrnap_cmd
+    barrnap_gff = subprocess.run(barrnap_cmd,
                                  shell=sys.platform != "win32",
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
                                  check=True)
-    results = flagstats.stdout.decode("utf-8").split("\n")
-    print(results)
+    results = barrnap_gff.stdout.decode("utf-8").split("\n")
+    return [x.split('\t') for x in results]
+
+
+def plot_scatter_with_anno_sns(data,
+                               names=["Position", "Entropy"],
+                               title="Shannon Entropy by Position",
+                               anno_list=[],
+                               output_path="entropy_plot.png"):
+    df = pd.DataFrame({names[0]: range(1, len(data) + 1),
+                       names[1]: data})  # columns=names)
+    fig, axs = plt.subplots(1, 1)
+    colors = ['#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',
+              '#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',]
+    axs.set_title('Shannon Entropies by Position')
+    # sns_plot = plt.scatter(data=df[, x=names[0], y=names[1], fit_reg=False)
+    xmin, xmax = 0, len(data)
+    ymin, ymax = -0.1, (max(data) * 1.2)
+    axs.set_xlim([xmin, xmax])
+    axs.set_ylim([ymin, ymax])
+    for index, anno in enumerate(anno_list):
+        rect = patches.Rectangle((anno[1][0],  # starting x
+                                  ymin),  # starting y
+                                 anno[1][1] - anno[1][0],  # rel x end
+                                 ymax - ymin,  # rel y end
+                                 facecolor=colors[index],
+                                 edgecolor=colors[index], alpha=0.2)
+        axs.add_patch(rect)
+        axs.text((anno[1][0] + anno[1][1]) / 2,    # x location
+                 ymax - 0.48,                      # y location
+                 anno[0],                          # text
+                 ha='center', color='red', weight='bold', fontsize=10)
+    axs.scatter(x=df["Position"], y=df["Entropy"])
+    fig.set_size_inches(12, 6.5)
+    fig.savefig(output_path, dpi=(200))
+
 
 def pure_python_plotting(data, outdir, script_name="plot.R", name="",
                          outfile_prefix="entropy_plot", DEBUG=True):
@@ -717,26 +767,42 @@ def profile_kmer_occurances(rec_list, alph, k, logger=None):
 
 
 def pairwise_least_squares(counts, names_list):
-    results = {}
+    res_list = []
     counts_list = []
     for k, v in counts.items():
         counts_list.append(v)
     # this gives each an index and gets all the pairs
     all_pairs = [[index, value] for index, value in
                  enumerate(product(range(0, len(names_list)), repeat=2))]
-    print("len of all_pairs: %i", len(all_pairs))
-    for i in all_pairs:
-        if i[1][1] == i[1][0]:
-            all_pairs.remove(i)
-    print("len of all_pairs: %i", len(all_pairs))
-
-    for i in all_pairs:
+    non_duplicated = []
+    # remove self compares and duplicates
+    for index, val in enumerate(all_pairs):
+        if val[1][1] == val[1][0]:
+            # print("removing duplicate: %s" % str(val))
+            continue
+        elif tuple(reversed(val[1])) in [x[1] for x in all_pairs[0:index]]:
+            # print("removing duplicate: %s" % str(val))
+            continue
+        else:
+            # print(val)
+            non_duplicated.append(val)
+    for i in non_duplicated:
         this_pairs_diffs = []
         for row in counts_list:
             this_pairs_diffs.append((row[i[1][0]] - row[i[1][1]]) ** 2)
-        results[str(names_list[i[1][0]] + "_vs_" + names_list[i[1][1]])] = sum(
-            this_pairs_diffs)
-    print(results)
+        res_list.append([names_list[i[1][0]],
+                         names_list[i[1][1]],
+                         sum(this_pairs_diffs)])
+    lsdf = pd.DataFrame(res_list, columns=["locus_1", "locus_2", "sls"])
+    print(lsdf)
+    return lsdf
+
+
+def calc_plot_mda(df, output_path="entropy_plot.png"):
+    """
+    """
+    mca_counts = mca.mca(df)
+    print(mca_counts)
 
 
 def main(clusters, genome_records, logger, verbose, within, no_revcomp,
@@ -914,21 +980,41 @@ if __name__ == "__main__":
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE,
                        check=True)
-        seq_entropy, names = calc_entropy_msa(results_path)
+
+        seq_entropy, names, tseq = calc_entropy_msa(results_path)
         with open(results_path, 'r') as resfile:
             msa_seqs = list(SeqIO.parse(resfile, "fasta"))
         counts, names = profile_kmer_occurances(msa_seqs,
                                                 alph='atcg-',
-                                                k=10,
+                                                k=5,
                                                 logger=logger)
 
-        pairwise_least_squares(counts=counts, names_list=names)
-        sys.exit(1)
-        tseq_array = list(map(list, zip(*kmer_profiles)))
-        print(tseq_array)
-        pure_python_plotting(data=seq_entropy, script_name="plot.R",
-                             outdir=args.output, name=genome_records[0].id,
-                             outfile_prefix="entropy_plot", DEBUG=True)
+        mca_df = pairwise_least_squares(counts=counts, names_list=names)
+        # calc_plot_mda(df=mca_df, output_path="entropy_plot.png")
+        gff = annotate_msa_conensus(tseq_array=tseq,
+                                    seq_file=os.path.join(args.output,
+                                                          "test_consensus.fasta"),
+                                    barrnap_exe=args.barrnap_exe,
+                                    kingdom=args.kingdom)
+        annos = []
+        for i in gff:
+            if i[0].startswith("#") or not len(i) == 9:
+                continue
+            m = re.search('product=(.+?)$', i[8])
+            if m:
+                found = m.group(1)
+            annos.append([found, [int(i[3]), int(i[4])]])
+        if len(annos) == 0:
+            logger.warning("Could not parse barrnap results!")
+        plot_scatter_with_anno_sns(data=seq_entropy,
+                                   names=["Position", "Entropy"],
+                                   title="Shannon Entropy by Position",
+                                   anno_list=annos,
+                                   output_path=os.path.join(args.output,
+                                                            "entropy_plot.png"))
+        # pure_python_plotting(data=seq_entropy, script_name="plot.R",
+        #                      outdir=args.output, name=genome_records[0].id,
+        #                      outfile_prefix="entropy_plot", DEBUG=True)
         # sys.stdout.write("position, ent\n")
         # for pos, i in enumerate(seq_entropy):
         #     sys.stdout.write(str(pos) + ", " + str(i) + "\n")
