@@ -630,13 +630,13 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
     """
     """
     consensus = []
-    print("len of tseq %i" % len(tseq_array))
+    nseqs = len(tseq_array[0])
     for position in tseq_array:
         if all([x == position[0] for x in position]):
-            consensus.append([position[0], len(position[0])])
+            consensus.append([position[0], nseqs])
         else:
             max_count = 0
-            next_best_count = 0
+            nextbest_count = 0
             best_nuc = None
             nextbest_nuc = None
             for nuc in set(position):
@@ -656,7 +656,6 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
                 consensus.append([nextbest_nuc, nextbest_count])
             else:
                 consensus.append([best_nuc, max_count])
-    # count consensus depth
     # if any are '-', replace with n's for barrnap
     seq = str(''.join([x[0] for x in consensus])).replace('-', 'n')
     # annotate seq
@@ -689,7 +688,7 @@ def plot_scatter_with_anno_sns(data,
     cov_max_depth = max(df_con['depth'])
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True,
-                                   gridspec_kw={'height_ratios':[4, 1]})
+                                   gridspec_kw={'height_ratios': [4, 1]})
     colors = ['#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',
               '#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F']
     ax1.set_title(title, y=1.08)
@@ -699,22 +698,24 @@ def plot_scatter_with_anno_sns(data,
     ax1.set_xlim([xmin, xmax])
     ax1.set_ylim([ymin, ymax])
     for index, anno in enumerate(anno_list):
-        rect1 = patches.Rectangle((anno[1][0],  # starting x
-                                  ymin),  # starting y
-                                 anno[1][1] - anno[1][0],  # rel x end
-                                 ymax - ymin,  # rel y end
-                                 facecolor=mpl.colors.ColorConverter().to_rgba(
-                                     colors[index], alpha=0.2),
-                                 edgecolor=mpl.colors.ColorConverter().to_rgba(
-                                     colors[index], alpha=0.2))
-        rect2 = patches.Rectangle((anno[1][0],  # starting x
-                                   1),  # starting y
-                                  anno[1][1] - anno[1][0],  # rel x end
-                                  cov_max_depth,  # dont -1 beacuse start at 1
-                                  facecolor=mpl.colors.ColorConverter().to_rgba(
-                                      colors[index], alpha=0.2),
-                                  edgecolor=mpl.colors.ColorConverter().to_rgba(
-                                     colors[index], alpha=0.2))
+        rect1 = patches.Rectangle(
+            (anno[1][0],  # starting x
+             ymin),  # starting y
+            anno[1][1] - anno[1][0],  # rel x end
+            ymax - ymin,  # rel y end
+            facecolor=mpl.colors.ColorConverter().to_rgba(
+                colors[index], alpha=0.2),
+            edgecolor=mpl.colors.ColorConverter().to_rgba(
+                colors[index], alpha=0.2))
+        rect2 = patches.Rectangle(
+            (anno[1][0],  # starting x
+             1),  # starting y
+            anno[1][1] - anno[1][0],  # rel x end
+            cov_max_depth,  # dont -1 beacuse start at 1
+            facecolor=mpl.colors.ColorConverter().to_rgba(
+                colors[index], alpha=0.2),
+            edgecolor=mpl.colors.ColorConverter().to_rgba(
+                colors[index], alpha=0.2))
         ax1.add_patch(rect1)
         ax2.add_patch(rect2)
         ax1.text((anno[1][0] + anno[1][1]) / 2,    # x location
@@ -729,9 +730,11 @@ def plot_scatter_with_anno_sns(data,
     ax2.invert_yaxis()
     ax2.set_ylabel('Consensus Coverage')
     ax2.get_yaxis().set_label_coords(-.05, 0.5)
-    ax2.set_ylim([cov_max_depth + 1, 1])
-    ax2.step(df_con.index, df_con["depth"],
-             where='mid', color='darkgrey')
+    # ax2.set_ylim([1, cov_max_depth + 1]) #, 1])
+    ax2.bar(df_con.index, df_con["depth"],
+            width=1, color='darkgrey', linewidth=0, edgecolor='darkgrey')
+    # ax2.step(df_con.index, df_con["depth"],
+    #          where='mid', color='darkgrey')
     for ax in [ax1, ax2]:
         ax.spines['right'].set_visible(False)
         # ax.spines['top'].set_visible(False)
@@ -744,7 +747,7 @@ def plot_scatter_with_anno_sns(data,
     # ax1.xaxis.set_ticklabels('')
     plt.tight_layout()
     fig.subplots_adjust(hspace=0)
-    fig.set_size_inches(12, 6.5)
+    fig.set_size_inches(12, 7.5)
     fig.savefig(output_path, dpi=(200))
 
 
