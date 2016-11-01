@@ -151,6 +151,11 @@ def get_args():
                           help="replace sequence with N's; " +
                           "default: %(default)s",
                           default=False, action="store_true", dest="replace")
+    optional.add_argument("--msa_kmers",
+                          help="calculate kmer similarity based on aligned " +
+                          "sequences instead of raw sequences;" +
+                          "default: %(default)s",
+                          default=False, action="store_true", dest="msa_kmers")
     optional.add_argument("-c", "--circular",
                           help="if the genome is known to be circular, and " +
                           "an region of interest (including flanking bits) " +
@@ -620,27 +625,40 @@ def calc_entropy_msa(msa_path):
     return (entropies, seq_names, tseq)
 
 
-def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe, kingdom):
+def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
+                          kingdom, excludedash=True):
     """
     """
     consensus = []
     print("len of tseq %i" % len(tseq_array))
     for position in tseq_array:
         if all([x == position[0] for x in position]):
-            consensus.append(position[0])
+            consensus.append([position[0], len(position[0])])
         else:
             max_count = 0
+            next_best_count = 0
             best_nuc = None
+            nextbest_nuc = None
             for nuc in set(position):
                 count = sum([nuc == z for z in position])
                 if count > max_count:
+                    nextbest_count = max_count
                     max_count = count
+                    nextbest_nuc = best_nuc
                     best_nuc = nuc
                 else:
                     pass
-            consensus.append(best_nuc)
-    # if any are '-', replace with n's foor barnap
-    seq = str(''.join(consensus)).replace('-', 'n')
+            # contol whether gaps are allowed in consensus
+            if (
+                    all([x != '-' for x in position]) and
+                    best_nuc == '-' and
+                    excludedash):
+                consensus.append([nextbest_nuc, nextbest_count])
+            else:
+                consensus.append([best_nuc, max_count])
+    # count consensus depth
+    # if any are '-', replace with n's for barrnap
+    seq = str(''.join([x[0] for x in consensus])).replace('-', 'n')
     # annotate seq
     with open(seq_file, 'w') as output:
         SeqIO.write(SeqRecord(
@@ -653,38 +671,79 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe, kingdom):
                                  stderr=subprocess.PIPE,
                                  check=True)
     results = barrnap_gff.stdout.decode("utf-8").split("\n")
-    return [x.split('\t') for x in results]
+    return ([x.split('\t') for x in results], consensus)
 
 
 def plot_scatter_with_anno_sns(data,
                                names=["Position", "Entropy"],
                                title="Shannon Entropy by Position",
+                               consensus_cov=[],
                                anno_list=[],
                                output_path="entropy_plot.png"):
+    if len(consensus_cov) != len(data):
+        raise ValueError("data and consensus different lengths!")
     df = pd.DataFrame({names[0]: range(1, len(data) + 1),
                        names[1]: data})  # columns=names)
-    fig, axs = plt.subplots(1, 1)
+    df_con = pd.DataFrame(consensus_cov, columns=["base",
+                                                  "depth"])
+    cov_max_depth = max(df_con['depth'])
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True,
+                                   gridspec_kw={'height_ratios':[4, 1]})
     colors = ['#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',
-              '#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',]
-    axs.set_title('Shannon Entropies by Position')
+              '#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F']
+    ax1.set_title(title, y=1.08)
     # sns_plot = plt.scatter(data=df[, x=names[0], y=names[1], fit_reg=False)
     xmin, xmax = 0, len(data)
     ymin, ymax = -0.1, (max(data) * 1.2)
-    axs.set_xlim([xmin, xmax])
-    axs.set_ylim([ymin, ymax])
+    ax1.set_xlim([xmin, xmax])
+    ax1.set_ylim([ymin, ymax])
     for index, anno in enumerate(anno_list):
-        rect = patches.Rectangle((anno[1][0],  # starting x
+        rect1 = patches.Rectangle((anno[1][0],  # starting x
                                   ymin),  # starting y
                                  anno[1][1] - anno[1][0],  # rel x end
                                  ymax - ymin,  # rel y end
-                                 facecolor=colors[index],
-                                 edgecolor=colors[index], alpha=0.2)
-        axs.add_patch(rect)
-        axs.text((anno[1][0] + anno[1][1]) / 2,    # x location
+                                 facecolor=mpl.colors.ColorConverter().to_rgba(
+                                     colors[index], alpha=0.2),
+                                 edgecolor=mpl.colors.ColorConverter().to_rgba(
+                                     colors[index], alpha=0.2))
+        rect2 = patches.Rectangle((anno[1][0],  # starting x
+                                   1),  # starting y
+                                  anno[1][1] - anno[1][0],  # rel x end
+                                  cov_max_depth,  # dont -1 beacuse start at 1
+                                  facecolor=mpl.colors.ColorConverter().to_rgba(
+                                      colors[index], alpha=0.2),
+                                  edgecolor=mpl.colors.ColorConverter().to_rgba(
+                                     colors[index], alpha=0.2))
+        ax1.add_patch(rect1)
+        ax2.add_patch(rect2)
+        ax1.text((anno[1][0] + anno[1][1]) / 2,    # x location
                  ymax - 0.48,                      # y location
-                 anno[0],                          # text
+                 anno[0][0:20],                          # text first 20 char
                  ha='center', color='red', weight='bold', fontsize=10)
-    axs.scatter(x=df["Position"], y=df["Entropy"])
+    ax1.scatter(x=df["Position"], y=df["Entropy"],
+                marker='o', color='black', s=2)
+    ax1.set_ylabel('Shannon Entropy')
+    ax1.get_yaxis().set_label_coords(-.05, 0.5)
+    ax2.set_xlim([xmin, xmax])
+    ax2.invert_yaxis()
+    ax2.set_ylabel('Consensus Coverage')
+    ax2.get_yaxis().set_label_coords(-.05, 0.5)
+    ax2.set_ylim([cov_max_depth + 1, 1])
+    ax2.step(df_con.index, df_con["depth"],
+             where='mid', color='darkgrey')
+    for ax in [ax1, ax2]:
+        ax.spines['right'].set_visible(False)
+        # ax.spines['top'].set_visible(False)
+    # Only show ticks on the left and bottom spines
+    ax1.spines['top'].set_visible(False)
+    ax2.spines['bottom'].set_visible(False)
+    ax.yaxis.set_ticks_position('left')
+    ax2.xaxis.set_ticks_position('bottom')
+    ax1.xaxis.set_ticks_position('top')
+    # ax1.xaxis.set_ticklabels('')
+    plt.tight_layout()
+    fig.subplots_adjust(hspace=0)
     fig.set_size_inches(12, 6.5)
     fig.savefig(output_path, dpi=(200))
 
@@ -797,23 +856,23 @@ def pairwise_least_squares(counts, names_list, output_path):
     fig, ax = plt.subplots()
     lsdf = lsdf_wNA.fillna(value=0)
     print(wlsdf)
-    heatmap = ax.pcolormesh(wlsdf, norm=mpl.colors.LogNorm()) #,
-                             # cmap='RdBu')  # , vmin=z_min, vmax=z_max)
-    ax.set_title('pcolormesh')
+    heatmap = ax.pcolormesh(wlsdf,
+                            # norm=mpl.colors.LogNorm(),
+                            cmap='Greens') #,
+    # ax.set_title('pcolormesh')
     # put the major ticks at the middle of each cell
     ax.set_yticks(np.arange(wlsdf.shape[0]) + 0.5, minor=False)
     ax.set_xticks(np.arange(wlsdf.shape[1]) + 0.5, minor=False)
-
     # # want a more natural, table-like display
     ax.invert_yaxis()
     ax.xaxis.tick_top()
     plt.xticks(rotation=90)
-
     # # Set the labels
     ax.set_xticklabels(wlsdf.columns.values, minor=False)
     ax.set_yticklabels(wlsdf.index, minor=False)
     fig.colorbar(heatmap)
-    fig.set_size_inches(6, 6)
+    plt.tight_layout()  # pad=0, w_pad=5, h_pad=.0)
+    fig.set_size_inches(8, 8)
     fig.savefig(output_path, dpi=(200))
     print(lsdf_wNA)
     return lsdf_wNA
@@ -1003,9 +1062,12 @@ if __name__ == "__main__":
                        check=True)
 
         seq_entropy, names, tseq = calc_entropy_msa(results_path)
-        with open(results_path, 'r') as resfile:
-            msa_seqs = list(SeqIO.parse(resfile, "fasta"))
-        counts, names = profile_kmer_occurances(msa_seqs,
+        if args.msa_kmers:
+            with open(results_path, 'r') as resfile:
+                kmer_seqs = list(SeqIO.parse(resfile, "fasta"))
+        else:
+            kmer_seqs = regions
+        counts, names = profile_kmer_occurances(kmer_seqs,
                                                 alph='atcg-',
                                                 k=5,
                                                 logger=logger)
@@ -1015,12 +1077,13 @@ if __name__ == "__main__":
                                             args.output,
                                             "sum_least_squares_heatmap.png"))
         # calc_plot_mda(df=mca_df, output_path="entropy_plot.png")
-        gff = annotate_msa_conensus(tseq_array=tseq,
-                                    seq_file=os.path.join(
-                                        args.output,
-                                        "test_consensus.fasta"),
-                                    barrnap_exe=args.barrnap_exe,
-                                    kingdom=args.kingdom)
+        gff, consensus_cov = annotate_msa_conensus(
+            tseq_array=tseq,
+            seq_file=os.path.join(
+                args.output,
+                "test_consensus.fasta"),
+            barrnap_exe=args.barrnap_exe,
+            kingdom=args.kingdom)
         annos = []
         for i in gff:
             if i[0].startswith("#") or not len(i) == 9:
@@ -1031,12 +1094,13 @@ if __name__ == "__main__":
             annos.append([found, [int(i[3]), int(i[4])]])
         if len(annos) == 0:
             logger.warning("Could not parse barrnap results!")
-        title = str("Shannon Entropy by Position\n"+
+        title = str("Shannon Entropy by Position\n" +
                     os.path.basename(
                         os.path.splitext(
                             args.genbank_genome)[0]))
 
         plot_scatter_with_anno_sns(data=seq_entropy,
+                                   consensus_cov=consensus_cov,
                                    names=["Position", "Entropy"],
                                    title=title,
                                    anno_list=annos,
