@@ -11,35 +11,29 @@ See README.md for more info and usage
 
 """
 import argparse
-# import gzip
 import sys
 import time
 import re
-# import errno
 import logging
-# import traceback
 import os
 import shutil
-# import argparse                 #
 import multiprocessing
 import subprocess
-# import glob
 
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 
-# from pyutilsnrw import utils3_5
-
 from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
     combine_contigs, run_quast, \
     copy_file, check_installed_tools, get_ave_read_len_from_fastq, \
     get_number_mapped, extract_mapped_and_mappedmates, clean_temp_dir, \
     output_from_subprocess_exists, keep_only_first_contig, get_fasta_lengths, \
-    file_len, check_version_from_init
-    #    make_output_prefix,
+    file_len, check_version_from_init, check_version_from_cmd
 
+## GLOBALS
+SAMTOOLS_MIN_VERSION = '1.3.1'
 #################################### functions ###############################
 
 
@@ -934,7 +928,8 @@ if __name__ == "__main__":
     package_init = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "__init__.py")
-    # check version of riboSeed
+
+    # log version of riboSeed, commandline options, and all settings
     logger.info("riboSeed pipeine package version {0}".format(
         check_version_from_init(init_file=package_init, min_version="0.0.0")))
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
@@ -947,14 +942,14 @@ if __name__ == "__main__":
     logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
                      "{2}\n").format(output_root, map_output_dir, results_dir))
 
-    # check cases of switch-typ args, and coerce if needed;
     # Cannot set Nonetype objects via commandline directly and I dont want None
     # to be default dehaviour, so here we convert 'None' to None.
     # I have not moral compass
     if args.ref_as_contig == 'None':
         args.ref_as_contig = None
+
     # TODO Look into resupporting bwa, as it plays better with BAM files,
-    # though smalt beats it on the overhangs.  The main issue is that BWA mem
+    # though smalt beats it on the overhangs. The main issue is that BWA mem
     # doesnt work with overhangs well, and bwasw is slower than smalt.
     # if args.method is not in  ["smalt", "bwa"]:
     #     logger.error("'smalt' and  'bwa' only methods currently supported")
@@ -975,7 +970,21 @@ if __name__ == "__main__":
     test_ex = [check_installed_tools(x, logger=logger) for x in executables]
     if all(test_ex):
         logger.debug("All needed system executables found!")
+        logger.debug(str([shutil.which(i) for i in executables]))
 
+    # check samtools verison
+    try:
+        samtools_verison = check_version_from_cmd(
+            exe='samtools',
+            cmd='',
+            line=3,
+            pattern=r"\s*Version: (?P<version>[^(]+)",
+            where='stderr',
+            min_version=SAMTOOLS_MIN_VERSION)
+    except Execption as e:
+        logger.error(e)
+        sys.exit(1)
+    logger.debug("samtools version: %s", samtools_verison)
     # check bambamc is installed proper if using smalt
     if args.method == "smalt":
         try:
@@ -983,6 +992,7 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error(e)
             sys.exit(1)
+
     # check equal length fastq.  This doesnt actually check propper pairs
     if file_len(args.fastq1) != file_len(args.fastq2):
         logger.error("Input Fastq's are of unequal length! Try " +
@@ -1023,6 +1033,7 @@ if __name__ == "__main__":
 
     nfastas = len(fastas)
     logger.debug(fastas)
+
     ### if using smalt (which you are), check for mapped reference
     if args.method == 'smalt':
         path_to_distance_file = os.path.join(results_dir, mapped_genome_sam)

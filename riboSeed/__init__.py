@@ -1,1 +1,2 @@
-__version__ = '0.0.2'
+# MAJOR CHANGES: ugraded riboSnag
+__version__ = '0.0.3'
