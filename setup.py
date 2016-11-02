@@ -14,6 +14,7 @@ import re
 from codecs import open
 from os import path
 import sys
+from pip.req import parse_requirements
 
 here = path.abspath(path.dirname(__file__))
 
@@ -34,7 +35,11 @@ if sys.version_info <= (3, 0):
                      "or above...exiting.\n")
     sys.exit(1)
 
-
+## parse requirements file
+install_reqs = parse_requirements(path.join(here, "requirements.txt"),
+                                  session=False)
+requirements = [str(ir.req) for ir in install_reqs]
+print(requirements)
 setup(
     name='riboSeed',
 
@@ -97,7 +102,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy','Biopython', "pyutilsnrw"],
+    install_requires=requirements,
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:

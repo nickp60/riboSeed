@@ -1,9 +1,7 @@
 Biopython==1.68
 coverage==4.2
 pyutilsnrw==0.0.74
-#ggplot==0.11.5
-matplotlib
-mca==1.0
-pandas
-#seaborn==0.7.1
-#nosetests
+matplotlib==1.5.3
+pandas==0.18.1
+git+https://github.com/WarrenWeckesser/heatmapcluster.git#egg=heatmapcluster
+# nosetests
