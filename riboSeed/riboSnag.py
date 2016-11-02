@@ -26,9 +26,6 @@ import re
 from collections import defaultdict  # for calculating kmer frequency
 from itertools import product  # for getting all possible kmers
 
-
-
-import mca
 import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')
@@ -41,8 +38,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
-import numpy as np
-import matplotlib.pyplot as plt
+
 from heatmapcluster import heatmapcluster
 
 #from pyutilsnrw import utils3_5
