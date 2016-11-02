@@ -1033,7 +1033,7 @@ if __name__ == "__main__":
                     clobber=False, logger=logger)
             else:
                 logger.error("Construction of MSA skipped because " +
-                             "%s is not a valid executable!", args.mafft)
+                             "%s is not a valid executable!", args.mafft_exe)
                 sys.exit(1)
         logger.info("Running %s for MSA", args.msa_tool)
         subprocess.run(msa_cmd,

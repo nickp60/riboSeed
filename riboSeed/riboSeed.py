@@ -33,7 +33,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
     file_len, check_version_from_init, check_version_from_cmd
 
 ## GLOBALS
-SAMTOOLS_MIN_VERSION = '1.3.1'
+SAMTOOLS_MIN_VERSION = '1.3.0'
 #################################### functions ###############################
 
 
@@ -981,7 +981,7 @@ if __name__ == "__main__":
             pattern=r"\s*Version: (?P<version>[^(]+)",
             where='stderr',
             min_version=SAMTOOLS_MIN_VERSION)
-    except Execption as e:
+    except Exception as e:
         logger.error(e)
         sys.exit(1)
     logger.debug("samtools version: %s", samtools_verison)

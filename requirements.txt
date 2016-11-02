@@ -1,6 +1,6 @@
 Biopython==1.68
 coverage==4.2
-pyutilsnrw==0.0.74
+pyutilsnrw==0.0.75
 matplotlib==1.5.3
 pandas==0.18.1
 git+https://github.com/WarrenWeckesser/heatmapcluster.git#egg=heatmapcluster
