@@ -744,15 +744,14 @@ def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
     """
     process each fasta seed to parallelize time comsuming parts
     """
-    logger.info("processing {0}".format(fasta))
-    logger.info("\nITEM %s of %s\n" % (str(fastas.index(fasta) + 1), nfastas))
+    prelog = "{0}-{1}:".format("SEED", num)
+    logger.info("%s processing %s", prelog, fasta)
+    logger.info("%s item %i of %i", prelog, fastas.index(fasta) + 1, nfastas)
     spades_dir = str(results_dir + "SPAdes_" +
                      os.path.split(fasta)[1].split(".fasta")[0])
     mapping_dir = str(map_output_dir + "mapping_" +
                       os.path.split(fasta)[1].split(".fasta")[0])
-    logger.debug(str("this fasta's output dirs: " +
-                     "\n{0}\n{1}").format(spades_dir,
-                                          mapping_dir))
+    logger.debug("%s output dirs: \n%s\n%s", prelog, spades_dir, mapping_dir)
     #  make appropriate output directories
     for i in [spades_dir, mapping_dir]:
         if not os.path.isdir(i):
@@ -763,7 +762,7 @@ def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
     fastq_results_prefix = os.path.join(
         results_dir, str(exp_name + "_" +
                          os.path.split(fasta)[1].split(".fasta")[0]))
-    logger.debug("copying seed file to mapping directory")
+    logger.debug("%s copying seed file to mapping directory", prelog)
     new_reference = copy_file(current_file=fasta, dest_dir=mapping_dir,
                               name='', overwrite=False, logger=logger)
 
@@ -775,9 +774,9 @@ def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
         elif target_len > 50:
             target_seed_len = int(target_len)
         else:
-            logger.error("invalid taget length provided; can either be given" +
+            logger.error("%s invalid taget length provided; must be given" +
                          " as fraction of total length or as an absolute " +
-                         "number of base pairs greater than 50")
+                         "number of base pairs greater than 50", prelog)
             sys.exit(1)
     else:
         pass
@@ -789,16 +788,17 @@ def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
     while this_iteration <= max_iterations and proceed:
         # if not the first round, replace ref with extended contigs
         if this_iteration != 1:
-            logger.info("copying contigs file for next iteration of assembly")
+            logger.info("%s copying contigs for next iteration of assembly",
+                        prelog)
             new_reference = copy_file(current_file=new_reference,
                                       dest_dir=mapping_dir,
                                       name=str(os.path.basename(fasta) +
                                                "_iter_" + str(this_iteration) +
                                                ".fasta"),
                                       overwrite=True, logger=logger)
-        logger.info("Iteration {0} of {1} for {2}, item {3} out of {4}".format(
-            this_iteration, max_iterations,
-            os.path.basename(fasta), fastas.index(fasta) + 1, len(fastas)))
+        logger.info("%s Iteration %i of %i, item %i out of %i",
+                    prelog, this_iteration, max_iterations,
+                    fastas.index(fasta) + 1, len(fastas))
         map_to_ref_smalt(ref=new_reference,  # ref_genome=reference_genome,
                          fastq_read1=fastq1, fastq_read2=fastq2,
                          fastq_readS=fastqS, read_len=average_read_length,
@@ -814,7 +814,7 @@ def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
                                        keep_unmapped=keep_unmapped_reads,
                                        logger=logger)
 
-        logger.info("Converting mapped results to fastqs")
+        logger.info("%s Converting mapped results to fastqs", prelog)
         try:
             new_fastq1, new_fastq2, new_fastqS, \
                 mapped_fastq1, mapped_fastq2, mapped_fastqS = \
@@ -827,9 +827,9 @@ def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
             logger.error(e)
             sys.exit(1)
         if subtract_reads and keep_unmapped_reads:
-            logger.warning("using reduced reads with next iteration")
+            logger.warning("%s using reduced reads for next iteration", prelog)
             fastq1, fastq2, fastqS = new_fastq1, new_fastq2, new_fastqS
-        logger.info("Running SPAdes")
+        logger.info("%s Running SPAdes", prelog)
         try:
             contigs_path, proceed = \
                 run_spades(pe1_1=mapped_fastq1, pe1_2=mapped_fastq2,
@@ -841,29 +841,30 @@ def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
                            k=kmers, logger=logger,
                            seqname=fasta, spades_exe=args.spades_exe)
         except Exception as e:
+            logger.error("%s SPAdes error:", prelog)
             logger.error(e)
             sys.exit(1)
         if not proceed:
-            logger.warning("Assembly failed: no spades output for {0}".format(
-                os.path.basename(fasta)))
+            logger.warning("%s Assembly failed: no spades output for %s",
+                           prelog, os.path.basename(fasta))
 
         # compare lengths of reference and freshly assembled contig
         contig_len = get_fasta_lengths(contigs_path)[0]
         ref_len = get_fasta_lengths(new_reference)[0]
         contig_length_diff = contig_len - ref_len
-        logger.info("Seed length: {0}".format(seed_len))
+        logger.info("%s Seed length: %i", prelog, seed_len)
         if proceed_to_target:
             logger.info("Target length: {0}".format(target_seed_len))
-        logger.info("Length of this iteration's longest contig: {0}".format(
-            contig_len))
+        logger.info("%s Length of this iteration's longest contig: %i",
+                    prelog, contig_len)
         if this_iteration != 1:
-            logger.info("Length of previous longest contig: {0}".format(
-                ref_len))
-            logger.info("The new contig differs from the previous " +
-                        "iteration by {0} bases".format(contig_length_diff))
+            logger.info("%s Length of previous longest contig: %i",
+                        prelog, ref_len)
+            logger.info("%s The new contig differs from the previous " +
+                        "iteration by %i bases", prelog, contig_length_diff)
         else:
-            logger.info("The new contig differs from the reference " +
-                        "seed by {0} bases".format(contig_length_diff))
+            logger.info("%s The new contig differs from the reference " +
+                        "seed by %i bases", prelog, contig_length_diff)
 
         # This cuts failing assemblies short
         if this_iteration == 1 and min_contig_len > contig_len:
@@ -871,11 +872,12 @@ def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
                            " is not greater than length set by " +
                            "--min_assembly_len. Assembly will likely fail if" +
                            " the contig does not meet the length of the seed")
-            if include_shorts_contigs:
+            if include_short_contigs:
                 logger.warning("Continuing, but if this occurs for more " +
                                "than one seed, we reccommend  you abort and " +
                                "retry with longer seeds, a different ref, " +
                                "or re-examine the riboSnag clustering")
+            else:
                 keep_contig = False  # flags contig for exclusion
             this_iteration = max_iterations + 1  # skip remaining iterations
         else:
@@ -903,7 +905,7 @@ def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
         new_reference = contigs_path
 
     #  Now, after iterative seeding
-    if not keep contigs:
+    if not keep_contig:
         logger.warning("Excluding contig seeded by %s!", fasta)
         return(1)
     else:
@@ -1102,7 +1104,7 @@ if __name__ == "__main__":
                  target_len=args.target_len,
                  score_minimum=args.min_score_SMALT,
                  min_contig_len=args.min_assembly_len,
-                 include_short_contigs=args.include_short)
+                 include_short_contigs=args.include_shorts)
 
     else:
         #  default is now to get cores available for worker and
@@ -1135,7 +1137,7 @@ if __name__ == "__main__":
                                      "target_len": args.target_len,
                                      "score_minimum": args.min_score_SMALT,
                                      "min_contig_len": args.min_assembly_len,
-                                     "include_short_contigs": args.include_short})
+                                     "include_short_contigs": args.include_shorts})
                    for num, fasta in enumerate(fastas)]
         pool.close()
         pool.join()
@@ -1147,7 +1149,8 @@ if __name__ == "__main__":
                                       contigs_name="riboSeedContigs",
                                       logger=logger)
     logger.info("Combined Seed Contigs: {0}".format(new_contig_file))
-    logger.info("Time taken to run seeding: %.2fm" % (time.time() - t0) / 60)
+    logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
+    # logger.info("Time taken to run seeding: %.2fm" % (time.time() - t0) / 60)
     logger.info("\n\n Starting Final Assemblies\n\n")
 
     quast_reports = []
