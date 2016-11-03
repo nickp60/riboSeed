@@ -21,6 +21,7 @@ md5: 27944249bf064ba54576be83053e82b0
 
 """
 __version__ = "0.0.3"
+import copy
 import sys
 import logging
 import os
@@ -44,7 +45,6 @@ from riboSeed.riboSnag import loci_cluster, locus
 
 sys.dont_write_bytecode = True
 logger = logging
-
 
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among otherthings wont run if you try this" +
@@ -133,6 +133,7 @@ class riboSnag_TestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             get_genbank_rec_from_multigb(
                 recordID='NC_011751.X', genbank_records=records)
+
     def test_extract_coords_from_locus(self):
         """todo: replace essentially unused get_genbank_record function
         """
@@ -189,14 +190,18 @@ class riboSnag_TestCase(unittest.TestCase):
                                                          feature="CDS",
                                                          logger=logger)
         old_seq = cluster_post_extract.SeqRecord
-        # old_list = [[x.start_coord, x.end_coord] for
-        #             x in cluster_post_extract.loci_list]
+        # test excessive padding
+        cluster_too_much_padding = copy.deepcopy(cluster_post_extract)
+        cluster_too_much_padding.padding = 10000000
+        with self.assertRaises(ValueError):
+            pad_genbank_sequence(cluster_too_much_padding,
+                                 logger=logger)
+        # test sucessful execution
         padded_cluster = pad_genbank_sequence(cluster_post_extract,
                                               logger=logger)
         self.assertEqual(str(old_seq.seq),
                          str(padded_cluster.SeqRecord.seq[padding_val:
                                                           -padding_val]))
-
 
     def test_stitching(self):
         """  This is actually the thing needing the most testing, most likely
@@ -208,78 +213,59 @@ class riboSnag_TestCase(unittest.TestCase):
             padding=padding_val,
             circular=True,
             logger=logger)
-        cluster = clusters[0]
+        cluster = clusters[0]  # this should be reverse complimented
         cluster_post_extract = extract_coords_from_locus(
             cluster=cluster,
             feature="rRNA",
             logger=logger)
         stitched_cluster = stitch_together_target_regions(
             cluster=cluster_post_extract,
-            flanking="1000",
+            flanking="1000:1000",
             within=50, minimum=50,
             replace=False,
             logger=logger,
             verbose=False,
             circular=False,
-            revcomp=False)
+            revcomp=True)
+        stitched_cluster_circular = stitch_together_target_regions(
+            cluster=cluster_post_extract,
+            flanking="1000:1000",
+            within=50, minimum=50,
+            replace=False,
+            logger=logger,
+            verbose=False,
+            circular=True,
+            revcomp=True)
+        # fail with invalid flanking arg
+        with self.assertRaises(ValueError):
+            stitch_together_target_regions(
+                cluster=cluster_post_extract,
+                flanking="1000:1000:1000",
+                within=50, minimum=50,
+                replace=False,
+                logger=logger,
+                verbose=False,
+                circular=False,
+                revcomp=False)
+        # fail with exceeded minimum
+        with self.assertRaises(ValueError):
+            stitch_together_target_regions(
+                cluster=cluster_post_extract,
+                flanking="1000",
+                within=5000, minimum=1500,
+                replace=True,
+                logger=logger,
+                verbose=False,
+                circular=False,
+                revcomp=False)
         with open(self.test_cluster2, 'r') as ref:
             ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
         self.assertEqual(str(ref_rec.seq),
                          str(stitched_cluster.extractedSeqRecord.seq))
-        # If reimplementing replacement write test cases here
-
-    # def test_stitching_integration(self):
-    #     """  Integration of several things
-    #     """
-    #     ex_padding = 1000  # an example padding amount
-    #     clusters = parse_clustered_loci_file(
-    #         filepath=self.test_loci_file,
-    #         gb_filepath=self.test_gb_file,
-    #         padding=ex_padding,
-    #         circular=False,
-    #         logger=logger)
-    #     cluster = clusters[0]
-    #     cluster_post_extract = extract_coords_from_locus(
-    #         cluster=cluster,
-    #         feature="rRNA",
-    #         logger=logger)
-    #     stitched_cluster = stitch_together_target_regions(
-    #         cluster=cluster_post_extract,
-    #         flanking="1000:1000",
-    #         within=50, minimum=50,
-    #         replace=False,
-    #         logger=logger,
-    #         verbose=False,
-    #         circular=False,
-    #         revcomp=False)
-    #     with open(self.test_cluster2, 'r') as ref:
-    #         ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
-    #     self.assertEqual(str(ref_rec.seq),
-    #                      str(stitched_cluster.extractedSeqRecord.seq))
-
-    #     padded_cluster = pad_genbank_sequence(stiched_cluster,
-    #                                           logger=logger)
-
-    #     # checks that the the sequence is properly padded
-    #     records = get_genbank_record(self.test_gb_file)
-    #     record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
-    #                                           genbank_records=records)
-
-    #     self.assertEqual(record.seq,
-    #                      padded_cluster.SeqRecord.seq[ex_padding: -ex_padding])
-    #     stitched_padded_record = \
-    #         stitch_together_target_regions(genome_sequence=padded_seq,
-    #                                        coords=padded_coords,
-    #                                        flanking="700:700",
-    #                                        within=50, minimum=50,
-    #                                        replace=False,
-    #                                        logger=logger,
-    #                                        verbose=False,
-    #                                        padding=ex_padding,
-    #                                        circular=True)
-    #     # check the extracted sequences are still the same, which verifies the
-    #     # coords were accuratly adjusted
-    #     self.assertEqual(stitched_record.seq, stitched_padded_record.seq)
+        # ensure that coords are named identically whether genome is
+        #  treated as circular
+        self.assertEqual(stitched_cluster.extractedSeqRecord.id,
+                         stitched_cluster_circular.extractedSeqRecord.id)
 
     def test_calc_Shannon(self):
         """ test calc_shannon_entropy;
@@ -294,7 +280,7 @@ class riboSnag_TestCase(unittest.TestCase):
             ["T", "T", "G", "G", "G"],
             ["A", "C", "G", "T", "-"]
         ]
-        entropies = calc_Shannon_entropy(test_matrix)
+        entropies = calc_Shannon_entropy(matrix=test_matrix)
         theoretical = [-0.0, 0.500402, 0.673012, 0.673012,
                        0.950271, 0.673012, 1.609438]
         for index, value in enumerate(entropies):
@@ -331,14 +317,14 @@ class riboSnag_TestCase(unittest.TestCase):
             combined_fastas=unaligned_seqs,
             prank_exe=self.prank_exe,
             add_args="-t=sometree",
-            clobber=False, logger=None)
+            clobber=False, logger=logger)
         mafft_cmd_1, results_path = prepare_mafft_cmd(
             outdir=self.testdirname,
             outfile_name="best_MSA.fasta",
             combined_fastas=unaligned_seqs,
             mafft_exe=self.mafft_exe,
             add_args="-t=sometree",
-            clobber=False, logger=None)
+            clobber=False, logger=logger)
         idealprank = "prank -t=sometree -d={0} -o={1}".format(
             unaligned_seqs, os.path.join(self.testdirname,
                                          "best_MSA.fasta"))
@@ -348,6 +334,108 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(idealprank, prank_cmd_1)
         self.assertEqual(idealmafft, mafft_cmd_1)
         self.to_be_removed.append(unaligned_seqs)
+
+    def test_msa_consensus(self):
+        """ calculate entropy, annotate consenesus,
+        and ensure barrnap is wired up properly
+        """
+        seq_entropy, names, tseq = calc_entropy_msa(
+            msa_path=self.test_mafft_msa)
+        with open(self.test_ent_seq, "r") as efile:
+            for index, line in enumerate(efile):
+                self.assertEqual(round(float(line.strip()), 7),
+                                 round(seq_entropy[index], 7))
+        gff, conseq, named_coords = annotate_msa_conensus(
+            tseq_array=tseq,
+            seq_file=os.path.join(self.testdirname,
+                                  "consensus_sample.fasta"),
+            pattern='product=(.+?)$',
+            barrnap_exe="barrnap",
+            kingdom="bact",
+            collapseNs=False,
+            countdashcov=True,
+            excludedash=False,
+            logger=logger)
+        # check first entry has 9 fields
+        self.assertEqual(len(gff[1]), 9)
+        # check start coord is still 362
+        self.assertEqual(gff[1][4], '362')
+        # check name
+        self.assertEqual(named_coords[0][0], '5S ribosomal RNA')
+
+    def test_scatter_plotting(self):
+        """
+        """
+        seq_entropy, names, tseq = calc_entropy_msa(
+            msa_path=self.test_mafft_msa)
+        with open(self.test_ent_seq, "r") as efile:
+            for index, line in enumerate(efile):
+                self.assertEqual(round(float(line.strip()), 7),
+                                 round(seq_entropy[index], 7))
+        gff, conseq, named_coords = annotate_msa_conensus(
+            tseq_array=tseq,
+            seq_file=os.path.join(self.testdirname,
+                                  "consensus.fasta"),
+            pattern='product=(.+?)$',
+            barrnap_exe="barrnap",
+            kingdom="bact",
+            collapseNs=False,
+            countdashcov=True,
+            excludedash=False,
+            logger=logger)
+        plot_scatter_with_anno(data=seq_entropy,
+                               names=["Position", "Entropy"],
+                               title="Shannon Entropy by Position",
+                               consensus_cov=conseq,
+                               anno_list=named_coords,
+                               output_prefix=os.path.join(self.testdirname,
+                                                          "entropy_plot"))
+        #  and without dashes
+        gff_nodash, conseq_nodash, named_coords_nodash = annotate_msa_conensus(
+            tseq_array=tseq,
+            seq_file=os.path.join(self.testdirname,
+                                  "consensus_nodash.fasta"),
+            pattern='product=(.+?)$',
+            barrnap_exe="barrnap",
+            kingdom="bact",
+            collapseNs=True,
+            countdashcov=False,
+            excludedash=False,
+            logger=logger)
+        plot_scatter_with_anno(
+            data=seq_entropy,
+            names=["Position", "Entropy"],
+            title="Shannon Entropy by Position No N's",
+            consensus_cov=conseq_nodash,
+            anno_list=named_coords_nodash,
+            output_prefix=os.path.join(self.testdirname, "entropy_plot_noN"))
+
+    def test_get_all_kmers(self):
+        """
+        """
+        string="ACGTCGACGACAGCTGAGCTGTCGTCTGCTGCGCTTA-T-TGCGACGTTACG"
+        all_kmers = sorted(get_all_kmers(alph="ATCG-", length=2))
+        ref_all_mers = ['--', '-A', '-C', '-G', '-T', 'A-', 'AA', 'AC', 'AG',
+                        'AT', 'C-', 'CA', 'CC', 'CG', 'CT', 'G-', 'GA', 'GC',
+                        'GG', 'GT', 'T-', 'TA', 'TC', 'TG', 'TT']
+        self.assertEqual(all_kmers, ref_all_mers)
+
+    def test_profile_kmer_occurances(self):
+        """
+        """
+        with open(self.test_mafft_msa, 'r') as resfile:
+            kmer_seqs = list(SeqIO.parse(resfile, "fasta"))
+        occurances, seqnames = profile_kmer_occurances(
+            rec_list=kmer_seqs,
+            alph="atcg-",
+            k=4,
+            logger=logger)
+        self.assertEqual(sorted(['NZ_CP017149.1_726410..727025',
+                                 'NZ_CP017149.1_4787826..4788441_RC',
+                                 'NZ_CP017149.1_5275421..5276036_RC',
+                                 'NZ_CP017149.1_6050886..6051501_RC']),
+                         sorted(seqnames))
+        # TODO make test for the occurances
 
     def tearDown(self):
         """ delete temp files if no errors

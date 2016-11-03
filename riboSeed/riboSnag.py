@@ -240,32 +240,35 @@ def parse_clustered_loci_file(filepath, gb_filepath,
         raise FileNotFoundError
     try:
         with open(filepath, "r") as f:
-            for line in f:
-                if line.startswith("#"):
-                    continue
-                seqname = line.strip("\n").split(" ")[0]
-                lt_list = [x for x in
-                             line.strip("\n").split(" ")[1].split(":")]
-                # make and append the locus objects
-                loci_list = []
-                for i, loc in enumerate(lt_list):
-                    loci_list.append(locus(index=i,
-                                           locus_tag=loc,
-                                           sequence=seqname))
-                # make and append loci_cluster objects
-                clusters.append(loci_cluster(index=cluster_index,
-                                             sequence=seqname,
-                                             loci_list=loci_list,
-                                             padding=padding,
-                                             circular=circular))
-                cluster_index = cluster_index + 1
-    except:
-        #  This is really broad, and I dont like it
+            file_contents = list(f)
+    except Exception as e:
         logger.error("Cluster file could not be parsed!")
-        raise FileNotFoundError
+        raise e
+    for line in file_contents:
+        try:
+            if line.startswith("#") or line.strip() == '':
+                continue
+            seqname = line.strip("\n").split(" ")[0]
+            lt_list = [x for x in
+                       line.strip("\n").split(" ")[1].split(":")]
+        except Exception as e:
+            logger.error("error parsing line: %s" % line)
+            raise e
+        # make and append the locus objects
+        loci_list = []
+        for i, loc in enumerate(lt_list):
+            loci_list.append(locus(index=i,
+                                   locus_tag=loc,
+                                   sequence=seqname))
+        # make and append loci_cluster objects
+        clusters.append(loci_cluster(index=cluster_index,
+                                     sequence=seqname,
+                                     loci_list=loci_list,
+                                     padding=padding,
+                                     circular=circular))
+        cluster_index = cluster_index + 1
     if len(clusters) == 0:
-        logger.error("Cluster file could not be parsed!")
-        raise FileNotFoundError
+        raise ValueError("No Clusters Found!!")
     # match up seqrecords
     with open(gb_filepath) as fh:
         gb_records = list(SeqIO.parse(fh, 'genbank'))
@@ -355,32 +358,11 @@ def pad_genbank_sequence(cluster, logger=None):
     new_seq = str(old_seq[-cluster.padding:]
                   + old_seq
                   + old_seq[0: cluster.padding])
-    if len(new_seq) != len(old_seq) + (2 * cluster.padding):
-        raise ValueError("Error within function! new seq should be len of " +
-                         "seq plus 2x padding")
+    assert len(new_seq) == (len(old_seq) + (2 * cluster.padding)), \
+        "Error within function! new seq should be len of " + \
+        "seq plus 2x padding"
     cluster.SeqRecord = SeqRecord(Seq(new_seq))
     return cluster
-
-
-# def strictly_increasing(L, dup_ok=False, verbose=False):
-#     """from 6502: http://stackoverflow.com/questions/4983258/
-#     python-how-to-check-list-monotonicity
-#     given list L, this check to see if items are ascending. if de_dup, this
-#     removes duplicates from the list temporarily and then tests the unique list
-#     """
-#     items = []
-#     for i in L:
-#         if i in items:
-#             if not dup_ok:
-#                 raise ValueError("list contains duplicates!")
-#             else:
-#                 pass
-#         else:
-#             items.append(i)
-#     if verbose:
-#         print(L)
-#         print(items)
-#     return(all(x < y for x, y in zip(items, items[1:])))
 
 
 def stitch_together_target_regions(cluster,
@@ -400,7 +382,7 @@ def stitch_together_target_regions(cluster,
         raise ValueError("Must have logger for this function")
     if replace is True:
         # raise ValueError("--replace no longer supported")
-        logger.error("--replace no longer supported")
+        logger.warning("--replace no longer supported")
     try:
         flank = [int(x) for x in flanking.split(":")]
         if len(flank) == 1:  # if only one value use for both up and downstream
@@ -528,15 +510,14 @@ def prepare_prank_cmd(outdir, combined_fastas, prank_exe,
     """returns command line for constructing MSA with
     PRANK and the path to results file
     """
+    if logger is None:
+        raise ValueError("Must use logger")
     if not os.path.exists(outdir):
-        if logger:
-            logger.error("output directory not found!")
-        raise FileExistsError
+        raise FileNotFoundError("output directory not found!")
     prank_cmd = "{0} {1} -d={2} -o={3}".format(
         prank_exe, add_args, combined_fastas,
         os.path.join(outdir, outfile_name))
-    if logger:
-        logger.debug("PRANK command: \n %s", prank_cmd)
+    logger.debug("PRANK command: \n %s", prank_cmd)
     return (prank_cmd, os.path.join(outdir, outfile_name))
 
 
@@ -544,17 +525,16 @@ def prepare_mafft_cmd(outdir, combined_fastas, mafft_exe,
                       add_args="", outfile_name="best_MSA",
                       clobber=False, logger=None):
     """returns command line for constructing MSA with
-    PRANK and the path to results file
+    mafft and the path to results file
     """
+    if logger is None:
+        raise ValueError("Must use logger")
     if not os.path.exists(outdir):
-        if logger:
-            logger.error("output directory not found!")
-        raise FileExistsError
+        raise FileNotFoundError("output directory not found!")
     mafft_cmd = "{0} {1} {2} > {3}".format(
         mafft_exe, add_args, combined_fastas,
         os.path.join(outdir, outfile_name))
-    if logger:
-        logger.debug("MAFFT command: \n %s", mafft_cmd)
+    logger.debug("MAFFT command: \n %s", mafft_cmd)
     return (mafft_cmd, os.path.join(outdir, outfile_name))
 
 
@@ -610,29 +590,45 @@ def calc_entropy_msa(msa_path):
 
 
 def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
-                          kingdom,
+                          kingdom="bact",
+                          pattern='product=(.+?)$',
                           countdashcov=True,   # include -'s in coverage
-                          excludedash=True):  # include -'s in consensus
+                          collapseNs=False,  # include -'s in consensus
+                          excludedash=False,
+                          logger=None):
+    """ returns annotations (as a gfflist),the consensus sequence as a list,
+    and named coords  as a list
+    TODO: The 'next_best' thing fails is an N is most frequent. Defaults to a T
     """
-    """
+    if logger is None:
+        raise ValueError("Must use logging")
+    if excludedash:
+        logger.warning("CAUTION: excludedash selected. There is a known " +
+                       "bug in the 'next_best' thing fails if an " +
+                       "N is most frequent. Defaults to a T")
     consensus = []
     nseqs = len(tseq_array[0])
+    logger.info("calc coverage for each of the %i positions", len(tseq_array))
     for position in tseq_array:
         if all([x == position[0] for x in position]):
-            if position[0] == '-' and not countdashcov:
-                consensus.append([position[0], 0])
+            if position[0] == '-':
+                if collapseNs:
+                    continue
+                elif not countdashcov:
+                    consensus.append([position[0], 0])
             else:
                 consensus.append([position[0], nseqs])
         else:
-            max_count = 0
+            max_count = 0  # starting count
             nextbest_count = 0
             best_nuc = None
             nextbest_nuc = None
             for nuc in set(position):
                 count = sum([nuc == z for z in position])
+                # if max count, swap with max to nextbest and update max
                 if count > max_count:
                     nextbest_count = max_count
-                    max_count = count
+                    max_count = count  # update count if better
                     nextbest_nuc = best_nuc
                     best_nuc = nuc
                 else:
@@ -642,6 +638,9 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
                     all([x != '-' for x in position]) and
                     best_nuc == '-' and
                     excludedash):
+                # if we dont want n's, choose nextbest
+                if nextbest_nuc is None:
+                    nextbest_nuc = 't'  # I hate myself for this
                 consensus.append([nextbest_nuc, nextbest_count])
             elif best_nuc == '-' and not countdashcov:
                 consensus.append([best_nuc, 0])
@@ -649,6 +648,7 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
                 consensus.append([best_nuc, max_count])
     # if any are '-', replace with n's for barrnap
     seq = str(''.join([x[0] for x in consensus])).replace('-', 'n')
+
     # annotate seq
     with open(seq_file, 'w') as output:
         SeqIO.write(SeqRecord(
@@ -660,8 +660,23 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
                                  check=True)
-    results = barrnap_gff.stdout.decode("utf-8").split("\n")
-    return ([x.split('\t') for x in results], consensus)
+    results_list = [x.split('\t') for x in
+                    barrnap_gff.stdout.decode("utf-8").split("\n")]
+
+    ###  make [name, [start_coord, end_coord]] list
+    named_coords = []
+    for i in results_list:
+        if i[0].startswith("#") or not len(i) == 9:
+            logger.debug("skipping gff line: %s", i)
+            continue
+        m = re.search(pattern, i[8])
+        if m:
+            found = m.group(1)
+        named_coords.append([found, [int(i[3]), int(i[4])]])
+    if len(named_coords) == 0:
+        raise ValueError(str("Error extracting coords from barrnap gff line" +
+                             " %s with pattern %s!" % (str(i), pattern)))
+    return (results_list, consensus, named_coords)
 
 
 def plot_scatter_with_anno(data,
@@ -670,6 +685,13 @@ def plot_scatter_with_anno(data,
                            consensus_cov=[],
                            anno_list=[],
                            output_prefix="entropy_plot.png"):
+    """Given annotation coords [feature, [start, end]],
+    consensus cov list ['base', coverage_depth],
+    entropy values (list) and consensus sequence
+    (same length for consensus_cov and data, no funny business),
+    plot out the entropies for each position,
+    plot the annotations, and return 0
+    """
     if len(consensus_cov) != len(data):
         raise ValueError("data and consensus different lengths!")
     df = pd.DataFrame({names[0]: range(1, len(data) + 1),
@@ -734,7 +756,6 @@ def plot_scatter_with_anno(data,
     ax.yaxis.set_ticks_position('left')
     ax2.xaxis.set_ticks_position('bottom')
     ax1.xaxis.set_ticks_position('top')
-    # ax1.xaxis.set_ticklabels('')
     ax1.tick_params(axis='y', colors='dimgrey')
     ax2.tick_params(axis='y', colors='dimgrey')
     ax1.tick_params(axis='x', colors='dimgrey')
@@ -759,7 +780,7 @@ def get_all_kmers(alph="", length=3):
 
 def profile_kmer_occurances(rec_list, alph, k, logger=None):
     """ given a list of seq records, an alphabet, and a value k,
-    retrun counts of kmer occurances
+    retrun counts dict of kmer occurances and list of seq names
     """
     counts = defaultdict(list)
     names_list = []
@@ -811,8 +832,7 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     lsdf = lsdf_wNA.fillna(value=0)
     print(wlsdf)
     heatmap = ax.pcolormesh(wlsdf,
-                            # norm=mpl.colors.LogNorm(),
-                            cmap='Greens') #,
+                            cmap='Greens')
     # put the major ticks at the middle of each cell
     ax.set_yticks(np.arange(wlsdf.shape[0]) + 0.5, minor=False)
     ax.set_xticks(np.arange(wlsdf.shape[1]) + 0.5, minor=False)
@@ -1044,33 +1064,26 @@ if __name__ == "__main__":
                 args.output,
                 "sum_least_squares"))
         # calc_plot_mda(df=mca_df, output_path="entropy_plot.png")
-        gff, consensus_cov = annotate_msa_conensus(
+        gff, consensus_cov, annos = annotate_msa_conensus(
             tseq_array=tseq,
+            pattern='product=(.+?)$',
             seq_file=os.path.join(
                 args.output,
                 "test_consensus.fasta"),
             barrnap_exe=args.barrnap_exe,
-            kingdom=args.kingdom)
-        annos = []
-        for i in gff:
-            if i[0].startswith("#") or not len(i) == 9:
-                continue
-            m = re.search('product=(.+?)$', i[8])
-            if m:
-                found = m.group(1)
-            annos.append([found, [int(i[3]), int(i[4])]])
-        if len(annos) == 0:
-            logger.warning("Could not parse barrnap results!")
+            kingdom=args.kingdom,
+            logger=logger)
         title = str("Shannon Entropy by Position\n" +
                     os.path.basename(
                         os.path.splitext(
                             args.genbank_genome)[0]))
 
-        plot_scatter_with_anno(data=seq_entropy,
-                               consensus_cov=consensus_cov,
-                               names=["Position", "Entropy"],
-                               title=title,
-                               anno_list=annos,
-                               output_prefix=os.path.join(
-                                   args.output,
-                                   "entropy_plot"))
+        return_code = plot_scatter_with_anno(
+            data=seq_entropy,
+            consensus_cov=consensus_cov,
+            names=["Position", "Entropy"],
+            title=title,
+            anno_list=annos,
+            output_prefix=os.path.join(
+                args.output,
+                "entropy_plot"))
