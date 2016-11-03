@@ -33,7 +33,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
     file_len, check_version_from_init, check_version_from_cmd
 
 ## GLOBALS
-SAMTOOLS_MIN_VERSION = '1.3.0'
+SAMTOOLS_MIN_VERSION = '1.3.1'
 #################################### functions ###############################
 
 
@@ -105,6 +105,12 @@ def get_args():
                           help="min score forsmalt mapping; inferred from " +
                           "read length" +
                           "; default: inferred")
+    optional.add_argument("--include_shorts", dest='include_shorts',
+                          action="store_true",
+                          default=False,
+                          help="if assembled contig is smaller than  " +
+                          "--min_assembly_len, contig will still be included" +
+                          " in assembly; default: inferred")
     optional.add_argument("-a", "--min_assembly_len", dest='min_assembly_len',
                           action="store",
                           default=4000, type=int,
@@ -672,59 +678,69 @@ def reconstruct_seq(refpath, pileup, verbose=True, veryverb=False,
 def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     """This skips any fields not in first report, for better or worse...
     """
+    if logger is None:
+        raise ValueError("Logging must be enabled for make_quick_quast_table")
     if not isinstance(pathlist, list):
-        if logger:
-            logger.warning("paths for quast reports must be in a list!")
+        logger.warning("paths for quast reports must be in a list!")
         return None
     filelist = pathlist
-    print(filelist)
+    logger.debug("Quast reports to combine: %s", str(filelist))
     mainDict = {}
     counter = 0
     for i in filelist:
         if counter == 0:
-            with open(i, "r") as handle:
-                for dex, line in enumerate(handle):
-                    row, val = line.strip().split("\t")
-                    if dex in [0]:
-                        continue  # skip header
-                    else:
-                        mainDict[row] = [val]
+            try:
+                with open(i, "r") as handle:
+                    for dex, line in enumerate(handle):
+                        row, val = line.strip().split("\t")
+                        if dex in [0]:
+                            continue  # skip header
+                        else:
+                            mainDict[row] = [val]
+            except Exception as e:
+                raise e("error parsing %s", i)
         else:
             report_list = []
-            with open(i, "r") as handle:
-                for dex, line in enumerate(handle):
-                    row, val = line.strip().split("\t")
-                    report_list.append([row, val])
-                logger.debug(report_list)
-                for k, v in mainDict.items():
-                    if k in [x[0] for x in report_list]:
-                        mainDict[k].append(str([x[1] for x in
-                                                report_list if x[0] == k][0]))
-                    else:
-                        mainDict[k].append("XX")
+            try:
+                with open(i, "r") as handle:
+                    for dex, line in enumerate(handle):
+                        row, val = line.strip().split("\t")
+                        report_list.append([row, val])
+                    logger.debug("report list: %s", str(report_list))
+                    for k, v in mainDict.items():
+                        if k in [x[0] for x in report_list]:
+                            mainDict[k].append(
+                                str([x[1] for x in
+                                     report_list if x[0] == k][0]))
+                        else:
+                            mainDict[k].append("XX")
+            except Exception as e:
+                raise e("error parsing %s", i)
         counter = counter + 1
     logger.info(str(mainDict))
     if write:
         if writedir is None:
-            if logger:
-                logger.warning("no output dir, cannot write!")
+            logger.warning("no output dir, cannot write!")
             return mainDict
-        with open(os.path.join(writedir,
-                               "combined_quast_report.tsv"), "w") as outfile:
-            for k, v in sorted(mainDict.items()):
-                if logger:
+        try:
+            with open(os.path.join(
+                    writedir, "combined_quast_report.tsv"), "w") as outfile:
+                for k, v in sorted(mainDict.items()):
                     logger.debug("{0}\t{1}\n".format(k, str("\t".join(v))))
-                outfile.write("{0}\t{1}\n".format(str(k), str("\t".join(v))))
+                    outfile.write("{0}\t{1}\n".format(
+                        str(k), str("\t".join(v))))
+        except Exception as e:
+            raise e("Error wrting out combined quast report")
 
     return mainDict
 
 
-def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
+def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
          reference_genome, fastq1, fastq2, fastqS, ave_read_length, cores,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
          paired_inference, smalt_scoring, min_growth, max_iterations, kmers,
          no_temps, distance_estimation, proceed_to_target, target_len,
-         score_minimum, min_contig_len):
+         score_minimum, min_contig_len, include_short_contigs):
     """
     process each fasta seed to parallelize time comsuming parts
     """
@@ -769,6 +785,7 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
     this_iteration = 1  # counter for iterations.
     # perform iterative mapping
     proceed = True  # this is set to false in while loop if spades fails
+    keep_contig = True  # this becomes false if assembly fails,
     while this_iteration <= max_iterations and proceed:
         # if not the first round, replace ref with extended contigs
         if this_iteration != 1:
@@ -854,10 +871,12 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
                            " is not greater than length set by " +
                            "--min_assembly_len. Assembly will likely fail if" +
                            " the contig does not meet the length of the seed")
-            logger.warning("Continuing, but if this occurs for more than " +
-                           "one seed, we reccommend that you abort and " +
-                           "retry with longer seeds, a different reference, " +
-                           "or re-examine the riboSnag clustering")
+            if include_shorts_contigs:
+                logger.warning("Continuing, but if this occurs for more " +
+                               "than one seed, we reccommend  you abort and " +
+                               "retry with longer seeds, a different ref, " +
+                               "or re-examine the riboSnag clustering")
+                keep_contig = False  # flags contig for exclusion
             this_iteration = max_iterations + 1  # skip remaining iterations
         else:
             pass
@@ -884,17 +903,21 @@ def main(fasta, results_dir, exp_name, mauve_path, map_output_dir, method,
         new_reference = contigs_path
 
     #  Now, after iterative seeding
-    try:
-        contigs_new_path = copy_file(current_file=contigs_path,
-                                     dest_dir=mauve_path,
-                                     name=str(os.path.basename(fasta) +
-                                              "_final_iter_" +
-                                              str(this_iteration) + ".fasta"),
-                                     logger=logger)
-    except:
-        logger.warning(str("no contigs moved for {0}!  Check the SPAdes log " +
-                           "in results directory if worried").format(fasta))
-    logger.debug("moving {0} to {1}".format(contigs_path, contigs_new_path))
+    if not keep contigs:
+        logger.warning("Excluding contig seeded by %s!", fasta)
+        return(1)
+    else:
+        try:
+            contigs_new_path = copy_file(current_file=contigs_path,
+                                         dest_dir=mauve_path,
+                                         name=str(os.path.basename(fasta) +
+                                                  "_final_iter_" +
+                                                  str(this_iteration) + ".fasta"),
+                                         logger=logger)
+        except:
+            logger.warning(str("no contigs moved for {0}! Check  SPAdes log " +
+                               "in results dir if worried").format(fasta))
+    logger.debug("moved {0} to {1}".format(contigs_path, contigs_new_path))
     if no_temps:
         logger.info("removing temporary files from {0}".format(mapping_dir))
         clean_temp_dir(mapping_dir)
@@ -1050,8 +1073,9 @@ if __name__ == "__main__":
     ### Main function call
     if args.DEBUG_multiprocessing:
         logger.warning("running without multiprocessing!")
-        for i in fastas:
-            main(fasta=i,
+        for num, fasta in enumerate(fastas):
+            main(fasta=fasta,
+                 num=num,
                  results_dir=results_dir,
                  exp_name=args.exp_name,
                  mauve_path=mauve_dir,
@@ -1077,13 +1101,15 @@ if __name__ == "__main__":
                  proceed_to_target=proceed_to_target,
                  target_len=args.target_len,
                  score_minimum=args.min_score_SMALT,
-                 min_contig_len=args.min_assembly_len)
+                 min_contig_len=args.min_assembly_len,
+                 include_short_contigs=args.include_short)
 
     else:
         #  default is now to get cores available for worker and
         pool = multiprocessing.Pool(processes=args.cores)
         results = [pool.apply_async(main, (fasta,),
-                                    {"results_dir": results_dir,
+                                    {"num": num,
+                                     "results_dir": results_dir,
                                      "map_output_dir": map_output_dir,
                                      "exp_name": args.exp_name,
                                      "method": args.method,
@@ -1108,8 +1134,9 @@ if __name__ == "__main__":
                                      "proceed_to_target": proceed_to_target,
                                      "target_len": args.target_len,
                                      "score_minimum": args.min_score_SMALT,
-                                     "min_contig_len": args.min_assembly_len})
-                   for fasta in fastas]
+                                     "min_contig_len": args.min_assembly_len,
+                                     "include_short_contigs": args.include_short})
+                   for num, fasta in enumerate(fastas)]
         pool.close()
         pool.join()
         logger.info(results)
@@ -1120,7 +1147,7 @@ if __name__ == "__main__":
                                       contigs_name="riboSeedContigs",
                                       logger=logger)
     logger.info("Combined Seed Contigs: {0}".format(new_contig_file))
-    logger.info("Time taken to run seeding: %.2fs" % (time.time() - t0))
+    logger.info("Time taken to run seeding: %.2fm" % (time.time() - t0) / 60)
     logger.info("\n\n Starting Final Assemblies\n\n")
 
     quast_reports = []
@@ -1160,12 +1187,16 @@ if __name__ == "__main__":
 
     if not args.skip_control:
         logger.debug("writing combined quast reports")
-        quast_comp = make_quick_quast_table(quast_reports,
-                                            write=True, writedir=results_dir,
-                                            logger=logger)
+        try:
+            quast_comp = make_quick_quast_table(quast_reports,
+                                                write=True,
+                                                writedir=results_dir,
+                                                logger=logger)
+            for k, v in sorted(quast_comp.items()):
+                logger.info("{0}: {1}".format(k, "  ".join(v)))
+        except Exception as e:
+            logger.warning(e)
         logger.info("Comparing de novo and de fere novo assemblies:")
-        for k, v in quast_comp.items():
-            logger.info("{0}: {1}".format(k, "  ".join(v)))
     # Report that we've finished
     logger.info("Done: %s." % time.asctime())
     logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
