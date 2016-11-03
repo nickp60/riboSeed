@@ -95,6 +95,22 @@ class riboSnag_TestCase(unittest.TestCase):
     def test_parse_loci(self):
         """this checks the parsing of riboSelect ouput
         """
+        # error parsing
+        with self.assertRaises(ValueError):
+            parse_clustered_loci_file(
+                filepath=str(self.test_loci_file + "png"),
+                gb_filepath=self.test_gb_file,
+                padding=100,
+                circular=True,
+                logger=logger)
+        # error wrong files provided
+        with self.assertRaises(FileNotFoundError):
+            parse_clustered_loci_file(
+                gb_filepath=self.test_loci_file,
+                filepath=self.test_gb_file,
+                padding=100,
+                circular=True,
+                logger=logger)
         clusters = parse_clustered_loci_file(
             filepath=self.test_loci_file,
             gb_filepath=self.test_gb_file,
@@ -114,7 +130,9 @@ class riboSnag_TestCase(unittest.TestCase):
         record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
                                               genbank_records=records)
         self.assertEqual(records[0].seq, record.seq)
-
+        with self.assertRaises(ValueError):
+            get_genbank_rec_from_multigb(
+                recordID='NC_011751.X', genbank_records=records)
     def test_extract_coords_from_locus(self):
         """todo: replace essentially unused get_genbank_record function
         """
@@ -179,15 +197,6 @@ class riboSnag_TestCase(unittest.TestCase):
                          str(padded_cluster.SeqRecord.seq[padding_val:
                                                           -padding_val]))
 
-    # def test_strictly_increasing(self):
-    #     """ I pulled this largely from SO, and it should check to
-    #     see if items are in an increasing order, with and without duplicates
-    #     """
-    #     self.assertTrue(strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=True))
-    #     with self.assertRaises(ValueError):
-    #         strictly_increasing([1, 5, 5.5, 10, 10], dup_ok=False)
-    #     self.assertFalse(strictly_increasing([1, 10, 5.5, 7, 9], dup_ok=False,
-    #                                          verbose=False))
 
     def test_stitching(self):
         """  This is actually the thing needing the most testing, most likely
