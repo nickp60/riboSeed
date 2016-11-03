@@ -64,20 +64,6 @@ class loci_cluster(object):
         self.circular = circular
         self.SeqRecord = SeqRecord
         self.extractedSeqRecord = extractedSeqRecord
-        # TODO protect types somehow
-        # allowed_types = [['self.index', int],
-        #                  ['self.sequence', str],
-        #                  ['self.loci_list', list],
-        #                  ['self.global_start_coord', int],
-        #                  ['self.global_end_coord', int],
-        #                  ['self.padding', int],
-        #                  ['self.replace', bool],
-        #                  ['self.circular', bool],
-        #                  ['self.SeqRecord', SeqRecord]]
-        # for i in allowed_types:
-        #     if not isinstance(eval(i[0]), i[1]):
-        #         raise ValueError("Cannot set loci_cluster.%s to a non-%s",
-        #                          i[0], i[1])
 
 
 class locus(object):
@@ -99,8 +85,7 @@ class locus(object):
         self.product = product
 
 
-
-def get_args():
+def get_args():  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
     """
@@ -209,7 +194,7 @@ def get_args():
                           "default: %(default)s")
     optional.add_argument("--kingdom", dest="kingdom",
                           action="store", default="bac",
-                          choices = ["mito", "euk", "arc", "bac"],
+                          choices=["mito", "euk", "arc", "bac"],
                           help="kingdom for barrnap; " +
                           "default: %(default)s")
     # had to make this explicitly to call it a faux optional arg
@@ -249,9 +234,9 @@ def parse_clustered_loci_file(filepath, gb_filepath,
     cluster_index = 0
     # this covers common case where user submits genbank and cluster file
     # in the wrong order.
-    if os.path.splitext(filepath)[1] in ["gb", "genbank", "gbk"]:
+    if filepath.endswith(("gb", "genbank", "gbk")):
         logger.error("Hmm, this cluster file looks like genbank; " +
-                     "it ends in {0}".format(os.path.splitext(file)[1]))
+                     "it ends in {0}".format(os.path.splitext(filepath)[1]))
         raise FileNotFoundError
     try:
         with open(filepath, "r") as f:
