@@ -1,5 +1,5 @@
 #!/bin/bash
-# version 0.0.2
+# version 0.0.3
 #  If submitting jobs to a cluster with SGE, set the variables
 #  below and the environment variables starting with #$.  Otherwise, you
 #  can submit arguments to commandline
@@ -21,9 +21,10 @@ READ2="$4"
 OUTDIR="$5"
 ITERATIONS="$6"
 FLANK="$7"
+VENVEXE="$8"
 
 # include any commands and/or other
 # bash scripting instructions here
-./example_batch.sh $GB $FASTA $READ1 $READ2 $OUTDIR $ITERATIONS $FLANK
+./example_batch.sh $GB $FASTA $READ1 $READ2 $OUTDIR $ITERATIONS $FLANK $VENVEXE
 
 echo "Task ended `date`"
