@@ -40,7 +40,7 @@ from riboSeed.riboSnag import parse_clustered_loci_file, \
     annotate_msa_conensus, plot_scatter_with_anno, get_all_kmers,\
     profile_kmer_occurances, plot_pairwise_least_squares
 
-from riboSeed.riboSnag import loci_cluster, locus
+from riboSeed.riboSnag import LociCluster, Locus
 
 
 sys.dont_write_bytecode = True
@@ -137,9 +137,9 @@ class riboSnag_TestCase(unittest.TestCase):
     def test_extract_coords_from_locus(self):
         """todo: replace essentially unused get_genbank_record function
         """
-        test_cluster = loci_cluster(
+        test_cluster = LociCluster(
             index=0, sequence='NC_011751.1',
-            loci_list=[locus(index=0,
+            loci_list=[Locus(index=0,
                              sequence='NC_011751.1',
                              locus_tag="ECUMN_0004",
                              strand=None,
@@ -150,7 +150,7 @@ class riboSnag_TestCase(unittest.TestCase):
             global_start_coord=None,
             global_end_coord=None,
             replace=False)
-        test_cluster.SeqRecord = get_genbank_record(self.test_gb_file)[0]
+        test_cluster.seq_record = get_genbank_record(self.test_gb_file)[0]
         cluster_post_extract = extract_coords_from_locus(
             cluster=test_cluster,
             feature="CDS",
@@ -172,9 +172,9 @@ class riboSnag_TestCase(unittest.TestCase):
         sequence is extracted padded and otherwise
         """
         padding_val = 50
-        test_cluster = loci_cluster(
+        test_cluster = LociCluster(
             index=0, sequence='NC_011751.1',
-            loci_list=[locus(index=0,
+            loci_list=[Locus(index=0,
                              sequence='NC_011751.1',
                              locus_tag="ECUMN_0004",
                              strand=None,
@@ -185,11 +185,11 @@ class riboSnag_TestCase(unittest.TestCase):
             global_start_coord=None,
             global_end_coord=None,
             replace=False)
-        test_cluster.SeqRecord = get_genbank_record(self.test_gb_file)[0]
+        test_cluster.seq_record = get_genbank_record(self.test_gb_file)[0]
         cluster_post_extract = extract_coords_from_locus(cluster=test_cluster,
                                                          feature="CDS",
                                                          logger=logger)
-        old_seq = cluster_post_extract.SeqRecord
+        old_seq = cluster_post_extract.seq_record
         # test excessive padding
         cluster_too_much_padding = copy.deepcopy(cluster_post_extract)
         cluster_too_much_padding.padding = 10000000
@@ -200,7 +200,7 @@ class riboSnag_TestCase(unittest.TestCase):
         padded_cluster = pad_genbank_sequence(cluster_post_extract,
                                               logger=logger)
         self.assertEqual(str(old_seq.seq),
-                         str(padded_cluster.SeqRecord.seq[padding_val:
+                         str(padded_cluster.seq_record.seq[padding_val:
                                                           -padding_val]))
 
     def test_stitching(self):
@@ -224,7 +224,6 @@ class riboSnag_TestCase(unittest.TestCase):
             within=50, minimum=50,
             replace=False,
             logger=logger,
-            verbose=False,
             circular=False,
             revcomp=True)
         stitched_cluster_circular = stitch_together_target_regions(
@@ -233,7 +232,6 @@ class riboSnag_TestCase(unittest.TestCase):
             within=50, minimum=50,
             replace=False,
             logger=logger,
-            verbose=False,
             circular=True,
             revcomp=True)
         # fail with invalid flanking arg
@@ -244,7 +242,6 @@ class riboSnag_TestCase(unittest.TestCase):
                 within=50, minimum=50,
                 replace=False,
                 logger=logger,
-                verbose=False,
                 circular=False,
                 revcomp=False)
         # fail with exceeded minimum
@@ -255,7 +252,6 @@ class riboSnag_TestCase(unittest.TestCase):
                 within=5000, minimum=1500,
                 replace=True,
                 logger=logger,
-                verbose=False,
                 circular=False,
                 revcomp=False)
         with open(self.test_cluster2, 'r') as ref:
@@ -317,14 +313,14 @@ class riboSnag_TestCase(unittest.TestCase):
             combined_fastas=unaligned_seqs,
             prank_exe=self.prank_exe,
             add_args="-t=sometree",
-            clobber=False, logger=logger)
+            logger=logger)
         mafft_cmd_1, results_path = prepare_mafft_cmd(
             outdir=self.testdirname,
             outfile_name="best_MSA.fasta",
             combined_fastas=unaligned_seqs,
             mafft_exe=self.mafft_exe,
             add_args="-t=sometree",
-            clobber=False, logger=logger)
+            logger=logger)
         idealprank = "prank -t=sometree -d={0} -o={1}".format(
             unaligned_seqs, os.path.join(self.testdirname,
                                          "best_MSA.fasta"))
@@ -427,7 +423,6 @@ class riboSnag_TestCase(unittest.TestCase):
             kmer_seqs = list(SeqIO.parse(resfile, "fasta"))
         occurances, seqnames = profile_kmer_occurances(
             rec_list=kmer_seqs,
-            alph="atcg-",
             k=4,
             logger=logger)
         self.assertEqual(sorted(['NZ_CP017149.1_726410..727025',
@@ -444,7 +439,6 @@ class riboSnag_TestCase(unittest.TestCase):
             kmer_seqs = list(SeqIO.parse(resfile, "fasta"))
         occurances, seqnames = profile_kmer_occurances(
             rec_list=kmer_seqs,
-            alph="atcg-",
             k=4,
             logger=logger)
         df = plot_pairwise_least_squares(
@@ -485,8 +479,6 @@ class riboSnag_TestCase(unittest.TestCase):
                       ['NZ_CP017149.1_6050886..6051501_RC',
                        'NZ_CP017149.1_6050886..6051501_RC', 0]]
         for index in range(0, len(sls_matrix)):
-            print(df.as_matrix().tolist()[index])
-            print(sls_matrix[index])
             self.assertEqual(df.as_matrix().tolist()[index],
                              sls_matrix[index])
 

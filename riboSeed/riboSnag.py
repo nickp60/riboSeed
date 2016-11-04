@@ -23,22 +23,19 @@ import sys
 import math
 import re
 
-from collections import defaultdict  # for calculating kmer frequency
-from itertools import product  # for getting all possible kmers
-
 import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-# import seaborn as sns
 import pandas as pd
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
-
+from collections import defaultdict  # for calculating kmer frequency
+from itertools import product  # for getting all possible kmers
 from heatmapcluster import heatmapcluster
 
 #from pyutilsnrw import utils3_5
@@ -46,28 +43,28 @@ from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
     combine_contigs
 
 
-class loci_cluster(object):
+class LociCluster(object):
     """ organizes the clustering process instead of dealing with nested lists
     This holds the whole cluster of one to several individual loci
     """
     def __init__(self, index, sequence, loci_list, padding=None,
                  global_start_coord=None, global_end_coord=None,
-                 SeqRecord=None, extractedSeqRecord=None, replace=False,
+                 seq_record=None, extractedSeqRecord=None, replace=False,
                  circular=False):
         self.index = index
         self.sequence = sequence
-        self.loci_list = loci_list  # this holds the locus objects
+        self.loci_list = loci_list  # this holds the Locus objects
         self.global_start_coord = global_start_coord
         self.global_end_coord = global_end_coord
         self.padding = padding
         self.replace = replace
         self.circular = circular
-        self.SeqRecord = SeqRecord
+        self.seq_record = seq_record
         self.extractedSeqRecord = extractedSeqRecord
 
 
-class locus(object):
-    """ this holds the info for each individual locus"
+class Locus(object):
+    """ this holds the info for each individual Locus"
     """
     def __init__(self, index, sequence, locus_tag, strand=None,
                  start_coord=None, end_coord=None, rel_start_coord=None,
@@ -75,7 +72,7 @@ class locus(object):
         # self.parent ??
         self.index = index
         self.sequence = sequence  # is this needed? I dont think so as long
-        # as a locus is never decoupled from the loci_cluster
+        # as a locus is never decoupled from the LociCluster
         self.locus_tag = locus_tag
         self.strand = strand  # 1 is +, -1 is -
         self.start_coord = start_coord
@@ -90,7 +87,7 @@ def get_args():  # pragma: no cover
     for named required arguments and optional arguments
     """
     parser = argparse.ArgumentParser(description="Use to extract regions " +
-                                     "of interest based on supplied locus " +
+                                     "of interest based on supplied Locus " +
                                      " tags.", add_help=False)
     parser.add_argument("genbank_genome", help="Genbank file (WITH SEQUENCE)")
     parser.add_argument("clustered_loci", help="output from riboSelect")
@@ -224,7 +221,7 @@ def parse_clustered_loci_file(filepath, gb_filepath,
     """Given a file from riboSelect or manually created (see specs in README)
     this parses the clusters and returns a list where [0] is sequence name
     and [1] is a list of loci in that cluster
-    As of 20161028, this returns a list of loci_cluster objects!
+    As of 20161028, this returns a list of LociCluster objects!
     """
     if logger is None:
         raise ValueError("logging must be used!")
@@ -235,9 +232,10 @@ def parse_clustered_loci_file(filepath, gb_filepath,
     # this covers common case where user submits genbank and cluster file
     # in the wrong order.
     if filepath.endswith(("gb", "genbank", "gbk")):
-        logger.error("Hmm, this cluster file looks like genbank; " +
-                     "it ends in {0}".format(os.path.splitext(filepath)[1]))
-        raise FileNotFoundError
+        logger.error
+        raise FileNotFoundError("Hmm, this cluster file looks like genbank; " +
+                                "it ends in {0}".format(os.path.splitext(
+                                    filepath)[1]))
     try:
         with open(filepath, "r") as f:
             file_contents = list(f)
@@ -257,15 +255,15 @@ def parse_clustered_loci_file(filepath, gb_filepath,
         # make and append the locus objects
         loci_list = []
         for i, loc in enumerate(lt_list):
-            loci_list.append(locus(index=i,
+            loci_list.append(Locus(index=i,
                                    locus_tag=loc,
                                    sequence=seqname))
-        # make and append loci_cluster objects
-        clusters.append(loci_cluster(index=cluster_index,
-                                     sequence=seqname,
-                                     loci_list=loci_list,
-                                     padding=padding,
-                                     circular=circular))
+        # make and append LociCluster objects
+        clusters.append(LociCluster(index=cluster_index,
+                                    sequence=seqname,
+                                    loci_list=loci_list,
+                                    padding=padding,
+                                    circular=circular))
         cluster_index = cluster_index + 1
     if len(clusters) == 0:
         raise ValueError("No Clusters Found!!")
@@ -273,7 +271,7 @@ def parse_clustered_loci_file(filepath, gb_filepath,
     with open(gb_filepath) as fh:
         gb_records = list(SeqIO.parse(fh, 'genbank'))
     for clu in clusters:
-        clu.SeqRecord = get_genbank_rec_from_multigb(
+        clu.seq_record = get_genbank_rec_from_multigb(
             recordID=clu.sequence,
             genbank_records=gb_records)
     return clusters
@@ -284,13 +282,13 @@ def extract_coords_from_locus(cluster,
     """given a list of locus_tags, return a list of
     [loc_number,[start_coord, end_coord], strand, product,
     locus_tag, record.id]
-    20161028 returns a loci_cluster
+    20161028 returns a LociCluster
     """
     if logger is None:
         raise ValueError("logging must be used!")
     loc_number = 0  # index for hits
     locus_tags = [x.locus_tag for x in cluster.loci_list]
-    for feat in cluster.SeqRecord.features:
+    for feat in cluster.seq_record.features:
         if not feat.type in feature:
             continue
         logger.debug("found {0} in the following feature : \n{1}".format(
@@ -314,7 +312,7 @@ def extract_coords_from_locus(cluster,
             this_locus.end_coord = feat.location.end.position
             this_locus.strand = feat.strand
             this_locus.product = feat.qualifiers.get("product")
-            # assert cluster.SeqRecord.id == this_locus.sequence # sanity check, probably not needed
+            # assert cluster.seq_record.id == this_locus.sequence # sanity check, probably not needed
             # loc_list.append([loc_number, coords, strand,
             #                  product, locus_tag, record.id])
             logger.debug("Added attributes for %s", this_locus.locus_tag)
@@ -342,7 +340,7 @@ def pad_genbank_sequence(cluster, logger=None):
     ### take care of the coordinates
     if logger:
         logger.info(str("adjusting coordinates by {0} to account for " +
-                    "padding").format(cluster.padding))
+                        "padding").format(cluster.padding))
     for loc in cluster.loci_list:
         logger.debug("pre-padded")
         logger.debug(str(loc.__dict__))
@@ -352,7 +350,7 @@ def pad_genbank_sequence(cluster, logger=None):
         logger.debug("post-padded")
         logger.debug(str(loc.__dict__))
     ### take care of the sequence
-    old_seq = cluster.SeqRecord.seq
+    old_seq = cluster.seq_record.seq
     if cluster.padding > len(old_seq):
         raise ValueError("padding cannot be greater than length of sequence")
     new_seq = str(old_seq[-cluster.padding:]
@@ -361,14 +359,14 @@ def pad_genbank_sequence(cluster, logger=None):
     assert len(new_seq) == (len(old_seq) + (2 * cluster.padding)), \
         "Error within function! new seq should be len of " + \
         "seq plus 2x padding"
-    cluster.SeqRecord = SeqRecord(Seq(new_seq))
+    cluster.seq_record = SeqRecord(Seq(new_seq))
     return cluster
 
 
 def stitch_together_target_regions(cluster,
                                    flanking="500:500",
                                    within=50, minimum=50, replace=True,
-                                   logger=None, verbose=True, circular=False,
+                                   logger=None, circular=False,
                                    revcomp=False):
     """
     given a list from get_coords, usually of length 3 (16,5,and 23 rRNAs),
@@ -405,9 +403,9 @@ def stitch_together_target_regions(cluster,
     smallest_feature = min([x.end_coord - x.start_coord for
                             x in cluster.loci_list])
     if smallest_feature < (minimum) and replace:
-        raise ValueError("invalid minimum of {0}! cannot exceed half of " +
-                         "smallest feature, which is {1} in this case".format(
-                             minimum, smallest_feature))
+        raise ValueError(str("invalid minimum of {0}! cannot exceed half of " +
+                             "smallest feature, or {1} in this " +
+                             "case").format(minimum, smallest_feature))
 
     logger.debug("stitching together the following coords:")
     for i in cluster.loci_list:
@@ -426,19 +424,19 @@ def stitch_together_target_regions(cluster,
         cluster.global_start_coord = 1
     cluster.global_end_coord = max([x.end_coord for
                                     x in cluster.loci_list]) + flank[1]
-    if cluster.global_end_coord > len(cluster.SeqRecord):
+    if cluster.global_end_coord > len(cluster.seq_record):
         logger.warning("Caution! Cannot retrieve full flanking region, as " +
                        "the 5' flanking region extends past start of " +
                        "sequence. If this is a problem, try using a smaller " +
                        "--flanking region, and/or if  appropriate, run with " +
                        "--circular.")
-        cluster.global_end_coord = len(cluster.SeqRecord)
+        cluster.global_end_coord = len(cluster.seq_record)
 
     logger.debug("global start and end: %s %s", cluster.global_start_coord,
                  cluster.global_end_coord)
     #  the minus one makes things go from 1 based to zero based
-    seq_with_ns = str(cluster.SeqRecord.seq[cluster.global_start_coord - 1:
-                                            cluster.global_end_coord])
+    seq_with_ns = str(cluster.seq_record.seq[cluster.global_start_coord - 1:
+                                             cluster.global_end_coord])
     seq_len = len(seq_with_ns[:])
     #
     # loop to mask actual coding regions with N's
@@ -492,7 +490,7 @@ def stitch_together_target_regions(cluster,
     if revcomp and \
        (sum([x == -1 for x in strands]) > sum([x == 1 for x in strands])):
         logger.info("returning the reverse compliment of the sequence")
-        cluster.extractedSeqRecord = SeqRecord(
+        cluster.extractedseq_record = SeqRecord(
             Seq(seq_with_ns,
                 IUPAC.IUPACAmbiguousDNA()).reverse_complement(),
             id=str(seq_id + "_RC"))
@@ -506,7 +504,7 @@ def stitch_together_target_regions(cluster,
 
 def prepare_prank_cmd(outdir, combined_fastas, prank_exe,
                       add_args="", outfile_name="best_MSA.fasta",
-                      clobber=False, logger=None):
+                      logger=None):
     """returns command line for constructing MSA with
     PRANK and the path to results file
     """
@@ -523,7 +521,7 @@ def prepare_prank_cmd(outdir, combined_fastas, prank_exe,
 
 def prepare_mafft_cmd(outdir, combined_fastas, mafft_exe,
                       add_args="", outfile_name="best_MSA",
-                      clobber=False, logger=None):
+                      logger=None):
     """returns command line for constructing MSA with
     mafft and the path to results file
     """
@@ -540,7 +538,7 @@ def prepare_mafft_cmd(outdir, combined_fastas, mafft_exe,
 
 def calc_Shannon_entropy(matrix):
     """ $j$ has entropy $H(j)$ such that
-    $H(j) = -\sum_{i=(A,C,T,G)} p_i(j) \log p_i(j)$
+    $H(j) = -sum_{i=(A,C,T,G)} p_i(j) log p_i(j)$
     """
     entropies = []
     for instance in matrix:
@@ -557,7 +555,7 @@ def calc_Shannon_entropy(matrix):
 def calc_entropy_msa(msa_path):
     """givn a path to an MSA in FASTA format, this gets the
     $j$ has entropy $H(j)$ such that
-    $H(j) = -\sum_{i=(A,C,T,G)} p_i(j) \log p_i(j)$
+    $H(j) = -sum_{i=(A,C,T,G)} p_i(j) log p_i(j)$
     return list
     """
     batch_size = 1000  # read seequences in chunks this long
@@ -680,10 +678,10 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
 
 
 def plot_scatter_with_anno(data,
+                           consensus_cov,
+                           anno_list,
                            names=["Position", "Entropy"],
                            title="Shannon Entropy by Position",
-                           consensus_cov=[],
-                           anno_list=[],
                            output_prefix="entropy_plot.png"):
     """Given annotation coords [feature, [start, end]],
     consensus cov list ['base', coverage_depth],
@@ -749,7 +747,6 @@ def plot_scatter_with_anno(data,
     #          where='mid', color='darkgrey')
     for ax in [ax1, ax2]:
         ax.spines['right'].set_visible(False)
-        # ax.spines['top'].set_visible(False)
     # Only show ticks on the left and bottom spines
     ax1.spines['top'].set_visible(False)
     ax2.spines['bottom'].set_visible(False)
@@ -768,6 +765,7 @@ def plot_scatter_with_anno(data,
     fig.subplots_adjust(hspace=0)
     fig.set_size_inches(12, 7.5)
     fig.savefig(str(output_prefix + '.png'), dpi=(200))
+    return 0
 
 
 def get_all_kmers(alph="", length=3):
@@ -778,7 +776,7 @@ def get_all_kmers(alph="", length=3):
     return mers
 
 
-def profile_kmer_occurances(rec_list, alph, k, logger=None):
+def profile_kmer_occurances(rec_list, k, logger=None):
     """ given a list of seq records, an alphabet, and a value k,
     retrun counts dict of kmer occurances and list of seq names
     """
@@ -806,7 +804,7 @@ def profile_kmer_occurances(rec_list, alph, k, logger=None):
         for value in set(string_mers):
             counts[value].append(sum([value == mer for mer in string_mers]))
         # filling in where not found
-        for missing in (unique_mers - set(string_mers)):
+        for missing in unique_mers - set(string_mers):
             counts[missing].append(0)
     return counts, names_list
 
@@ -818,7 +816,7 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     """
     res_list = []
     counts_list = []
-    for k, v in counts.items():
+    for v in counts.values():
         counts_list.append(v)
     # this gives each an index and gets all the pairs
     all_pairs = [[index, value] for index, value in
@@ -834,7 +832,6 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     wlsdf = lsdf_wNA.pivot(index='locus_1', columns='locus_2', values='sls')
     fig, ax = plt.subplots(1, 1)
     lsdf = lsdf_wNA.fillna(value=0)
-    print(wlsdf)
     heatmap = ax.pcolormesh(wlsdf,
                             cmap='Greens')
     # put the major ticks at the middle of each cell
@@ -869,14 +866,14 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
 
 
 def main(clusters, genome_records, logger, verbose, within, no_revcomp,
-         flanking, replace, output, padding, circular, minimum,
+         replace, output, circular, minimum,
          feature, prefix_name):
     get_rev_comp = no_revcomp is False  # kinda clunky
     for cluster in clusters:  # for each cluster of loci
         # locus_tag_list = cluster[1]
         # get seq record that cluster is  from
         try:
-            cluster.SeqRecord = \
+            cluster.seq_record = \
                 get_genbank_rec_from_multigb(recordID=cluster.sequence,
                                              genbank_records=genome_records)
         except Exception as e:
@@ -964,7 +961,7 @@ if __name__ == "__main__":
     logger.debug("Usage:\n{0}\n".format(str(" ".join([x for x in sys.argv]))))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
-        logger.debug("{0}: {1}".format(k, v))
+        logger.debug("%s: %s", k, v)
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
     # parse cluster file
     try:
@@ -986,22 +983,22 @@ if __name__ == "__main__":
                    genome_records=genome_records,
                    logger=logger,
                    verbose=False, within=args.within,
-                   flanking=args.flanking,
+                   # flanking=args.flanking,
                    replace=args.replace,
                    output=args.output,
-                   padding=args.padding,
+                   # padding=args.padding,
                    circular=args.circular,
                    minimum=args.minimum,
                    prefix_name=args.name,
                    no_revcomp=args.no_revcomp,
                    feature=args.feature)
 
-    # profile_string_kmers(string, size)
     # make MSA and calculate entropy
     if not args.skip_check:
         if args.clobber:
             logger.error("Cannot safely check SMA when --clobber is used!")
             sys.exit(1)
+
         unaligned_seqs = combine_contigs(contigs_dir=args.output,
                                          pattern="*",
                                          contigs_name="riboSnag_unaligned",
@@ -1017,7 +1014,7 @@ if __name__ == "__main__":
                     combined_fastas=unaligned_seqs,
                     prank_exe=args.prank_exe,
                     add_args="",
-                    clobber=False, logger=logger)
+                    logger=logger)
             else:
                 logger.error("Construction of MSA skipped because " +
                              "%s is not a valid executable!", args.prank_exe)
@@ -1032,7 +1029,7 @@ if __name__ == "__main__":
                     combined_fastas=unaligned_seqs,
                     mafft_exe=args.mafft_exe,
                     add_args="",
-                    clobber=False, logger=logger)
+                    logger=logger)
             else:
                 logger.error("Construction of MSA skipped because " +
                              "%s is not a valid executable!", args.mafft_exe)
@@ -1051,7 +1048,7 @@ if __name__ == "__main__":
         else:
             kmer_seqs = regions
         counts, names = profile_kmer_occurances(kmer_seqs,
-                                                alph='atcg-',
+                                                # alph='atcg-',
                                                 k=5,
                                                 logger=logger)
 
@@ -1060,7 +1057,6 @@ if __name__ == "__main__":
             output_prefix=os.path.join(
                 args.output,
                 "sum_least_squares"))
-        # calc_plot_mda(df=mca_df, output_path="entropy_plot.png")
         gff, consensus_cov, annos = annotate_msa_conensus(
             tseq_array=tseq,
             pattern='product=(.+?)$',
