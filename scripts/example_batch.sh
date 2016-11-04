@@ -1,5 +1,5 @@
 #!/bin/bash
-# version 0.0.3
+# version 0.0.4
 #$ -cwd
 #$ -j yes
 #$ -V
@@ -12,9 +12,9 @@ set -e # exit on error!
 
 # output scanScaffolds_combined.gb in current directory
 echo 'USAGE: /path/to/genome.gb path/to/genome.fasta path/to/read1 path/to/read2 /path/to/outdir/ n_iterations n_flanking n_cores'
-if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ] || [ -z "$6" ] || [ -z "$7" ] ;
+if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ] || [ -z "$6" ] || [ -z "$7" ] || [ -z "$8" ] ;
 then
-    echo "All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iterations, flanking_width
+    echo "All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iterations, flanking_width, virtenve_exe
     exit 1
 fi
 
@@ -30,9 +30,11 @@ READ2="$4"
 OUTDIR="$5"
 ITERATIONS="$6"
 FLANK="$7"
+VENVEXE="$8"
 ## make  dirs
 mkdir ${OUTDIR}
-
+## enter virtual environment
+source ${VENVEXE}
 ## RiboSelect
 python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${GB} -o ${OUTDIR}select/
 ## RiboSnag
