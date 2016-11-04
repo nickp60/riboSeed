@@ -503,7 +503,7 @@ def stitch_together_target_regions(cluster,
 
 
 def prepare_prank_cmd(outdir, combined_fastas, prank_exe,
-                      add_args="", outfile_name="best_MSA.fasta",
+                      add_args="", outfile_name="best_MSA",
                       logger=None):
     """returns command line for constructing MSA with
     PRANK and the path to results file
@@ -516,7 +516,7 @@ def prepare_prank_cmd(outdir, combined_fastas, prank_exe,
         prank_exe, add_args, combined_fastas,
         os.path.join(outdir, outfile_name))
     logger.debug("PRANK command: \n %s", prank_cmd)
-    return (prank_cmd, os.path.join(outdir, outfile_name))
+    return (prank_cmd, os.path.join(outdir, str(outfile_name + ".fasta")))
 
 
 def prepare_mafft_cmd(outdir, combined_fastas, mafft_exe,
@@ -865,6 +865,43 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     return lsdf_wNA
 
 
+def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
+             args, outdir, logger=None):
+    """returns msa cmd and results path
+    """
+    if logger is None:
+        raise ValueError("Must use logger")
+    if msa_tool == "prank":
+        if check_installed_tools(executable=prank_exe,
+                                 hard=False,
+                                 logger=logger):
+            msa_cmd, results_path = prepare_prank_cmd(
+                outdir=outdir,
+                outfile_name="best_MSA",
+                combined_fastas=unaligned_seqs,
+                prank_exe=prank_exe,
+                add_args=args,
+                logger=logger)
+        else:
+            raise ValueError("Construction of MSA skipped because " +
+                             "%s is not a valid executable!", prank_exe)
+    elif msa_tool == "mafft":
+        if check_installed_tools(executable=mafft_exe,
+                                 hard=False,
+                                 logger=logger):
+            msa_cmd, results_path = prepare_mafft_cmd(
+                outdir=outdir,
+                outfile_name="best_MSA.fasta",
+                combined_fastas=unaligned_seqs,
+                mafft_exe=mafft_exe,
+                add_args=args,
+                logger=logger)
+        else:
+            raise ValueError("Construction of MSA skipped because " +
+                             "%s is not a valid executable!", mafft_exe)
+    return(msa_cmd, results_path)
+
+
 def main(clusters, genome_records, logger, verbose, within, no_revcomp,
          replace, output, circular, minimum, flanking,
          feature, prefix_name):
@@ -1004,36 +1041,13 @@ if __name__ == "__main__":
                                          contigs_name="riboSnag_unaligned",
                                          ext=".fasta", verbose=False,
                                          logger=logger)
-        if args.msa_tool == "prank":
-            if check_installed_tools(executable=args.prank_exe,
-                                     hard=False,
-                                     logger=logger):
-                msa_cmd, results_path = prepare_prank_cmd(
-                    outdir=args.output,
-                    outfile_name="best_MSA",
-                    combined_fastas=unaligned_seqs,
-                    prank_exe=args.prank_exe,
-                    add_args="",
-                    logger=logger)
-            else:
-                logger.error("Construction of MSA skipped because " +
-                             "%s is not a valid executable!", args.prank_exe)
-                sys.exit(1)
-        elif args.msa_tool == "mafft":
-            if check_installed_tools(executable=args.mafft_exe,
-                                     hard=False,
-                                     logger=logger):
-                msa_cmd, results_path = prepare_mafft_cmd(
-                    outdir=args.output,
-                    outfile_name="best_MSA",
-                    combined_fastas=unaligned_seqs,
-                    mafft_exe=args.mafft_exe,
-                    add_args="",
-                    logger=logger)
-            else:
-                logger.error("Construction of MSA skipped because " +
-                             "%s is not a valid executable!", args.mafft_exe)
-                sys.exit(1)
+        msa_cmd, results_path = make_msa(msa_tool=args.msa_tool,
+                                         unaligned_seqs=unaligned_seqs,
+                                         prank_exe=args.prank_exe,
+                                         mafft_exe=args.mafft_exe,
+                                         outdir=args.output,
+                                         logger=logger)
+
         logger.info("Running %s for MSA", args.msa_tool)
         subprocess.run(msa_cmd,
                        shell=sys.platform != "win32",
