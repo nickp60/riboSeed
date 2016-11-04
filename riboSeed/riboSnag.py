@@ -812,6 +812,10 @@ def profile_kmer_occurances(rec_list, alph, k, logger=None):
 
 
 def plot_pairwise_least_squares(counts, names_list, output_prefix):
+    """given a  list of sequence names, a prefix for plot file names,
+    and a list of counts from plot_kmer_occurances,
+    retruns a pandas df of least squares after plotting heatmaps
+    """
     res_list = []
     counts_list = []
     for k, v in counts.items():
@@ -862,13 +866,6 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     # fig2.set_size_inches(16, 16)
     plt.savefig(str(output_prefix + "clustered_heatmap.png"), dpi=(200))
     return lsdf_wNA
-
-
-def calc_plot_mda(df, output_path="entropy_plot.png"):
-    """
-    """
-    mca_counts = mca.mca(df)
-    print(mca_counts)
 
 
 def main(clusters, genome_records, logger, verbose, within, no_revcomp,

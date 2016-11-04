@@ -437,6 +437,59 @@ class riboSnag_TestCase(unittest.TestCase):
                          sorted(seqnames))
         # TODO make test for the occurances
 
+    def test_plot_least_squares(self):
+        """the whole sls_matrix
+        """
+        with open(self.test_mafft_msa, 'r') as resfile:
+            kmer_seqs = list(SeqIO.parse(resfile, "fasta"))
+        occurances, seqnames = profile_kmer_occurances(
+            rec_list=kmer_seqs,
+            alph="atcg-",
+            k=4,
+            logger=logger)
+        df = plot_pairwise_least_squares(
+            counts=occurances,
+            names_list=seqnames,
+            output_prefix=os.path.join(
+                self.testdirname, "sum_least_squares"))
+        sls_matrix = [['NZ_CP017149.1_726410..727025',
+                       'NZ_CP017149.1_726410..727025', 0],
+                      ['NZ_CP017149.1_726410..727025',
+                       'NZ_CP017149.1_4787826..4788441_RC', 512],
+                      ['NZ_CP017149.1_726410..727025',
+                       'NZ_CP017149.1_5275421..5276036_RC', 448],
+                      ['NZ_CP017149.1_726410..727025',
+                       'NZ_CP017149.1_6050886..6051501_RC', 450],
+                      ['NZ_CP017149.1_4787826..4788441_RC',
+                       'NZ_CP017149.1_726410..727025', 512],
+                      ['NZ_CP017149.1_4787826..4788441_RC',
+                       'NZ_CP017149.1_4787826..4788441_RC', 0],
+                      ['NZ_CP017149.1_4787826..4788441_RC',
+                       'NZ_CP017149.1_5275421..5276036_RC', 362],
+                      ['NZ_CP017149.1_4787826..4788441_RC',
+                       'NZ_CP017149.1_6050886..6051501_RC', 380],
+                      ['NZ_CP017149.1_5275421..5276036_RC',
+                       'NZ_CP017149.1_726410..727025', 448],
+                      ['NZ_CP017149.1_5275421..5276036_RC',
+                       'NZ_CP017149.1_4787826..4788441_RC', 362],
+                      ['NZ_CP017149.1_5275421..5276036_RC',
+                       'NZ_CP017149.1_5275421..5276036_RC', 0],
+                      ['NZ_CP017149.1_5275421..5276036_RC',
+                       'NZ_CP017149.1_6050886..6051501_RC', 392],
+                      ['NZ_CP017149.1_6050886..6051501_RC',
+                       'NZ_CP017149.1_726410..727025', 450],
+                      ['NZ_CP017149.1_6050886..6051501_RC',
+                       'NZ_CP017149.1_4787826..4788441_RC', 380],
+                      ['NZ_CP017149.1_6050886..6051501_RC',
+                       'NZ_CP017149.1_5275421..5276036_RC', 392],
+                      ['NZ_CP017149.1_6050886..6051501_RC',
+                       'NZ_CP017149.1_6050886..6051501_RC', 0]]
+        for index in range(0, len(sls_matrix)):
+            print(df.as_matrix().tolist()[index])
+            print(sls_matrix[index])
+            self.assertEqual(df.as_matrix().tolist()[index],
+                             sls_matrix[index])
+
     def tearDown(self):
         """ delete temp files if no errors
         """
