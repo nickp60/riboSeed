@@ -66,6 +66,8 @@ class riboSelect_TestCase(unittest.TestCase):
                                         specific_features="16S",
                                         verbose=False,
                                         logger=logger)
+        for k, v in filtered.items():
+            print(k, v)
         self.assertEqual(len(filtered), 7)
         # check length of 1st item (ie, occurances) is same
         self.assertEqual(len(nfeat['NC_011751.1']),

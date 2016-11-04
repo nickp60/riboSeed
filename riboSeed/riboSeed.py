@@ -37,7 +37,7 @@ SAMTOOLS_MIN_VERSION = '1.3.1'
 #################################### functions ###############################
 
 
-def get_args():
+def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
         description="Given regions from riboSnag, assembles the mapped reads",
         add_help=False)  # to allow for custom help
@@ -222,9 +222,10 @@ def check_smalt_full_install(smalt_exe, logger=None):
     smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                 "sample_data",
                                 "smalt_test", "")
-    if logger:
-        logger.debug("looking for smalt test dir: {0}".format(
-            smalttestdir))
+    if logger is None:
+        raise ValueError("Must Use Logging")
+    logger.debug("looking for smalt test dir: {0}".format(
+        smalttestdir))
     if not os.path.exists(smalttestdir):
         raise FileNotFoundError("cannot find smalt_test dir containing " +
                                 "files to verify bambamc install!")
@@ -237,12 +238,10 @@ def check_smalt_full_install(smalt_exe, logger=None):
                                                             test_bam,
                                                             index,
                                                             test_reads))
-    if logger:
-        logger.debug("testing instalation of smalt and bambamc")
+    logger.debug("testing instalation of smalt and bambamc")
     for i in [testindexcmd, testmapcmd]:
         try:
-            if logger:
-                logger.debug(i)
+            logger.debug(i)
             subprocess.run([i],
                            shell=sys.platform != "win32",
                            stdout=subprocess.PIPE,

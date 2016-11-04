@@ -30,7 +30,7 @@ from pyutilsnrw.utils3_5 import check_single_scaffold, \
     set_up_logging, multisplit
 
 
-def get_args():
+def get_args():  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
     """
