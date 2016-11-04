@@ -930,6 +930,13 @@ if __name__ == "__main__":
     for k, v in sorted(vars(args).items()):
         logger.debug("%s: %s", k, v)
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
+    # test whether executables are there
+    executables = ['barrnap']
+    test_ex = [check_installed_tools(x, logger=logger) for x in executables]
+    if all(test_ex):
+        logger.debug("All needed system executables found!")
+        logger.debug(str([shutil.which(i) for i in executables]))
+
     # parse cluster file
     try:
         clusters = parse_clustered_loci_file(args.clustered_loci,
