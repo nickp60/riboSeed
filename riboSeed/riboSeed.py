@@ -113,7 +113,7 @@ def get_args():  # pragma: no cover
                           " in assembly; default: inferred")
     optional.add_argument("-a", "--min_assembly_len", dest='min_assembly_len',
                           action="store",
-                          default=4000, type=int,
+                          default=6000, type=int,
                           help="if initial SPAdes assembly largest contig " +
                           "is not at least as long as --min_assembly_len, " +
                           "exit. Set this to the length of the seed " +
