@@ -942,7 +942,6 @@ def main(clusters, genome_records, logger, verbose, within, no_revcomp,
                                                minimum=minimum,
                                                flanking=flanking,
                                                replace=replace,
-                                               verbose=False,
                                                logger=logger,
                                                circular=circular,
                                                revcomp=get_rev_comp)

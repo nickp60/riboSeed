@@ -12,9 +12,10 @@ set -e # exit on error!
 
 # output scanScaffolds_combined.gb in current directory
 echo 'USAGE: /path/to/genome.gb path/to/genome.fasta path/to/read1 path/to/read2 /path/to/outdir/ n_iterations n_flanking n_cores'
+
 if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ] || [ -z "$6" ] || [ -z "$7" ] || [ -z "$8" ] ;
 then
-    echo "All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iterations, flanking_width, virtenve_exe
+    echo "All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iterations, flanking_width, virtenve_exe"
     exit 1
 fi
 
