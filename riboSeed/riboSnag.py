@@ -951,7 +951,7 @@ if __name__ == "__main__":
                    logger=logger,
                    verbose=False,
                    flanking=args.flanking,
-                   output=args.output,
+                   output=output_root,
                    circular=args.circular,
                    prefix_name=args.name,
                    no_revcomp=args.no_revcomp,
@@ -963,7 +963,7 @@ if __name__ == "__main__":
             logger.error("Cannot safely check SMA when --clobber is used!")
             sys.exit(1)
 
-        unaligned_seqs = combine_contigs(contigs_dir=args.output,
+        unaligned_seqs = combine_contigs(contigs_dir=output_root,
                                          pattern="*",
                                          contigs_name="riboSnag_unaligned",
                                          ext=".fasta", verbose=False,
@@ -973,7 +973,7 @@ if __name__ == "__main__":
                                          prank_exe=args.prank_exe,
                                          args='',
                                          mafft_exe=args.mafft_exe,
-                                         outdir=args.output,
+                                         outdir=output_root,
                                          logger=logger)
 
         logger.info("Running %s for MSA", args.msa_tool)
@@ -997,13 +997,13 @@ if __name__ == "__main__":
         mca_df = plot_pairwise_least_squares(
             counts=counts, names_list=names,
             output_prefix=os.path.join(
-                args.output,
+                output_root,
                 "sum_least_squares"))
         gff, consensus_cov, annos = annotate_msa_conensus(
             tseq_array=tseq,
             pattern='product=(.+?)$',
             seq_file=os.path.join(
-                args.output,
+                output_root,
                 "test_consensus.fasta"),
             barrnap_exe=args.barrnap_exe,
             kingdom=args.kingdom,
@@ -1020,5 +1020,5 @@ if __name__ == "__main__":
             title=title,
             anno_list=annos,
             output_prefix=os.path.join(
-                args.output,
+                output_root,
                 "entropy_plot"))
