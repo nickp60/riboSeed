@@ -76,8 +76,8 @@ class Locus(object):
         self.strand = strand  # 1 is +, -1 is -
         self.start_coord = start_coord
         self.end_coord = end_coord
-        self.rel_start_coord = rel_start_coord  # start relative to length of region
-        self.rel_end_coord = rel_end_coord  # end relative to length of region
+        # self.rel_start_coord = rel_start_coord  # start relative to length of region
+        # self.rel_end_coord = rel_end_coord  # end relative to length of region
         self.product = product
 
 
@@ -104,10 +104,10 @@ def get_args():  # pragma: no cover
                         "rRNA; default: %(default)s",
                         default='rRNA', dest="feature",
                         action="store", type=str)
-    optional.add_argument("-w", "--within_feature_length",
-                          help="bp's to include within the region; " +
-                          "default: %(default)s",
-                          default=0, dest="within", action="store", type=int)
+    # optional.add_argument("-w", "--within_feature_length",
+    #                       help="bp's to include within the region; " +
+    #                       "default: %(default)s",
+    #                       default=0, dest="within", action="store", type=int)
     optional.add_argument("-n", "--name",
                           help="rename the contigs with this prefix" +
                           # "default: %(default)s",
@@ -219,7 +219,6 @@ def parse_clustered_loci_file(filepath, gb_filepath,
     # this covers common case where user submits genbank and cluster file
     # in the wrong order.
     if filepath.endswith(("gb", "genbank", "gbk")):
-        logger.error
         raise FileNotFoundError("Hmm, this cluster file looks like genbank; " +
                                 "it ends in {0}".format(os.path.splitext(
                                     filepath)[1]))
@@ -264,11 +263,9 @@ def parse_clustered_loci_file(filepath, gb_filepath,
     return clusters
 
 
-def extract_coords_from_locus(cluster,
-                              feature="rRNA", logger=None):
-    """given a list of locus_tags, return a list of
-    [loc_number,[start_coord, end_coord], strand, product,
-    locus_tag, record.id]
+def extract_coords_from_locus(cluster, feature="rRNA",
+                              logger=None, verbose=False):
+    """given a LociCluster object, ammend values
     20161028 returns a LociCluster
     """
     if logger is None:
@@ -278,9 +275,9 @@ def extract_coords_from_locus(cluster,
     for feat in cluster.seq_record.features:
         if not feat.type in feature:
             continue
-        logger.debug("found {0} in the following feature : \n{1}".format(
-            feature, feat))
-
+        if verbose:
+            logger.debug("found {0} in the following feature : \n{1}".format(
+                feature, feat))
         try:
             locus_tag = feat.qualifiers.get("locus_tag")[0]
         except:
@@ -299,14 +296,12 @@ def extract_coords_from_locus(cluster,
             this_locus.end_coord = feat.location.end.position
             this_locus.strand = feat.strand
             this_locus.product = feat.qualifiers.get("product")
-            # assert cluster.seq_record.id == this_locus.sequence # sanity check, probably not needed
-            # loc_list.append([loc_number, coords, strand,
-            #                  product, locus_tag, record.id])
             logger.debug("Added attributes for %s", this_locus.locus_tag)
             logger.debug(str(this_locus.__dict__))
             loc_number = loc_number + 1
         else:
             pass
+            # logger.error("skipping %s", locus_tag)
     if not loc_number > 0:
         logger.error("no hits found in any record with feature %s! Double " +
                      "check your genbank file", feature)
@@ -352,15 +347,12 @@ def pad_genbank_sequence(cluster, logger=None):
 
 def stitch_together_target_regions(cluster,
                                    flanking="500:500",
-                                   within=50,
                                    logger=None, circular=False,
                                    revcomp=False):
     """
-    given a list from get_coords, usually of length 3 (16,5,and 23 rRNAs),
-    return a string with the sequence of the region, replacing coding
-    sequences with N's (or not, if replace=False), and including the flanking
-    regions upstream and down.
-
+    given a single LociCluster object containing Locus objects (usually)
+    of length 3 (16,5,and 23 rRNAs),
+    return the object with ammended sequence info
     revamped 20161004
     """
     if logger is None:
@@ -414,12 +406,14 @@ def stitch_together_target_regions(cluster,
     seq_with_ns = str(cluster.seq_record.seq[cluster.global_start_coord - 1:
                                              cluster.global_end_coord])
     seq_len = len(seq_with_ns[:])
-
-
+    logger.info(seq_len)
     # again, plus 1 corrects for 0 index.
     # len("AAAA") = 4 vs AAAA[-1] - AAAA[0] = 3
-    logger.info(str("\nexp length {0} \nact length {1}".format(
-        cluster.global_end_coord - cluster.global_start_coord + 1, seq_len)))
+    logger.info("\nexp length %i \nact length %i",
+                cluster.global_end_coord - cluster.global_start_coord + 1,
+                seq_len)
+
+    ## Change coords in ID When using padding
     if not circular:
         seq_id = str(cluster.sequence + "_" + str(cluster.global_start_coord) +
                      ".." + str(cluster.global_end_coord))
@@ -428,12 +422,12 @@ def stitch_together_target_regions(cluster,
                                                   cluster.padding) +
                      ".." + str(cluster.global_end_coord - cluster.padding))
 
-    strands = [x.strand for x in cluster.loci_list]
     # if most are on - strand, return sequence reverse complement
+    strands = [x.strand for x in cluster.loci_list]
     if revcomp and \
        (sum([x == -1 for x in strands]) > sum([x == 1 for x in strands])):
         logger.info("returning the reverse compliment of the sequence")
-        cluster.extractedseq_record = SeqRecord(
+        cluster.extractedSeqRecord = SeqRecord(
             Seq(seq_with_ns,
                 IUPAC.IUPACAmbiguousDNA()).reverse_complement(),
             id=str(seq_id + "_RC"))
@@ -442,6 +436,10 @@ def stitch_together_target_regions(cluster,
             Seq(seq_with_ns,
                 IUPAC.IUPACAmbiguousDNA()),
             id=seq_id)
+    ### last minuete check
+    logger.warning(vars(cluster))
+    for property, value in vars(cluster).items():
+        assert value is not None, "%s has a value of None!" % property
     return cluster
 
 
@@ -845,7 +843,7 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
     return(msa_cmd, results_path)
 
 
-def main(clusters, genome_records, logger, verbose, within, no_revcomp,
+def main(clusters, genome_records, logger, verbose, no_revcomp,
          output, circular, flanking,
          feature, prefix_name):
     get_rev_comp = no_revcomp is False  # kinda clunky
@@ -878,7 +876,6 @@ def main(clusters, genome_records, logger, verbose, within, no_revcomp,
         try:
             cluster_post_stitch =\
                 stitch_together_target_regions(cluster=cluster_post_pad,
-                                               within=within,
                                                flanking=flanking,
                                                logger=logger,
                                                circular=circular,
@@ -893,13 +890,9 @@ def main(clusters, genome_records, logger, verbose, within, no_revcomp,
         logger.debug(index)
         logger.debug(region)
         if prefix_name is None:
-            filename = str("{0}_region_{1}_{2}.fasta".format(date,
-                                                             index + 1,
-                                                             "riboSnag"))
-        else:
-            filename = str("{0}_region_{1}_{2}.fasta".format(prefix_name,
-                                                             index + 1,
-                                                             "riboSnag"))
+            prefix_name = date
+        filename = str("{0}_region_{1}_{2}.fasta".format(
+            prefix_name, index + 1, "riboSnag"))
         with open(os.path.join(output, filename), "w") as outfile:
             #TODO make discription work when writing seqrecord
             #TODO move date tag to fasta description?
@@ -956,7 +949,7 @@ if __name__ == "__main__":
     regions = main(clusters=clusters,
                    genome_records=genome_records,
                    logger=logger,
-                   verbose=False, within=args.within,
+                   verbose=False,
                    flanking=args.flanking,
                    output=args.output,
                    circular=args.circular,
@@ -978,6 +971,7 @@ if __name__ == "__main__":
         msa_cmd, results_path = make_msa(msa_tool=args.msa_tool,
                                          unaligned_seqs=unaligned_seqs,
                                          prank_exe=args.prank_exe,
+                                         args='',
                                          mafft_exe=args.mafft_exe,
                                          outdir=args.output,
                                          logger=logger)
