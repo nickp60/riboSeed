@@ -866,7 +866,7 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
 
 
 def main(clusters, genome_records, logger, verbose, within, no_revcomp,
-         replace, output, circular, minimum,
+         replace, output, circular, minimum, flanking,
          feature, prefix_name):
     get_rev_comp = no_revcomp is False  # kinda clunky
     for cluster in clusters:  # for each cluster of loci
@@ -983,7 +983,7 @@ if __name__ == "__main__":
                    genome_records=genome_records,
                    logger=logger,
                    verbose=False, within=args.within,
-                   # flanking=args.flanking,
+                   flanking=args.flanking,
                    replace=args.replace,
                    output=args.output,
                    # padding=args.padding,
