@@ -49,7 +49,7 @@ class LociCluster(object):
     """
     def __init__(self, index, sequence, loci_list, padding=None,
                  global_start_coord=None, global_end_coord=None,
-                 seq_record=None, extractedSeqRecord=None, replace=False,
+                 seq_record=None, extractedSeqRecord=None,
                  circular=False):
         self.index = index
         self.sequence = sequence
@@ -57,7 +57,6 @@ class LociCluster(object):
         self.global_start_coord = global_start_coord
         self.global_end_coord = global_end_coord
         self.padding = padding
-        self.replace = replace
         self.circular = circular
         self.seq_record = seq_record
         self.extractedSeqRecord = extractedSeqRecord
@@ -109,14 +108,6 @@ def get_args():  # pragma: no cover
                           help="bp's to include within the region; " +
                           "default: %(default)s",
                           default=0, dest="within", action="store", type=int)
-    optional.add_argument("-m", "--minimum_feature_length",
-                          help="if --replace, and sequence is shorter than " +
-                          "2x --within_feature_length, --within will be " +
-                          "modified so that only -m bp of sequnece are" +
-                          "turned to N's " +
-                          "default: %(default)s",
-                          default=100, dest="minimum",
-                          action="store", type=int)
     optional.add_argument("-n", "--name",
                           help="rename the contigs with this prefix" +
                           # "default: %(default)s",
@@ -128,10 +119,6 @@ def get_args():  # pragma: no cover
                           "separated to give separate upstream and " +
                           "downstream flanking regions; default: %(default)s",
                           default='1000', type=str, dest="flanking")
-    optional.add_argument("-r", "--replace",
-                          help="replace sequence with N's; " +
-                          "default: %(default)s",
-                          default=False, action="store_true", dest="replace")
     optional.add_argument("--msa_kmers",
                           help="calculate kmer similarity based on aligned " +
                           "sequences instead of raw sequences;" +
@@ -365,7 +352,7 @@ def pad_genbank_sequence(cluster, logger=None):
 
 def stitch_together_target_regions(cluster,
                                    flanking="500:500",
-                                   within=50, minimum=50, replace=True,
+                                   within=50,
                                    logger=None, circular=False,
                                    revcomp=False):
     """
@@ -378,9 +365,6 @@ def stitch_together_target_regions(cluster,
     """
     if logger is None:
         raise ValueError("Must have logger for this function")
-    if replace is True:
-        # raise ValueError("--replace no longer supported")
-        logger.warning("--replace no longer supported")
     try:
         flank = [int(x) for x in flanking.split(":")]
         if len(flank) == 1:  # if only one value use for both up and downstream
@@ -398,14 +382,6 @@ def stitch_together_target_regions(cluster,
                        "you've been warned")
     start_list = sorted([x.start_coord for x in cluster.loci_list])
     logger.debug("Start_list: {0}".format(start_list))
-    # if not strictly_increasing([x for x in start_list]):
-    #     raise ValueError("coords are not increasing!")
-    smallest_feature = min([x.end_coord - x.start_coord for
-                            x in cluster.loci_list])
-    if smallest_feature < (minimum) and replace:
-        raise ValueError(str("invalid minimum of {0}! cannot exceed half of " +
-                             "smallest feature, or {1} in this " +
-                             "case").format(minimum, smallest_feature))
 
     logger.debug("stitching together the following coords:")
     for i in cluster.loci_list:
@@ -438,45 +414,12 @@ def stitch_together_target_regions(cluster,
     seq_with_ns = str(cluster.seq_record.seq[cluster.global_start_coord - 1:
                                              cluster.global_end_coord])
     seq_len = len(seq_with_ns[:])
-    #
-    # loop to mask actual coding regions with N's
-    #
-    if replace:
-        for loc in cluster.loci_list:
-            region_length = loc.end_coord - loc.start_coord - (2 * within)
-            # if dealing with short sequences
-            if region_length < (2 * within):
-                # set within to retain minimum sequence length
-                this_within = int((region_length - minimum) / 2)
-            else:
-                # use default if not
-                this_within = within
-            loc.rel_start_coord = ((loc.start_coord + this_within) -
-                                   cluster.global_start_coord)
-            loc.rel_end_coord = ((loc.end_coord - this_within) -
-                                 cluster.global_start_coord)
-            seq_with_ns = str(seq_with_ns[0: loc.rel_start_coord] +
-                              str("N" * region_length) +
-                              seq_with_ns[loc.rel_end_coord:])
 
-        try:
-            # make sure the sequence is proper length, corrected for zero-index
-            assert cluster.global_end_coord - cluster.global_start, seq_len
-            # make sure replacement didnt change seq length
-            assert seq_len, len(seq_with_ns)
-        except:
-            logger.error("There appears to be an error with the seqeuence " +
-                         "coordinate  calculation!")
+
     # again, plus 1 corrects for 0 index.
     # len("AAAA") = 4 vs AAAA[-1] - AAAA[0] = 3
     logger.info(str("\nexp length {0} \nact length {1}".format(
         cluster.global_end_coord - cluster.global_start_coord + 1, seq_len)))
-    # if verbose:
-    #     lb = 70  # line break
-    #     for i in range(0, int(len(seq_with_ns) / lb)):
-    #         print(str(full_seq[i * lb: lb + (i * lb)]))
-    #         print(str(seq_with_ns[i * lb: lb + (i * lb)]))
-    #         print()
     if not circular:
         seq_id = str(cluster.sequence + "_" + str(cluster.global_start_coord) +
                      ".." + str(cluster.global_end_coord))
@@ -903,11 +846,12 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
 
 
 def main(clusters, genome_records, logger, verbose, within, no_revcomp,
-         replace, output, circular, minimum, flanking,
+         output, circular, flanking,
          feature, prefix_name):
     get_rev_comp = no_revcomp is False  # kinda clunky
+    extracted_regions = []
+    logger.debug(clusters)
     for cluster in clusters:  # for each cluster of loci
-        # locus_tag_list = cluster[1]
         # get seq record that cluster is  from
         try:
             cluster.seq_record = \
@@ -919,11 +863,7 @@ def main(clusters, genome_records, logger, verbose, within, no_revcomp,
         # make coord list
         try:
             cluster_with_loci = extract_coords_from_locus(
-                cluster=cluster,
-                # record=genbank_rec,
-                feature=feature,
-                # locus_tag_list=[x.locus_tag for x in i.loci_list],
-                logger=logger)
+                cluster=cluster, feature=feature, logger=logger)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
@@ -939,37 +879,35 @@ def main(clusters, genome_records, logger, verbose, within, no_revcomp,
             cluster_post_stitch =\
                 stitch_together_target_regions(cluster=cluster_post_pad,
                                                within=within,
-                                               minimum=minimum,
                                                flanking=flanking,
-                                               replace=replace,
                                                logger=logger,
                                                circular=circular,
                                                revcomp=get_rev_comp)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
-        regions.append(cluster_post_stitch.extractedSeqRecord)
+        extracted_regions.append(cluster_post_stitch.extractedSeqRecord)
     # after each cluster has been extracted, write out results
-    logger.debug(regions)
-    output_index = 1
-    for i in regions:
+    logger.debug(extracted_regions)
+    for index, region in enumerate(extracted_regions):
+        logger.debug(index)
+        logger.debug(region)
         if prefix_name is None:
             filename = str("{0}_region_{1}_{2}.fasta".format(date,
-                                                             output_index,
+                                                             index + 1,
                                                              "riboSnag"))
         else:
             filename = str("{0}_region_{1}_{2}.fasta".format(prefix_name,
-                                                             output_index,
+                                                             index + 1,
                                                              "riboSnag"))
         with open(os.path.join(output, filename), "w") as outfile:
             #TODO make discription work when writing seqrecord
             #TODO move date tag to fasta description?
             # i.description = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
             #                           output_index, args.flanking, args.within))
-            SeqIO.write(i, outfile, "fasta")
+            SeqIO.write(region, outfile, "fasta")
             outfile.write('\n')
-            output_index = output_index + 1
-    return regions
+    return extracted_regions
 
 
 if __name__ == "__main__":
@@ -1020,11 +958,8 @@ if __name__ == "__main__":
                    logger=logger,
                    verbose=False, within=args.within,
                    flanking=args.flanking,
-                   replace=args.replace,
                    output=args.output,
-                   # padding=args.padding,
                    circular=args.circular,
-                   minimum=args.minimum,
                    prefix_name=args.name,
                    no_revcomp=args.no_revcomp,
                    feature=args.feature)
