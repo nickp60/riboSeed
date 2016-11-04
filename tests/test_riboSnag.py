@@ -38,7 +38,7 @@ from riboSeed.riboSnag import parse_clustered_loci_file, \
     pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd,\
     calc_Shannon_entropy, calc_entropy_msa,\
     annotate_msa_conensus, plot_scatter_with_anno, get_all_kmers,\
-    profile_kmer_occurances, plot_pairwise_least_squares
+    profile_kmer_occurances, plot_pairwise_least_squares, make_msa
 
 from riboSeed.riboSnag import LociCluster, Locus
 
@@ -309,7 +309,7 @@ class riboSnag_TestCase(unittest.TestCase):
                                          logger=logger)
         prank_cmd_1, results_path = prepare_prank_cmd(
             outdir=self.testdirname,
-            outfile_name="best_MSA.fasta",
+            outfile_name="best_MSA",
             combined_fastas=unaligned_seqs,
             prank_exe=self.prank_exe,
             add_args="-t=sometree",
@@ -323,12 +323,47 @@ class riboSnag_TestCase(unittest.TestCase):
             logger=logger)
         idealprank = "prank -t=sometree -d={0} -o={1}".format(
             unaligned_seqs, os.path.join(self.testdirname,
-                                         "best_MSA.fasta"))
+                                         "best_MSA"))
         idealmafft = "mafft -t=sometree {0} > {1}".format(
             unaligned_seqs, os.path.join(self.testdirname,
                                          "best_MSA.fasta"))
         self.assertEqual(idealprank, prank_cmd_1)
         self.assertEqual(idealmafft, mafft_cmd_1)
+        self.to_be_removed.append(unaligned_seqs)
+
+    def test_make_msa(self):
+        """
+        """
+        unaligned_seqs = combine_contigs(contigs_dir=self.test_snag_dir,
+                                         pattern="*",
+                                         contigs_name="riboSnag_unaligned",
+                                         ext=".fasta", verbose=False,
+                                         logger=logger)
+        # with mafft
+        msa_cmd1, results_path1 = make_msa(msa_tool='mafft',
+                                           unaligned_seqs=unaligned_seqs,
+                                           args="-t=sometree",
+                                           prank_exe=self.prank_exe,
+                                           mafft_exe=self.mafft_exe,
+                                           outdir=self.testdirname,
+                                           logger=logger)
+        # with prank
+        msa_cmd2, results_path2 = make_msa(msa_tool='prank',
+                                           unaligned_seqs=unaligned_seqs,
+                                           args="-t=sometree",
+                                           prank_exe=self.prank_exe,
+                                           mafft_exe=self.mafft_exe,
+                                           outdir=self.testdirname,
+                                           logger=logger)
+        idealprank = "prank -t=sometree -d={0} -o={1}".format(
+            unaligned_seqs, os.path.join(self.testdirname,
+                                         "best_MSA"))
+        idealmafft = "mafft -t=sometree {0} > {1}".format(
+            unaligned_seqs, os.path.join(self.testdirname,
+                                         "best_MSA.fasta"))
+        self.assertEqual(results_path2, results_path1)
+        self.assertEqual(idealprank, msa_cmd2)
+        self.assertEqual(idealmafft, msa_cmd1)
         self.to_be_removed.append(unaligned_seqs)
 
     def test_msa_consensus(self):
