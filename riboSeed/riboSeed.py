@@ -729,7 +729,7 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
                     outfile.write("{0}\t{1}\n".format(
                         str(k), str("\t".join(v))))
         except Exception as e:
-            raise e("Error wrting out combined quast report")
+            raise e
 
     return mainDict
 
@@ -1184,6 +1184,9 @@ if __name__ == "__main__":
                       threads=args.cores,
                       ref=args.reference_genome,
                       logger=logger)
+        else:
+            logger.error("Some error occured during final assemblies; " +
+                         "SPAdes logs")
         quast_reports.append(os.path.join(results_dir, str("quast_" + j),
                                           "report.tsv"))
 
@@ -1197,7 +1200,8 @@ if __name__ == "__main__":
             for k, v in sorted(quast_comp.items()):
                 logger.info("{0}: {1}".format(k, "  ".join(v)))
         except Exception as e:
-            logger.warning(e)
+            logger.error("Error writing out combined quast report")
+            logger.error(e)
         logger.info("Comparing de novo and de fere novo assemblies:")
     # Report that we've finished
     logger.info("Done: %s." % time.asctime())
