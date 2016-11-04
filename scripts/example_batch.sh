@@ -18,7 +18,7 @@ then
     echo "All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iterations, flanking_width, virtenve_exe"
     exit 1
 fi
-
+echo "example_script.sh PATH: \n $PATH"
 if [ -d "$5" ]; then
     echo "output dir exists!"
     echo "play things safe, make a new directory for results"
@@ -37,8 +37,8 @@ mkdir ${OUTDIR}
 ## enter virtual environment
 source ${VENVEXE}
 ## RiboSelect
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${GB} -o ${OUTDIR}select/
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${GB} -o ${OUTDIR}select/ -v 1
 ## RiboSnag
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSnag.py ${GB} ${OUTDIR}select/riboSelect_grouped_loci.txt -o ${OUTDIR}snag/ -l $FLANK
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSnag.py ${GB} ${OUTDIR}select/riboSelect_grouped_loci.txt -o ${OUTDIR}snag/ -l $FLANK -v 1
 # RiboSeed
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py ${OUTDIR}snag/ -F ${READ1} -R ${READ2} -r ${FASTA} -v 1 -i ${ITERATIONS} -o ${OUTDIR}seed/
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py ${OUTDIR}snag/ -F ${READ1} -R ${READ2} -r ${FASTA} -v 1 -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1

@@ -288,9 +288,9 @@ Installing with pip3.5 will be the easiest way, but prior to release, clone this
 * R (don't ask...)
 * SPAdes v3.8 or higher
 * SMALT (tested with 0.7.6)
-* SAMTools (tested with 1.3.1)
+* SAMTools (must be 1.3.1 or above)
 * QUAST (tested with 4.1)
-
+* Barrnap (must be 0.7 or above)
 ## Note on installation of SMALT
 
 Must have bambamc installed! If you get an error as follows,

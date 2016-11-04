@@ -22,6 +22,7 @@ import argparse
 import sys
 import math
 import re
+import shutil
 
 import numpy as np
 import matplotlib as mpl
@@ -40,7 +41,7 @@ from heatmapcluster import heatmapcluster
 
 #from pyutilsnrw import utils3_5
 from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
-    combine_contigs
+    combine_contigs, check_version_from_cmd
 
 
 class LociCluster(object):
@@ -437,7 +438,6 @@ def stitch_together_target_regions(cluster,
                 IUPAC.IUPACAmbiguousDNA()),
             id=seq_id)
     ### last minuete check
-    logger.warning(vars(cluster))
     for property, value in vars(cluster).items():
         assert value is not None, "%s has a value of None!" % property
     return cluster
@@ -936,7 +936,14 @@ if __name__ == "__main__":
     if all(test_ex):
         logger.debug("All needed system executables found!")
         logger.debug(str([shutil.which(i) for i in executables]))
-
+    check_version_from_cmd(
+        exe='barrnap',
+        cmd='', line=2,
+        pattern=r"barrnap (?P<version>[^-]+)",
+        where='stderr',
+        logger=logger,
+        coerce_two_digit=True,
+        min_version="0.0.7")
     # parse cluster file
     try:
         clusters = parse_clustered_loci_file(args.clustered_loci,
