@@ -1390,22 +1390,19 @@ if __name__ == "__main__":
     ### #new logic starts here
     # make seedGenome object
     seedGenome = SeedGenome(
-        name=args.name,
         riboSelect_path=args.riboSelect_path,
         output_root=output_root,
         genbank_path=args.genbank_genome,
-        loci_clusters=None,
-        seq_records=None,
         logger=logger)
 
     ### add ngsobject
-    seedGenome = ngsLib(name="",
-                        readF=args.fastq1,
-                        readR=args.fastq2,
-                        readS0=args.fastqS,
-                        logger=logger,
-                        smalt_exe=args.smalt_exe,
-                        ref_fasta=seedGenome.fasta_path)
+    seedGenome.ngs_ob = ngsLib(name="",
+                               readF=args.fastq1,
+                               readR=args.fastq2,
+                               readS0=args.fastqS,
+                               logger=logger,
+                               smalt_exe=args.smalt_exe,
+                               ref_fasta=seedGenome.fasta_path)
 
     # read in riboSelect clusters
     seedGenome.loci_clusters = parse_clustered_loci_file(
@@ -1414,6 +1411,33 @@ if __name__ == "__main__":
         padding=args.padding,
         circular=args.circular,
         logger=logger)
+
+    for cluster in seedGenome.loci_clusters:  # for each cluster of loci
+        # get seq record that cluster is  from
+        try:
+            cluster.seq_record = \
+                get_genbank_rec_from_multigb(
+                    recordID=cluster.sequence,
+                    genbank_records=seedGenome.seq_records,
+                    genome_records)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
+        # make coord list
+        try:
+            extract_coords_from_locus(
+                cluster=cluster, feature=feature, logger=logger)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
+        logger.info(str(cluster.__dict__))
+        # if circular:
+        #     cluster_post_pad = pad_genbank_sequence(cluster=cluster_with_loci,
+        #                                             logger=logger)
+        # else:
+        #     cluster_post_pad = cluster_with_loci
+
+    ####
     # Run commands to map to the genome
     map_to_genome_smalt(seed_genome=seedGenome,
                         ngsLib=seedGenome.ngs_ob,
@@ -1448,9 +1472,9 @@ if __name__ == "__main__":
 
 
 
-def extract_mapped_and_mappedmates(mapped_bam,
-                                   map_results_prefix, fetch_mates,
-                                   keep_unmapped, samtools_exe, logger=None):
+def extract_mapped_reads(mapped_bam,
+                         map_results_prefix, fetch_mates,
+                         keep_unmapped, samtools_exe, logger=None):
     """
     Take a prefix for a dir containing your mapped bam file.
     IF fetch_mates is true, mapped reads are extracted,

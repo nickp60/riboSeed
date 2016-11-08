@@ -310,7 +310,7 @@ def extract_coords_from_locus(cluster, feature="rRNA",
     logger.debug("Here are the detected region,coords, strand, product, " +
                  "locus tag, subfeatures and sequence id of the results:")
     logger.debug(str(cluster.__dict__))
-    return cluster
+    # return cluster
 
 
 def pad_genbank_sequence(cluster, logger=None):
@@ -899,17 +899,17 @@ def main(clusters, genome_records, logger, verbose, no_revcomp,
             sys.exit(1)
         # make coord list
         try:
-            cluster_with_loci = extract_coords_from_locus(
+            extract_coords_from_locus(
                 cluster=cluster, feature=feature, logger=logger)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
         logger.info(str(cluster_with_loci.__dict__))
         if circular:
-            cluster_post_pad = pad_genbank_sequence(cluster=cluster_with_loci,
+            cluster_post_pad = pad_genbank_sequence(cluster=cluster,
                                                     logger=logger)
         else:
-            cluster_post_pad = cluster_with_loci
+            cluster_post_pad = cluster
 
         #  given coords and a sequnce, extract the region as a SeqRecord
         try:

@@ -148,13 +148,13 @@ class riboSnag_TestCase(unittest.TestCase):
                              product=None)],
             padding=None,
             global_start_coord=None,
-            global_end_coord=None,
-            replace=False)
+            global_end_coord=None)
         test_cluster.seq_record = get_genbank_record(self.test_gb_file)[0]
-        cluster_post_extract = extract_coords_from_locus(
+        extract_coords_from_locus(
             cluster=test_cluster,
             feature="CDS",
             logger=logger)
+        cluster_post_extract = test_cluster
         self.assertEqual(cluster_post_extract.loci_list[0].index, 0)
         self.assertEqual(
             cluster_post_extract.loci_list[0].locus_tag, "ECUMN_0004")
@@ -183,25 +183,24 @@ class riboSnag_TestCase(unittest.TestCase):
                              product=None)],
             padding=padding_val,
             global_start_coord=None,
-            global_end_coord=None,
-            replace=False)
+            global_end_coord=None)
         test_cluster.seq_record = get_genbank_record(self.test_gb_file)[0]
-        cluster_post_extract = extract_coords_from_locus(cluster=test_cluster,
-                                                         feature="CDS",
-                                                         logger=logger)
-        old_seq = cluster_post_extract.seq_record
+        extract_coords_from_locus(cluster=test_cluster,
+                                  feature="CDS",
+                                  logger=logger)
+        old_seq = test_cluster.seq_record
         # test excessive padding
-        cluster_too_much_padding = copy.deepcopy(cluster_post_extract)
+        cluster_too_much_padding = copy.deepcopy(test_cluster)
         cluster_too_much_padding.padding = 10000000
         with self.assertRaises(ValueError):
             pad_genbank_sequence(cluster_too_much_padding,
                                  logger=logger)
         # test sucessful execution
-        padded_cluster = pad_genbank_sequence(cluster_post_extract,
+        padded_cluster = pad_genbank_sequence(test_cluster,
                                               logger=logger)
         self.assertEqual(str(old_seq.seq),
                          str(padded_cluster.seq_record.seq[padding_val:
-                                                          -padding_val]))
+                                                          - padding_val]))
 
     def test_stitching(self):
         """  This is actually the thing needing the most testing, most likely
@@ -214,46 +213,40 @@ class riboSnag_TestCase(unittest.TestCase):
             circular=True,
             logger=logger)
         cluster = clusters[0]  # this should be reverse complimented
-        cluster_post_extract = extract_coords_from_locus(
+        extract_coords_from_locus(
             cluster=cluster,
             feature="rRNA",
             logger=logger)
         stitched_cluster = stitch_together_target_regions(
-            cluster=cluster_post_extract,
+            cluster=cluster,
             flanking="1000:1000",
-            within=50, minimum=50,
-            replace=False,
             logger=logger,
             circular=False,
             revcomp=True)
         stitched_cluster_circular = stitch_together_target_regions(
-            cluster=cluster_post_extract,
+            cluster=cluster,
             flanking="1000:1000",
-            within=50, minimum=50,
-            replace=False,
             logger=logger,
             circular=True,
             revcomp=True)
         # fail with invalid flanking arg
         with self.assertRaises(ValueError):
             stitch_together_target_regions(
-                cluster=cluster_post_extract,
+                cluster=cluster,
                 flanking="1000:1000:1000",
-                within=50, minimum=50,
-                replace=False,
                 logger=logger,
                 circular=False,
                 revcomp=False)
-        # fail with exceeded minimum
-        with self.assertRaises(ValueError):
-            stitch_together_target_regions(
-                cluster=cluster_post_extract,
-                flanking="1000",
-                within=5000, minimum=1500,
-                replace=True,
-                logger=logger,
-                circular=False,
-                revcomp=False)
+        # # fail with exceeded minimum
+        # with self.assertRaises(ValueError):
+        #     stitch_together_target_regions(
+        #         cluster=cluster,
+        #         flanking="1000",
+        #         within=5000, minimum=1500,
+        #         replace=True,
+        #         logger=logger,
+        #         circular=False,
+        #         revcomp=False)
         with open(self.test_cluster2, 'r') as ref:
             ref_rec = list(SeqIO.parse(ref, 'fasta'))[0]
         self.assertEqual(str(ref_rec.seq),
