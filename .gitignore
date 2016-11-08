@@ -97,3 +97,8 @@ venv*
 *~
 \#*#
 .\#*
+
+# my testing dirs
+test_sel/*
+test_snag/*
+test_seed/*

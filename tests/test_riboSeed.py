@@ -41,7 +41,7 @@ logger = logging
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among otherthings wont run if you try this" +
                  " with less than python 3.5")
-class utils3_5TestCase(unittest.TestCase):
+class riboSeedTestCase(unittest.TestCase):
     """ tests for riboSeed.py
     """
     def setUp(self):
@@ -144,7 +144,7 @@ class utils3_5TestCase(unittest.TestCase):
     def test_check_smalt_full_install(self):
         """ TODO: how would I test this?
         """
-        check_smalt_full_install(self.smalt_exe, logger=None)
+        check_smalt_full_install(self.smalt_exe, logger=logger)
         pass
 
     def test_run_spades(self):

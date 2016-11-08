@@ -535,7 +535,7 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
                           collapseNs=False,  # include -'s in consensus
                           excludedash=False,
                           logger=None):
-    """ returns annotations (as a gfflist),the consensus sequence as a list,
+    """ returns annotations (as a gfflist),the consensus sequence as a list[base, cov],
     and named coords  as a list
     TODO: The 'next_best' thing fails is an N is most frequent. Defaults to a T
     """
@@ -843,6 +843,45 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
     return(msa_cmd, results_path)
 
 
+def plot_alignment_3d(consensus, tseq, output_prefix):
+    from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib
+    import numpy as np
+    from scipy.interpolate import interp1d
+    from matplotlib import cm
+    from matplotlib import pyplot as plt
+    step = 0.04
+    maxval = 1.0
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ### Make differences
+
+    # for index, value in enumerate(consensus):
+
+
+    ###
+    u=np.array([0,1,2,1,0,2,4,6,4,2,1])
+    v=np.array([4,4,6,3,6,4,1,4,4,4,4])
+    r=np.array([0,1,2,3,4,5,6,7,8,9,10])
+    f=interp1d(r,u)
+
+    # walk along the circle
+    p = np.linspace(0,2*np.pi,20)
+    R,P = np.meshgrid(r,p)
+    # transform them to cartesian system
+    X,Y = R*np.cos(P),R*np.sin(P)
+
+    # Z=2
+    # print(X)
+    # print(Y)
+    Z=f(R)
+
+    # ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.jet)
+    ax.scatter(X, Y, Z)#, rstride=1, cstride=1, cmap=cm.jet)
+    ax.set_xticks([])
+    fig.savefig(str(output_prefix + '3d..png'), dpi=(200))
+
+
 def main(clusters, genome_records, logger, verbose, no_revcomp,
          output, circular, flanking,
          feature, prefix_name):
@@ -1036,3 +1075,7 @@ if __name__ == "__main__":
             output_prefix=os.path.join(
                 output_root,
                 "entropy_plot"))
+        # plot_alignment_3d(
+        #     output_prefix=os.path.join(output_root, "entropy_plot"),
+        #     consensus=consensus_cov,
+        #     tseq=tseq)
