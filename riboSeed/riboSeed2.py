@@ -193,7 +193,8 @@ class LociCluster(object):
     """
     def __init__(self, index, sequence, loci_list, padding=None,
                  global_start_coord=None, global_end_coord=None,
-                 seq_record=None, extractedSeqRecord=None,
+                 seq_record=None, feat_of_interest=None,
+                 extractedSeqRecord=None,
                  circular=False):
         self.index = index
         self.sequence = sequence
@@ -202,6 +203,7 @@ class LociCluster(object):
         self.global_end_coord = global_end_coord
         self.padding = padding
         self.circular = circular
+        self.feat_of_interest = feat_of_interest
         # self.seq_record = seq_record
         self.extractedSeqRecord = extractedSeqRecord
 
@@ -1418,15 +1420,14 @@ if __name__ == "__main__":
             cluster.seq_record = \
                 get_genbank_rec_from_multigb(
                     recordID=cluster.sequence,
-                    genbank_records=seedGenome.seq_records,
-                    genome_records)
+                    genbank_records=seedGenome.seq_records)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
         # make coord list
         try:
             extract_coords_from_locus(
-                cluster=cluster, feature=feature, logger=logger)
+                cluster=cluster, feature=args.feature, logger=logger)
         except Exception as e:
             logger.error(e)
             sys.exit(1)

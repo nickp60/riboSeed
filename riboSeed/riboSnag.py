@@ -50,7 +50,8 @@ class LociCluster(object):
     """
     def __init__(self, index, sequence, loci_list, padding=None,
                  global_start_coord=None, global_end_coord=None,
-                 seq_record=None, extractedSeqRecord=None,
+                 seq_record=None, feat_of_interest=None,
+                 extractedSeqRecord=None,
                  circular=False):
         self.index = index
         self.sequence = sequence
@@ -58,6 +59,7 @@ class LociCluster(object):
         self.global_start_coord = global_start_coord
         self.global_end_coord = global_end_coord
         self.padding = padding
+        self.feat_of_interest = feat_of_interest
         self.circular = circular
         self.seq_record = seq_record
         self.extractedSeqRecord = extractedSeqRecord
@@ -201,7 +203,7 @@ def get_genbank_rec_from_multigb(recordID, genbank_records):
         else:
             pass
     # if none found, raise error
-    raise ValueError("no record found matching record id!")
+    raise ValueError("no record found matching record id %s!"% recordID)
 
 
 def parse_clustered_loci_file(filepath, gb_filepath,
@@ -229,9 +231,16 @@ def parse_clustered_loci_file(filepath, gb_filepath,
     except Exception as e:
         logger.error("Cluster file could not be parsed!")
         raise e
+    feature = None
     for line in file_contents:
         try:
-            if line.startswith("#") or line.strip() == '':
+            if line.startswith("#$ FEATURE"):
+                try:
+                    feature = line.split("FEATURE")[1].strip()
+                except:
+                    raise ValueError("Cannot extract FEATURE from '%s'" % line)
+                continue
+            elif line.startswith("#") or line.strip() == '':
                 continue
             seqname = line.strip("\n").split(" ")[0]
             lt_list = [x for x in
@@ -252,12 +261,18 @@ def parse_clustered_loci_file(filepath, gb_filepath,
                                     padding=padding,
                                     circular=circular))
         cluster_index = cluster_index + 1
+    ### check feature; if still none or starts with #$ (ie, no split)
+    if feature is None:
+        raise ValueError("no feature extracted from coords file! This " +
+                         "has been made mandatory 20161108")
+    ###
     if len(clusters) == 0:
         raise ValueError("No Clusters Found!!")
     # match up seqrecords
     with open(gb_filepath) as fh:
         gb_records = list(SeqIO.parse(fh, 'genbank'))
     for clu in clusters:
+        clu.feat_of_interest = feature
         clu.seq_record = get_genbank_rec_from_multigb(
             recordID=clu.sequence,
             genbank_records=gb_records)
@@ -904,7 +919,7 @@ def main(clusters, genome_records, logger, verbose, no_revcomp,
         except Exception as e:
             logger.error(e)
             sys.exit(1)
-        logger.info(str(cluster_with_loci.__dict__))
+        logger.info(str(cluster.__dict__))
         if circular:
             cluster_post_pad = pad_genbank_sequence(cluster=cluster,
                                                     logger=logger)
