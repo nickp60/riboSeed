@@ -219,11 +219,13 @@ def get_args():  # pragma: no cover
 
 
 def check_smalt_full_install(smalt_exe, logger=None):
+    """
+    """
     smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                 "sample_data",
                                 "smalt_test", "")
     if logger is None:
-        raise ValueError("Must Use Logging")
+        raise ValueError("Smalt installation checker must use logging")
     logger.debug("looking for smalt test dir: {0}".format(
         smalttestdir))
     if not os.path.exists(smalttestdir):
