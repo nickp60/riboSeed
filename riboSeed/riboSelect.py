@@ -405,6 +405,10 @@ if __name__ == "__main__":
         with open(output_path, "a") as outfile:
             outfile.write("# Generated cluters for {0} on {1}\n".format(
                 i, date))
+            outfile.write("#$ FEATURE {0}".format(args.feature))
+            sys.stdout.write("#$ FEATURE {0}".format(args.feature))
+            sys.stdout.write("# Generated cluters for {0} on {1}\n".format(
+                i, date))
             for k, v in indexClusters.items():
                 # for each k:v, this replaces the index in v with the locus tag
                 # from subset, and writes it out in the way that plays nice
