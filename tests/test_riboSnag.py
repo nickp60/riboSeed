@@ -120,7 +120,7 @@ class riboSnag_TestCase(unittest.TestCase):
         ref_seq_name = 'NC_011751.1'
         ref_loci_list = ['ECUMN_16S_6', 'ECUMN_23S_6', 'ECUMN_5S_7']
         test_locus_tags = [x.locus_tag for x in clusters[0].loci_list]
-        self.assertEqual(clusters[0].sequence, ref_seq_name)
+        self.assertEqual(clusters[0].sequence_id, ref_seq_name)
         self.assertEqual(test_locus_tags, ref_loci_list)
 
     def test_genbank_match_id(self):
@@ -138,9 +138,9 @@ class riboSnag_TestCase(unittest.TestCase):
         """todo: replace essentially unused get_genbank_record function
         """
         test_cluster = LociCluster(
-            index=0, sequence='NC_011751.1',
+            index=0, sequence_id='NC_011751.1',
             loci_list=[Locus(index=0,
-                             sequence='NC_011751.1',
+                             sequence_id='NC_011751.1',
                              locus_tag="ECUMN_0004",
                              strand=None,
                              start_coord=None,
@@ -165,7 +165,7 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(
             cluster_post_extract.loci_list[0].end_coord, 4978)
         self.assertEqual(
-            cluster_post_extract.loci_list[0].sequence, 'NC_011751.1')
+            cluster_post_extract.loci_list[0].sequence_id, 'NC_011751.1')
 
     def test_pad_genbank_sequence(self):
         """Just tests the function, later we wll test that the same
@@ -173,9 +173,9 @@ class riboSnag_TestCase(unittest.TestCase):
         """
         padding_val = 50
         test_cluster = LociCluster(
-            index=0, sequence='NC_011751.1',
+            index=0, sequence_id='NC_011751.1',
             loci_list=[Locus(index=0,
-                             sequence='NC_011751.1',
+                             sequence_id='NC_011751.1',
                              locus_tag="ECUMN_0004",
                              strand=None,
                              start_coord=None,

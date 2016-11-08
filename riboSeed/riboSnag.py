@@ -48,13 +48,13 @@ class LociCluster(object):
     """ organizes the clustering process instead of dealing with nested lists
     This holds the whole cluster of one to several individual loci
     """
-    def __init__(self, index, sequence, loci_list, padding=None,
+    def __init__(self, index, sequence_id, loci_list, padding=None,
                  global_start_coord=None, global_end_coord=None,
                  seq_record=None, feat_of_interest=None,
                  extractedSeqRecord=None,
                  circular=False):
         self.index = index
-        self.sequence = sequence
+        self.sequence_id = sequence_id
         self.loci_list = loci_list  # this holds the Locus objects
         self.global_start_coord = global_start_coord
         self.global_end_coord = global_end_coord
@@ -68,12 +68,12 @@ class LociCluster(object):
 class Locus(object):
     """ this holds the info for each individual Locus"
     """
-    def __init__(self, index, sequence, locus_tag, strand=None,
+    def __init__(self, index, sequence_id, locus_tag, strand=None,
                  start_coord=None, end_coord=None, rel_start_coord=None,
                  rel_end_coord=None, product=None):
         # self.parent ??
         self.index = index
-        self.sequence = sequence  # is this needed? I dont think so as long
+        self.sequence_id = sequence_id  # is this needed? I dont think so as long
         # as a locus is never decoupled from the LociCluster
         self.locus_tag = locus_tag
         self.strand = strand  # 1 is +, -1 is -
@@ -103,10 +103,10 @@ def get_args():  # pragma: no cover
     # had to make this faux "optional" parse so that the named required ones
     # above get listed first
     optional = parser.add_argument_group('optional arguments')
-    parser.add_argument("-f", "--feature", help="Feature, such as CDS,tRNA, " +
-                        "rRNA; default: %(default)s",
-                        default='rRNA', dest="feature",
-                        action="store", type=str)
+    # parser.add_argument("-f", "--feature", help="Feature, such as CDS,tRNA, " +
+    #                     "rRNA; default: %(default)s",
+    #                     default='rRNA', dest="feature",
+    #                     action="store", type=str)
     # optional.add_argument("-w", "--within_feature_length",
     #                       help="bp's to include within the region; " +
     #                       "default: %(default)s",
@@ -203,7 +203,7 @@ def get_genbank_rec_from_multigb(recordID, genbank_records):
         else:
             pass
     # if none found, raise error
-    raise ValueError("no record found matching record id %s!"% recordID)
+    raise ValueError("no record found matching record id %s!" % recordID)
 
 
 def parse_clustered_loci_file(filepath, gb_filepath,
@@ -253,10 +253,10 @@ def parse_clustered_loci_file(filepath, gb_filepath,
         for i, loc in enumerate(lt_list):
             loci_list.append(Locus(index=i,
                                    locus_tag=loc,
-                                   sequence=seqname))
+                                   sequence_id=seqname))
         # make and append LociCluster objects
         clusters.append(LociCluster(index=cluster_index,
-                                    sequence=seqname,
+                                    sequence_id=seqname,
                                     loci_list=loci_list,
                                     padding=padding,
                                     circular=circular))
@@ -274,7 +274,7 @@ def parse_clustered_loci_file(filepath, gb_filepath,
     for clu in clusters:
         clu.feat_of_interest = feature
         clu.seq_record = get_genbank_rec_from_multigb(
-            recordID=clu.sequence,
+            recordID=clu.sequence_id,
             genbank_records=gb_records)
     return clusters
 
@@ -431,10 +431,10 @@ def stitch_together_target_regions(cluster,
 
     ## Change coords in ID When using padding
     if not circular:
-        seq_id = str(cluster.sequence + "_" + str(cluster.global_start_coord) +
+        seq_id = str(cluster.sequence_id + "_" + str(cluster.global_start_coord) +
                      ".." + str(cluster.global_end_coord))
     else:  # correct for padding
-        seq_id = str(cluster.sequence + "_" + str(cluster.global_start_coord -
+        seq_id = str(cluster.sequence_id + "_" + str(cluster.global_start_coord -
                                                   cluster.padding) +
                      ".." + str(cluster.global_end_coord - cluster.padding))
 
@@ -898,8 +898,7 @@ def plot_alignment_3d(consensus, tseq, output_prefix):
 
 
 def main(clusters, genome_records, logger, verbose, no_revcomp,
-         output, circular, flanking,
-         feature, prefix_name):
+         output, circular, flanking, prefix_name):
     get_rev_comp = no_revcomp is False  # kinda clunky
     extracted_regions = []
     logger.debug(clusters)
@@ -907,7 +906,7 @@ def main(clusters, genome_records, logger, verbose, no_revcomp,
         # get seq record that cluster is  from
         try:
             cluster.seq_record = \
-                get_genbank_rec_from_multigb(recordID=cluster.sequence,
+                get_genbank_rec_from_multigb(recordID=cluster.sequence_id,
                                              genbank_records=genome_records)
         except Exception as e:
             logger.error(e)
@@ -915,7 +914,8 @@ def main(clusters, genome_records, logger, verbose, no_revcomp,
         # make coord list
         try:
             extract_coords_from_locus(
-                cluster=cluster, feature=feature, logger=logger)
+                cluster=cluster, feature=cluster.feat_of_interest,
+                logger=logger)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
@@ -1023,7 +1023,7 @@ if __name__ == "__main__":
                    circular=args.circular,
                    prefix_name=args.name,
                    no_revcomp=args.no_revcomp,
-                   feature=args.feature)
+                   )
 
     # make MSA and calculate entropy
     if not args.skip_check:

@@ -31,7 +31,7 @@ import unittest
 from pyutilsnrw.utils3_5 import check_installed_tools, md5, file_len
 
 from riboSeed.riboSeed2 import SeedGenome, ngsLib, LociCluster, LociMapping,\
-    map_to_genome_smalt
+    map_to_genome_smalt, add_coords_to_clusters
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
@@ -131,6 +131,23 @@ class riboSeed2TestCase(unittest.TestCase):
             padding=100,
             circular=False,
             logger=logger)
+        print(gen.__dict__)
+        print(gen.loci_clusters[0].__dict__)
+        print(gen.loci_clusters[0].loci_list[0].__dict__)
+
+    def test_add_coords_to_SeedGenome(self):
+        gen = SeedGenome(
+            genbank_path=self.ref_gb,
+            riboSelect_path=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.riboSelect_path,
+            gb_filepath=gen.genbank_path,
+            padding=100,
+            circular=False,
+            logger=logger)
+        add_coords_to_clusters(seedGenome=gen, logger=logger)
         print(gen.__dict__)
         print(gen.loci_clusters[0].__dict__)
         print(gen.loci_clusters[0].loci_list[0].__dict__)

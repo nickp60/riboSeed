@@ -1414,29 +1414,7 @@ if __name__ == "__main__":
         circular=args.circular,
         logger=logger)
 
-    for cluster in seedGenome.loci_clusters:  # for each cluster of loci
-        # get seq record that cluster is  from
-        try:
-            cluster.seq_record = \
-                get_genbank_rec_from_multigb(
-                    recordID=cluster.sequence,
-                    genbank_records=seedGenome.seq_records)
-        except Exception as e:
-            logger.error(e)
-            sys.exit(1)
-        # make coord list
-        try:
-            extract_coords_from_locus(
-                cluster=cluster, feature=args.feature, logger=logger)
-        except Exception as e:
-            logger.error(e)
-            sys.exit(1)
-        logger.info(str(cluster.__dict__))
-        # if circular:
-        #     cluster_post_pad = pad_genbank_sequence(cluster=cluster_with_loci,
-        #                                             logger=logger)
-        # else:
-        #     cluster_post_pad = cluster_with_loci
+    add_coords_to_clusters(seedGenome=seedGenome, logger=logger)
 
     ####
     # Run commands to map to the genome
@@ -1469,8 +1447,68 @@ if __name__ == "__main__":
         #     logger.error(e)
         #     sys.exit(1)
 
+def partition_mapped_reads(seedGenome, flank=[0,0],logger=None):
+    for cluster in seedGenome.loci_clusters:
+        if logger is None:
+            raise ValueError("Must have logger for this function")
+        if sorted([x.start_coord for x in cluster.loci_list]) != \
+           [x.start_coord for x in cluster.loci_list]:
+            logger.warning("Coords are not in increasing order; " +
+                           "you've been warned")
+        start_list = sorted([x.start_coord for x in cluster.loci_list])
+        logger.debug("Start_list: {0}".format(start_list))
 
+        logger.debug("stitching together the following coords:")
+        for i in cluster.loci_list:
+            logger.debug(str(i.__dict__))
+        #  This works as long as coords are never in reverse order
+        cluster.global_start_coord = min([x.start_coord for
+                                          x in cluster.loci_list]) - flank[0]
+        # if start is negative, just use 1, the beginning of the sequence
+        if cluster.global_start_coord < 1:
+            logger.warning("Caution! Cannot retrieve full flanking region, as " +
+                           "the 5' flanking region extends past start of " +
+                           "sequence. If this is a problem, try using a smaller " +
+                           "--flanking region, and/or if  appropriate, run with " +
+                           "--circular.")
+            cluster.global_start_coord = 1
+        cluster.global_end_coord = max([x.end_coord for
+                                        x in cluster.loci_list]) + flank[1]
+        if cluster.global_end_coord > len(cluster.seq_record):
+            logger.warning("Caution! Cannot retrieve full flanking region, as " +
+                           "the 5' flanking region extends past start of " +
+                           "sequence. If this is a problem, try using a smaller " +
+                           "--flanking region, and/or if  appropriate, run with " +
+                           "--circular.")
+            cluster.global_end_coord = len(cluster.seq_record)
+    logger.debug("global start and end: %s %s", cluster.global_start_coord,
+                 cluster.global_end_coord)
 
+def add_coords_to_clusters(seedGenome, logger=None):
+    for cluster in seedGenome.loci_clusters:  # for each cluster of loci
+        # get seq record that cluster is  from
+        try:
+            cluster.seq_record = \
+                get_genbank_rec_from_multigb(
+                    recordID=cluster.sequence,
+                    genbank_records=seedGenome.seq_records)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
+        # make coord list
+        try:
+            extract_coords_from_locus(
+                cluster=cluster, feature=cluster.feat_of_interest,
+                logger=logger)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
+        logger.info(str(cluster.__dict__))
+        # if circular:
+        #     cluster_post_pad = pad_genbank_sequence(cluster=cluster_with_loci,
+        #                                             logger=logger)
+        # else:
+        #     cluster_post_pad = cluster_with_loci
 
 
 def extract_mapped_reads(mapped_bam,
