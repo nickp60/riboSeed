@@ -33,6 +33,14 @@ from pyutilsnrw.utils3_5 import check_installed_tools, md5, file_len
 from riboSeed.riboSeed2 import SeedGenome, ngsLib, LociCluster, LociMapping,\
     map_to_genome_smalt
 
+from riboSeed.riboSnag import parse_clustered_loci_file, \
+    extract_coords_from_locus, \
+    stitch_together_target_regions, get_genbank_rec_from_multigb,\
+    pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd,\
+    calc_Shannon_entropy, calc_entropy_msa,\
+    annotate_msa_conensus, plot_scatter_with_anno, get_all_kmers,\
+    profile_kmer_occurances, plot_pairwise_least_squares, make_msa
+
 
 
 
@@ -72,6 +80,9 @@ class riboSeed2TestCase(unittest.TestCase):
                                                "test_mapping")
         self.fastq_results_prefix = os.path.join(self.test_dir,
                                                  "test_bam_to_fastq")
+        self.test_loci_file = os.path.join(os.path.dirname(__file__),
+                                           str("references" + os.path.sep +
+                                               'grouped_loci_reference.txt'))
         self.to_be_removed = []
 
     def test_make_testing_dir(self):
@@ -107,32 +118,49 @@ class riboSeed2TestCase(unittest.TestCase):
             output_root=self.test_dir)
         self.assertTrue(os.path.exists(os.path.join(self.test_dir,
                                                     "NC_011751.1.fasta")))
-        print(gen.fasta_path)
 
-    def test_map_to_genome_smalt(self):
+    def test_add_clusters_to_SeedGenome(self):
         gen = SeedGenome(
             genbank_path=self.ref_gb,
-            output_root=self.test_dir)
-        gen.seq_ob = ngsLib(
-            name="test",
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            readS0=None,
-            ref_fasta=gen.fasta_path,
-            smalt_dist_path=None,
-            readlen=None,
-            smalt_exe=self.smalt_exe)
-        map_to_genome_smalt(
-            seed_genome=gen,
-            ngsLib=gen.seq_ob,
-            map_results_prefix=gen.initial_map_prefix,
-            cores=2,
-            samtools_exe=self.samtools_exe,
-            smalt_exe=self.smalt_exe,
-            score_minimum=None,
-            step=3, k=5,
-            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+            riboSelect_path=self.test_loci_file,
+            output_root=self.test_dir,
             logger=logger)
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.riboSelect_path,
+            gb_filepath=gen.genbank_path,
+            padding=100,
+            circular=False,
+            logger=logger)
+        print(gen.__dict__)
+        print(gen.loci_clusters[0].__dict__)
+        print(gen.loci_clusters[0].loci_list[0].__dict__)
+
+    # def test_map_to_genome_smalt(self):
+    #     gen = SeedGenome(
+    #         genbank_path=self.ref_gb,
+    #         output_root=self.test_dir)
+    #     gen.seq_ob = ngsLib(
+    #         name="test",
+    #         readF=self.ref_Ffastq,
+    #         readR=self.ref_Rfastq,
+    #         readS0=None,
+    #         ref_fasta=gen.fasta_path,
+    #         smalt_dist_path=None,
+    #         readlen=None,
+    #         smalt_exe=self.smalt_exe)
+    #     map_to_genome_smalt(
+    #         seed_genome=gen,
+    #         ngsLib=gen.seq_ob,
+    #         map_results_prefix=gen.initial_map_prefix,
+    #         cores=2,
+    #         samtools_exe=self.samtools_exe,
+    #         smalt_exe=self.smalt_exe,
+    #         score_minimum=None,
+    #         step=3, k=5,
+    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+    #         logger=logger)
+    #     print(gen.__dict__)
+    #     print(gen.seq_ob.__dict__)
 
     def tearDown(self):
         """ delete temp files if no errors
