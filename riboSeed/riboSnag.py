@@ -336,6 +336,8 @@ def extract_coords_from_locus(cluster, feature="rRNA",
     logger.debug("Here are the detected region,coords, strand, product, " +
                  "locus tag, subfeatures and sequence id of the results:")
     logger.debug(str(cluster.__dict__))
+    # logger.debug("adding extracted sequence")
+    # cluster.extractedSeqRecord = cluster.seq_record.seq[cluster.
     # return cluster
 
 
