@@ -54,11 +54,12 @@ from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
-    stitch_together_target_regions, get_genbank_rec_from_multigb,\
-    pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd,\
-    calc_Shannon_entropy, calc_entropy_msa,\
+    stitch_together_target_regions, get_genbank_rec_from_multigb, \
+    pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd, \
+    calc_Shannon_entropy, calc_entropy_msa, \
     annotate_msa_conensus, plot_scatter_with_anno, \
-    profile_kmer_occurances, plot_pairwise_least_squares, make_msa
+    profile_kmer_occurances, plot_pairwise_least_squares, make_msa, \
+    LociCluster, Locus
 
 ## GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
@@ -186,45 +187,47 @@ class ngsLib(object):
             return None
 
 
-class LociCluster(object):
-    """ organizes the clustering process instead of dealing with nested lists
-    This holds the whole cluster of one to several individual loci
-    """
-    def __init__(self, index, sequence_id, loci_list, padding=None,
-                 global_start_coord=None, global_end_coord=None,
-                 seq_record=None, feat_of_interest=None, mappings=None,
-                 extractedSeqRecord=None, cluster_dir_name=None,
-                 circular=False):
-        self.index = index
-        self.sequence_id = sequence_id
-        self.loci_list = loci_list  # this holds the Locus objects
-        self.global_start_coord = global_start_coord
-        self.global_end_coord = global_end_coord
-        self.padding = padding
-        self.circular = circular
-        self.cluster_dir_name = cluster_dir_name  # named dynamically
-        self.mappings = mappings
-        self.feat_of_interest = feat_of_interest
-        self.extractedSeqRecord = extractedSeqRecord
-        self.name_cluster_dir()
+# class LociCluster(object):
+#     """ organizes the clustering process instead of dealing with nested lists
+#     This holds the whole cluster of one to several individual loci
+#     """
+#     def __init__(self, index, sequence_id, loci_list, padding=None,
+#                  global_start_coord=None, global_end_coord=None,
+#                  seq_record=None, feat_of_interest=None, mappings=None,
+#                  extractedSeqRecord=None, cluster_dir_name=None,
+#                  circular=False):
+#         self.index = index
+#         self.sequence_id = sequence_id
+#         self.loci_list = loci_list  # this holds the Locus objects
+#         self.global_start_coord = global_start_coord
+#         self.global_end_coord = global_end_coord
+#         self.padding = padding
+#         self.circular = circular
+#         self.cluster_dir_name = cluster_dir_name  # named dynamically
+#         self.mappings = mappings
+#         self.feat_of_interest = feat_of_interest
+#         self.extractedSeqRecord = extractedSeqRecord
+#         self.name_cluster_dir()
 
-    def name_mapping_dir(self):
-        self.cluster_dir_name = str("{0}_cluster_{1}").format(
-            self.sequence_id, self.index)
+#     def name_mapping_dir(self):
+#         self.cluster_dir_name = str("{0}_cluster_{1}").format(
+#             self.sequence_id, self.index)
 
 
 class LociMapping(object):
-    """
+    """ order of operations: map to reference, extract and convert,
+    assemble, save results here
     """
     def __init__(self, iteration, mapping_subdir, finished=False,
                  ref_path=None, pe_map_bam=None, s_map_bam=None,
                  sorted_map_bam=None, sorted_map_subset_bam=None,
-                 merge_map_bam=None, mapped_sam=None,
+                 merge_map_bam=None, mapped_sam=None, spades_subdir=None,
                  unmapped_sam=None, mappedF_fq=None, mappedR_fq=None,
-                 mappedS_fq=None):
+                 mappedS_fq=None, assembled_contig=None):
         self.iteration = iteration
         self.finished = finished
         self.mapping_subdir = mapping_subdir
+        self.assembly_subdir = assembly_subdir
         self.ref_path = ref_path
         self.pe_map_bam = pe_map_bam
         self.s_map_bam = s_map_bam
@@ -236,32 +239,46 @@ class LociMapping(object):
         self.mappedS_fq = mappedS_fq
         self.sorted_map_bam = sorted_map_bam
         self.sorted_map_subset_bam = sorted_map_subset_bam
+        self.assembled_contig = assembled_contig
+        ###
         self.make_mapping_subdir()
+        self.make_assembly_subdir()
 
     def make_mapping_subdir(self):
         if not os.path.isdir(self.mapping_subdir):
             os.makedirs(self.mapping_subdir)
 
+    def make_assembly_subdir(self):
+        if not os.path.isdir(self.assembly_subdir):
+            os.makedirs(self.assembly_subdir)
+    # def make__subdir(self):
+    #     if not os.path.isdir(self.mapping_subdir):
+    #         os.makedirs(self.mapping_subdir)
+    # def make_mapping_subdir(self):
+    #     if not os.path.isdir(self.mapping_subdir):
+    #         os.makedirs(self.mapping_subdir)
 
-class Locus(object):
-    """ this holds the info for each individual Locus"
-    """
-    def __init__(self, index, sequence_id, locus_tag, strand=None,
-                 start_coord=None, end_coord=None, rel_start_coord=None,
-                 rel_end_coord=None, product=None):
-        # self.parent ??
-        self.index = index
-        self.sequence_id = sequence_id  # is this needed? I dont think so as long
-        # as a locus is never decoupled from the LociCluster
-        self.locus_tag = locus_tag
-        self.strand = strand  # 1 is +, -1 is -
-        self.start_coord = start_coord
-        self.end_coord = end_coord
-        # self.rel_start_coord = rel_start_coord  # start relative to length of region
-        # self.rel_end_coord = rel_end_coord  # end relative to length of region
-        self.product = product
+
+# class Locus(object):
+#     """ this holds the info for each individual Locus"
+#     """
+#     def __init__(self, index, sequence_id, locus_tag, strand=None,
+#                  start_coord=None, end_coord=None, rel_start_coord=None,
+#                  rel_end_coord=None, product=None):
+#         # self.parent ??
+#         self.index = index
+#         self.sequence_id = sequence_id  # is this needed? I dont think so as long
+#         # as a locus is never decoupled from the LociCluster
+#         self.locus_tag = locus_tag
+#         self.strand = strand  # 1 is +, -1 is -
+#         self.start_coord = start_coord
+#         self.end_coord = end_coord
+#         # self.rel_start_coord = rel_start_coord  # start relative to length of region
+#         # self.rel_end_coord = rel_end_coord  # end relative to length of region
+#         self.product = product
 
 #################################### functions ###############################
+
 
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
@@ -449,66 +466,6 @@ def get_args():  # pragma: no cover
     return args
 
 ########################  funtions adapted from elsewhere ###################
-
-def parse_clustered_loci_file(filepath, gb_filepath,
-                              padding, circular, logger=None):
-    """Given a file from riboSelect or manually created (see specs in README)
-    this parses the clusters and returns a list where [0] is sequence name
-    and [1] is a list of loci in that cluster
-    As of 20161028, this returns a list of LociCluster objects!
-    no no longer attaches an object for each record.  maybe later?
-    """
-    if logger is None:
-        raise ValueError("logging must be used!")
-    if not (os.path.isfile(filepath) and os.path.getsize(filepath) > 0):
-        raise ValueError("Cluster File not found!")
-    clusters = []
-    cluster_index = 0
-    # this covers common case where user submits genbank and cluster file
-    # in the wrong order.
-    if filepath.endswith(("gb", "genbank", "gbk")):
-        raise FileNotFoundError("Hmm, this cluster file looks like genbank; " +
-                                "it ends in {0}".format(os.path.splitext(
-                                    filepath)[1]))
-    try:
-        with open(filepath, "r") as f:
-            file_contents = list(f)
-    except Exception as e:
-        logger.error("Cluster file could not be parsed!")
-        raise e
-    for line in file_contents:
-        try:
-            if line.startswith("#") or line.strip() == '':
-                continue
-            seqname = line.strip("\n").split(" ")[0]
-            lt_list = [x for x in
-                       line.strip("\n").split(" ")[1].split(":")]
-        except Exception as e:
-            logger.error("error parsing line: %s" % line)
-            raise e
-        # make and append the locus objects
-        loci_list = []
-        for i, loc in enumerate(lt_list):
-            loci_list.append(Locus(index=i,
-                                   locus_tag=loc,
-                                   sequence_id=seqname))
-        # make and append LociCluster objects
-        clusters.append(LociCluster(index=cluster_index,
-                                    sequence_id=seqname,
-                                    loci_list=loci_list,
-                                    padding=padding,
-                                    circular=circular))
-        cluster_index = cluster_index + 1
-    if len(clusters) == 0:
-        raise ValueError("No Clusters Found!!")
-    # match up seqrecords
-    # with open(gb_filepath) as fh:
-    #     gb_records = list(SeqIO.parse(fh, 'genbank'))
-    # for clu in clusters:
-    #     clu.seq_record = get_genbank_rec_from_multigb(
-    #         recordID=clu.sequence_id,
-    #         genbank_records=gb_records)
-    return clusters
 
 
 def check_smalt_full_install(smalt_exe, logger=None):
@@ -1107,6 +1064,11 @@ def partition_mapped_reads(seedGenome, samtools_exe,
             cluster.cluster_dir_name,
             "{0}_cluster_{1}_mapping_iteration_0".format(
                 cluster.sequence_id, cluster.index))
+        assembly_subdir = os.path.join(
+            seedGenome.output_root,
+            cluster.cluster_dir_name,
+            "{0}_cluster_{1}_assembly_iteration_0".format(
+                cluster.sequence_id, cluster.index))
         sorted_map_subset_bam = str("{0}{1}{2}_{3}_{4}").format(
             mapping_subdir, os.path.sep, "cluster", cluster.index,
             "sorted_subset.bam")
@@ -1115,6 +1077,7 @@ def partition_mapped_reads(seedGenome, samtools_exe,
 
         mapping0 = LociMapping(iteration=0,
                                mapping_subdir=mapping_subdir,
+                               assembly_subdir=assembly_subdir,
                                sorted_map_subset_bam=sorted_map_subset_bam,
                                sorted_map_bam=sorted_map_bam,
                                finished=False,
@@ -1159,6 +1122,18 @@ def partition_mapped_reads(seedGenome, samtools_exe,
             cluster.global_end_coord = len(cluster.seq_record)
         logger.debug("global start and end: %s %s", cluster.global_start_coord,
                      cluster.global_end_coord)
+
+        logger.debug("Extracting the sequence: %s %s",
+                     cluster.global_start_coord,
+                     cluster.global_end_coord)
+        cluster.extractedSeqRecord = cluster.seq_record[
+            cluster.global_start_coord,
+            cluster.global_end_coord]
+        mapping0.ref_path = os.path.join(mapping0.mapping_subdir,
+                                         "extracted_seed_sequence.fasta")
+        with open(mapping0.ref_path, "w") as writepath:
+            SeqIO.write(mapping0.extractedSeqRecord, writepath, 'fasta')
+
         # Prepare for partitioning
         partition_cmds = []
         if not os.path.exists(mapping0.sorted_map_bam):
@@ -1238,11 +1213,6 @@ def add_coords_to_clusters(seedGenome, logger=None):
             logger.error(e)
             sys.exit(1)
         logger.info(str(cluster.__dict__))
-        # if circular:
-        #     cluster_post_pad = pad_genbank_sequence(cluster=cluster_with_loci,
-        #                                             logger=logger)
-        # else:
-        #     cluster_post_pad = cluster_with_loci
 
 
 def main(fasta, fastas, num, results_dir, exp_name, mauve_path, map_output_dir, method,
@@ -1587,7 +1557,6 @@ if __name__ == "__main__":
     add_coords_to_clusters(seedGenome=seedGenome,
                            logger=logger)
 
-    ####
     # Run commands to map to the genome
     map_to_genome_smalt(seed_genome=seedGenome,
                         ngsLib=seedGenome.ngs_ob,
@@ -1604,7 +1573,20 @@ if __name__ == "__main__":
         samtools_exe=args.samtools_exe,
         flank=[0, 0],
         logger=logger)
-    # now, we need to
+
+    # now, we need to assemble each mapping object
+    if args.DEBUG_multiprocessing:
+        logger.warning("running without multiprocessing!")
+        for num, fasta in enumerate(fastas):
+            assemble_initial_mapping(mapping_ob)
+    else:
+        pool = multiprocessing.Pool(processes=args.cores)
+        results = [pool.apply_async(assemble_initial_mapping,
+                                    (cluster,),{
+                                        "nseqs": len(seedGenome.loci_clusters),
+                                    })
+                   for cluster in genomeSeed.loci_clusters]
+
 
     # extract_mapped_and_mappedmates(map_results_prefix,
     #                                fetch_mates=fetch_mates,
@@ -1623,6 +1605,18 @@ if __name__ == "__main__":
         # except Exception as e:
         #     logger.error(e)
         #     sys.exit(1)
+
+def assemble_initial_mapping(clu, nseqs):
+    prelog = "{0}-{1}:".format("SEED_cluster", clu.index)
+    logger.info("%s processing initial mapping", prelog)
+    logger.info("%s item %i of %i", prelog, clu.index + 1, nseqs)
+    # assembly_dir = str(results_dir + "Assembly_" +
+    #                  os.path.split(fasta)[1].split(".fasta")[0])
+    # mapping_dir = str(map_output_dir + "mapping_" +
+    #                   os.path.split(fasta)[1].split(".fasta")[0])
+    logger.debug("%s output dirs: \n%s\n%s", prelog,
+                 clu.mappings[0].assembly_dir,
+                 clu.mappings[0].mapping_dir)
 
 
 
