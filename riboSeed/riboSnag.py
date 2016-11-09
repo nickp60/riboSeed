@@ -50,8 +50,8 @@ class LociCluster(object):
     """
     def __init__(self, index, sequence_id, loci_list, padding=None,
                  global_start_coord=None, global_end_coord=None,
-                 seq_record=None, feat_of_interest=None,
-                 extractedSeqRecord=None,
+                 seq_record=None, feat_of_interest=None, mappings=None,
+                 extractedSeqRecord=None, cluster_dir_name=None,
                  circular=False):
         self.index = index
         self.sequence_id = sequence_id
@@ -61,8 +61,15 @@ class LociCluster(object):
         self.padding = padding
         self.feat_of_interest = feat_of_interest
         self.circular = circular
+        self.cluster_dir_name = cluster_dir_name  # named dynamically
+        self.mappings = mappings
         self.seq_record = seq_record
         self.extractedSeqRecord = extractedSeqRecord
+        self.name_mapping_dir()
+
+    def name_mapping_dir(self):
+        self.cluster_dir_name = str("{0}_cluster_{1}").format(
+            self.sequence_id, self.index)
 
 
 class Locus(object):
@@ -256,6 +263,7 @@ def parse_clustered_loci_file(filepath, gb_filepath,
                                    sequence_id=seqname))
         # make and append LociCluster objects
         clusters.append(LociCluster(index=cluster_index,
+                                    mappings=[],
                                     sequence_id=seqname,
                                     loci_list=loci_list,
                                     padding=padding,
@@ -269,13 +277,16 @@ def parse_clustered_loci_file(filepath, gb_filepath,
     if len(clusters) == 0:
         raise ValueError("No Clusters Found!!")
     # match up seqrecords
-    with open(gb_filepath) as fh:
-        gb_records = list(SeqIO.parse(fh, 'genbank'))
+    # with open(gb_filepath) as fh:
+    #     gb_records = list(SeqIO.parse(fh, 'genbank'))
+    gb_records = SeqIO.index(gb_filepath, 'genbank')
     for clu in clusters:
         clu.feat_of_interest = feature
-        clu.seq_record = get_genbank_rec_from_multigb(
-            recordID=clu.sequence_id,
-            genbank_records=gb_records)
+        clu.seq_record = gb_records[clu.sequence_id]
+        # clu.seq_record = get_genbank_rec_from_multigb(
+        #     recordID=clu.sequence_id,
+        #     genbank_records=gb_records)
+    gb_records.close()
     return clusters
 
 
