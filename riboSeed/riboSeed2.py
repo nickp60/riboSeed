@@ -57,7 +57,7 @@ from riboSeed.riboSnag import parse_clustered_loci_file, \
     stitch_together_target_regions, get_genbank_rec_from_multigb,\
     pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd,\
     calc_Shannon_entropy, calc_entropy_msa,\
-    annotate_msa_conensus, plot_scatter_with_anno, get_all_kmers,\
+    annotate_msa_conensus, plot_scatter_with_anno, \
     profile_kmer_occurances, plot_pairwise_least_squares, make_msa
 
 ## GLOBALS
@@ -91,12 +91,12 @@ class SeedGenome(object):
 
     def make_map_prefix(self):
         initial_map_dir = os.path.join(self.output_root,
-                                       str(self.name + "initial_mapping"))
+                                       str(self.name + "_initial_mapping"))
         if not os.path.isdir(initial_map_dir):
             os.makedirs(initial_map_dir)
         self.initial_map_prefix = os.path.join(
             self.output_root,
-            str(self.name + "initial_mapping"),
+            str(self.name + "_initial_mapping"),
             "initial_mapping")
 
     def write_fasta_genome(self):
@@ -178,7 +178,6 @@ class ngsLib(object):
             self.smalt_dist_path = estimate_distances_smalt(
                 outfile=os.path.join(os.path.dirname(self.ref_fasta),
                                      "smalt_distance_est.sam"),
-                # outfile=self.smalt_dist_path,
                 smalt_exe=self.smalt_exe,
                 ref_genome=self.ref_fasta,
                 fastq1=self.readF, fastq2=self.readR,
@@ -191,21 +190,27 @@ class LociCluster(object):
     """ organizes the clustering process instead of dealing with nested lists
     This holds the whole cluster of one to several individual loci
     """
-    def __init__(self, index, sequence, loci_list, padding=None,
+    def __init__(self, index, sequence_id, loci_list, padding=None,
                  global_start_coord=None, global_end_coord=None,
-                 seq_record=None, feat_of_interest=None,
-                 extractedSeqRecord=None,
+                 seq_record=None, feat_of_interest=None, mappings=None,
+                 extractedSeqRecord=None, cluster_dir_name=None,
                  circular=False):
         self.index = index
-        self.sequence = sequence
+        self.sequence_id = sequence_id
         self.loci_list = loci_list  # this holds the Locus objects
         self.global_start_coord = global_start_coord
         self.global_end_coord = global_end_coord
         self.padding = padding
         self.circular = circular
+        self.cluster_dir_name = cluster_dir_name  # named dynamically
+        self.mappings = mappings
         self.feat_of_interest = feat_of_interest
-        # self.seq_record = seq_record
         self.extractedSeqRecord = extractedSeqRecord
+        self.name_cluster_dir()
+
+    def name_mapping_dir(self):
+        self.cluster_dir_name = str("{0}_cluster_{1}").format(
+            self.sequence_id, self.index)
 
 
 class LociMapping(object):
@@ -213,6 +218,7 @@ class LociMapping(object):
     """
     def __init__(self, iteration, mapping_subdir, finished=False,
                  ref_path=None, pe_map_bam=None, s_map_bam=None,
+                 sorted_map_bam=None, sorted_map_subset_bam=None,
                  merge_map_bam=None, mapped_sam=None,
                  unmapped_sam=None, mappedF_fq=None, mappedR_fq=None,
                  mappedS_fq=None):
@@ -228,6 +234,8 @@ class LociMapping(object):
         self.mappedF_fq = mappedF_fq
         self.mappedR_fq = mappedR_fq
         self.mappedS_fq = mappedS_fq
+        self.sorted_map_bam = sorted_map_bam
+        self.sorted_map_subset_bam = sorted_map_subset_bam
         self.make_mapping_subdir()
 
     def make_mapping_subdir(self):
@@ -238,12 +246,12 @@ class LociMapping(object):
 class Locus(object):
     """ this holds the info for each individual Locus"
     """
-    def __init__(self, index, sequence, locus_tag, strand=None,
+    def __init__(self, index, sequence_id, locus_tag, strand=None,
                  start_coord=None, end_coord=None, rel_start_coord=None,
                  rel_end_coord=None, product=None):
         # self.parent ??
         self.index = index
-        self.sequence = sequence  # is this needed? I dont think so as long
+        self.sequence_id = sequence_id  # is this needed? I dont think so as long
         # as a locus is never decoupled from the LociCluster
         self.locus_tag = locus_tag
         self.strand = strand  # 1 is +, -1 is -
@@ -292,6 +300,11 @@ def get_args():  # pragma: no cover
                           help="prefix for results files; " +
                           "default: %(default)s",
                           default="riboSeed", type=str)
+    optional.add_argument("-l", "--flanking_length",
+                          help="length of flanking regions, can be colon-" +
+                          "separated to give separate upstream and " +
+                          "downstream flanking regions; default: %(default)s",
+                          default='1000', type=str, dest="flanking")
     optional.add_argument("-m", "--method_for_map", dest='method',
                           action="store",
                           help="available mappers: smalt; " +
@@ -478,10 +491,10 @@ def parse_clustered_loci_file(filepath, gb_filepath,
         for i, loc in enumerate(lt_list):
             loci_list.append(Locus(index=i,
                                    locus_tag=loc,
-                                   sequence=seqname))
+                                   sequence_id=seqname))
         # make and append LociCluster objects
         clusters.append(LociCluster(index=cluster_index,
-                                    sequence=seqname,
+                                    sequence_id=seqname,
                                     loci_list=loci_list,
                                     padding=padding,
                                     circular=circular))
@@ -493,7 +506,7 @@ def parse_clustered_loci_file(filepath, gb_filepath,
     #     gb_records = list(SeqIO.parse(fh, 'genbank'))
     # for clu in clusters:
     #     clu.seq_record = get_genbank_rec_from_multigb(
-    #         recordID=clu.sequence,
+    #         recordID=clu.sequence_id,
     #         genbank_records=gb_records)
     return clusters
 
@@ -1076,7 +1089,163 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     return mainDict
 
 
-def main(fasta, num, results_dir, exp_name, mauve_path, map_output_dir, method,
+def partition_mapped_reads(seedGenome, samtools_exe,
+                           flank=[0, 0], logger=None):
+    """ This handles the first round of mapped reads
+    """
+    # make a list of regions mapping
+    mapped_regions = []
+    for cluster in seedGenome.loci_clusters:
+        """ make iteration 0 LociMapping object
+        """
+        if logger is None:
+            raise ValueError("Must have logger for this function")
+
+        ## make maping objec
+        mapping_subdir = os.path.join(
+            seedGenome.output_root,
+            cluster.cluster_dir_name,
+            "{0}_cluster_{1}_mapping_iteration_0".format(
+                cluster.sequence_id, cluster.index))
+        sorted_map_subset_bam = str("{0}{1}{2}_{3}_{4}").format(
+            mapping_subdir, os.path.sep, "cluster", cluster.index,
+            "sorted_subset.bam")
+        sorted_map_bam = str(seedGenome.initial_map_prefix +
+                             "_sorted.bam")
+
+        mapping0 = LociMapping(iteration=0,
+                               mapping_subdir=mapping_subdir,
+                               sorted_map_subset_bam=sorted_map_subset_bam,
+                               sorted_map_bam=sorted_map_bam,
+                               finished=False,
+                               ref_path=None,
+                               pe_map_bam=None,
+                               s_map_bam=None,
+                               merge_map_bam=None, mapped_sam=None,
+                               unmapped_sam=None, mappedF_fq=None,
+                               mappedR_fq=None,
+                               mappedS_fq=None)
+        if sorted([x.start_coord for x in cluster.loci_list]) != \
+           [x.start_coord for x in cluster.loci_list]:
+            logger.warning("Coords are not in increasing order; " +
+                           "you've been warned")
+        start_list = sorted([x.start_coord for x in cluster.loci_list])
+        logger.debug("Start_list: {0}".format(start_list))
+
+        logger.debug("Find coordinates to gather reads from the following coords:")
+        for i in cluster.loci_list:
+            logger.debug(str(i.__dict__))
+        #  This works as long as coords are never in reverse order
+        cluster.global_start_coord = min([x.start_coord for
+                                          x in cluster.loci_list]) - flank[0]
+        # if start is negative, just use 1, the beginning of the sequence
+        if cluster.global_start_coord < 1:
+            logger.warning(
+                "Caution! Cannot retrieve full flanking region, as " +
+                "the 5' flanking region extends past start of " +
+                "sequence. If this is a problem, try using a smaller " +
+                "--flanking region, and/or if  appropriate, run with " +
+                "--circular.")
+            cluster.global_start_coord = 1
+        cluster.global_end_coord = max([x.end_coord for
+                                        x in cluster.loci_list]) + flank[1]
+        if cluster.global_end_coord > len(cluster.seq_record):
+            logger.warning(
+                "Caution! Cannot retrieve full flanking region, as " +
+                "the 5' flanking region extends past start of " +
+                "sequence. If this is a problem, try using a smaller " +
+                "--flanking region, and/or if  appropriate, run with " +
+                "--circular.")
+            cluster.global_end_coord = len(cluster.seq_record)
+        logger.debug("global start and end: %s %s", cluster.global_start_coord,
+                     cluster.global_end_coord)
+        # Prepare for partitioning
+        partition_cmds = []
+        if not os.path.exists(mapping0.sorted_map_bam):
+            sort_cmd = str("{0} sort {1} > {2}").format(
+                samtools_exe, str(seedGenome.initial_map_prefix + ".bam"),
+                mapping0.sorted_map_bam)
+            index_cmd = str("{0} index {1}").format(
+                samtools_exe, mapping0.sorted_map_bam)
+            partition_cmds.extend([sort_cmd, index_cmd])
+        region_to_extract = "{0}:{1}-{2}".format(
+            cluster.sequence_id, cluster.global_start_coord,
+            cluster.global_end_coord)
+        view_cmd = str("{0} view -o {1} {2} {3}").format(
+            samtools_exe, mapping0.sorted_map_subset_bam,
+            mapping0.sorted_map_bam,
+            region_to_extract)
+        partition_cmds.append(view_cmd)
+        mapped_regions.append(region_to_extract)
+        ### run cmds
+        cluster.mappings.append(mapping0)
+        for cmd in partition_cmds:
+            subprocess.run([cmd],
+                           shell=sys.platform != "win32",
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           check=True)
+    # get unmapped poo
+    init_unmapped = LociMapping(iteration=0,
+                                mapping_subdir=os.path.join(
+                                    seedGenome.output_root, str(
+                                        seedGenome.name +
+                                        "_unmapped_iteration_0")),
+                                finished=False,
+                                ref_path=None,
+                                pe_map_bam=None,
+                                s_map_bam=None,
+                                sorted_map_bam=str(
+                                    seedGenome.initial_map_prefix +
+                                    "_sorted.bam"),
+                                merge_map_bam=None, mapped_sam=None,
+                                unmapped_sam=None, mappedF_fq=None,
+                                mappedR_fq=None,
+                                mappedS_fq=None)
+    init_unmapped.sorted_map_subset_bam = str(
+        init_unmapped.mapping_subdir +
+        os.path.sep +
+        "unmapped_subset.bam")
+
+    unmapped_view_cmd = str("{0} view -o {1} {2} -U {3}").format(
+        samtools_exe, init_unmapped.sorted_map_subset_bam,
+        init_unmapped.sorted_map_bam,
+        ' '.join([x for x in mapped_regions]))
+    subprocess.run([unmapped_view_cmd],
+                   shell=sys.platform != "win32",
+                   stdout=subprocess.PIPE,
+                   stderr=subprocess.PIPE,
+                   check=True)
+
+
+def add_coords_to_clusters(seedGenome, logger=None):
+    for cluster in seedGenome.loci_clusters:  # for each cluster of loci
+        # get seq record that cluster is  from
+        try:
+            cluster.seq_record = \
+                get_genbank_rec_from_multigb(
+                    recordID=cluster.sequence_id,
+                    genbank_records=seedGenome.seq_records)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
+        # make coord list
+        try:
+            extract_coords_from_locus(
+                cluster=cluster, feature=cluster.feat_of_interest,
+                logger=logger)
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
+        logger.info(str(cluster.__dict__))
+        # if circular:
+        #     cluster_post_pad = pad_genbank_sequence(cluster=cluster_with_loci,
+        #                                             logger=logger)
+        # else:
+        #     cluster_post_pad = cluster_with_loci
+
+
+def main(fasta, fastas, num, results_dir, exp_name, mauve_path, map_output_dir, method,
          reference_genome, fastq1, fastq2, fastqS, ave_read_length, cores,
          subtract_reads, ref_as_contig, fetch_mates, keep_unmapped_reads,
          paired_inference, smalt_scoring, min_growth, max_iterations, kmers,
@@ -1414,7 +1583,9 @@ if __name__ == "__main__":
         circular=args.circular,
         logger=logger)
 
-    add_coords_to_clusters(seedGenome=seedGenome, logger=logger)
+    # add coordinates
+    add_coords_to_clusters(seedGenome=seedGenome,
+                           logger=logger)
 
     ####
     # Run commands to map to the genome
@@ -1428,12 +1599,18 @@ if __name__ == "__main__":
                         step=3, k=5,
                         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                         logger=logger)
+    partition_mapped_reads(
+        seedGenome=seedGenome,
+        samtools_exe=args.samtools_exe,
+        flank=[0, 0],
+        logger=logger)
+    # now, we need to
 
-    extract_mapped_and_mappedmates(map_results_prefix,
-                                   fetch_mates=fetch_mates,
-                                   samtools_exe=args.samtools_exe,
-                                   keep_unmapped=keep_unmapped_reads,
-                                   logger=logger)
+    # extract_mapped_and_mappedmates(map_results_prefix,
+    #                                fetch_mates=fetch_mates,
+    #                                samtools_exe=args.samtools_exe,
+    #                                keep_unmapped=keep_unmapped_reads,
+    #                                logger=logger)
         # logger.info("%s Converting mapped results to fastqs", prelog)
         # try:
         #     new_fastq1, new_fastq2, new_fastqS, \
@@ -1447,68 +1624,6 @@ if __name__ == "__main__":
         #     logger.error(e)
         #     sys.exit(1)
 
-def partition_mapped_reads(seedGenome, flank=[0,0],logger=None):
-    for cluster in seedGenome.loci_clusters:
-        if logger is None:
-            raise ValueError("Must have logger for this function")
-        if sorted([x.start_coord for x in cluster.loci_list]) != \
-           [x.start_coord for x in cluster.loci_list]:
-            logger.warning("Coords are not in increasing order; " +
-                           "you've been warned")
-        start_list = sorted([x.start_coord for x in cluster.loci_list])
-        logger.debug("Start_list: {0}".format(start_list))
-
-        logger.debug("stitching together the following coords:")
-        for i in cluster.loci_list:
-            logger.debug(str(i.__dict__))
-        #  This works as long as coords are never in reverse order
-        cluster.global_start_coord = min([x.start_coord for
-                                          x in cluster.loci_list]) - flank[0]
-        # if start is negative, just use 1, the beginning of the sequence
-        if cluster.global_start_coord < 1:
-            logger.warning("Caution! Cannot retrieve full flanking region, as " +
-                           "the 5' flanking region extends past start of " +
-                           "sequence. If this is a problem, try using a smaller " +
-                           "--flanking region, and/or if  appropriate, run with " +
-                           "--circular.")
-            cluster.global_start_coord = 1
-        cluster.global_end_coord = max([x.end_coord for
-                                        x in cluster.loci_list]) + flank[1]
-        if cluster.global_end_coord > len(cluster.seq_record):
-            logger.warning("Caution! Cannot retrieve full flanking region, as " +
-                           "the 5' flanking region extends past start of " +
-                           "sequence. If this is a problem, try using a smaller " +
-                           "--flanking region, and/or if  appropriate, run with " +
-                           "--circular.")
-            cluster.global_end_coord = len(cluster.seq_record)
-    logger.debug("global start and end: %s %s", cluster.global_start_coord,
-                 cluster.global_end_coord)
-
-def add_coords_to_clusters(seedGenome, logger=None):
-    for cluster in seedGenome.loci_clusters:  # for each cluster of loci
-        # get seq record that cluster is  from
-        try:
-            cluster.seq_record = \
-                get_genbank_rec_from_multigb(
-                    recordID=cluster.sequence,
-                    genbank_records=seedGenome.seq_records)
-        except Exception as e:
-            logger.error(e)
-            sys.exit(1)
-        # make coord list
-        try:
-            extract_coords_from_locus(
-                cluster=cluster, feature=cluster.feat_of_interest,
-                logger=logger)
-        except Exception as e:
-            logger.error(e)
-            sys.exit(1)
-        logger.info(str(cluster.__dict__))
-        # if circular:
-        #     cluster_post_pad = pad_genbank_sequence(cluster=cluster_with_loci,
-        #                                             logger=logger)
-        # else:
-        #     cluster_post_pad = cluster_with_loci
 
 
 def extract_mapped_reads(mapped_bam,
