@@ -27,11 +27,13 @@ import logging
 import subprocess
 import os
 import unittest
+import multiprocessing
 
 from pyutilsnrw.utils3_5 import check_installed_tools, md5, file_len
 
 from riboSeed.riboSeed2 import SeedGenome, ngsLib, LociCluster, LociMapping,\
-    map_to_genome_smalt, add_coords_to_clusters, partition_mapped_reads
+    map_to_genome_smalt, add_coords_to_clusters, partition_mapped_reads,\
+    assemble_initial_mapping, extract_mapped_reads
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
@@ -220,7 +222,30 @@ class riboSeed2TestCase(unittest.TestCase):
             logger=logger)
         print(gen.__dict__)
         print(gen.loci_clusters[0].__dict__)
-
+        logger.warning("running without multiprocessing!")
+        for cluster in gen.loci_clusters:
+            assemble_initial_mapping(
+                cluster,
+                nseqs=len(gen.loci_clusters),
+                fetch_mates=False,
+                target_len=6000,
+                samtools_exe=self.samtools_exe,
+                keep_unmapped_reads=False,
+                logger=logger)
+       # pool = multiprocessing.Pool(processes=4)
+        # results = [pool.apply_async(assemble_initial_mapping,
+        #                             (cluster,),
+        #                             {"nseqs": len(gen.loci_clusters),
+        #                              "fetch_mates": False,
+        #                              "target_len": 6000,
+        #                              "keep_unmapped_reads": False,
+        #                              "logger": logger})
+        #            for cluster in gen.loci_clusters]
+        # # print(sum([x.get() for x in results]))
+        # print(results)
+        # print(results[0])
+        # print(results[0].get())
+        # results[0].get()
     def tearDown(self):
         """ delete temp files if no errors
         """

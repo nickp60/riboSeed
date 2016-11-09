@@ -220,37 +220,49 @@ class LociMapping(object):
     """
     def __init__(self, iteration, mapping_subdir, finished=False,
                  ref_path=None, pe_map_bam=None, s_map_bam=None,
-                 sorted_map_bam=None, sorted_map_subset_bam=None,
+                 sorted_map_bam=None, merge_map_sam=None, mapped_bam=None,
                  merge_map_bam=None, mapped_sam=None, spades_subdir=None,
                  unmapped_sam=None, mappedF_fq=None, mappedR_fq=None,
-                 mappedS_fq=None, assembled_contig=None):
+                 mapped_ids_txt=None, unmapped_ids_txt=None, unmapped_bam=None,
+                 mappedS_fq=None, assembled_contig=None, assembly_subdir=None):
         self.iteration = iteration
         self.finished = finished
         self.mapping_subdir = mapping_subdir
         self.assembly_subdir = assembly_subdir
         self.ref_path = ref_path
-        self.pe_map_bam = pe_map_bam
-        self.s_map_bam = s_map_bam
-        self.merge_map_bam = merge_map_bam
-        self.mapped_sam = mapped_sam
+        self.pe_map_bam = pe_map_bam  # all reads from pe mapping
+        self.s_map_bam = s_map_bam  # all reads from singltons mapping
+        self.merge_map_bam = merge_map_bam  # combined pe and s as bam
+        self.merge_map_sam = merge_map_sam  # combined pe and s as sam
+        self.mapped_sam = mapped_sam  # mapped reads only, sam
+        self.mapped_bam = mapped_bam  # mapped reads only, bam
+        self.mapped_ids_txt = mapped_ids_txt
+        self.unmapped_ids_txt = unmapped_ids_txt
         self.unmapped_sam = unmapped_sam
+        self.unmapped_bam = unmapped_bam
         self.mappedF_fq = mappedF_fq
         self.mappedR_fq = mappedR_fq
         self.mappedS_fq = mappedS_fq
-        self.sorted_map_bam = sorted_map_bam
-        self.sorted_map_subset_bam = sorted_map_subset_bam
+        self.sorted_map_bam = sorted_map_bam   # used with intial mapping
+        # self.sorted_map_subset_bam = sorted_map_subset_bam
         self.assembled_contig = assembled_contig
         ###
         self.make_mapping_subdir()
         self.make_assembly_subdir()
+        # self.name_id_file()
 
     def make_mapping_subdir(self):
         if not os.path.isdir(self.mapping_subdir):
             os.makedirs(self.mapping_subdir)
 
     def make_assembly_subdir(self):
-        if not os.path.isdir(self.assembly_subdir):
-            os.makedirs(self.assembly_subdir)
+        if self.assembly_subdir is not None:
+            if not os.path.isdir(self.assembly_subdir):
+                os.makedirs(self.assembly_subdir)
+
+    # def name_id_file(self):
+    #     self.mapped_ids_txt = os.path.join(os.path.basename(
+    #         self.merge_map_bam), "_mapped_IDs.txt")
     # def make__subdir(self):
     #     if not os.path.isdir(self.mapping_subdir):
     #         os.makedirs(self.mapping_subdir)
@@ -1069,7 +1081,7 @@ def partition_mapped_reads(seedGenome, samtools_exe,
             cluster.cluster_dir_name,
             "{0}_cluster_{1}_assembly_iteration_0".format(
                 cluster.sequence_id, cluster.index))
-        sorted_map_subset_bam = str("{0}{1}{2}_{3}_{4}").format(
+        merge_map_bam = str("{0}{1}{2}_{3}_{4}").format( #merged_map bam so it integrates
             mapping_subdir, os.path.sep, "cluster", cluster.index,
             "sorted_subset.bam")
         sorted_map_bam = str(seedGenome.initial_map_prefix +
@@ -1078,13 +1090,14 @@ def partition_mapped_reads(seedGenome, samtools_exe,
         mapping0 = LociMapping(iteration=0,
                                mapping_subdir=mapping_subdir,
                                assembly_subdir=assembly_subdir,
-                               sorted_map_subset_bam=sorted_map_subset_bam,
+                               # sorted_map_subset_bam=sorted_map_subset_bam,
                                sorted_map_bam=sorted_map_bam,
                                finished=False,
                                ref_path=None,
                                pe_map_bam=None,
                                s_map_bam=None,
-                               merge_map_bam=None, mapped_sam=None,
+                               merge_map_bam=merge_map_bam,
+                               mapped_sam=None,
                                unmapped_sam=None, mappedF_fq=None,
                                mappedR_fq=None,
                                mappedS_fq=None)
@@ -1123,16 +1136,17 @@ def partition_mapped_reads(seedGenome, samtools_exe,
         logger.debug("global start and end: %s %s", cluster.global_start_coord,
                      cluster.global_end_coord)
 
-        logger.debug("Extracting the sequence: %s %s",
-                     cluster.global_start_coord,
-                     cluster.global_end_coord)
-        cluster.extractedSeqRecord = cluster.seq_record[
-            cluster.global_start_coord,
-            cluster.global_end_coord]
+        logger.warning("Extracting the sequence: %s %s",
+                       cluster.global_start_coord,
+                       cluster.global_end_coord)
+        cluster.extractedSeqRecord = SeqRecord(
+            cluster.seq_record.seq[
+                cluster.global_start_coord:
+                cluster.global_end_coord])
         mapping0.ref_path = os.path.join(mapping0.mapping_subdir,
                                          "extracted_seed_sequence.fasta")
         with open(mapping0.ref_path, "w") as writepath:
-            SeqIO.write(mapping0.extractedSeqRecord, writepath, 'fasta')
+            SeqIO.write(cluster.extractedSeqRecord, writepath, 'fasta')
 
         # Prepare for partitioning
         partition_cmds = []
@@ -1147,7 +1161,7 @@ def partition_mapped_reads(seedGenome, samtools_exe,
             cluster.sequence_id, cluster.global_start_coord,
             cluster.global_end_coord)
         view_cmd = str("{0} view -o {1} {2} {3}").format(
-            samtools_exe, mapping0.sorted_map_subset_bam,
+            samtools_exe, mapping0.merge_map_bam,
             mapping0.sorted_map_bam,
             region_to_extract)
         partition_cmds.append(view_cmd)
@@ -1177,13 +1191,13 @@ def partition_mapped_reads(seedGenome, samtools_exe,
                                 unmapped_sam=None, mappedF_fq=None,
                                 mappedR_fq=None,
                                 mappedS_fq=None)
-    init_unmapped.sorted_map_subset_bam = str(
+    init_unmapped.merge_map_bam = str(
         init_unmapped.mapping_subdir +
         os.path.sep +
         "unmapped_subset.bam")
 
     unmapped_view_cmd = str("{0} view -o {1} {2} -U {3}").format(
-        samtools_exe, init_unmapped.sorted_map_subset_bam,
+        samtools_exe, init_unmapped.merge_map_bam,
         init_unmapped.sorted_map_bam,
         ' '.join([x for x in mapped_regions]))
     subprocess.run([unmapped_view_cmd],
@@ -1577,22 +1591,28 @@ if __name__ == "__main__":
     # now, we need to assemble each mapping object
     if args.DEBUG_multiprocessing:
         logger.warning("running without multiprocessing!")
-        for num, fasta in enumerate(fastas):
-            assemble_initial_mapping(mapping_ob)
+        for cluster in seedGenome.loci_clusters:
+            assemble_initial_mapping(
+                cluster,
+                nseqs=len(seedGenome.loci_clusters),
+                fetch_mates=False,
+                target_len=6000,
+                samtools_exe=args.samtools_exe,
+                keep_unmapped_reads=False,
+                logger=logger)
     else:
         pool = multiprocessing.Pool(processes=args.cores)
         results = [pool.apply_async(assemble_initial_mapping,
-                                    (cluster,),{
-                                        "nseqs": len(seedGenome.loci_clusters),
-                                    })
-                   for cluster in genomeSeed.loci_clusters]
+                                    (cluster,),
+                                    {"nseqs": len(seedGenome.loci_clusters),
+                                     "fetch_mates": False,
+                                     "target_len": 6000,
+                                     "keep_unmapped_reads": False,
+                                     "samtools_exe": args.samtools_exe,
+                                     "logger": logger})
+                   for cluster in seedGenome.loci_clusters]
 
 
-    # extract_mapped_and_mappedmates(map_results_prefix,
-    #                                fetch_mates=fetch_mates,
-    #                                samtools_exe=args.samtools_exe,
-    #                                keep_unmapped=keep_unmapped_reads,
-    #                                logger=logger)
         # logger.info("%s Converting mapped results to fastqs", prelog)
         # try:
         #     new_fastq1, new_fastq2, new_fastqS, \
@@ -1606,22 +1626,24 @@ if __name__ == "__main__":
         #     logger.error(e)
         #     sys.exit(1)
 
-def assemble_initial_mapping(clu, nseqs):
+def assemble_initial_mapping(clu, nseqs, target_len, fetch_mates, logger,
+                             samtools_exe, keep_unmapped_reads=False):
     prelog = "{0}-{1}:".format("SEED_cluster", clu.index)
     logger.info("%s processing initial mapping", prelog)
     logger.info("%s item %i of %i", prelog, clu.index + 1, nseqs)
-    # assembly_dir = str(results_dir + "Assembly_" +
-    #                  os.path.split(fasta)[1].split(".fasta")[0])
-    # mapping_dir = str(map_output_dir + "mapping_" +
-    #                   os.path.split(fasta)[1].split(".fasta")[0])
     logger.debug("%s output dirs: \n%s\n%s", prelog,
-                 clu.mappings[0].assembly_dir,
-                 clu.mappings[0].mapping_dir)
+                 clu.mappings[0].assembly_subdir,
+                 clu.mappings[0].mapping_subdir)
+    # seed_len = clu.global_end_coord - clu.global_start_coord
+    extract_mapped_reads(mapping=clu.mappings[0],
+                         fetch_mates=fetch_mates,
+                         samtools_exe=samtools_exe,
+                         keep_unmapped=keep_unmapped_reads,
+                         logger=logger)
+    return 0
 
 
-
-def extract_mapped_reads(mapped_bam,
-                         map_results_prefix, fetch_mates,
+def extract_mapped_reads(mapping, fetch_mates,
                          keep_unmapped, samtools_exe, logger=None):
     """
     Take a prefix for a dir containing your mapped bam file.
@@ -1637,41 +1659,55 @@ def extract_mapped_reads(mapped_bam,
     LC_ALL=C  call from pierre lindenbaum. No idea how it does, but its magic
     """
     extract_cmds = []
+    mapping.merge_map_sam = '{0}.sam'.format(
+        os.path.splitext(mapping.merge_map_bam)[0])
+    mapping.unmapped_sam = '{0}_unmapped.sam'.format(
+        os.path.splitext(mapping.merge_map_bam)[0])
+    mapping.unmapped_bam = '{0}_unmapped.bam'.format(
+        os.path.splitext(mapping.merge_map_bam)[0])
+    mapping.mapped_sam = '{0}_mapped.sam'.format(
+        os.path.splitext(mapping.merge_map_bam)[0])
+    mapping.mapped_bam = '{0}_mapped.bam'.format(
+        os.path.splitext(mapping.merge_map_bam)[0])
+    mapping.unmapped_ids_txt = '{0}_unmappedIDs.txt'.format(
+        os.path.splitext(mapping.merge_map_bam)[0])
+    mapping.mapped_ids_txt = '{0}_mappedIDs.txt'.format(
+        os.path.splitext(mapping.merge_map_bam)[0])
     # Either get nates or ignore mates
     if fetch_mates:
-        samview = str(samtools_exe + "  view -h -F 4 {0}.bam  | cut -f1 > " +
-                      "{0}_mappedIDs.txt").format(map_results_prefix)
-        lc_cmd = str("LC_ALL=C grep -w -F -f {0}_mappedIDs.txt  < {0}.sam > " +
-                     "{0}_mapped.sam").format(map_results_prefix)
-        extract_cmds.extend([samview, lc_cmd])
+        makesam = "{0} view -o {1}".format(samtools_exe, mapping.merge_map_sam)
+        samview = str("{0} view -h -F 4 {1} | cut -f1 > {2}").format(
+            samtools_exe, mapping.merge_map_bam, mapping.mapped_ids_txt)
+        lc_cmd = str("LC_ALL=C grep -w -F -f {0}  < {1} > {2}").format(
+            mapping.mapped_ids_txt, mapping.merge_map_sam, mapping.mapped_sam)
+        extract_cmds.extend([makesam, samview, lc_cmd])
     else:
-        samview = str(samtools_exe + " view -hS -F 4 {0}.bam > " +
-                      "{0}_mapped.sam").format(map_results_prefix)
+        samview = str("{0} view -hS -F 4 {1} > {2}").format(
+            samtools_exe, mapping.merge_map_bam, mapping.mapped_sam)
         extract_cmds.extend([samview])
-    samsort = str(samtools_exe + " view -bhS {0}_mapped.sam " +
-                  "| samtools sort - > " +
-                  "{0}_mapped.bam").format(map_results_prefix)
-    samindex = " {0} index {1}_mapped.bam".format(samtools_exe,
-                                                  map_results_prefix)
+    samsort = str("{0} view -bhS {1} | samtools sort - > {2}").format(
+        samtools_exe, mapping.mapped_sam, mapping.mapped_bam)
+    samindex = " {0} index {1}".format(samtools_exe, mapping.mapped_bam)
     extract_cmds.extend([samsort, samindex])
     if keep_unmapped:
-        samviewU = str(samtools_exe + "  view -f 4 {0}.bam  | cut -f1 > " +
-                       "{0}_unmappedIDs.txt").format(map_results_prefix)
-        lc_cmdU = str("LC_ALL=C grep -w -F -f {0}_unmappedIDs.txt  < " +
-                      "{0}.sam > {0}_unmapped.sam").format(map_results_prefix)
-        samindexU = str("{1} view -bhS {0}_unmapped.sam | samtools " +
-                        "sort - -o {0}_unmapped.bam && samtools index " +
-                        "{0}_unmapped.bam").format(map_results_prefix,
-                                                   samtools_exe)
+        samviewU = str("{0} view -f 4 {1} | cut -f1 > {2}").format(
+            samtools_exe, mapping.mapped_bam, mapping.unmapped_ids_txt)
+        lc_cmdU = str("LC_ALL=C grep -w -F -f {0} < {1} > {2}").format(
+            mapping.unmapped_ids_txt, mapping.merge_map_sam,
+            mapping.unmapped_sam)
+        samindexU = str("{0} view -bhS {1} " +
+                        "| {0} sort - -o {2} && {0} index {2}").format(
+            samtools_exe, mapping.unmapped_sam, mapping.unmapped_bam,)
         extract_cmds.extend([samviewU, lc_cmdU, samindexU])
     if logger:
         logger.debug("running the following commands to extract reads:")
     for i in extract_cmds:
         if logger:
-            logger.debug(i)
+            logger.warning(i)
         subprocess.run(i, shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, check=True)
+    return 0
 
 
 
