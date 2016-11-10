@@ -52,7 +52,7 @@ class LociCluster(object):
                  global_start_coord=None, global_end_coord=None,
                  seq_record=None, feat_of_interest=None, mappings=None,
                  extractedSeqRecord=None, cluster_dir_name=None,
-                 circular=False):
+                 circular=False, output_root=None):
         self.index = index
         self.sequence_id = sequence_id
         self.loci_list = loci_list  # this holds the Locus objects
@@ -62,6 +62,7 @@ class LociCluster(object):
         self.feat_of_interest = feat_of_interest
         self.circular = circular
         self.cluster_dir_name = cluster_dir_name  # named dynamically
+        self.output_root = output_root
         self.mappings = mappings
         self.seq_record = seq_record
         self.extractedSeqRecord = extractedSeqRecord
@@ -213,7 +214,7 @@ def get_genbank_rec_from_multigb(recordID, genbank_records):
     raise ValueError("no record found matching record id %s!" % recordID)
 
 
-def parse_clustered_loci_file(filepath, gb_filepath,
+def parse_clustered_loci_file(filepath, gb_filepath, output_root,
                               padding, circular, logger=None):
     """Given a file from riboSelect or manually created (see specs in README)
     this parses the clusters and returns a list where [0] is sequence name
@@ -264,6 +265,7 @@ def parse_clustered_loci_file(filepath, gb_filepath,
         # make and append LociCluster objects
         clusters.append(LociCluster(index=cluster_index,
                                     mappings=[],
+                                    output_root=output_root,
                                     sequence_id=seqname,
                                     loci_list=loci_list,
                                     padding=padding,
@@ -1015,6 +1017,7 @@ if __name__ == "__main__":
     try:
         clusters = parse_clustered_loci_file(args.clustered_loci,
                                              gb_filepath=args.genbank_genome,
+                                             output_root='',
                                              padding=args.padding,
                                              circular=args.circular,
                                              logger=logger)

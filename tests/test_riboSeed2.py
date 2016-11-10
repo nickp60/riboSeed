@@ -130,6 +130,7 @@ class riboSeed2TestCase(unittest.TestCase):
             logger=logger)
         gen.loci_clusters = parse_clustered_loci_file(
             filepath=gen.riboSelect_path,
+            output_root=self.test_dir,
             gb_filepath=gen.genbank_path,
             padding=100,
             circular=False,
@@ -147,6 +148,7 @@ class riboSeed2TestCase(unittest.TestCase):
         gen.loci_clusters = parse_clustered_loci_file(
             filepath=gen.riboSelect_path,
             gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
             padding=100,
             circular=False,
             logger=logger)
@@ -200,6 +202,7 @@ class riboSeed2TestCase(unittest.TestCase):
             smalt_exe=self.smalt_exe)
         gen.loci_clusters = parse_clustered_loci_file(
             filepath=gen.riboSelect_path,
+            output_root=self.test_dir,
             gb_filepath=gen.genbank_path,
             padding=100,
             circular=False,
@@ -216,6 +219,7 @@ class riboSeed2TestCase(unittest.TestCase):
         #     step=3, k=5,
         #     scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
         #     logger=logger)
+        # add output root to each
         partition_mapped_reads(
             seedGenome=gen,
             samtools_exe=self.samtools_exe,
@@ -229,7 +233,9 @@ class riboSeed2TestCase(unittest.TestCase):
                 cluster,
                 nseqs=len(gen.loci_clusters),
                 fetch_mates=False,
-                target_len=6000,
+                include_short_contigs=True,
+                min_contig_len=3000,
+                target_len=7000,
                 samtools_exe=self.samtools_exe,
                 keep_unmapped_reads=False,
                 logger=logger)
