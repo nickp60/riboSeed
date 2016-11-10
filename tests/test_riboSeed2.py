@@ -104,6 +104,7 @@ class riboSeed2TestCase(unittest.TestCase):
     def test_ngsLib(self):
         testlib = ngsLib(
             name="test",
+            master=True,
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
             readS0=None,
@@ -133,9 +134,9 @@ class riboSeed2TestCase(unittest.TestCase):
             padding=100,
             circular=False,
             logger=logger)
-        print(gen.__dict__)
-        print(gen.loci_clusters[0].__dict__)
-        print(gen.loci_clusters[0].loci_list[0].__dict__)
+        # print(gen.__dict__)
+        # print(gen.loci_clusters[0].__dict__)
+        # print(gen.loci_clusters[0].loci_list[0].__dict__)
 
     def test_add_coords_to_SeedGenome(self):
         gen = SeedGenome(
@@ -150,9 +151,9 @@ class riboSeed2TestCase(unittest.TestCase):
             circular=False,
             logger=logger)
         add_coords_to_clusters(seedGenome=gen, logger=logger)
-        print(gen.__dict__)
-        print(gen.loci_clusters[0].__dict__)
-        print(gen.loci_clusters[0].loci_list[0].__dict__)
+        # print(gen.__dict__)
+        # print(gen.loci_clusters[0].__dict__)
+        # print(gen.loci_clusters[0].loci_list[0].__dict__)
 
     # def test_map_to_genome_smalt(self):
     #     gen = SeedGenome(
