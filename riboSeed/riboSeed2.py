@@ -127,13 +127,14 @@ class SeedGenome(object):
 class ngsLib(object):
     """paired end data object
     """
-    def __init__(self, name, readF=None, readR=None,
+    def __init__(self, name, master=False, readF=None, readR=None,
                  readS0=None, readS1=None,
                  # readS1=None, readS2=None, readS3=None,
                  smalt_dist_path=None, readlen=None,
                  libtype=None, logger=None, smalt_exe=None,
                  ref_fasta=None):
         self.name = name
+        self.master = master
         self.libtype = libtype  # set this dynamically
         self.readF = readF
         self.readR = readR
@@ -167,6 +168,8 @@ class ngsLib(object):
                 self.libtype = "pe"
 
     def get_readlen(self):
+        if self.master is not True:
+            return None
         if self.libtype in ['pe', 'pe_s']:
             self.readlen = get_ave_read_len_from_fastq(
                 self.readF, N=36, logger=self.logger)
@@ -175,6 +178,9 @@ class ngsLib(object):
                 self.readS0, N=36, logger=self.logger)
 
     def smalt_insert_file(self):
+        # if intermediate mapping data, not original datasets
+        if self.master is not True:
+            return None
         if self.libtype in ['pe', 'pe_s']:
             self.smalt_dist_path = estimate_distances_smalt(
                 outfile=os.path.join(os.path.dirname(self.ref_fasta),
@@ -226,7 +232,8 @@ class LociMapping(object):
                  unmapped_sam=None, mappedF=None, mappedR=None,
                  mapped_ids_txt=None, unmapped_ids_txt=None, unmapped_bam=None,
                  mappedS=None, assembled_contig=None, assembly_subdir=None,
-                 unmappedF=None, unmappedR=None, unmappedS=None):
+                 unmappedF=None, unmappedR=None, unmappedS=None,
+                 mapped_ngsLib=None, unmapped_ngsLib=None):
         self.iteration = iteration
         self.mapping_success = mapping_success
         self.assembly_success = assembly_success
@@ -244,12 +251,14 @@ class LociMapping(object):
         self.unmapped_sam = unmapped_sam
         self.unmapped_bam = unmapped_bam
         #  The fastqs
-        self.mappedF = mappedF
-        self.mappedR = mappedR
-        self.mappedS = mappedS
-        self.unmappedF = unmappedF
-        self.unmappedR = unmappedR
-        self.unmappedS = unmappedS
+        self.mapped_ngsLib = mapped_ngsLib
+        self.unmapped_ngsLib = unmapped_ngsLib
+        # self.mappedF = mappedF
+        # self.mappedR = mappedR
+        # self.mappedS = mappedS
+        # self.unmappedF = unmappedF
+        # self.unmappedR = unmappedR
+        # self.unmappedS = unmappedS
         self.sorted_map_bam = sorted_map_bam   # used with intial mapping
         # self.sorted_map_subset_bam = sorted_map_subset_bam
         self.assembled_contig = assembled_contig
@@ -680,36 +689,31 @@ def map_to_genome_smalt(
                                       samtools_exe=samtools_exe)))
 
 
-def convert_bams_to_fastq(mapping_ob,
-                          keep_unmapped, samtools_exe, logger=None):
-    """ return 6 paths: unmapped F, R, S and mapped F, R. S
-    given the prefix for the mapped bam files, write out mapped (and optionally
-    unmapped) reads to fasta files
+def convert_bams_to_fastq(mapping_ob, samtools_exe,  which='mapped',
+                          logger=None):
+    """     returns ngslib
     """
-    output_paths = {'mapped_bam': ['mappedF', 'mappedR', 'mappedS'],
-                    'unmapped_bam': ['unmappedF', 'unmappedR', 'unmappedS']}
-    for key, value in output_paths.items():
-        for fastq in value:
-            setattr(mapping_ob, fastq,
-                    str(os.path.splitext(mapping_ob.merge_map_bam)[0] +
-                        "_" + fastq + '.fastq'))
+    if which not in ['mapped', 'unmapped']:
+        raise ValueError("only valid options are mapped and unmapped")
+    read_path_dict = {'readF': None, 'readR': None, 'readS': None}
+    for key, value in read_path_dict.items():
+        read_path_dict[key] = str(os.path.splitext(
+            mapping_ob.merge_map_bam)[0] + which + key + '.fastq')
     convert_cmds = []
-    for key, val in output_paths.items():
-        if not os.path.exists(getattr(mapping_ob, key)):
-            if key == 'unmapped_bam' and not keep_unmapped:
-                continue
-            else:
-                if logger:
-                    logger.error(str("No {0} file found").format(
-                        getattr(mapping_ob, key)))
-                raise FileNotFoundError("No {0} file found".format(
-                    getattr(mapping_ob, key)))
-        samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
-            samtools_exe, getattr(mapping_ob, key),
-            getattr(mapping_ob, val[0]),
-            getattr(mapping_ob, val[1]),
-            getattr(mapping_ob, val[2]))
-        convert_cmds.append(samfilter)
+
+    if not os.path.exists(getattr(mapping_ob, str(which + "_bam"))):
+        if logger:
+            logger.error(str("No {0} file found").format(
+                getattr(mapping_ob, str(which + "_bam"))))
+        raise FileNotFoundError("No {0} file found".format(
+            getattr(mapping_ob, str(which + "_bam"))))
+    samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
+        samtools_exe,
+        getattr(mapping_ob, str(which + "_bam")),
+        read_path_dict['readF'],
+        read_path_dict['readR'],
+        read_path_dict['readS'])
+    convert_cmds.append(samfilter)
     if logger:
         logger.debug("running the following commands to extract reads:")
     for i in convert_cmds:
@@ -718,7 +722,12 @@ def convert_bams_to_fastq(mapping_ob,
         subprocess.run(i, shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, check=True)
-
+    return(ngsLib(name=which, master=False,
+                  logger=logger,
+                  readF=read_path_dict['readF'],
+                  readR=read_path_dict['readR'],
+                  readS0=read_path_dict['readS'],
+                  ref_fasta=mapping_ob))
 
 
 def run_spades(
@@ -729,7 +738,7 @@ def run_spades(
     wrapper for common spades setting for long illumina reads
     ref_as_contig should be either blank, 'trusted', or 'untrusted'
     prelim flag is True, only assembly is run, and without coverage correction
-    #TODO
+s    #TODO
     the seqname variable is used only for renaming the resulting contigs
     during iterative assembly.  It would be nice to inheirit from "ref",
     but that is changed with each iteration. This should probably be addressed
@@ -750,23 +759,23 @@ def run_spades(
     else:
         alt_contig = ''
     # prepare read types, etc
-    if as_paired and mapping_ob.mappedS is not None:  # for lib with both
+    if as_paired and mapping_ob.mapped_ngsLib.readS0 is not None:  # for lib with both
         singles = "--pe1-s {0} ".format(mapping_ob.mappedS)
         pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
-            mapping_ob.mappedF, mapping_ob.mappedR)
-    elif as_paired and mapping_ob.mappedS is None:  # for lib with just PE
+            mapping_ob.mapped_ngsLib.readF, mapping_ob.mapped_ngsLib.readR)
+    elif as_paired and mapping_ob.mapped_ngsLib.readS0 is None:  # for lib with just PE
         singles = ""
         pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
-            mapping_ob.mappedF, mapping_ob.mappedR)
+            mapping_ob.mapped_ngsLib.readF, mapping_ob.mapped_ngsLib.readR)
     # for libraries treating paired ends as two single-end libs
-    elif not as_paired and mapping_ob.mappedS is None:
+    elif not as_paired and mapping_ob.mapped_ngsLib.readS0 is None:
         singles = ''
         pairs = "--pe1-s {0} --pe2-s {1} ".format(
-            mapping_ob.mappedF, mapping_ob.mappedR)
+            mapping_ob.mapped_ngsLib.readF, mapping_ob.mapped_ngsLib.readR)
     else:  # for 3 single end libraries
-        singles = "--pe1-s {0} ".format(mapping_ob.mappedS)
+        singles = "--pe1-s {0} ".format(mapping_ob.mapped_ngsLib.readS0)
         pairs = str("--pe2-s {0} --pe3-s {1} ".format(
-            mapping_ob.mappedF, mapping_ob.mappedR))
+            mapping_ob.mapped_ngsLib.readF, mapping_ob.mapped_ngsLib.readR))
     reads = str(pairs + singles)
 #    spades_cmds=[]
     if prelim:
@@ -1475,6 +1484,7 @@ if __name__ == "__main__":
 
     ### add ngsobject
     seedGenome.ngs_ob = ngsLib(name="",
+                               master=True,
                                readF=args.fastq1,
                                readR=args.fastq2,
                                readS0=args.fastqS,
@@ -1568,10 +1578,16 @@ def assemble_initial_mapping(clu, nseqs, target_len, fetch_mates, logger,
         logger.error(e)
         sys.exit(1)
     try:
-        convert_bams_to_fastq(mapping_ob=clu.mappings[0],
-                              keep_unmapped=False,
-                              samtools_exe=samtools_exe,
-                              logger=logger)
+        clu.mappings[0].mapped_ngsLib = convert_bams_to_fastq(
+            mapping_ob=clu.mappings[0],
+            which='mapped',
+            samtools_exe=samtools_exe,
+            logger=logger)
+        # clu.mappings[0].unmapped_ngsLib = convert_bams_to_fastq(
+        #     mapping_ob=clu.mappings[0],
+        #     which='mapped',
+        #     samtools_exe=samtools_exe,
+        #     logger=logger)
 
     except Exception as e:
         logger.error(e)
@@ -1597,12 +1613,11 @@ def assemble_initial_mapping(clu, nseqs, target_len, fetch_mates, logger,
 def extract_mapped_reads(mapping_ob, fetch_mates,
                          keep_unmapped, samtools_exe, logger=None):
     """
-    Take a prefix for a dir containing your mapped bam file.
     IF fetch_mates is true, mapped reads are extracted,
     and mates are feteched with the LC_ALL line.If not, that part is
     skipped, and just the mapped reads are extracted.
     Setting keep_unmapped to true will output a bam file with
-    all the remaining reads.  This could be used if you are really confident
+    all the remaining reads. This could be used if you are really confident
     there are no duplicate mapping_obs you are interested in.
      -F 4 option selects mapped reads
     Note that the umapped output includes reads whose pairs were mapped.
@@ -1654,6 +1669,56 @@ def extract_mapped_reads(mapping_ob, fetch_mates,
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, check=True)
     return 0
+
+
+def assemble_iterative_mapping(
+        clu, nseqs, max_iters, target_len, fetch_mates, logger,
+        samtools_exe, keep_unmapped_reads=False, prelim=True):
+    prelog = "{0}-{1}:".format("SEED_cluster", clu.index)
+    logger.info("%s processing mapping iteration %i", prelog, )
+    logger.info("%s item %i of %i", prelog, clu.index + 1, nseqs)
+    logger.debug("%s output dirs: \n%s\n%s", prelog,
+                 clu.mappings[0].assembly_subdir,
+                 clu.mappings[0].mapping_subdir)
+    try:
+        extract_mapped_reads(mapping_ob=clu.mappings[0],
+                             fetch_mates=fetch_mates,
+                             samtools_exe=samtools_exe,
+                             keep_unmapped=keep_unmapped_reads,
+                             logger=logger)
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
+    try:
+        convert_bams_to_fastq(mapping_ob=clu.mappings[0],
+                              keep_unmapped=False,
+                              samtools_exe=samtools_exe,
+                              logger=logger)
+
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
+    logger.info("%s Running SPAdes", prelog)
+    try:
+        run_spades(
+            mapping_ob=clu.mappings[0], ref_as_contig='trusted',
+            as_paired=False, keep_best=True, prelim=prelim,
+            groom_contigs='keep_first', k="21,33,55,77,99",
+            seqname='', spades_exe="spades.py", logger=logger)
+
+    except Exception as e:
+        logger.error("SPAdes error:")
+        logger.error(e)
+        sys.exit(1)
+    # if not clu.mapping.assembly_success:
+    #     logger.warning("%s Assembly failed: no spades output for %s",
+    #                    prelog, os.path.basename(fasta))
+    return 0
+
+
+
+
+
 
 
 
@@ -1759,10 +1824,14 @@ def extract_mapped_reads(mapping_ob, fetch_mates,
     logger.info("Combined Seed Contigs: {0}".format(new_contig_file))
     logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
     # logger.info("Time taken to run seeding: %.2fm" % (time.time() - t0) / 60)
+# run_final_assemblies(skip_control=args.skip_control,
+#                      new_contig_file=new_contig_file,
+#                      logger=logger)
+# def run_final_assemblies(skip_control, logger=logger):
     logger.info("\n\n Starting Final Assemblies\n\n")
 
     quast_reports = []
-    if not args.skip_control:
+    if not skip_control:
         final_list = ["de_novo", "de_fere_novo"]
     else:
         final_list = ["de_fere_novo"]
