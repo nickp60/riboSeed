@@ -218,15 +218,18 @@ class LociMapping(object):
     """ order of operations: map to reference, extract and convert,
     assemble, save results here
     """
-    def __init__(self, iteration, mapping_subdir, finished=False,
+    def __init__(self, iteration, mapping_subdir,
+                 mapping_success=False, assembly_success=False,
                  ref_path=None, pe_map_bam=None, s_map_bam=None,
                  sorted_map_bam=None, merge_map_sam=None, mapped_bam=None,
                  merge_map_bam=None, mapped_sam=None, spades_subdir=None,
-                 unmapped_sam=None, mappedF_fq=None, mappedR_fq=None,
+                 unmapped_sam=None, mappedF=None, mappedR=None,
                  mapped_ids_txt=None, unmapped_ids_txt=None, unmapped_bam=None,
-                 mappedS_fq=None, assembled_contig=None, assembly_subdir=None):
+                 mappedS=None, assembled_contig=None, assembly_subdir=None,
+                 unmappedF=None, unmappedR=None, unmappedS=None):
         self.iteration = iteration
-        self.finished = finished
+        self.mapping_success = mapping_success
+        self.assembly_success = assembly_success
         self.mapping_subdir = mapping_subdir
         self.assembly_subdir = assembly_subdir
         self.ref_path = ref_path
@@ -240,9 +243,13 @@ class LociMapping(object):
         self.unmapped_ids_txt = unmapped_ids_txt
         self.unmapped_sam = unmapped_sam
         self.unmapped_bam = unmapped_bam
-        self.mappedF_fq = mappedF_fq
-        self.mappedR_fq = mappedR_fq
-        self.mappedS_fq = mappedS_fq
+        #  The fastqs
+        self.mappedF = mappedF
+        self.mappedR = mappedR
+        self.mappedS = mappedS
+        self.unmappedF = unmappedF
+        self.unmappedR = unmappedR
+        self.unmappedS = unmappedS
         self.sorted_map_bam = sorted_map_bam   # used with intial mapping
         # self.sorted_map_subset_bam = sorted_map_subset_bam
         self.assembled_contig = assembled_contig
@@ -259,16 +266,6 @@ class LociMapping(object):
         if self.assembly_subdir is not None:
             if not os.path.isdir(self.assembly_subdir):
                 os.makedirs(self.assembly_subdir)
-
-    # def name_id_file(self):
-    #     self.mapped_ids_txt = os.path.join(os.path.basename(
-    #         self.merge_map_bam), "_mapped_IDs.txt")
-    # def make__subdir(self):
-    #     if not os.path.isdir(self.mapping_subdir):
-    #         os.makedirs(self.mapping_subdir)
-    # def make_mapping_subdir(self):
-    #     if not os.path.isdir(self.mapping_subdir):
-    #         os.makedirs(self.mapping_subdir)
 
 
 # class Locus(object):
@@ -557,32 +554,6 @@ def estimate_distances_smalt(outfile, smalt_exe, ref_genome,
         pass
     return outfile
 
-# TODO reimplement bwa, but use BWA-SW instead of MEM
-# def map_to_ref_map_mem(ref, fastq_read1, fastq_read2, map_results_prefix,
-#                        cores, stdout, stderr, kseed=19):
-#     """outputs in bam format to play nice with alternative option, bwa aln
-#         Since 0.5:
-#         -- removed unpaired penalty (for obvious reasons)|| -U def 9, now 0
-#         -- increased mismatch penalty || -B def 4, now 8
-#         -- open gap penalty decrease from 6 to 0
-#     """
-#     print('######  Running BWA MEM...' +
-#           str(datetime.time(datetime.now())).split('.')[0])
-#     subprocess.call('bwa index %s' % ref, shell=True, stdout=stdout,
-#                      stderr=stderr)
-#     try:
-#         kseed = int(kseed)
-#     except ValueError:
-#         raise("k must be numeric")
-#     subprocess.call('bwa mem -A 1 -d 20  -U 0 -L 100 -B 100 -a -O 6 -t '+
-#                     '%s -k %i %s %s %s > %s.sam' %
-#                     (cores, kseed, ref, fastq_read1, fastq_read2,
-#                      map_results_prefix),
-#                     stdout=stdout, stderr=stderr, shell=True)
-#     subprocess.call('samtools view -bhS %s.sam > %s.bam' %
-#                     (map_results_prefix, map_results_prefix), shell=True,
-#                     stdout=stdout, stderr=stderr)
-
 
 def map_to_ref_smalt(ref, fastq_read1, fastq_read2,
                      distance_results,
@@ -709,29 +680,35 @@ def map_to_genome_smalt(
                                       samtools_exe=samtools_exe)))
 
 
-def convert_bams_to_fastq(map_results_prefix,
-                          fastq_results_prefix,
+def convert_bams_to_fastq(mapping_ob,
                           keep_unmapped, samtools_exe, logger=None):
     """ return 6 paths: unmapped F, R, S and mapped F, R. S
     given the prefix for the mapped bam files, write out mapped (and optionally
     unmapped) reads to fasta files
     """
+    output_paths = {'mapped_bam': ['mappedF', 'mappedR', 'mappedS'],
+                    'unmapped_bam': ['unmappedF', 'unmappedR', 'unmappedS']}
+    for key, value in output_paths.items():
+        for fastq in value:
+            setattr(mapping_ob, fastq,
+                    str(os.path.splitext(mapping_ob.merge_map_bam)[0] +
+                        "_" + fastq + '.fastq'))
     convert_cmds = []
-    bams = ["_unmapped", "_mapped"]
-    for i in bams:
-        if not os.path.exists("%s%s.bam" % (map_results_prefix, i)):
-            if i == '_unmapped' and not keep_unmapped:
+    for key, val in output_paths.items():
+        if not os.path.exists(getattr(mapping_ob, key)):
+            if key == 'unmapped_bam' and not keep_unmapped:
                 continue
             else:
                 if logger:
-                    logger.error(str("No {0}{1}.bam file" +
-                                     "found").format(map_results_prefix, i))
-                raise FileNotFoundError("Cannot find bam mapping; files" +
-                                        "must have '_mapped.bam' prefix")
-        samfilter = \
-            str(samtools_exe + " fastq {0}{1}.bam -1 {2}{1}1.fastq -2 " +
-                "{2}{1}2.fastq -s {2}{1}S.fastq").format(map_results_prefix, i,
-                                                         fastq_results_prefix)
+                    logger.error(str("No {0} file found").format(
+                        getattr(mapping_ob, key)))
+                raise FileNotFoundError("No {0} file found".format(
+                    getattr(mapping_ob, key)))
+        samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
+            samtools_exe, getattr(mapping_ob, key),
+            getattr(mapping_ob, val[0]),
+            getattr(mapping_ob, val[1]),
+            getattr(mapping_ob, val[2]))
         convert_cmds.append(samfilter)
     if logger:
         logger.debug("running the following commands to extract reads:")
@@ -741,27 +718,13 @@ def convert_bams_to_fastq(map_results_prefix,
         subprocess.run(i, shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, check=True)
-    if keep_unmapped:
-        fnames = []
-        for bam_idx in (0, 1):
-            for suffix in ('1', '2', 'S'):
-                fnames.append("{0}{1}{2}.fastq".format(fastq_results_prefix,
-                                                       bams[bam_idx], suffix))
-            return fnames
-    else:
-        return(None,  # unmapped forward
-               None,  # unmapped reverse
-               None,  # unmapped Single
-               "%s%s1.fastq" % (fastq_results_prefix, bams[1]),  # mapped fwd
-               "%s%s2.fastq" % (fastq_results_prefix, bams[1]),  # mapped rev
-               "%s%sS.fastq" % (fastq_results_prefix, bams[1]))  # mapped s
 
 
-def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
-               as_paired=True, keep_best=True, prelim=False,
-               groom_contigs='keep_first',
-               k="21,33,55,77,99", seqname='', spades_exe="spades.py",
-               logger=None):
+
+def run_spades(
+        mapping_ob, ref_as_contig, as_paired=True, keep_best=True,
+        prelim=False, groom_contigs='keep_first', k="21,33,55,77,99",
+        seqname='', spades_exe="spades.py", logger=None):
     """return path to contigs
     wrapper for common spades setting for long illumina reads
     ref_as_contig should be either blank, 'trusted', or 'untrusted'
@@ -778,106 +741,68 @@ def run_spades(output, ref, ref_as_contig, pe1_1='', pe1_2='', pe1_s='',
         raise ValueError("groom_contigs option must be either 'keep_first' " +
                          "or 'consensus'")
     if seqname == '':
-        seqname = ref
+        seqname = mapping_ob.ref_path
     kmers = k  # .split[","]
-    success = False
     #  prepare reference, if being used
     if not ref_as_contig is None:
-        alt_contig = str("--%s-contigs %s" % (ref_as_contig, ref))
+        alt_contig = "--{0}-contigs {1}".format(
+            ref_as_contig, mapping_ob.ref_path)
     else:
         alt_contig = ''
     # prepare read types, etc
-    if as_paired and pe1_s != "":  # for libraries with both
-        singles = str("--pe1-s %s " % pe1_s)
-        pairs = str("--pe1-1 %s --pe1-2 %s " % (pe1_1, pe1_2))
-    elif as_paired and pe1_s == "":  # for libraries with just PE
+    if as_paired and mapping_ob.mappedS is not None:  # for lib with both
+        singles = "--pe1-s {0} ".format(mapping_ob.mappedS)
+        pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
+            mapping_ob.mappedF, mapping_ob.mappedR)
+    elif as_paired and mapping_ob.mappedS is None:  # for lib with just PE
         singles = ""
-        pairs = str("--pe1-1 %s --pe1-2 %s " % (pe1_1, pe1_2))
-    elif pe1_s == "":  # for libraries treating paired ends as two single-end libs
+        pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
+            mapping_ob.mappedF, mapping_ob.mappedR)
+    # for libraries treating paired ends as two single-end libs
+    elif not as_paired and mapping_ob.mappedS is None:
         singles = ''
-        pairs = str("--pe1-s %s --pe2-s %s " % (pe1_1, pe1_2))
+        pairs = "--pe1-s {0} --pe2-s {1} ".format(
+            mapping_ob.mappedF, mapping_ob.mappedR)
     else:  # for 3 single end libraries
-        singles = str("--pe1-s %s " % pe1_s)
-        pairs = str("--pe2-s %s --pe3-s %s " % (pe1_1, pe1_2))
+        singles = "--pe1-s {0} ".format(mapping_ob.mappedS)
+        pairs = str("--pe2-s {0} --pe3-s {1} ".format(
+            mapping_ob.mappedF, mapping_ob.mappedR))
     reads = str(pairs + singles)
 #    spades_cmds=[]
     if prelim:
-        prelim_cmd =\
-            str("{4}  --only-assembler --cov-cutoff off --sc --careful -k" +
-                " {0} {1} {2} -o {3}").format(kmers, reads, alt_contig,
-                                              output, spades_exe)
-        logger.debug("Running SPAdes command:\n{0}".format(prelim_cmd))
+        prelim_cmd = str(
+            "{0} --only-assembler --cov-cutoff off --sc --careful -k {1} " +
+            "{2} {3} -o {4}").format(spades_exe, kmers, reads, alt_contig,
+                                     mapping_ob.assembly_subdir)
+        logger.debug("Running SPAdes command:\n%s", prelim_cmd)
         subprocess.run(prelim_cmd,
                        shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, check=True)
-        success = output_from_subprocess_exists(os.path.join(output,
-                                                             "contigs.fasta"))
-        if groom_contigs == "keep_first" and success:
+        mapping_ob.assembly_success = output_from_subprocess_exists(
+            os.path.join(mapping_ob.assembly_subdir, "contigs.fasta"))
+        if groom_contigs == "keep_first" and mapping_ob.assembly_success:
             logger.info("reserving first contig")
             try:
-                keep_only_first_contig(str(os.path.join(output,
-                                                        "contigs.fasta")),
-                                       newname=os.path.splitext(
-                                           os.path.basename(seqname))[0])
+                keep_only_first_contig(
+                    os.path.join(mapping_ob.assembly_subdir, "contigs.fasta"),
+                    newname=os.path.splitext(os.path.basename(seqname))[0])
             except Exception as f:
                 logger.error(f)
                 raise f
-        elif success and groom_contigs == "consensus":
-            # get consensus; copy ref for starters to double check later
-            contigs_backup = copy_file(current_file=ref, dest_dir=output,
-                                       name=str("backedup_contigs.fasta"),
-                                       overwrite=True, logger=logger)
-
-            logger.debug("copying {0} to {0} as a backup to self-test " +
-                         " consensus".format(ref, contigs_backup))
-            # make pileup
-            pileupcmd = str("smalt index {0} {0} ; smalt map {0} {1} | " +
-                            "samtools sort - | samtools mpileup -f {0} - -o " +
-                            "{2}").format(ref,
-                                          os.path.join(output,
-                                                       'contigs.fasta'),
-                                          os.path.join(output,
-                                                       'contigs_pileup.txt'))
-            subprocess.run(pileupcmd,
-                           shell=sys.platform != "win32",
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
-            # test pileup
-            try:
-                pileup = check_samtools_pileup(
-                    os.path.join(output, 'contigs_pileup.txt'))
-            except Exception as e:
-                logger.error(e)
-                sys.exit(1)
-            # parse pileup
-            try:
-                consensus = reconstruct_seq(refpath=ref, pileup=pileup,
-                                            verbose=False, veryverb=False,
-                                            logger=logger)
-            except Exception as e:
-                logger.error(e)
-                sys.exit(1)
-
-            with open(os.path.join(output, 'contigs.fasta'), 'w') as new_seqs:
-                seqrec = Seq(consensus, IUPAC.IUPACAmbiguousDNA())
-                SeqIO.write(SeqRecord(seqrec,
-                                      id="contigs_consensus_riboSeed",
-                                      description=""), new_seqs, 'fasta')
         else:
             logger.warning("No output from SPAdes this time around")
     else:
-        spades_cmd = str(spades_exe + " --careful -k {0} {1} {2} -o " +
-                         "{3}").format(kmers, reads, alt_contig, output)
-        logger.info("Running the following command:\n{0}".format(spades_cmd))
+        spades_cmd = "{0} --careful -k {1} {2} {3} -o {4}".format(
+            spades_exe, kmers, reads, alt_contig, mapping_ob.assembly_subdir)
+        logger.warning("Running the following command:\n{0}".format(spades_cmd))
         subprocess.run(spades_cmd,
                        shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE)
         # not check=True; dont know spades return codes
-        success = output_from_subprocess_exists(os.path.join(output,
-                                                             "contigs.fasta"))
-    return("{0}contigs.fasta".format(os.path.join(output, "")), success)
+        mapping_ob.assembly_success = output_from_subprocess_exists(
+            os.path.join(mapping_ob.assembly_subdir, "contigs.fasta"))
 
 
 def check_samtools_pileup(pileup):
@@ -1092,15 +1017,14 @@ def partition_mapped_reads(seedGenome, samtools_exe,
                                assembly_subdir=assembly_subdir,
                                # sorted_map_subset_bam=sorted_map_subset_bam,
                                sorted_map_bam=sorted_map_bam,
-                               finished=False,
                                ref_path=None,
                                pe_map_bam=None,
                                s_map_bam=None,
                                merge_map_bam=merge_map_bam,
                                mapped_sam=None,
-                               unmapped_sam=None, mappedF_fq=None,
-                               mappedR_fq=None,
-                               mappedS_fq=None)
+                               unmapped_sam=None, mappedF=None,
+                               mappedR=None,
+                               mappedS=None)
         if sorted([x.start_coord for x in cluster.loci_list]) != \
            [x.start_coord for x in cluster.loci_list]:
             logger.warning("Coords are not in increasing order; " +
@@ -1180,7 +1104,6 @@ def partition_mapped_reads(seedGenome, samtools_exe,
                                     seedGenome.output_root, str(
                                         seedGenome.name +
                                         "_unmapped_iteration_0")),
-                                finished=False,
                                 ref_path=None,
                                 pe_map_bam=None,
                                 s_map_bam=None,
@@ -1188,9 +1111,9 @@ def partition_mapped_reads(seedGenome, samtools_exe,
                                     seedGenome.initial_map_prefix +
                                     "_sorted.bam"),
                                 merge_map_bam=None, mapped_sam=None,
-                                unmapped_sam=None, mappedF_fq=None,
-                                mappedR_fq=None,
-                                mappedS_fq=None)
+                                unmapped_sam=None, mappedF=None,
+                                mappedR=None,
+                                mappedS=None)
     init_unmapped.merge_map_bam = str(
         init_unmapped.mapping_subdir +
         os.path.sep +
@@ -1627,23 +1550,51 @@ if __name__ == "__main__":
         #     sys.exit(1)
 
 def assemble_initial_mapping(clu, nseqs, target_len, fetch_mates, logger,
-                             samtools_exe, keep_unmapped_reads=False):
+                             samtools_exe, keep_unmapped_reads=False,
+                             prelim=True):
     prelog = "{0}-{1}:".format("SEED_cluster", clu.index)
     logger.info("%s processing initial mapping", prelog)
     logger.info("%s item %i of %i", prelog, clu.index + 1, nseqs)
     logger.debug("%s output dirs: \n%s\n%s", prelog,
                  clu.mappings[0].assembly_subdir,
                  clu.mappings[0].mapping_subdir)
-    # seed_len = clu.global_end_coord - clu.global_start_coord
-    extract_mapped_reads(mapping=clu.mappings[0],
-                         fetch_mates=fetch_mates,
-                         samtools_exe=samtools_exe,
-                         keep_unmapped=keep_unmapped_reads,
-                         logger=logger)
+    try:
+        extract_mapped_reads(mapping_ob=clu.mappings[0],
+                             fetch_mates=fetch_mates,
+                             samtools_exe=samtools_exe,
+                             keep_unmapped=keep_unmapped_reads,
+                             logger=logger)
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
+    try:
+        convert_bams_to_fastq(mapping_ob=clu.mappings[0],
+                              keep_unmapped=False,
+                              samtools_exe=samtools_exe,
+                              logger=logger)
+
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
+    logger.info("%s Running SPAdes", prelog)
+    try:
+        run_spades(
+            mapping_ob=clu.mappings[0], ref_as_contig='trusted',
+            as_paired=False, keep_best=True, prelim=prelim,
+            groom_contigs='keep_first', k="21,33,55,77,99",
+            seqname='', spades_exe="spades.py", logger=logger)
+
+    except Exception as e:
+        logger.error("SPAdes error:")
+        logger.error(e)
+        sys.exit(1)
+    # if not clu.mapping.assembly_success:
+    #     logger.warning("%s Assembly failed: no spades output for %s",
+    #                    prelog, os.path.basename(fasta))
     return 0
 
 
-def extract_mapped_reads(mapping, fetch_mates,
+def extract_mapped_reads(mapping_ob, fetch_mates,
                          keep_unmapped, samtools_exe, logger=None):
     """
     Take a prefix for a dir containing your mapped bam file.
@@ -1652,68 +1603,57 @@ def extract_mapped_reads(mapping, fetch_mates,
     skipped, and just the mapped reads are extracted.
     Setting keep_unmapped to true will output a bam file with
     all the remaining reads.  This could be used if you are really confident
-    there are no duplicate mappings you are interested in.
+    there are no duplicate mapping_obs you are interested in.
      -F 4 option selects mapped reads
     Note that the umapped output includes reads whose pairs were mapped.
     This is to try to catch the stragglers.
     LC_ALL=C  call from pierre lindenbaum. No idea how it does, but its magic
     """
+    all_files = {'sam': ['merge_map_sam', 'unmapped_sam', 'mapped_sam'],
+                 'txt': ['unmapped_ids_txt', 'mapped_ids_txt'],
+                 'bam': ['unmapped_bam', 'mapped_bam', 'unmapped_bam']}
     extract_cmds = []
-    mapping.merge_map_sam = '{0}.sam'.format(
-        os.path.splitext(mapping.merge_map_bam)[0])
-    mapping.unmapped_sam = '{0}_unmapped.sam'.format(
-        os.path.splitext(mapping.merge_map_bam)[0])
-    mapping.unmapped_bam = '{0}_unmapped.bam'.format(
-        os.path.splitext(mapping.merge_map_bam)[0])
-    mapping.mapped_sam = '{0}_mapped.sam'.format(
-        os.path.splitext(mapping.merge_map_bam)[0])
-    mapping.mapped_bam = '{0}_mapped.bam'.format(
-        os.path.splitext(mapping.merge_map_bam)[0])
-    mapping.unmapped_ids_txt = '{0}_unmappedIDs.txt'.format(
-        os.path.splitext(mapping.merge_map_bam)[0])
-    mapping.mapped_ids_txt = '{0}_mappedIDs.txt'.format(
-        os.path.splitext(mapping.merge_map_bam)[0])
+    for key, values in all_files.items():
+        for value in values:
+            setattr(mapping_ob, value,
+                    str(os.path.splitext(mapping_ob.merge_map_bam)[0] +
+                        "_" + value + "." + key))
+
     # Either get nates or ignore mates
     if fetch_mates:
-        makesam = "{0} view -o {1}".format(samtools_exe, mapping.merge_map_sam)
+        makesam = "{0} view -o {1}".format(samtools_exe, mapping_ob.merge_map_sam)
         samview = str("{0} view -h -F 4 {1} | cut -f1 > {2}").format(
-            samtools_exe, mapping.merge_map_bam, mapping.mapped_ids_txt)
+            samtools_exe, mapping_ob.merge_map_bam, mapping_ob.mapped_ids_txt)
         lc_cmd = str("LC_ALL=C grep -w -F -f {0}  < {1} > {2}").format(
-            mapping.mapped_ids_txt, mapping.merge_map_sam, mapping.mapped_sam)
+            mapping_ob.mapped_ids_txt, mapping_ob.merge_map_sam, mapping_ob.mapped_sam)
         extract_cmds.extend([makesam, samview, lc_cmd])
     else:
         samview = str("{0} view -hS -F 4 {1} > {2}").format(
-            samtools_exe, mapping.merge_map_bam, mapping.mapped_sam)
+            samtools_exe, mapping_ob.merge_map_bam, mapping_ob.mapped_sam)
         extract_cmds.extend([samview])
     samsort = str("{0} view -bhS {1} | samtools sort - > {2}").format(
-        samtools_exe, mapping.mapped_sam, mapping.mapped_bam)
-    samindex = " {0} index {1}".format(samtools_exe, mapping.mapped_bam)
+        samtools_exe, mapping_ob.mapped_sam, mapping_ob.mapped_bam)
+    samindex = " {0} index {1}".format(samtools_exe, mapping_ob.mapped_bam)
     extract_cmds.extend([samsort, samindex])
     if keep_unmapped:
         samviewU = str("{0} view -f 4 {1} | cut -f1 > {2}").format(
-            samtools_exe, mapping.mapped_bam, mapping.unmapped_ids_txt)
+            samtools_exe, mapping_ob.mapped_bam, mapping_ob.unmapped_ids_txt)
         lc_cmdU = str("LC_ALL=C grep -w -F -f {0} < {1} > {2}").format(
-            mapping.unmapped_ids_txt, mapping.merge_map_sam,
-            mapping.unmapped_sam)
+            mapping_ob.unmapped_ids_txt, mapping_ob.merge_map_sam,
+            mapping_ob.unmapped_sam)
         samindexU = str("{0} view -bhS {1} " +
                         "| {0} sort - -o {2} && {0} index {2}").format(
-            samtools_exe, mapping.unmapped_sam, mapping.unmapped_bam,)
+            samtools_exe, mapping_ob.unmapped_sam, mapping_ob.unmapped_bam,)
         extract_cmds.extend([samviewU, lc_cmdU, samindexU])
     if logger:
         logger.debug("running the following commands to extract reads:")
     for i in extract_cmds:
         if logger:
-            logger.warning(i)
+            logger.debug(i)
         subprocess.run(i, shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, check=True)
     return 0
-
-
-
-
-
-
 
 
 
@@ -1839,12 +1779,13 @@ def extract_mapped_reads(mapping, fetch_mates,
             sys.exit(1)
         logger.info("Running %s SPAdes" % j)
         output_contigs, \
-            final_success = run_spades(pe1_1=args.fastq1, pe1_2=args.fastq2,
-                                       output=os.path.join(results_dir, j),
-                                       ref=assembly_ref,
-                                       ref_as_contig=assembly_ref_as_contig,
-                                       prelim=False, keep_best=False,
-                                       k=args.kmers, logger=logger)
+            final_success = run_spades(
+                pe1_1=args.fastq1, pe1_2=args.fastq2,
+                output=os.path.join(results_dir, j),
+                ref=assembly_ref,
+                ref_as_contig=assembly_ref_as_contig,
+                prelim=False, keep_best=False,
+                k=args.kmers, logger=logger)
         if final_success:
             logger.info("Running %s QUAST" % j)
             run_quast(contigs=output_contigs,

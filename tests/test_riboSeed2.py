@@ -31,16 +31,17 @@ import multiprocessing
 
 from pyutilsnrw.utils3_5 import check_installed_tools, md5, file_len
 
-from riboSeed.riboSeed2 import SeedGenome, ngsLib, LociCluster, LociMapping,\
-    map_to_genome_smalt, add_coords_to_clusters, partition_mapped_reads,\
-    assemble_initial_mapping, extract_mapped_reads
+from riboSeed.riboSeed2 import SeedGenome, ngsLib, LociCluster, LociMapping, \
+    map_to_genome_smalt, add_coords_to_clusters, partition_mapped_reads, \
+    assemble_initial_mapping, extract_mapped_reads, convert_bams_to_fastq, \
+    run_spades
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
-    stitch_together_target_regions, get_genbank_rec_from_multigb,\
-    pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd,\
-    calc_Shannon_entropy, calc_entropy_msa,\
-    annotate_msa_conensus, plot_scatter_with_anno, get_all_kmers,\
+    stitch_together_target_regions, get_genbank_rec_from_multigb, \
+    pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd, \
+    calc_Shannon_entropy, calc_entropy_msa, \
+    annotate_msa_conensus, plot_scatter_with_anno, \
     profile_kmer_occurances, plot_pairwise_least_squares, make_msa
 
 
@@ -97,8 +98,7 @@ class riboSeed2TestCase(unittest.TestCase):
     def test_LociMapping(self):
         testmapping = LociMapping(
             iteration=1,
-            mapping_subdir=os.path.join(self.test_dir, "LociMapping"),
-            finished=False)
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
         self.assertTrue(os.path.isdir(testmapping.mapping_subdir))
 
     def test_ngsLib(self):
@@ -232,7 +232,7 @@ class riboSeed2TestCase(unittest.TestCase):
                 samtools_exe=self.samtools_exe,
                 keep_unmapped_reads=False,
                 logger=logger)
-       # pool = multiprocessing.Pool(processes=4)
+        # pool = multiprocessing.Pool(processes=4)
         # results = [pool.apply_async(assemble_initial_mapping,
         #                             (cluster,),
         #                             {"nseqs": len(gen.loci_clusters),
@@ -246,6 +246,7 @@ class riboSeed2TestCase(unittest.TestCase):
         # print(results[0])
         # print(results[0].get())
         # results[0].get()
+
     def tearDown(self):
         """ delete temp files if no errors
         """
