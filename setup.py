@@ -39,7 +39,6 @@ if sys.version_info <= (3, 0):
 install_reqs = parse_requirements(path.join(here, "requirements.txt"),
                                   session=False)
 requirements = [str(ir.req) for ir in install_reqs]
-print(requirements)
 setup(
     name='riboSeed',
 
@@ -48,11 +47,11 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version=init_version,
 
-    description='assembline stuff in a more vtter manner',
+    description='riboSeed: assemble across rDNA regions',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/nickp60/pyutilsnrw',
+    url='https://github.com/nickp60/riboSeed',
 
     # Author details
     author='Nick Waters',
@@ -92,7 +91,8 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['riboSeed'],
+    # packages=['riboSeed'],
+    packages=find_packages(),
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
@@ -136,5 +136,5 @@ setup(
     # Using the scripts keyword here for speed, as the entry points are not
     # yet defined
     scripts=['riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
-             'riboSeed/riboSnag.py'],
+             'riboSeed/riboSnag.py', 'riboSeed/riboSeed2.py'],
 )

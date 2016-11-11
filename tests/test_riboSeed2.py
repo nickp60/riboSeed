@@ -191,27 +191,23 @@ class riboSeed2TestCase(unittest.TestCase):
             circular=False,
             logger=logger)
         add_coords_to_clusters(seedGenome=gen, logger=logger)
-        # map_to_genome_ref_smalt(
-        #     ref=gen.ref_fasta,
-        #     ngsLib=gen.ngs_ob,
-        #     map_results_prefix=gen.initial_map_prefix,
-        #     cores=2,
-        #     samtools_exe=self.samtools_exe,
-        #     smalt_exe=self.smalt_exe,
-        #     score_minimum=None,
-        #     step=3, k=5,
-        #     scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-        #     logger=logger)
+        map_to_genome_ref_smalt(
+            ref=gen.ref_fasta,
+            ngsLib=gen.ngs_ob,
+            map_results_prefix=gen.initial_map_prefix,
+            cores=2,
+            samtools_exe=self.samtools_exe,
+            smalt_exe=self.smalt_exe,
+            score_minimum=None,
+            step=3, k=5,
+            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+            logger=logger)
         # add output root to each
         partition_mapped_reads(
             seedGenome=gen,
             samtools_exe=self.samtools_exe,
             flank=[0, 0],
             logger=logger)
-        # print(gen.__dict__)
-        # print(gen.loci_clusters[0].__dict__)
-        print("ref_fasta")
-        print(gen.ref_fasta)
         logger.warning("running without multiprocessing!")
         for cluster in gen.loci_clusters:
             assemble_iterative_mapping(
