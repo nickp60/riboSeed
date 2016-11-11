@@ -951,13 +951,13 @@ if __name__ == "__main__":
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
-    package_init = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "__init__.py")
-
-    # log version of riboSeed, commandline options, and all settings
-    logger.info("riboSeed pipeine package version {0}".format(
-        check_version_from_init(init_file=package_init, min_version="0.0.0")))
+    # package_init = os.path.join(
+    #     os.path.dirname(os.path.abspath(__file__)),
+    #     "__init__.py")
+    # logger.debug("checking for init file: %s", package_init)
+    # # log version of riboSeed, commandline options, and all settings
+    # logger.info("riboSeed pipeine package version {0}".format(
+    #     check_version_from_init(init_file=package_init, min_version="0.0.0")))
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
