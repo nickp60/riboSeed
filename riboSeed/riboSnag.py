@@ -52,7 +52,7 @@ class LociCluster(object):
                  global_start_coord=None, global_end_coord=None,
                  seq_record=None, feat_of_interest=None, mappings=None,
                  extractedSeqRecord=None, cluster_dir_name=None,
-                 circular=False, output_root=None):
+                 circular=False, output_root=None, final_contigs_path=None):
         self.index = index
         self.sequence_id = sequence_id
         self.loci_list = loci_list  # this holds the Locus objects
@@ -66,6 +66,7 @@ class LociCluster(object):
         self.mappings = mappings
         self.seq_record = seq_record
         self.extractedSeqRecord = extractedSeqRecord
+        self.final_contig_path = final_contigs_path
         self.name_mapping_dir()
 
     def name_mapping_dir(self):
