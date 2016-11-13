@@ -53,19 +53,32 @@ class LociCluster(object):
                  seq_record=None, feat_of_interest=None, mappings=None,
                  extractedSeqRecord=None, cluster_dir_name=None,
                  circular=False, output_root=None, final_contigs_path=None):
+        # int: unique identifier for cluster
         self.index = index
+        # str: sequence name, usually looks like 'NC_17777373.1' or similar
         self.sequence_id = sequence_id
+        # list: hold locus objects for each item in cluster
         self.loci_list = loci_list  # this holds the Locus objects
+        # int: bounds ____[___.....rRNA....rRNA..rRNA....__]_________
         self.global_start_coord = global_start_coord
         self.global_end_coord = global_end_coord
+        # int: how much to pad sequences y if treating as circular
         self.padding = padding
+        # str: feature for filtering: rRNA, cDNA, exon, etc
         self.feat_of_interest = feat_of_interest
+        # Bool: treat seqs as circular by padding the ends
         self.circular = circular
+        # path: where your cluster-specific output goes
         self.cluster_dir_name = cluster_dir_name  # named dynamically
+        # path: where the overall output goes
         self.output_root = output_root
+        # list: lociMapping objects that hold mappinging paths
         self.mappings = mappings
+        # SeqRecord: holds SeqIO Seqrecord for sequence_id
         self.seq_record = seq_record
+        # SeqRecord: holds SeqIO Seqrecord for seq extracted from global coords
         self.extractedSeqRecord = extractedSeqRecord
+        # path: for best contig after riboseed2 iterations
         self.final_contig_path = final_contigs_path
         self.name_mapping_dir()
 
@@ -80,16 +93,20 @@ class Locus(object):
     def __init__(self, index, sequence_id, locus_tag, strand=None,
                  start_coord=None, end_coord=None, rel_start_coord=None,
                  rel_end_coord=None, product=None):
-        # self.parent ??
+        # int: unique identifier for cluster
         self.index = index
+        # str: sequence name, usually looks like 'NC_17777373.1' or similar
         self.sequence_id = sequence_id  # is this needed? I dont think so as long
-        # as a locus is never decoupled from the LociCluster
+        # str: unique identifier from \locus_tag= of gb file
         self.locus_tag = locus_tag
-        self.strand = strand  # 1 is +, -1 is -
+        # int: 1 is +strand, -1 is -strand
+        self.strand = strand
+        # int:
         self.start_coord = start_coord
         self.end_coord = end_coord
         # self.rel_start_coord = rel_start_coord  # start relative to length of region
         # self.rel_end_coord = rel_end_coord  # end relative to length of region
+        # str: from \product= of gb file
         self.product = product
 
 
