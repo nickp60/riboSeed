@@ -104,3 +104,4 @@ test_snag/*
 test_seed/*
 tests/output_riboseed2_tests/
 test_ribo2/
+test_mapps/
