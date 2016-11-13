@@ -9,21 +9,6 @@ Created on Sun Jul 24 19:33:37 2016
 
 See README.md for more info and usage
 
-
-### iooutline
-read in (multi)gb, and a riboSelect output
-constroct a seedGenome
-- append seq record
-- append all needed loci_clusters
-- append all needed Locus
-
-map all reads to genome
-extract and link files to loci
-
-extract
-
-
-
 ###
 
 
@@ -62,6 +47,7 @@ from riboSnag import parse_clustered_loci_file, \
 
 ## GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
+PACKAGE_VERSION = '0.4.0'
 #################################### classes ###############################
 
 
@@ -111,7 +97,9 @@ class SeedGenome(object):
             str(self.name + "_initial_mapping"),
             "initial_mapping")
         self.final_contigs_dir = os.path.join(
-            self.output_root, "mauve_path")
+            self.output_root, "seeded_contigs")
+        if not os.path.isdir(self.final_contigs_dir):
+            os.makedirs(self.final_contigs_dir)
 
     def write_fasta_genome(self):
         """
@@ -211,7 +199,7 @@ class LociMapping(object):
     """ order of operations: map to reference, extract and convert,
     assemble, save results here
     """
-    def __init__(self, iteration, mapping_subdir,
+    def __init__(self, iteration, mapping_subdir=None,
                  mapping_success=False, assembly_success=False,
                  ref_fasta=None, pe_map_bam=None, s_map_bam=None,
                  sorted_map_bam=None, merge_map_sam=None, mapped_bam=None,
@@ -248,14 +236,21 @@ class LociMapping(object):
         self.make_assembly_subdir()
 
     def make_mapping_subdir(self):
-        if not os.path.isdir(self.mapping_subdir):
-            os.makedirs(self.mapping_subdir)
+        print("making subdir")
+        if self.mapping_subdir is None:
+            pass
+        else:
+            if not os.path.isdir(self.mapping_subdir):
+                os.makedirs(self.mapping_subdir)
+            else:
+                pass
 
     def make_assembly_subdir(self):
         if self.assembly_subdir_needed:
             if self.assembly_subdir is not None:
                 if not os.path.isdir(self.assembly_subdir):
                     os.makedirs(self.assembly_subdir)
+
         else:
             pass
 
@@ -577,7 +572,6 @@ def map_to_genome_ref_smalt(
         #               "{5}").format(score_min, cores, ngsLib.smalt_dist_path,
         #                             map_results_prefix, ngsLib.readS0,
         #                             scoring, smalt_exe)
-        print("HHHHHHHHHH %s$$$$$" %ngsLib.readS0)
         cmdmapS = str("{0} map -S {1} -m {2} -n {3} -g {4} -f bam -o {5}" +
                       "S.bam {6} {7}").format(smalt_exe, scoring, score_min,
                                               cores, ngsLib.smalt_dist_path,
@@ -651,7 +645,7 @@ def convert_bams_to_fastq(mapping_ob, samtools_exe, which='mapped',
 
 
 def run_spades(
-        mapping_ob, ref_as_contig, as_paired=True, keep_best=True,
+        mapping_ob, ngs_ob, ref_as_contig, as_paired=True, keep_best=True,
         prelim=False, groom_contigs='keep_first', k="21,33,55,77,99",
         seqname='', spades_exe="spades.py", logger=None):
     """return path to contigs
@@ -679,23 +673,23 @@ s    #TODO
     else:
         alt_contig = ''
     # prepare read types, etc
-    if as_paired and mapping_ob.mapped_ngsLib.readS0 is not None:  # for lib with both
-        singles = "--pe1-s {0} ".format(mapping_ob.mappedS)
+    if as_paired and ngs_ob.readS0 is not None:  # for lib with both
+        singles = "--pe1-s {0} ".format(ngs_ob.readS)
         pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
-            mapping_ob.mapped_ngsLib.readF, mapping_ob.mapped_ngsLib.readR)
-    elif as_paired and mapping_ob.mapped_ngsLib.readS0 is None:  # for lib with just PE
+            ngs_ob.readF, ngs_ob.readR)
+    elif as_paired and ngs_ob.readS0 is None:  # for lib with just PE
         singles = ""
         pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
-            mapping_ob.mapped_ngsLib.readF, mapping_ob.mapped_ngsLib.readR)
+            ngs_ob.readF, ngs_ob.readR)
     # for libraries treating paired ends as two single-end libs
-    elif not as_paired and mapping_ob.mapped_ngsLib.readS0 is None:
+    elif not as_paired and ngs_ob.readS0 is None:
         singles = ''
         pairs = "--pe1-s {0} --pe2-s {1} ".format(
-            mapping_ob.mapped_ngsLib.readF, mapping_ob.mapped_ngsLib.readR)
+            ngs_ob.readF, ngs_ob.readR)
     else:  # for 3 single end libraries
-        singles = "--pe1-s {0} ".format(mapping_ob.mapped_ngsLib.readS0)
+        singles = "--pe1-s {0} ".format(ngs_ob.readS0)
         pairs = str("--pe2-s {0} --pe3-s {1} ".format(
-            mapping_ob.mapped_ngsLib.readF, mapping_ob.mapped_ngsLib.readR))
+            ngs_ob.readF, ngs_ob.readR))
     reads = str(pairs + singles)
 #    spades_cmds=[]
     if prelim:
@@ -736,8 +730,6 @@ s    #TODO
         mapping_ob.assembly_subdir, "contigs.fasta")
 
 
-
-
 def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     """This skips any fields not in first report, for better or worse...
     """
@@ -760,8 +752,8 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
                             continue  # skip header
                         else:
                             mainDict[row] = [val]
-            except Exception as e:
-                raise e("error parsing %s", i)
+            except Exception:
+                raise ValueError("error parsing %s", i)
         else:
             report_list = []
             try:
@@ -1042,7 +1034,7 @@ def extract_mapped_reads(mapping_ob, fetch_mates,
 
 def assemble_iterative_mapping(clu, args, nseqs, target_len,
                                samtools_exe, min_contig_len,
-                               final_contigs_path, fetch_mates,# seedG,
+                               final_contigs_dir, fetch_mates,
                                proceed_to_target=False, min_growth=0,
                                keep_unmapped_reads=False,
                                include_short_contigs=False, prelim=True):
@@ -1092,7 +1084,9 @@ def assemble_iterative_mapping(clu, args, nseqs, target_len,
     logger.info("%s Running SPAdes", prelog)
     try:
         run_spades(
-            mapping_ob=clu.mappings[-1], ref_as_contig='trusted',
+            mapping_ob=clu.mappings[-1],
+            ngs_ob=clu.mappings[-1].mapped_ngsLib,
+            ref_as_contig='trusted',
             as_paired=False, keep_best=True, prelim=prelim,
             groom_contigs='keep_first', k="21,33,55,77,99",
             seqname='', spades_exe="spades.py", logger=logger)
@@ -1199,7 +1193,7 @@ def assemble_iterative_mapping(clu, args, nseqs, target_len,
             fetch_mates=fetch_mates, min_growth=min_growth,
             # master_ngs_ob=clu.master_ngs_ob,
             samtools_exe=samtools_exe,
-            final_contigs_path=final_contigs_path,
+            final_contigs_dir=final_contigs_dir,
             min_contig_len=min_contig_len,
             proceed_to_target=proceed_to_target,
             keep_unmapped_reads=keep_unmapped_reads,
@@ -1210,9 +1204,9 @@ def assemble_iterative_mapping(clu, args, nseqs, target_len,
         return(1)
     else:
         try:
-            contigs_new_path = copy_file(
+            clu.contigs_new_path = copy_file(
                 current_file=clu.mappings[-1].assembled_contig,
-                dest_dir=final_contigs_path,
+                dest_dir=final_contigs_dir,
                 name=str(os.path.basename(clu.mappings[-1].assembled_contig) +
                          "_final_iter_" +
                          str(clu.mappings[-1].iteration) + ".fasta"),
@@ -1226,6 +1220,81 @@ def assemble_iterative_mapping(clu, args, nseqs, target_len,
     #     logger.info("removing temporary files from {0}".format(mapping_dir))
     #     clean_temp_dir(clu.output_root)
     return 0
+
+
+def run_final_assemblies(args, seedGenome, logger=None):
+    """
+    """
+    logger.info("\n\n Starting Final Assemblies\n\n")
+    quast_reports = []
+    final_list = ["de_fere_novo"]
+    if not args.skip_control:
+        final_list.append("de_novo")
+    for j in final_list:
+        final_mapping = LociMapping(iteration=None,
+                                    mapping_subdir=None,
+                                    assembly_subdir_needed=True,
+                                    assembly_subdir=os.path.join(
+                                        seedGenome.output_root,
+                                        "final_{0}_assembly".format(j)),
+                                    sorted_map_bam=None,
+                                    # ref_fasta=seedGenome.ref_fasta,
+                                    pe_map_bam=None,
+                                    s_map_bam=None,
+                                    merge_map_bam=None,
+                                    mapped_sam=None,
+                                    unmapped_sam=None, mappedF=None,
+                                    mappedR=None,
+                                    mappedS=None)
+        logging.info("\n\nRunning %s SPAdes \n" % j)
+        if j == "de_novo":
+            final_mapping.ref_fasta = ''
+            assembly_ref_as_contig = None
+        elif j == "de_fere_novo":
+            final_mapping.ref_fasta = seedGenome.assembled_contig
+            assembly_ref_as_contig = 'trusted'
+        else:
+            raise ValueError("Only valid cases are de novo and de fere novo!")
+        logger.info("Running %s SPAdes" % j)
+        try:
+            run_spades(
+                ngs_ob=seedGenome.master_ngs_ob,
+                mapping_ob=final_mapping,
+                ref_as_contig=assembly_ref_as_contig,
+                as_paired=True, keep_best=False, prelim=False,
+                seqname='', spades_exe=args.spades_exe,
+                k=args.kmers, logger=logger)
+        except Exception as e:
+            raise e
+        if final_mapping.assembly_success:
+            logger.info("Running %s QUAST" % j)
+            run_quast(contigs=seedGenome.assembled_contig,
+                      output=os.path.join(seedGenome.output_root,
+                                          str("quast_" + j)),
+                      quast_exe=args.quast_exe,
+                      threads=args.cores,
+                      ref=seedGenome.ref_fasta,
+                      logger=logger)
+        else:
+            logger.error("Some error occured during final assemblies; " +
+                         "SPAdes logs")
+        quast_reports.append(os.path.join(seedGenome.output_root,
+                                          str("quast_" + j), "report.tsv"))
+
+    if not args.skip_control:
+        logger.debug("writing combined quast reports")
+        try:
+            quast_comp = make_quick_quast_table(
+                quast_reports,
+                write=True,
+                writedir=seedGenome.output_root,
+                logger=logger)
+            for k, v in sorted(quast_comp.items()):
+                logger.info("{0}: {1}".format(k, "  ".join(v)))
+        except Exception as e:
+            logger.error("Error writing out combined quast report")
+            logger.error(e)
+        logger.info("Comparing de novo and de fere novo assemblies:")
 
 
 #%%
@@ -1254,8 +1323,9 @@ if __name__ == "__main__":
     #     "__init__.py")
     # logger.debug("checking for init file: %s", package_init)
     # # log version of riboSeed, commandline options, and all settings
-    # logger.info("riboSeed pipeine package version {0}".format(
-    #     check_version_from_init(init_file=package_init, min_version="0.0.0")))
+    logger.info("riboSeed pipeine package version {0}".format(
+        PACKAGE_VERSION))
+
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
@@ -1380,13 +1450,11 @@ if __name__ == "__main__":
                            logger=logger)
     # add keep_contigs and continue iterating attribute
     for cluster in seedGenome.loci_clusters:
-        cluster.keep_contigs = True  # by default, include all
+        cluster.keep_contig = True  # by default, include all
         cluster.continue_iterating = True  # by default, keep going
         cluster.master_ngs_ob = seedGenome.master_ngs_ob
 
     # Run commands to map to the genome
-    print("ref_fasta")
-    print(seedGenome.ref_fasta)
     map_to_genome_ref_smalt(ref=seedGenome.ref_fasta,
                             ngsLib=seedGenome.master_ngs_ob,
                             map_results_prefix=seedGenome.initial_map_prefix,
@@ -1408,133 +1476,54 @@ if __name__ == "__main__":
         for cluster in seedGenome.loci_clusters:
             assemble_iterative_mapping(cluster,
                                        args=args,
-                                       # master_ngs_ob=seedGenome.master_ngs_ob,
                                        nseqs=len(seedGenome.loci_clusters),
                                        seedG=seedGenome,
                                        fetch_mates=False,
                                        include_short_contigs=False,
-                                       min_contig_len=6000,
-                                       target_len=7000,
-                                       final_contigs_path=seedGenome.final_contigs_dir,
+                                       min_contig_len=args.min_assembly_len,
+                                       target_len=args.target_len,
+                                       final_contigs_dir=seedGenome.final_contigs_dir,
                                        samtools_exe=args.samtools_exe,
                                        keep_unmapped_reads=False)
     else:
-        import pickle
-        # m = multiprocessingManager()
-        # m_clusters = m.list(seedGenome.loci_clusters)
         pool = multiprocessing.Pool(processes=args.cores)
-        # results = [pool.apply_async(print_ob,
-        #                             (cluster.index,),
-        #                             {"logger": logger})
-        #            for cluster in seedGenome.loci_clusters]
         nseqs = len(seedGenome.loci_clusters)
         results = [pool.apply_async(assemble_iterative_mapping,
                                     (cluster.index,),
                                     {"nseqs": nseqs,
-                                     # "master_ngs_ob": 4, #seedGenome.master_ngs_ob,
-                                     # "seedG": pickle.dumps(seedGenome),
                                      "args": args,
                                      "fetch_mates": False,
                                      "include_short_contigs": False,
-                                     "min_contig_len": 6000,
-                                     "target_len": 7000,
-                                     "final_contigs_path": seedGenome.final_contigs_dir,
+                                     "min_contig_len": args.min_assembly_len,
+                                     "target_len": args.target_len,
+                                     "final_contigs_dir": seedGenome.final_contigs_dir,
                                      "samtools_exe": args.samtools_exe,
                                      "keep_unmapped_reads": False})
                    for cluster in seedGenome.loci_clusters]
         pool.close()
         pool.join()
         logger.info(results)
-        print(results[0].get())
         logger.info(sum([r.get() for r in results]))
-
-
-
-
-
-    # ### if using smalt (which you are), check for mapped reference
-    # if args.method == 'smalt':
-    #     path_to_distance_file = os.path.join(results_dir, mapped_genome_sam)
-    #     dist_est = estimate_distances_smalt(outfile=path_to_distance_file,
-    #                                         smalt_exe=args.smalt_exe,
-    #                                         ref_genome=args.reference_genome,
-    #                                         fastq1=args.fastq1,
-    #                                         fastq2=args.fastq2,
-    #                                         cores=args.cores, logger=logger)
-    # else:
-    #     logger.error("As of v 0.88, only supported mapper is 'smalt'")
-    #     sys.exit(1)
-
-
-    # logging.info("combinging contigs from %s" % mauve_dir)
-    # new_contig_file = combine_contigs(contigs_dir=mauve_dir,
-    #                                   contigs_name="riboSeedContigs",
-    #                                   logger=logger)
-    # logger.info("Combined Seed Contigs: {0}".format(new_contig_file))
-    # logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
-    # logger.info("Time taken to run seeding: %.2fm" % (time.time() - t0) / 60)
-# run_final_assemblies(skip_control=args.skip_control,
-#                      new_contig_file=new_contig_file,
-#                      logger=logger)
-
-
-def run_final_assemblies(skip_control, logger=None):
-    """
-    """
-    logger.info("\n\n Starting Final Assemblies\n\n")
-
-    quast_reports = []
-    if not skip_control:
-        final_list = ["de_novo", "de_fere_novo"]
-    else:
-        final_list = ["de_fere_novo"]
-    for j in final_list:
-        logging.info("\n\nRunning %s SPAdes \n" % j)
-        if j == "de_novo":
-            assembly_ref = ''
-            assembly_ref_as_contig = None
-        elif j == "de_fere_novo":
-            assembly_ref = new_contig_file
-            assembly_ref_as_contig = 'trusted'
-        else:
-            logger.error("Only valid cases are de novo and de fere novo!")
-            sys.exit(1)
-        logger.info("Running %s SPAdes" % j)
-        output_contigs, \
-            final_success = run_spades(
-                pe1_1=args.fastq1, pe1_2=args.fastq2,
-                output=os.path.join(results_dir, j),
-                ref=assembly_ref,
-                ref_as_contig=assembly_ref_as_contig,
-                prelim=False, keep_best=False,
-                k=args.kmers, logger=logger)
-        if final_success:
-            logger.info("Running %s QUAST" % j)
-            run_quast(contigs=output_contigs,
-                      output=os.path.join(results_dir, str("quast_" + j)),
-                      quast_exe=args.quast_exe,
-                      threads=args.cores,
-                      ref=args.reference_genome,
-                      logger=logger)
-        else:
-            logger.error("Some error occured during final assemblies; " +
-                         "SPAdes logs")
-        quast_reports.append(os.path.join(results_dir, str("quast_" + j),
-                                          "report.tsv"))
-
-    if not args.skip_control:
-        logger.debug("writing combined quast reports")
-        try:
-            quast_comp = make_quick_quast_table(quast_reports,
-                                                write=True,
-                                                writedir=results_dir,
-                                                logger=logger)
-            for k, v in sorted(quast_comp.items()):
-                logger.info("{0}: {1}".format(k, "  ".join(v)))
-        except Exception as e:
-            logger.error("Error writing out combined quast report")
-            logger.error(e)
-        logger.info("Comparing de novo and de fere novo assemblies:")
+    logging.info("combinging contigs from %s", seedGenome.final_contigs_dir)
+    try:
+        seedGenome.assembled_contig = combine_contigs(
+            contigs_dir=seedGenome.final_contigs_dir,
+            contigs_name="riboSeedContigs",
+            logger=logger)
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
+    logger.info("Combined Seed Contigs: %s", seedGenome.assembled_contig)
+    logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
+    # run final contigs
+    try:
+        run_final_assemblies(args=args, seedGenome=seedGenome, logger=logger)
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
     # Report that we've finished
-    logger.info("Done: %s." % time.asctime())
+    logger.info("Done: %s", time.asctime())
+    logger.info("riboSeed Assembly: %s", seedGenome.output_root)
+    logger.info("Combined Contig Seeds (for validation or alternate " +
+                "assembly): %s", seedGenome.assembled_contig)
     logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
