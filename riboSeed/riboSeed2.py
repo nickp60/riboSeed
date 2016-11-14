@@ -58,66 +58,103 @@ class SeedGenome(object):
     """
     def __init__(self, genbank_path, this_iteration=0, ref_fasta=None,
                  loci_clusters=None, output_root=None, initial_map_bam=None,
-                 final_contigs_dir=None, unmapped_ngsLib=None, name=None,
-                 reads_mapped_txt=None, unmapped_mapping_list=None,
-                 initial_map_sam=None, unmapped_sam=None,
+                 final_contigs_dir=None, unmapped_ngsLib=None, name=None, iter_mapping_list=None,
+                 reads_mapped_txt=None, unmapped_mapping_list=None, max_iterations=None,
+                 initial_map_sam=None, unmapped_sam=None, initial_mapping_ob=None,
                  clustered_loci_txt=None, seq_records=None, initial_map_prefix=None,
                  initial_map_sorted_bam=None, master_ngs_ob=None, logger=None):
         self.name = name  # get from commsanline in case running multiple
         self.this_iteration = this_iteration  # this should always start at 0
+        self.max_iterations = max_iterations  # this should always start at 0
+        self.iter_mapping_list = iter_mapping_list  # this should always start at 0
+        # The main output for resulting files, all other are relative
         self.output_root = output_root
+        # from command line
         self.genbank_path = genbank_path
+        # This is created from genbank
         self.ref_fasta = ref_fasta  # this is made dynamically
+        # output from riboSelect
         self.clustered_loci_txt = clustered_loci_txt
-        self.loci_clusters = loci_clusters  # this holds LociCluster objects
+        # holds a list of LociCluster objects
+        self.loci_clusters = loci_clusters
+        # this set below with attach_genome_seqRecor
         self.seq_records = seq_records  # this is set
+        self.initial_mapping_ob = initial_mapping_ob
+        # this will hold prefix for initial mapping
         self.initial_map_prefix = initial_map_prefix  # set this dynamically
-        self.initial_map_sorted_bam = initial_map_sorted_bam  # set this dynamically
+        # extracting reads by position requires an indexed, sorted bam
+        self.initial_map_sorted_bam = initial_map_sorted_bam  # set dynamically
+        # inial mapping result (combined s and pe)
         self.initial_map_bam = initial_map_bam  # set this dynamically
+        # see above
         self.initial_map_sam = initial_map_sam  # set this dynamically
+        # holds user-provided sequencing data. Keep intact for final assembly
         self.master_ngs_ob = master_ngs_ob  # for ngslib object
+        # each round of seeding results in a ml list for remaining reads
         self.unmapped_mapping_list = unmapped_mapping_list
-        self.unmapped_ngsLib = unmapped_ngsLib
+        # holds dynamically updated list of remaining unmapped
         self.unmapped_sam = unmapped_sam
+        # after paritioning, the last mapping list is extraced into this ngs ob
+        self.unmapped_ngsLib = unmapped_ngsLib
+        # path to file mapped readnames are appended to
         self.reads_mapped_txt = reads_mapped_txt
+        # destination for seeded contigs prior to final assemblies
         self.final_contigs_dir = final_contigs_dir
+        # a logger
         self.logger = logger
+        # self.set_up_iterdirs()
         self.write_fasta_genome()
-        self.attach_genome_seqRecord()
+        self.attach_genome_seqRecords()
         self.check_records()
         self.make_map_paths_and_dir()
+        self.make_initial_mapping_ob()
 
     def make_map_paths_and_dir(self):
-        initial_map_dir = os.path.join(self.output_root,
-                                       str(self.name + "_initial_mapping"))
-        if not os.path.isdir(initial_map_dir):
-            os.makedirs(initial_map_dir)
-        self.initial_map_sorted_bam = os.path.join(
-            self.output_root,
-            str(self.name + "_initial_mapping"),
-            "initial_mapping_sorted.bam")
-        self.initial_map_bam = os.path.join(
-            self.output_root,
-            str(self.name + "_initial_mapping"),
-            "initial_mapping.bam")
-        self.initial_map_sam = os.path.join(
-            self.output_root,
-            str(self.name + "_initial_mapping"),
-            "initial_mapping.sam")
-        self.reads_mapped_txt = os.path.join(
-            self.output_root,
-            "reads_mapped.txt")
-        self.initial_map_prefix = os.path.join(
-            self.output_root,
-            str(self.name + "_initial_mapping"),
-            "initial_mapping")
-        self.final_contigs_dir = os.path.join(
-            self.output_root, "seeded_contigs")
-        if not os.path.isdir(self.final_contigs_dir):
-            os.makedirs(self.final_contigs_dir)
+        """ Given a output root, this prepares all the needed subdirs and paths
+        """
+        for i in range(0, self.max_iterations):
+            self.iter_mapping_list.append(LociMapping(
+                name="{0}_mapping_for_iter_{1}".format(self.name, i),
+                iteration=i,
+                mapping_subdir=os.path.join(
+                    self.output_root,
+                    "{0}_mapping_for_iter_{1}".format(self.name, i)),
+                assembly_subdir_needed=False))
+
+        # self.initial_map_sorted_bam = os.path.join(
+        #     self.mapping_list[0],
+        #     str(self.name + "_initial_mapping"),
+        #     "initial_mapping_sorted.bam")
+        # self.initial_map_bam = os.path.join(
+        #     self.mapping_list[0],
+        #     str(self.name + "_initial_mapping"),
+        #     "initial_mapping.bam")
+        # self.initial_map_sam = os.path.join(
+        #     self.mapping_list[0],
+        #     str(self.name + "_initial_mapping"),
+        #     "initial_mapping.sam")
+        # self.reads_mapped_txt = os.path.join(
+        #     self.output_root,
+        #     "reads_mapped.txt")
+        # self.initial_map_prefix = os.path.join(
+        #     self.output_root,
+        #     str(self.name + "_initial_mapping"),
+        #     "initial_mapping")
+        # self.final_contigs_dir = os.path.join(
+        #     self.output_root, "seeded_contigs")
+        # if not os.path.isdir(self.final_contigs_dir):
+        #     os.makedirs(self.final_contigs_dir)
+
+    # def set_up_iterdirs(self):
+    #     for i in range(0, self.max_iterations):
+    #         dirname = os.path.join(self.output_root,
+    #                                "mapping_iteration_{0}".format(i))
+    #         if not os.path.isdir(dirname):
+    #             os.makedirs(self.final_contigs_dir)
+    #         self.mapping_list.append(dirname)
 
     def write_fasta_genome(self):
-        """
+        """Given a genbank file, this writes out as (multi)fasta
         """
         self.name = os.path.splitext(
             os.path.basename(self.genbank_path))[0]
@@ -129,39 +166,62 @@ class SeedGenome(object):
                 count = SeqIO.write(sequences, outfh, "fasta")
                 # print("re-wrote %i sequences as fasta" % count)
 
-    def attach_genome_seqRecord(self):
-        """
+    def attach_genome_seqRecords(self):
+        """attach a list of seqrecords
         """
         with open(self.genbank_path, 'r') as fh:
             self.seq_records = list(SeqIO.parse(fh, "genbank"))
 
     def check_records(self):
+        # ensures we have a entry for each record
         assert len(list(SeqIO.parse(self.ref_fasta, "fasta"))) == \
             len(self.seq_records), "Error parsing genbank file!"
+
+    def make_initial_mapping_ob(self):
+        self.initial_mapping_ob = LociMapping(
+            name='initial',
+            iteration=0,
+            mapping_subdir=os.path.join(
+                self.output_root, str(self.name + "_initial_mapping")),
+            assembly_subdir_needed=True,
+            assembly_subdir=os.path.join(
+                self.output_root, str(self.name + "_final_mapping")))
+        self.initial_mapping_ob.ref_fasta = self.ref_fasta
 
 
 class ngsLib(object):
     """paired end data object
+    This is made post mapping, prior to extraction.
     """
     def __init__(self, name, master=False, readF=None, readR=None,
                  readS0=None, readS1=None, mapping_success=False,
-                 # readS1=None, readS2=None, readS3=None,
                  smalt_dist_path=None, readlen=None,
                  libtype=None, logger=None, smalt_exe=None,
                  ref_fasta=None):
         self.name = name
+        # Bool: whether this is a master record
         self.master = master
+        # holds libtype detected from non-None libraries
         self.libtype = libtype  # set this dynamically
+        # forward Fastq path
         self.readF = readF
+        # reverse Fastq path
         self.readR = readR
+        # singleton Fastq path
         self.readS0 = readS0
+        # other singleton fastq path (thining ahead, but not really...)
         self.readS1 = readS1
+        # detected from Forward fastq with gget_readlen below
         self.readlen = readlen  # set this dynamically
-        self.logger = logger
-        self.smalt_exe = smalt_exe
-        self.ref_fasta = ref_fasta
+        # bool: did mapping have errors?
         self.mapping_success = mapping_success
+        # needed to generate distance file if master
+        self.smalt_exe = smalt_exe
+        # also needed to generate distance file if master
+        self.ref_fasta = ref_fasta
+        # results of distance mapping
         self.smalt_dist_path = smalt_dist_path  # set this dynamically
+        self.logger = logger
         self.set_libtype()
         self.get_readlen()
         self.smalt_insert_file()
@@ -211,46 +271,55 @@ class ngsLib(object):
 
 
 class LociMapping(object):
-    """ order of operations: map to reference, extract and convert,
+    """
+    instantiate with iteration, mapping subdir, and ref
+    map_ref_genome_will use it and an ngslib for mapping
+    extract_
+    order of operations: map to reference, extract and convert,
     assemble, save results here
     """
-    def __init__(self, iteration, mapping_subdir=None,
+    def __init__(self, name, iteration, mapping_subdir, mapping_prefix=None,
                  mapping_success=False, assembly_success=False,
                  ref_fasta=None, pe_map_bam=None, s_map_bam=None,
-                 sorted_map_bam=None, merge_map_sam=None, mapped_bam=None,
-                 merge_map_bam=None, mapped_sam=None, spades_subdir=None,
+                 sorted_mapped_bam=None, merge_map_sam=None, mapped_bam=None,
+                  mapped_sam=None, spades_subdir=None,
                  unmapped_sam=None, mappedF=None, mappedR=None,
                  mapped_ids_txt=None, unmapped_ids_txt=None, unmapped_bam=None,
                  mappedS=None, assembled_contig=None, assembly_subdir=None,
                  unmappedF=None, unmappedR=None, unmappedS=None,
                  mapped_ngsLib=None, unmapped_ngsLib=None,
                  assembly_subdir_needed=True):
+        # int: current iteration (0 is initial)
         self.iteration = iteration
-        # self.mapping_success = mapping_success
+        self.name = name
+        # bool: did the eassembly run without errors
         self.assembly_success = assembly_success
+        # results for the
         self.mapping_subdir = mapping_subdir
         self.assembly_subdir = assembly_subdir
         self.assembly_subdir_needed = assembly_subdir_needed
+        self.mapping_prefix = mapping_prefix  # set dynamically
         self.ref_fasta = ref_fasta
+        #### do not ever name these directly
         self.pe_map_bam = pe_map_bam  # all reads from pe mapping
         self.s_map_bam = s_map_bam  # all reads from singltons mapping
-        self.merge_map_bam = merge_map_bam  # combined pe and s as bam
-        self.merge_map_sam = merge_map_sam  # combined pe and s as sam
         self.mapped_sam = mapped_sam  # mapped reads only, sam
         self.mapped_bam = mapped_bam  # mapped reads only, bam
         self.mapped_ids_txt = mapped_ids_txt
         self.unmapped_ids_txt = unmapped_ids_txt
         self.unmapped_sam = unmapped_sam
         self.unmapped_bam = unmapped_bam
+        self.sorted_mapped_bam = sorted_mapped_bam   # used with intial mapping
+
         self.mapped_ngsLib = mapped_ngsLib
         self.unmapped_ngsLib = unmapped_ngsLib
-        self.sorted_map_bam = sorted_map_bam   # used with intial mapping
         self.assembled_contig = assembled_contig
         ###
-        self.make_mapping_subdir()
+        self.make_mapping_subdir_and_prefix()
         self.make_assembly_subdir()
+        self.name_bams_and_sams()
 
-    def make_mapping_subdir(self):
+    def make_mapping_subdir_and_prefix(self):
         print("making subdir")
         if self.mapping_subdir is None:
             pass
@@ -259,13 +328,26 @@ class LociMapping(object):
                 os.makedirs(self.mapping_subdir)
             else:
                 pass
+            self.mapping_prefix = os.path.join(
+                self.mapping_subdir,
+                "{0}_iteration_{1}".format(self.name, self.iteration))
+
+    def name_bams_and_sams(self):
+        self.pe_map_bam = str(self.mapping_prefix + "_pe.bam")
+        self.s_map_bam = str(self.mapping_prefix + "_s.bam")
+        self.mapped_bam = str(self.mapping_prefix + ".bam")
+        self.unampped_bam = str(self.mapping_prefix + "unmapped.bam")
+        self.sorted_mapped_bam = str(self.mapping_prefix + "_sorted.bam")
+        self.mapped_sam = str(self.mapping_prefix + ".sam")
+        self.unmapped_sam = str(self.mapping_prefix + "_unmapped.sam")
+        self.unmapped_ids_txt = str(self.mapping_prefix + "_unmapped.txt")
+        self.mapped_ids_txt = str(self.mapping_prefix + "_mapped.txt")
 
     def make_assembly_subdir(self):
         if self.assembly_subdir_needed:
             if self.assembly_subdir is not None:
                 if not os.path.isdir(self.assembly_subdir):
                     os.makedirs(self.assembly_subdir)
-
         else:
             pass
 
@@ -348,7 +430,7 @@ def get_args():  # pragma: no cover
                           help="min score forsmalt mapping; inferred from " +
                           "read length" +
                           "; default: inferred")
-    optional.add_argument("--include_shorts", dest='include_shorts',
+    optional.add_argument("--include_shorts", dest='include_short_contigs',
                           action="store_true",
                           default=False,
                           help="if assembled contig is smaller than  " +
@@ -554,14 +636,14 @@ def estimate_distances_smalt(outfile, smalt_exe, ref_genome,
     return outfile
 
 
-def map_to_genome_ref_smalt(
-        ref, ngsLib, map_results_prefix, cores,
-        samtools_exe, smalt_exe, score_minimum=None, step=3,
-        k=5, scoring="match=1,subst=-4,gapopen=-4,gapext=-3", logger=None):
+def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
+                            samtools_exe, smalt_exe, score_minimum=None, step=3,
+                            k=5, scoring="match=1,subst=-4,gapopen=-4,gapext=-3", logger=None):
     """run smalt based on pased args
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
+    logger.info("Mapping all reads to reference genome")
     # check min score
     if score_minimum is None:
         score_min = int(ngsLib.readlen * .3)
@@ -569,34 +651,40 @@ def map_to_genome_ref_smalt(
         score_min = score_minimum
     logger.debug(str("mapping with smalt using a score min of " +
                      "{0}").format(score_min))
+    # index the reference
     cmdindex = str("{0} index -k {1} -s {2} {3} {3}").format(
-        smalt_exe, k, step, ref)
-    cmdmap = str('{7} map -l pe -S {8} ' +
-                 '-m {0} -n {1} -g {2} -f bam -o {3}_pe.bam {4} {5} ' +
-                 '{6}').format(score_min, cores, ngsLib.smalt_dist_path,
-                               map_results_prefix, ref,
+        smalt_exe, k, step, mapping_ob.ref_fasta)
+    # map paired end reads to reference index
+    # cmdmap = str('{7} map -l pe -S {8} ' +
+    #              '-m {0} -n {1} -g {2} -f bam -o {3}_pe.bam {4} {5} {6}
+    cmdmap = str('{0} map -l pe -S {1} ' +
+                 '-m {2} -n {3} -g {4} -f bam -o {5} {6} {7} ' +
+                 '{8}').format(smalt_exe, scoring,
+                               score_min, cores, ngsLib.smalt_dist_path,
+                               mapping_ob.pe_map_bam, mapping_ob.ref_fasta,
                                ngsLib.readF,
-                               ngsLib.readR, smalt_exe, scoring)
+                               ngsLib.readR)
+
     smaltcommands = [cmdindex, cmdmap]
 
+    # if singletons are present, map those too.  Index is already made
     if ngsLib.readS0 is not None:
-        cmdindexS = str('{0} index -k {1} -s {2} {3} {3}').format(
-            smalt_exe, k, step, ref)
-        # cmdmapS = str("{7} map -S {6} " +
-        #               "-m {0} -n {1} -g {2} -f bam -o {3}S.bam {4} " +
-        #               "{5}").format(score_min, cores, ngsLib.smalt_dist_path,
-        #                             map_results_prefix, ngsLib.readS0,
-        #                             scoring, smalt_exe)
+        # cmdindexS = str('{0} index -k {1} -s {2} {3} {3}').format(
+        #     smalt_exe, k, step, mapping_ob.ref_fasta)
         cmdmapS = str("{0} map -S {1} -m {2} -n {3} -g {4} -f bam -o {5}" +
-                      "S.bam {6} {7}").format(smalt_exe, scoring, score_min,
-                                              cores, ngsLib.smalt_dist_path,
-                                              map_results_prefix, ref, ngsLib.readS0)
-        cmdmergeS = str('{0} merge -f  {1}.bam {1}_pe.bam ' +
-                        '{1}S.bam').format(samtools_exe, map_results_prefix)
-        smaltcommands.extend([cmdindexS, cmdmapS, cmdmergeS])
+                      "{6} {7}").format(
+                          smalt_exe, scoring, score_min, cores,
+                          ngsLib.smalt_dist_path, mapping_ob.s_map_bam,
+                          mapping_ob.ref_fasta, ngsLib.readS0)
+        # merge together the singleton and pe reads
+        cmdmergeS = str('{0} merge -f  {1} {2} ' +
+                        '{3}').format(samtools_exe, mapping_ob.pe_map_bam,
+                                           mapping_ob.s_map_bam, mapping_ob.mapped_bam)
+        # smaltcommands.extend([cmdindexS, cmdmapS, cmdmergeS])
+        smaltcommands.extend([cmdmapS, cmdmergeS])
     else:
-        cmdmerge = str("{0} view -bh {1}_pe.bam >" +
-                       "{1}.bam").format(samtools_exe, map_results_prefix)
+        cmdmerge = str("{0} view -bh {1} >" +
+                       "{2}").format(samtools_exe, mapping_ob.pe_map_bam, mapping_ob.mapped_bam)
         smaltcommands.extend([cmdmerge])
     logger.info("running SMALT:")
     logger.debug("with the following SMALT commands:")
@@ -605,21 +693,65 @@ def map_to_genome_ref_smalt(
         subprocess.run(i, shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, check=True)
+    # report simgpleton reads mapped
     if ngsLib.readS0 is not None:
         logger.info(str("Singleton mapped reads: " +
-                        get_number_mapped(str(map_results_prefix + "S.bam"),
+                        get_number_mapped(mapping_ob.s_map_bam,
                                           samtools_exe=samtools_exe)))
+    # report paired reads mapped
     logger.info(str("PE mapped reads: " +
-                    get_number_mapped(str(map_results_prefix + "_pe.bam"),
+                    get_number_mapped(mapping_ob.pe_map_bam,
                                       samtools_exe=samtools_exe)))
     logger.info(str("Combined mapped reads: " +
-                    get_number_mapped(str(map_results_prefix + ".bam"),
+                    get_number_mapped(mapping_ob.mapped_bam,
                                       samtools_exe=samtools_exe)))
+    # apparently there have been no errors, so mapping success!
     ngsLib.mapping_success = True
 
 
-def convert_bams_to_fastq(mapping_ob, samtools_exe, which='mapped',
-                          logger=None):
+# def convert_bams_to_fastq(mapping_ob, samtools_exe, which='mapped',
+#                           logger=None):
+#     """     returns ngslib
+#     """
+#     if which not in ['mapped', 'unmapped']:
+#         raise ValueError("only valid options are mapped and unmapped")
+#     read_path_dict = {'readF': None, 'readR': None, 'readS': None}
+#     for key, value in read_path_dict.items():
+#         read_path_dict[key] = str(os.path.splitext(
+#             mapping_ob.mapped_bam)[0] + which + key + '.fastq')
+#     convert_cmds = []
+
+#     if not os.path.exists(getattr(mapping_ob, str(which + "_bam"))):
+#         if logger:
+#             logger.error(str("No {0} file found").format(
+#                 getattr(mapping_ob, str(which + "_bam"))))
+#         raise FileNotFoundError("No {0} file found".format(
+#             getattr(mapping_ob, str(which + "_bam"))))
+#     samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
+#         samtools_exe,
+#         getattr(mapping_ob, str(which + "_bam")),
+#         read_path_dict['readF'],
+#         read_path_dict['readR'],
+#         read_path_dict['readS'])
+#     convert_cmds.append(samfilter)
+#     if logger:
+#         logger.debug("running the following commands to extract reads:")
+#     for i in convert_cmds:
+#         if logger:
+#             logger.debug(i)
+#         subprocess.run(i, shell=sys.platform != "win32",
+#                        stdout=subprocess.PIPE,
+#                        stderr=subprocess.PIPE, check=True)
+#     return(ngsLib(name=which, master=False,
+#                   logger=logger,
+#                   readF=read_path_dict['readF'],
+#                   readR=read_path_dict['readR'],
+#                   readS0=read_path_dict['readS'],
+#                   ref_fasta=mapping_ob.ref_fasta))
+
+
+def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
+                               which='mapped', logger=None):
     """     returns ngslib
     """
     if which not in ['mapped', 'unmapped']:
@@ -627,15 +759,9 @@ def convert_bams_to_fastq(mapping_ob, samtools_exe, which='mapped',
     read_path_dict = {'readF': None, 'readR': None, 'readS': None}
     for key, value in read_path_dict.items():
         read_path_dict[key] = str(os.path.splitext(
-            mapping_ob.merge_map_bam)[0] + which + key + '.fastq')
+            mapping_ob.mapped_bam)[0] + which + key + '.fastq')
     convert_cmds = []
 
-    if not os.path.exists(getattr(mapping_ob, str(which + "_bam"))):
-        if logger:
-            logger.error(str("No {0} file found").format(
-                getattr(mapping_ob, str(which + "_bam"))))
-        raise FileNotFoundError("No {0} file found".format(
-            getattr(mapping_ob, str(which + "_bam"))))
     samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
         samtools_exe,
         getattr(mapping_ob, str(which + "_bam")),
@@ -643,31 +769,22 @@ def convert_bams_to_fastq(mapping_ob, samtools_exe, which='mapped',
         read_path_dict['readR'],
         read_path_dict['readS'])
     convert_cmds.append(samfilter)
-    if logger:
-        logger.debug("running the following commands to extract reads:")
-    for i in convert_cmds:
-        if logger:
-            logger.debug(i)
-        subprocess.run(i, shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE, check=True)
-    return(ngsLib(name=which, master=False,
-                  logger=logger,
-                  readF=read_path_dict['readF'],
-                  readR=read_path_dict['readR'],
-                  readS0=read_path_dict['readS'],
-                  ref_fasta=mapping_ob.ref_fasta))
+    return(convert_cmds, ngsLib(name=which, master=False,
+                                logger=logger,
+                                readF=read_path_dict['readF'],
+                                readR=read_path_dict['readR'],
+                                readS0=read_path_dict['readS'],
+                                ref_fasta=ref_fasta))
 
 
-def run_spades(
-        mapping_ob, ngs_ob, ref_as_contig, as_paired=True, keep_best=True,
-        prelim=False, groom_contigs='keep_first', k="21,33,55,77,99",
-        seqname='', spades_exe="spades.py", logger=None):
-    """return path to contigs
+def generate_spades_cmd(
+        mapping_ob, ngs_ob, ref_as_contig, as_paired=True, prelim=False,
+        k="21,33,55,77,99", spades_exe="spades.py", logger=None):
+    """return spades command so we can multiprocess the assemblies
     wrapper for common spades setting for long illumina reads
     ref_as_contig should be either blank, 'trusted', or 'untrusted'
-    prelim flag is True, only assembly is run, and without coverage correction
-s    #TODO
+    prelim flag is True, only assembly is run, and without coverage corrections
+    #TODO
     the seqname variable is used only for renaming the resulting contigs
     during iterative assembly.  It would be nice to inheirit from "ref",
     but that is changed with each iteration. This should probably be addressed
@@ -675,11 +792,6 @@ s    #TODO
     """
     if logger is None:
         raise ValueError("this must be used with a logger!")
-    if groom_contigs not in ['keep_first', 'consensus']:
-        raise ValueError("groom_contigs option must be either 'keep_first' " +
-                         "or 'consensus'")
-    if seqname == '':
-        seqname = os.path.splitext(os.path.basename(mapping_ob.ref_fasta))[0]
     kmers = k  # .split[","]
     #  prepare reference, if being used
     if not ref_as_contig is None:
@@ -706,43 +818,176 @@ s    #TODO
         pairs = str("--pe2-s {0} --pe3-s {1} ".format(
             ngs_ob.readF, ngs_ob.readR))
     reads = str(pairs + singles)
-#    spades_cmds=[]
     if prelim:
         prelim_cmd = str(
             "{0} --only-assembler --cov-cutoff off --sc --careful -k {1} " +
             "{2} {3} -o {4}").format(spades_exe, kmers, reads, alt_contig,
                                      mapping_ob.assembly_subdir)
         logger.debug("Running SPAdes command:\n%s", prelim_cmd)
-        subprocess.run(prelim_cmd,
-                       shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE, check=True)
-        mapping_ob.assembly_success = output_from_subprocess_exists(
-            os.path.join(mapping_ob.assembly_subdir, "contigs.fasta"))
-        if groom_contigs == "keep_first" and mapping_ob.assembly_success:
-            logger.info("reserving first contig")
-            try:
-                keep_only_first_contig(
-                    os.path.join(mapping_ob.assembly_subdir, "contigs.fasta"),
-                    newname=seqname)
-            except Exception as f:
-                logger.error(f)
-                raise f
-        else:
-            logger.warning("No output from SPAdes this time around")
+        return prelim_cmd
     else:
         spades_cmd = "{0} --careful -k {1} {2} {3} -o {4}".format(
             spades_exe, kmers, reads, alt_contig, mapping_ob.assembly_subdir)
         logger.debug("Running the following command:\n{0}".format(spades_cmd))
-        subprocess.run(spades_cmd,
-                       shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE)
-        # not check=True; dont know spades return codes
-        mapping_ob.assembly_success = output_from_subprocess_exists(
-            os.path.join(mapping_ob.assembly_subdir, "contigs.fasta"))
+        return spades_cmd
+
+
+def get_extract_convert_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
+                                    spades_exe, ref_as_contig, logger):
+    commands = []
+    # extract_cmd = extract_mapped_reads(
+    #     mapping_ob=mapping_ob,
+    #     fetch_mates=fetch_mates,
+    #     samtools_exe=samtools_exe,
+    #     keep_unmapped=False,
+    #     logger=logger)
+    # commands.append(extract_cmd)
+    convert_cmds, new_ngslib = convert_bams_to_fastq_cmds(
+        mapping_ob=mapping_ob, samtools_exe=samtools_exe,
+        ref_fasta=mapping_ob.ref_fasta, which='mapped', logger=None)
+    commands.append(convert_cmds)
+    spades_cmd = generate_spades_cmd(
+        mapping_ob=mapping_ob,
+        ngs_ob=new_ngslib,
+        ref_as_contig='trusted',
+        as_paired=False, prelim=True,
+        k="21,33,55,77,99",
+        spades_exe=spades_exe, logger=logger)
+    commands.append(spades_cmd)
+# except Exception as e:
+#         logger.error(e)
+#         sys.exit(1)
+    return(commands, new_ngslib)
+
+
+def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
+                            min_assembly_len, min_growth,
+                            include_short_contigs, keep_best_contig=True,
+                            seqname='', logger=None):
+    """return path to contigs
+s    #TODO
+    """
+    prelog = "{0}-{1}:".format("SEED_cluster", clu.index)
+    if logger is None:
+        raise ValueError("this must be used with a logger!")
+    if seqname == '':
+        seqname = os.path.splitext(os.path.basename(mapping_ob.ref_fasta))[0]
+    mapping_ob.assembly_success = output_from_subprocess_exists(
+        os.path.join(mapping_ob.assembly_subdir, "contigs.fasta"))
+    if keep_best_contig and mapping_ob.assembly_success:
+        logger.info("reserving first contig")
+        try:
+            keep_only_first_contig(
+                os.path.join(mapping_ob.assembly_subdir, "contigs.fasta"),
+                newname=seqname)
+        except Exception as f:
+            logger.error(f)
+            raise f
+    elif not mapping_ob.assembly_success:
+        logger.warning("No output from SPAdes this time around")
+    else:
+        pass
     mapping_ob.assembled_contig = os.path.join(
         mapping_ob.assembly_subdir, "contigs.fasta")
+    ########################################################
+
+    prelog = "{0}-{1}-iter{2}:".format("SEED_cluster", clu.index,
+                                       clu.mappings[-1].iteration)
+    if clu.mappings[-1].iteration == 0:
+        logger.info("%s analyzing  initial mapping", prelog)
+    seed_len = get_fasta_lengths(mapping_ob.ref_fasta)[0]
+    # set proceed_to_target params
+    if proceed_to_target:
+        if target_len > 0 and 5 > target_len:
+            target_seed_len = int(target_len * seed_len)
+        elif target_len > 50:
+            target_seed_len = int(target_len)
+        else:
+            logger.error("%s invalid target length provided; must be given " +
+                         "as fraction of total length or as an absolute " +
+                         "number of base pairs greater than 50", prelog)
+            sys.exit(1)
+    else:
+        pass
+    if not clu.mappings[-1].assembly_success:
+        logger.warning("%s Assembly failed: no spades output for %s",
+                       prelog, os.path.basename(mapping_ob.ref_fasta))
+    # compare lengths of reference and freshly assembled contig
+    contig_len = get_fasta_lengths(mapping_ob.assembled_contig)[0]
+    # contig_len = get_fasta_lengths(mapping_ob.assembled_contig)[0]
+    ref_len = get_fasta_lengths(mapping_ob.ref_fasta)[0]
+    contig_length_diff = contig_len - ref_len
+    logger.info("%s Seed length: %i", prelog, seed_len)
+    if proceed_to_target:
+        logger.info("Target length: {0}".format(target_seed_len))
+    logger.info("%s Length of this iteration's longest contig: %i",
+                prelog, contig_len)
+    if mapping_ob.iteration != 0:
+        logger.info("%s Length of previous longest contig: %i",
+                    prelog, ref_len)
+        logger.info("%s The new contig differs from the previous " +
+                    "iteration by %i bases", prelog, contig_length_diff)
+    else:
+        logger.info("%s The new contig differs from the reference " +
+                    "seed by %i bases", prelog, contig_length_diff)
+
+    # This cuts failing assemblies short
+    if min_contig_len > contig_len:
+        logger.warning("The first iteration's assembly's best contig " +
+                       "is not greater than length set by " +
+                       "--min_assembly_len. Assembly will likely fail if " +
+                       "the contig does not meet the length of the seed")
+        if include_short_contigs:
+            logger.warning("Continuing, but if this occurs for more " +
+                           "than one seed, we reccommend  you abort and " +
+                           "retry with longer seeds, a different ref, " +
+                           "or re-examine the riboSnag clustering")
+        else:
+            clu.keep_contig = False  # flags contig for exclusion
+        clu.continue_iterating = False  # skip remaining iterations
+    else:
+        pass
+    # This is a feature that is supposed to help skip unneccesary
+    # iterations. If the difference is negative (new contig is shorter)
+    # continue, as this may happen (especially in first mapping if
+    # reference is not closely related to Sample), continue to map.
+    # If the contig length increases, but not as much as min_growth,
+    # skip future iterations
+    if contig_length_diff > 0 and contig_length_diff < min_growth and \
+       min_growth > 0:  # ie, ignore by default
+        logger.info("the length of the new contig was only 0bp changed " +
+                    "from previous iteration; skipping future iterations")
+        # this_iteration = max_iterations + 1  # skip remaining iterations
+    # if continuing til reaching the target lenth of the seed
+    elif proceed_to_target and contig_len >= target_seed_len:
+        logger.info("target length threshold! has been reached; " +
+                    "skipping future iterations")
+        clu.continue_iterating = False  # skip remaining iterations
+    else:
+        # nothing to see here
+        clu.continue_iterating = True
+    if clu.continue_iterating:
+        return seedGenome
+    elif not clu.keep_contig:
+        return 1
+    else:
+        try:
+            clu.contigs_new_path = copy_file(
+                current_file=mapping_ob.assembled_contig,
+                dest_dir=final_contigs_dir,
+                name=os.path.join(os.path.basename(mapping_ob.assembled_contig),
+                                  "cluster_{0}_final_iter_{1}.fasta".format(
+                                      clu.index, mapping_ob.iteration)),
+                logger=logger)
+        except:
+            logger.warning("no contigs moved for %s_%i! Check  SPAdes log " +
+                           "in results dir if worried", clu.sequence_id,
+                           clu.index)
+            return seedGenome
+    # logger.debug("moved {0} to {1}".format(contigs_path, contigs_new_path))
+    # if no_temps:
+    #     logger.info("removing temporary files from {0}".format(mapping_dir))
+    #     clean_temp_dir(clu.output_root)
 
 
 def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
@@ -804,63 +1049,29 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     return mainDict
 
 
-def make_lociMapping(cluster, iteration, output_root, ref_fasta=None,
-                     mapping_subdir=None, logger=None):
-    """ make LociMapping object
-    """
-    if logger is None:
-        raise ValueError("Must have logger for this function")
-
-    ## make maping object
-    if mapping_subdir is None:
-        assembly_subdir_needed = True  # whether to make an assembly dir
-        mapping_subdir = os.path.join(
-            output_root,
-            cluster.cluster_dir_name,
-            "{0}_cluster_{1}_mapping_iteration_{2}".format(
-                cluster.sequence_id, cluster.index, iteration))
-        assembly_subdir = os.path.join(
-            output_root,
-            cluster.cluster_dir_name,
-            "{0}_cluster_{1}_assembly_iteration_{2}".format(
-                cluster.sequence_id, cluster.index, iteration))
-        #merged_map bam so it integrates
-        merge_map_bam = str("{0}{1}{2}_{3}_{4}").format(
-            mapping_subdir, os.path.sep, "cluster", cluster.index,
-            "sorted_subset.bam")
-    else:
-        merge_map_bam = None
-        assembly_subdir_needed = False
-        assembly_subdir = None
-
-    return(LociMapping(iteration=iteration,
-                       assembly_subdir_needed=assembly_subdir_needed,
-                       mapping_subdir=mapping_subdir,
-                       assembly_subdir=assembly_subdir,
-                       sorted_map_bam=merge_map_bam,
-                       ref_fasta=ref_fasta,
-                       pe_map_bam=None,
-                       s_map_bam=None,
-                       merge_map_bam=merge_map_bam,
-                       mapped_sam=None,
-                       unmapped_sam=None, mappedF=None,
-                       mappedR=None,
-                       mappedS=None))
-
-
-def process_init_mapping(seedGenome, logger, samtools_exe, flank=[0, 0]):
+def process_clusters_mapping(seedGenome, logger, samtools_exe, flank=[0, 0]):
     """ Extract interesting stuff based on coords, not a binary
     mapped/not_mapped condition
     """
     mapped_regions = []
     logger.info("processing intial mapping")
     for cluster in seedGenome.loci_clusters:
-        mapping0 = make_lociMapping(cluster=cluster,
-                                    iteration=seedGenome.this_iteration,
-                                    # ref_fasta=None,
-                                    output_root=cluster.output_root,
-                                    logger=logger)
-        mapping0.sorted_map_bam = str(seedGenome.initial_map_sorted_bam)
+        mapping_subdir = os.path.join(
+            output_root, cluster.cluster_dir_name,
+            "{0}_cluster_{1}_mapping_iteration_{2}".format(
+                cluster.sequence_id, cluster.index, seedGenome.this_iteration))
+        assembly_subdir = os.path.join(
+            output_root, cluster.cluster_dir_name,
+            "{0}_cluster_{1}_assembly_iteration_{2}".format(
+                cluster.sequence_id, cluster.index, seedGenome.this_iteration))
+
+        mapping0 = LociMapping(
+            name="{0}_cluster_{1}_iter{2}".format(
+                cluster.sequence_id, cluster.index, seedGenome.this_iteration),
+            iteration=seedGenome.this_iteration,
+            assembly_subdir_needed=True,
+            mapping_subdir=mapping_subdir,
+            assembly_subdir=assembly_subdir)
 
         if sorted([x.start_coord for x in cluster.loci_list]) != \
            [x.start_coord for x in cluster.loci_list]:
@@ -915,23 +1126,23 @@ def process_init_mapping(seedGenome, logger, samtools_exe, flank=[0, 0]):
         partition_cmds = []
         # if not os.path.exists(mapping0.sorted_map_bam):
         sort_cmd = str("{0} sort {1} > {2}").format(
-            samtools_exe, str(seedGenome.initial_map_bam),
-            seedGenome.initial_map_sorted_bam)
+            samtools_exe,
+            seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_bam,
+            seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam)
         index_cmd = str("{0} index {1}").format(
-            samtools_exe, seedGenome.initial_map_sorted_bam)
+            samtools_exe, seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam)
         partition_cmds.extend([sort_cmd, index_cmd])
         #
         region_to_extract = "{0}:{1}-{2}".format(
             cluster.sequence_id, cluster.global_start_coord,
             cluster.global_end_coord)
         view_cmd = str("{0} view -o {1} {2} {3}").format(
-            samtools_exe, mapping0.merge_map_bam,
-            mapping0.sorted_map_bam,
+            samtools_exe, mapping0.mapped_bam,
+            seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
             region_to_extract)
         partition_cmds.append(view_cmd)
         mapped_regions.append(region_to_extract)
         ### run cmds
-        cluster.mappings.append(mapping0)
         for cmd in partition_cmds:
             logger.debug(cmd)
             subprocess.run([cmd],
@@ -939,13 +1150,15 @@ def process_init_mapping(seedGenome, logger, samtools_exe, flank=[0, 0]):
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE,
                            check=True)
+        # add mapping to cluster's mapping list
+        cluster.mappings.append(mapping0)
     logger.info("mapped regions in initial mapping:\n %s",
                 "\n".join([x for x in mapped_regions]))
     return mapped_regions
 
 
-def partition_mapped_reads(seedGenome, samtools_exe, cluster_list=None,
-                           initial=False, flank=[0, 0], logger=None):
+def partition_mapped_reads(seedGenome, samtools_exe, current_unmapped_sam,
+                           cluster_list=None, initial=False, flank=[0, 0], logger=None):
     """ This handles the first round of mapped reads
     """
     # make a list of regions mapping
@@ -953,23 +1166,9 @@ def partition_mapped_reads(seedGenome, samtools_exe, cluster_list=None,
         pass
         # do stuff
     else:
-        mapped_regions = process_init_mapping(
+        mapped_regions = process_clusters_mapping(
             seedGenome=seedGenome, logger=logger,
             samtools_exe=samtools_exe, flank=flank)
-    # unmapped lociMapping object
-    unmapped_lm = make_lociMapping(
-        cluster=None,
-        iteration=0,
-        output_root=seedGenome.output_root,
-        mapping_subdir=os.path.join(
-            seedGenome.output_root, str(
-                seedGenome.name +
-                "_unmapped_iteration_0")),
-        logger=logger)
-    # init_unmapped.sorted_map_bam = seedGenome.initial_map_sorted_bam
-    # unmapped ngsLib
-    # unmapped_lm.merge_map_bam = os.path.join(
-    #     unmapped_lm.mapping_subdir, "unmapped_subset.bam")
     cmds = []
     # make commands to gnerate unmapped bam.  If initial, it uses samtools
     # view with the regions output from the 'process_init_mapping' function.
@@ -986,21 +1185,22 @@ def partition_mapped_reads(seedGenome, samtools_exe, cluster_list=None,
             seedGenome.initial_map_sam = seedGenome.unmapped_sam
     else:
         # make a sam from the global mapping bam
-        make_initial_map_sam = "{0} view -o {1} -h {2}".format(
-            samtools_exe, seedGenome.initial_map_sam, seedGenome.initial_map_bam)
+        make_initial_map_sam = "{0} view -o {1}.sam -h {1}_sorted.bam".format(
+            samtools_exe, seedGenome.iter_mapping_list[seedGenome.this_iteration].mapping_prefix)
         # make a list of all the reads that map to any of the regions
-        append_reads_cmd = str("{0} view  {1} -U {2} | cut -f1 >> {3}").format(
-            samtools_exe, seedGenome.initial_map_sorted_bam,
+        append_reads_cmd = str("{0} view  {1}_sorted.bam -U {2} | cut -f1 > {3}").format(
+            samtools_exe, seedGenome.iter_mapping_list[seedGenome.this_iteration].mapping_prefix,
             ' '.join([x for x in mapped_regions]),
-            seedGenome.reads_mapped_txt)
+            seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt)
         cmds.extend([make_initial_map_sam, append_reads_cmd])
-        #  begin with unmapped being all the reads
+    #  begin with unmapped being all the reads
     # from the global sam mapping filter out those in the reads_mapped_txt list
-    cmds.append("LC_ALL=C grep -w -v -F -f {0}  < {2} > {1}".format(
-        seedGenome.reads_mapped_txt, seedGenome.unmapped_sam,
-        seedGenome.initial_map_sam))
+    cmds.append("LC_ALL=C grep -w -v -F -f {0}  < {1} > {2}".format(
+        seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt,
+        seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
+        seedGenome.iter_mapping_list[seedGenome.this_iteration].unmapped_sam))
     for cmd in cmds:
-        logger.debug(i)
+        logger.debug(cmd)
         subprocess.run([cmd],
                        shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
@@ -1047,22 +1247,26 @@ def extract_mapped_reads(mapping_ob, fetch_mates,
     """
     all_files = {'sam': ['merge_map_sam', 'unmapped_sam', 'mapped_sam'],
                  'txt': ['unmapped_ids_txt', 'mapped_ids_txt'],
-                 'bam': ['unmapped_bam', 'mapped_bam', 'unmapped_bam']}
+                 'bam': ['unmapped_bam', 'mapped_bam']}
     extract_cmds = []
     for key, values in all_files.items():
         for value in values:
             setattr(mapping_ob, value,
-                    str(os.path.splitext(mapping_ob.merge_map_bam)[0] +
+                    str(os.path.splitext(mapping_ob.mapped_bam)[0] +
                         "_" + value + "." + key))
 
     # Either get nates or ignore mates
     if fetch_mates:
-        makesam = "{0} view -o {1}".format(samtools_exe, mapping_ob.merge_map_sam)
-        samview = str("{0} view -h -F 4 {1} | cut -f1 > {2}").format(
-            samtools_exe, mapping_ob.merge_map_bam, mapping_ob.mapped_ids_txt)
-        lc_cmd = str("LC_ALL=C grep -w -F -f {0}  < {1} > {2}").format(
-            mapping_ob.mapped_ids_txt, mapping_ob.merge_map_sam, mapping_ob.mapped_sam)
-        extract_cmds.extend([makesam, samview, lc_cmd])
+        raise ValueError("Fetch mates option no longer supported")
+        # makesam = "{0} view -o {1} {2}".format(samtools_exe, mapping_ob.mapped_bam,
+        #                                    mapping_ob.mapped_sam)
+        # # get list of mapped
+        # samview = str("{0} view -h -F 4 {1} | cut -f1 > {2}").format(
+        #     samtools_exe, mapping_ob.mapped_bam, mapping_ob.mapped_ids_txt)
+        # get
+        # lc_cmd = str("LC_ALL=C grep -w -F -f {0}  < {1} > {2}").format(
+        #     mapping_ob.mapped_ids_txt, mapping_ob.merge_map_sam, mapping_ob.mapped_sam)
+        # extract_cmds.extend([makesam, samview, lc_cmd])
     else:
         samview = str("{0} view -hS -F 4 {1} > {2}").format(
             samtools_exe, mapping_ob.merge_map_bam, mapping_ob.mapped_sam)
@@ -1081,206 +1285,162 @@ def extract_mapped_reads(mapping_ob, fetch_mates,
                         "| {0} sort - -o {2} && {0} index {2}").format(
             samtools_exe, mapping_ob.unmapped_sam, mapping_ob.unmapped_bam,)
         extract_cmds.extend([samviewU, lc_cmdU, samindexU])
-    if logger:
-        logger.debug("running the following commands to extract reads:")
-    for i in extract_cmds:
-        if logger:
-            logger.debug(i)
-        subprocess.run(i, shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE, check=True)
-    return 0
+    # if logger:
+    #     logger.debug("running the following commands to extract reads:")
+    # for i in extract_cmds:
+    #     if logger:
+    #         logger.debug(i)
+    #     subprocess.run(i, shell=sys.platform != "win32",
+    #                    stdout=subprocess.PIPE,
+    #                    stderr=subprocess.PIPE, check=True)
+    return extract_cmds
 
 
-def assemble_iterative_mapping(clu, args, nseqs, target_len,
-                               samtools_exe, min_contig_len,
-                               final_contigs_dir, fetch_mates,
-                               proceed_to_target=False, min_growth=0,
-                               keep_unmapped_reads=False,
-                               include_short_contigs=False, prelim=True):
-    clu = [x for x in seedGenome.loci_clusters if x.index == clu][0]
-    prelog = "{0}-{1}:".format("SEED_cluster", clu.index)
-    if clu.mappings[-1].iteration == 0:
-        logger.info("%s processing initial mapping", prelog)
-    logger.info("%s item %i of %i", prelog, clu.index + 1, nseqs)
-    logger.debug("%s output dirs: \n%s\n%s", prelog,
-                 clu.mappings[-1].assembly_subdir,
-                 clu.mappings[-1].mapping_subdir)
-    seed_len = get_fasta_lengths(clu.mappings[-1].ref_fasta)[0]
-    # set proceed_to_target params
-    if proceed_to_target:
-        if target_len > 0 and 5 > target_len:
-            target_seed_len = int(target_len * seed_len)
-        elif target_len > 50:
-            target_seed_len = int(target_len)
-        else:
-            logger.error("%s invalid target length provided; must be given " +
-                         "as fraction of total length or as an absolute " +
-                         "number of base pairs greater than 50", prelog)
-            sys.exit(1)
-    else:
-        pass
+# def assemble_iterative_mapping(clu, args, nseqs, target_len,
+#                                        samtools_exe, min_assembly_len,
+#                                        final_contigs_dir, fetch_mates,
+#                                        proceed_to_target=False, min_growth=0,
+#                                        keep_unmapped_reads=False,
+#                                        include_short_contigs=False, prelim=True):
+#     clu = [x for x in seedGenome.loci_clusters if x.index == clu][0]
+#     prelog = "{0}-{1}-iter{2}:".format("SEED_cluster", clu.index,
+#                                        clu.mappings[-1].iteration)
+#     if clu.mappings[-1].iteration == 0:
+#         logger.info("%s processing initial mapping", prelog)
+#     logger.info("%s item %i of %i", prelog, clu.index + 1, nseqs)
+#     logger.debug("%s output dirs: \n%s\n%s", prelog,
+#                  clu.mappings[-1].assembly_subdir,
+#                  clu.mappings[-1].mapping_subdir)
+#     seed_len = get_fasta_lengths(clu.mappings[-1].ref_fasta)[0]
+#     # set proceed_to_target params
+#     if proceed_to_target:
+#         if target_len > 0 and 5 > target_len:
+#             target_seed_len = int(target_len * seed_len)
+#         elif target_len > 50:
+#             target_seed_len = int(target_len)
+#         else:
+#             logger.error("%s invalid target length provided; must be given " +
+#                          "as fraction of total length or as an absolute " +
+#                          "number of base pairs greater than 50", prelog)
+#             sys.exit(1)
+#     else:
+#         pass
+#     logger.info("%s Extracting mapped reads", prelog)
+#     try:
+#         extract_mapped_reads(mapping_ob=clu.mappings[-1],
+#                              fetch_mates=fetch_mates,
+#                              samtools_exe=samtools_exe,
+#                              keep_unmapped=keep_unmapped_reads,
+#                              logger=logger)
+#     except Exception as e:
+#         logger.error(e)
+#         sys.exit(1)
+#     logger.info("%s Converting mapped results to fastqs", prelog)
+#     try:
+#         clu.mappings[-1].mapped_ngsLib = convert_bams_to_fastq(
+#             mapping_ob=clu.mappings[-1],
+#             which='mapped',
+#             samtools_exe=samtools_exe,
+#             logger=logger)
 
-    try:
-        extract_mapped_reads(mapping_ob=clu.mappings[-1],
-                             fetch_mates=fetch_mates,
-                             samtools_exe=samtools_exe,
-                             keep_unmapped=keep_unmapped_reads,
-                             logger=logger)
-    except Exception as e:
-        logger.error(e)
-        sys.exit(1)
-    logger.info("%s Converting mapped results to fastqs", prelog)
-    try:
-        clu.mappings[-1].mapped_ngsLib = convert_bams_to_fastq(
-            mapping_ob=clu.mappings[-1],
-            which='mapped',
-            samtools_exe=samtools_exe,
-            logger=logger)
+#     except Exception as e:
+#         logger.error(e)
+#         sys.exit(1)
+#     logger.info("%s Running SPAdes", prelog)
+#     try:
+#         run_spades(
+#             mapping_ob=clu.mappings[-1],
+#             ngs_ob=clu.mappings[-1].mapped_ngsLib,
+#             ref_as_contig='trusted',
+#             as_paired=False, keep_best=True, prelim=prelim,
+#             groom_contigs='keep_first', k="21,33,55,77,99",
+#             seqname='', spades_exe="spades.py", logger=logger)
 
-    except Exception as e:
-        logger.error(e)
-        sys.exit(1)
-    logger.info("%s Running SPAdes", prelog)
-    try:
-        run_spades(
-            mapping_ob=clu.mappings[-1],
-            ngs_ob=clu.mappings[-1].mapped_ngsLib,
-            ref_as_contig='trusted',
-            as_paired=False, keep_best=True, prelim=prelim,
-            groom_contigs='keep_first', k="21,33,55,77,99",
-            seqname='', spades_exe="spades.py", logger=logger)
+#     except Exception as e:
+#         logger.error("SPAdes error:")
+#         logger.error(e)
+#         sys.exit(1)
+#     logger.error("post spades")
+#     logger.error(clu.mappings[-1].__dict__)
+#     if not clu.mappings[-1].assembly_success:
+#         logger.warning("%s Assembly failed: no spades output for %s",
+#                        prelog, os.path.basename(clu.mappings[-1].ref_fasta))
+#     # compare lengths of reference and freshly assembled contig
+#     contig_len = get_fasta_lengths(clu.mappings[-1].assembled_contig)[0]
+#     # contig_len = get_fasta_lengths(clu.mappings[-1].assembled_contig)[0]
+#     ref_len = get_fasta_lengths(clu.mappings[-1].ref_fasta)[0]
+#     contig_length_diff = contig_len - ref_len
+#     logger.info("%s Seed length: %i", prelog, seed_len)
+#     if proceed_to_target:
+#         logger.info("Target length: {0}".format(target_seed_len))
+#     logger.info("%s Length of this iteration's longest contig: %i",
+#                 prelog, contig_len)
+#     if clu.mappings[-1].iteration != 0:
+#         logger.info("%s Length of previous longest contig: %i",
+#                     prelog, ref_len)
+#         logger.info("%s The new contig differs from the previous " +
+#                     "iteration by %i bases", prelog, contig_length_diff)
+#     else:
+#         logger.info("%s The new contig differs from the reference " +
+#                     "seed by %i bases", prelog, contig_length_diff)
 
-    except Exception as e:
-        logger.error("SPAdes error:")
-        logger.error(e)
-        sys.exit(1)
-    if not clu.mappings[-1].assembly_success:
-        logger.warning("%s Assembly failed: no spades output for %s",
-                       prelog, os.path.basename(clu.mappings[-1].ref_fasta))
-    # compare lengths of reference and freshly assembled contig
-    print(clu.mappings[-1].assembled_contig)
-    contig_len = get_fasta_lengths(clu.mappings[-1].assembled_contig)[0]
-    # contig_len = get_fasta_lengths(clu.mappings[-1].assembled_contig)[0]
-    ref_len = get_fasta_lengths(clu.mappings[-1].ref_fasta)[0]
-    contig_length_diff = contig_len - ref_len
-    logger.info("%s Seed length: %i", prelog, seed_len)
-    if proceed_to_target:
-        logger.info("Target length: {0}".format(target_seed_len))
-    logger.info("%s Length of this iteration's longest contig: %i",
-                prelog, contig_len)
-    if clu.mappings[-1].iteration != 0:
-        logger.info("%s Length of previous longest contig: %i",
-                    prelog, ref_len)
-        logger.info("%s The new contig differs from the previous " +
-                    "iteration by %i bases", prelog, contig_length_diff)
-    else:
-        logger.info("%s The new contig differs from the reference " +
-                    "seed by %i bases", prelog, contig_length_diff)
-
-    # This cuts failing assemblies short
-    if min_contig_len > contig_len:
-        logger.warning("The first iteration's assembly's best contig " +
-                       "is not greater than length set by " +
-                       "--min_assembly_len. Assembly will likely fail if " +
-                       "the contig does not meet the length of the seed")
-        if include_short_contigs:
-            logger.warning("Continuing, but if this occurs for more " +
-                           "than one seed, we reccommend  you abort and " +
-                           "retry with longer seeds, a different ref, " +
-                           "or re-examine the riboSnag clustering")
-        else:
-            clu.keep_contig = False  # flags contig for exclusion
-        clu.continue_iterating = False  # skip remaining iterations
-    else:
-        pass
-    # This is a feature that is supposed to help skip unneccesary
-    # iterations. If the difference is negative (new contig is shorter)
-    # continue, as this may happen (especially in first mapping if
-    # reference is not closely related to Sample), continue to map.
-    # If the contig length increases, but not as much as min_growth,
-    # skip future iterations
-    if contig_length_diff > 0 and contig_length_diff < min_growth and \
-       min_growth > 0:  # ie, ignore by default
-        logger.info("the length of the new contig was only 0bp changed " +
-                    "from previous iteration; skipping future iterations")
-        # this_iteration = max_iterations + 1  # skip remaining iterations
-    # if continuing til reaching the target lenth of the seed
-    elif proceed_to_target and contig_len >= target_seed_len:
-        logger.info("target length threshold! has been reached; " +
-                    "skipping future iterations")
-        clu.continue_iterating = False  # skip remaining iterations
-    else:
-        # nothing to see here
-        clu.continue_iterating = True
-    if 1 == 2:
-        pass
-    # # use contigs_path as new reference
-    # if (
-    #         clu.continue_iterating and
-    #         clu.mappings[-1].iteration + 1 < args.iterations):
-    #     # make mapping object for next round
-    #     mapping_n = make_lociMapping(
-    #         cluster=clu,
-    #         ref_fasta=clu.mappings[-1].assembled_contig,
-    #         iteration=clu.mappings[-1].iteration + 1,
-    #         output_root=clu.output_root,
-    #         logger=logger)
-    #     new_prefix = os.path.join(
-    #         mapping_n.mapping_subdir,
-    #         str("cluster_{0}_sorted_subset".format(clu.index)))
-    #     map_to_genome_ref_smalt(  # seed_genome=seedGenome,
-    #         ref=clu.mappings[-1].assembled_contig,
-    #         ngsLib=clu.master_ngs_ob,
-    #         map_results_prefix=new_prefix,
-    #         cores=args.cores,
-    #         samtools_exe=args.samtools_exe,
-    #         smalt_exe=args.smalt_exe,
-    #         score_minimum=None,
-    #         step=3, k=5,
-    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-    #         logger=logger)
-
-    #     extract_mapped_reads(mapping_ob=mapping_n,
-    #                          fetch_mates=False,  # fetch_mates,
-    #                          samtools_exe=samtools_exe,
-    #                          keep_unmapped=False,
-    #                          logger=logger)
-
-    #     clu.mappings.append(mapping_n)
-
-    #     assemble_iterative_mapping(
-    #         clu=clu.index, args=args, nseqs=nseqs, target_len=target_len,
-    #         fetch_mates=fetch_mates, min_growth=min_growth,
-    #         # master_ngs_ob=clu.master_ngs_ob,
-    #         samtools_exe=samtools_exe,
-    #         final_contigs_dir=final_contigs_dir,
-    #         min_contig_len=min_contig_len,
-    #         proceed_to_target=proceed_to_target,
-    #         keep_unmapped_reads=keep_unmapped_reads,
-    #         include_short_contigs=include_short_contigs,
-    #         prelim=prelim)
-    # elif not clu.keep_contig:
-    #     logger.warning("Excluding contig seeded by %s!", prelog)
-    #     return(1)
-    else:
-        try:
-            clu.contigs_new_path = copy_file(
-                current_file=clu.mappings[-1].assembled_contig,
-                dest_dir=final_contigs_dir,
-                name=str(os.path.basename(clu.mappings[-1].assembled_contig) +
-                         "_final_iter_" +
-                         str(clu.mappings[-1].iteration) + ".fasta"),
-                logger=logger)
-        except:
-            logger.warning("no contigs moved for %s_%i! Check  SPAdes log " +
-                           "in results dir if worried", clu.sequence_id,
-                           clu.index)
-    # logger.debug("moved {0} to {1}".format(contigs_path, contigs_new_path))
-    # if no_temps:
-    #     logger.info("removing temporary files from {0}".format(mapping_dir))
-    #     clean_temp_dir(clu.output_root)
-    return 0
+#     # This cuts failing assemblies short
+#     if min_assembly_len > contig_len:
+#         logger.warning("The first iteration's assembly's best contig " +
+#                        "is not greater than length set by " +
+#                        "--min_assembly_len. Assembly will likely fail if " +
+#                        "the contig does not meet the length of the seed")
+#         if include_short_contigs:
+#             logger.warning("Continuing, but if this occurs for more " +
+#                            "than one seed, we reccommend  you abort and " +
+#                            "retry with longer seeds, a different ref, " +
+#                            "or re-examine the riboSnag clustering")
+#         else:
+#             clu.keep_contig = False  # flags contig for exclusion
+#         clu.continue_iterating = False  # skip remaining iterations
+#     else:
+#         pass
+#     # This is a feature that is supposed to help skip unneccesary
+#     # iterations. If the difference is negative (new contig is shorter)
+#     # continue, as this may happen (especially in first mapping if
+#     # reference is not closely related to Sample), continue to map.
+#     # If the contig length increases, but not as much as min_growth,
+#     # skip future iterations
+#     if contig_length_diff > 0 and contig_length_diff < min_growth and \
+#        min_growth > 0:  # ie, ignore by default
+#         logger.info("the length of the new contig was only 0bp changed " +
+#                     "from previous iteration; skipping future iterations")
+#         # this_iteration = max_iterations + 1  # skip remaining iterations
+#     # if continuing til reaching the target lenth of the seed
+#     elif proceed_to_target and contig_len >= target_seed_len:
+#         logger.info("target length threshold! has been reached; " +
+#                     "skipping future iterations")
+#         clu.continue_iterating = False  # skip remaining iterations
+#     else:
+#         # nothing to see here
+#         clu.continue_iterating = True
+#     if clu.continue_iterating:
+#         return seedGenome
+#     elif not clu.keep_contig:
+#         return 1
+#     else:
+#         try:
+#             clu.contigs_new_path = copy_file(
+#                 current_file=clu.mappings[-1].assembled_contig,
+#                 dest_dir=final_contigs_dir,
+#                 name=os.path.join(os.path.basename(clu.mappings[-1].assembled_contig),
+#                                   "cluster_{0}_final_iter_{1}.fasta".format(
+#                                       clu.index, clu.mappings[-1].iteration)),
+#                 logger=logger)
+#         except:
+#             logger.warning("no contigs moved for %s_%i! Check  SPAdes log " +
+#                            "in results dir if worried", clu.sequence_id,
+#                            clu.index)
+#             return seedGenome
+#     # logger.debug("moved {0} to {1}".format(contigs_path, contigs_new_path))
+#     # if no_temps:
+#     #     logger.info("removing temporary files from {0}".format(mapping_dir))
+#     #     clean_temp_dir(clu.output_root)
 
 
 def run_final_assemblies(args, seedGenome, logger=None):
@@ -1298,7 +1458,6 @@ def run_final_assemblies(args, seedGenome, logger=None):
                                     assembly_subdir=os.path.join(
                                         seedGenome.output_root,
                                         "final_{0}_assembly".format(j)),
-                                    sorted_map_bam=None,
                                     # ref_fasta=seedGenome.ref_fasta,
                                     pe_map_bam=None,
                                     s_map_bam=None,
@@ -1365,13 +1524,16 @@ def make_faux_genome(cluster_list, iteration, output_root, nbuff=5000):
     faux_genome = ""
     counter = 0
     for clu in cluster_list:
-        if not clu.keep_contig or clu.continue_iterating:
+        logger.debug(clu.mappings[-1].__dict__)
+        with open(clu.mappings[-1].assembled_contig, 'r') as con:
+            contig_rec = list(SeqIO.parse(con, 'fasta'))[0]
+        if not clu.keep_contig or not clu.continue_iterating:
             pass
         else:
-            faux_genome = str(faux_genome + clu.assembled_contig.seq)
+            faux_genome = str(faux_genome + contig_rec.seq)
             counter = counter + 1
     if counter == 0:
-        logger.warnng("No viable contigs for faux genome construction!")
+        logger.warning("No viable contigs for faux genome construction!")
         return 1
     record = SeqRecord(Seq(str(faux_genome + nbuffer),
                            IUPAC.IUPACAmbiguousDNA()),
@@ -1383,20 +1545,72 @@ def make_faux_genome(cluster_list, iteration, output_root, nbuff=5000):
         SeqIO.write(record, outf, 'fasta')
     return outpath
 
-#%%
+
+
+# def run_next_mapping(ref, seedGenome, logger):
+#     mapping_n = LociMapping(iteration=seedGenome.this_iteration,
+#                             assembly_subdir_needed=False,
+#                             mapping_subdir=os.path.join(
+#                                 seedGenome.output_root,
+#                                 "{0}_grouped_mapping_iteration_{1}".format(
+#                                     seedGenome.name, seedGenome.this_iteration)),
+#                             merge_map_bam=seedGenome.unmapped_bam)
+
+#     new_prefix = os.path.join(
+#         mapping_n.mapping_subdir,
+#         "{0}_grouped_iteration_{1}".format(
+#             seedGenome.name, seedGenome.this_iteration))
+#     mapping_n.mapped_ngslib = convert_bams_to_fastq(
+#         mapping_ob=clu.mappings[-1],
+#         which='mapped',
+#         samtools_exe=samtools_exe,
+#         logger=logger)
+
+#     map_to_genome_ref_smalt(  # seed_genome=seedGenome,
+#         ref=ref,
+#         ngsLib=clu.master_ngs_ob,
+#         # map_results_prefix=new_prefix,
+#         cores=args.cores,
+#         samtools_exe=args.samtools_exe,
+#         smalt_exe=args.smalt_exe,
+#         score_minimum=None,
+#         step=3, k=5,
+#         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+#         logger=logger)
+
+#     extract_mapped_reads(mapping_ob=mapping_n,
+#                          fetch_mates=False,  # fetch_mates,
+#                          samtools_exe=samtools_exe,
+#                          keep_unmapped=False,
+#                          logger=logger)
+
+#     clu.mappings.append(mapping_n)
+
+#     assemble_iterative_mapping(
+#         clu=clu.index, args=args, nseqs=nseqs, target_len=target_len,
+#         fetch_mates=fetch_mates, min_growth=min_growth,
+#         # master_ngs_ob=clu.master_ngs_ob,
+#         samtools_exe=samtools_exe,
+#         final_contigs_dir=final_contigs_dir,
+#         min_assembly_len=min_assembly_len,
+#         proceed_to_target=proceed_to_target,
+#         keep_unmapped_reads=keep_unmapped_reads,
+#         include_short_contigs=include_short_contigs,
+#         prelim=prelim)
+#     return(0)
+#     # elif not clu.keep_contig:
+#     #     logger.warning("Excluding contig seeded by %s!", prelog)
+#     #     return(1)
+
+
 if __name__ == "__main__":
     args = get_args()
-    # smalt checks this to estimate PE distance; see estimate_smalt_distances
-    mapped_genome_sam = "genome_distance_est.sam"
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
         os.makedirs(output_root)
     except OSError:
         raise OSError(str("Output directory already exists"))
-    map_output_dir = os.path.join(output_root, 'map', "")
-    results_dir = os.path.join(output_root, 'results', "")
-    mauve_dir = os.path.join(output_root, 'results', "mauve", "")
     t0 = time.time()
     log_path = os.path.join(output_root,
                             str("{0}_riboSeed_log.txt".format(
@@ -1404,10 +1618,6 @@ if __name__ == "__main__":
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
-    # package_init = os.path.join(
-    #     os.path.dirname(os.path.abspath(__file__)),
-    #     "__init__.py")
-    # logger.debug("checking for init file: %s", package_init)
     # # log version of riboSeed, commandline options, and all settings
     logger.info("riboSeed pipeine package version {0}".format(
         PACKAGE_VERSION))
@@ -1419,8 +1629,6 @@ if __name__ == "__main__":
     if args.cores is None:
         args.cores = multiprocessing.cpu_count()
         logger.info("Using %i cores", multiprocessing.cpu_count())
-    logger.debug(str("\noutput root {0}\nmap_output_dir: {1}\nresults_dir: " +
-                     "{2}\n").format(output_root, map_output_dir, results_dir))
 
     # Cannot set Nonetype objects via commandline directly and I dont want None
     # to be default dehaviour, so here we convert 'None' to None.
@@ -1428,12 +1636,6 @@ if __name__ == "__main__":
     if args.ref_as_contig == 'None':
         args.ref_as_contig = None
 
-    # TODO Look into resupporting bwa, as it plays better with BAM files,
-    # though smalt beats it on the overhangs. The main issue is that BWA mem
-    # doesnt work with overhangs well, and bwasw is slower than smalt.
-    # if args.method is not in  ["smalt", "bwa"]:
-    #     logger.error("'smalt' and  'bwa' only methods currently supported")
-    #     sys.exit(1)
     if args.method not in ["smalt"]:
         logger.error("'smalt' only method currently supported")
         sys.exit(1)
@@ -1441,8 +1643,6 @@ if __name__ == "__main__":
     executables = [args.samtools_exe, args.spades_exe, args.quast_exe]
     if args.method == "smalt":
         executables.append(args.smalt_exe)
-    # elif args.method == "bwa":
-    #     executables.append(args.bwa_exe)
     else:
         logger.error("Mapping method not found!")
         sys.exit(1)
@@ -1455,11 +1655,8 @@ if __name__ == "__main__":
     # check samtools verison
     try:
         samtools_verison = check_version_from_cmd(
-            exe='samtools',
-            cmd='',
-            line=3,
+            exe='samtools', cmd='', line=3, where='stderr',
             pattern=r"\s*Version: (?P<version>[^(]+)",
-            where='stderr',
             min_version=SAMTOOLS_MIN_VERSION)
     except Exception as e:
         logger.error(e)
@@ -1497,23 +1694,27 @@ if __name__ == "__main__":
             proceed_to_target = True
     else:
         proceed_to_target = False
+###############################################################################
 
-    for i in [map_output_dir, results_dir, mauve_dir]:
-        make_outdir(i)
+###############################################################################
 
-    fastq_results_prefix = os.path.join(results_dir, args.exp_name)
-
-    ### #new logic starts here
-    # make seedGenome object
+# make seedGenome object
     seedGenome = SeedGenome(
+        this_iteration=0,
+        iter_mapping_list=[],
+        max_iterations=args.iterations,
         clustered_loci_txt=args.clustered_loci_txt,
         output_root=output_root,
+        unmapped_mapping_list=[],
         genbank_path=args.reference_genbank,
         logger=logger)
 
-    ### add ngsobject
+    seedGenome.iter_mapping_list[0].ref_fasta = seedGenome.ref_fasta
+    ### add ngslib object for user supplied NGS data
+    # this will automatically generate a distance file because
+    # it is a 'master' lib
     seedGenome.master_ngs_ob = ngsLib(
-        name="",
+        name="master",
         master=True,
         readF=args.fastq1,
         readR=args.fastq2,
@@ -1522,7 +1723,8 @@ if __name__ == "__main__":
         smalt_exe=args.smalt_exe,
         ref_fasta=seedGenome.ref_fasta)
 
-    # read in riboSelect clusters
+    # read in riboSelect clusters, make a lociCluster ob for each,
+    # which get placed in seedGenome.loci_clusters
     seedGenome.loci_clusters = parse_clustered_loci_file(
         filepath=seedGenome.clustered_loci_txt,
         gb_filepath=seedGenome.genbank_path,
@@ -1531,7 +1733,7 @@ if __name__ == "__main__":
         circular=args.circular,
         logger=logger)
 
-    # add coordinates
+    # add coordinates for each locus in lociCluster.loci_list
     add_coords_to_clusters(seedGenome=seedGenome,
                            logger=logger)
     # add keep_contigs and continue iterating attribute
@@ -1541,17 +1743,20 @@ if __name__ == "__main__":
         cluster.master_ngs_ob = seedGenome.master_ngs_ob
 
     # Run commands to map to the genome
-    map_to_genome_ref_smalt(ref=seedGenome.ref_fasta,
-                            ngsLib=seedGenome.master_ngs_ob,
-                            map_results_prefix=seedGenome.initial_map_prefix,
-                            cores=args.cores,
-                            samtools_exe=args.samtools_exe,
-                            smalt_exe=args.smalt_exe,
-                            score_minimum=None,
-                            step=3, k=5,
-                            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-                            logger=logger)
+    map_to_genome_ref_smalt(
+        mapping_ob=seedGenome.iter_mapping_list[0],
+        ngsLib=seedGenome.master_ngs_ob,
+        # map_results_prefix=os.path.join(
+        #     seedGenome.initial_mapping_ob.mapping_dir, "initial"),
+        cores=args.cores,
+        samtools_exe=args.samtools_exe,
+        smalt_exe=args.smalt_exe,
+        score_minimum=None,
+        step=3, k=5,
+        scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+        logger=logger)
     partition_mapped_reads(seedGenome=seedGenome,
+                           current_unmapped_sam=None,  # must be none for  init
                            samtools_exe=args.samtools_exe,
                            initial=True,
                            cluster_list=None,  # must be none for intial
@@ -1560,112 +1765,108 @@ if __name__ == "__main__":
 
     # now, we need to assemble each mapping object
     # this should exclude any failures
-    seedGenome.this_iteration = 0
     while seedGenome.this_iteration + 1 < args.iterations:
+        if not seedGenome.this_iteration == 0:
+            convert_cmds, unmapped_ngsLib = convert_bams_to_fastq_cmds(
+                mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration - 1],
+                samtools_exe=args.samtools_exe,
+                ref_fasta=faux_genome_path,
+                which='unmapped', logger=logger)
+            for cmd in convert_cmds:
+                subprocess.run([cmd],
+                               shell=sys.platform != "win32",
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               check=True)
+            map_to_genome_ref_smalt(
+                mapping_ob=seedGenome.iter_mapping_list[0],
+                ngsLib=unmapped_ngsLib,
+                cores=args.cores,
+                samtools_exe=args.samtools_exe,
+                smalt_exe=args.smalt_exe,
+                score_minimum=None,
+                step=3, k=5,
+                scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+                logger=logger)
+            partition_mapped_reads(seedGenome=seedGenome,
+                                   current_unmapped_sam=None,  # must be none for  init
+                                   samtools_exe=args.samtools_exe,
+                                   initial=False,
+                                   cluster_list=None,  # must be none for intial
+                                   flank=[0, 0],
+                                   logger=logger)
+        else:
+            pass
+
+        # this should be all first time through
         clusters_to_process = [x for x in seedGenome.loci_clusters if
                                x.continue_iterating and
                                x.keep_contig]
         if len(clusters_to_process) == 0:
             logger.error("No clusters had sufficient mapping! Exiting")
-            syss.exit(1)
+            sys.exit(1)
+
+        extract_convert_assemble_cmds = []
+        # generate spades cmds (cannot be multiprocessed)
+        for cluster in clusters_to_process[0:2]:
+            logger.debug("getting extract convert cmds for %s cluster %i",
+                         cluster.sequence_id, cluster.index)
+            cmdlist, new_ngslib = get_extract_convert_spades_cmds(
+                mapping_ob=cluster.mappings[-1], fetch_mates=False,
+                samtools_exe=args.samtools_exe,
+                spades_exe=args.spades_exe,
+                ref_as_contig=args.ref_as_contig, logger=logger)
+            cluster.mappings[-1].mapped_ngslib = new_ngslib
+            logger.warning("found %i cmds", len(cmdlist))
+            extract_convert_assemble_cmds.extend(cmdlist)
+        logger.warning("running %i cmds", len(extract_convert_assemble_cmds))
         if args.DEBUG_multiprocessing:
             logger.warning("running without multiprocessing!")
-            for cluster in clusters_to_process:
-                assemble_iterative_mapping(cluster,
-                                           args=args,
-                                           nseqs=len(seedGenome.loci_clusters),
-                                           seedG=seedGenome,
-                                           fetch_mates=False,
-                                           include_short_contigs=False,
-                                           min_contig_len=args.min_assembly_len,
-                                           target_len=args.target_len,
-                                           final_contigs_dir=seedGenome.final_contigs_dir,
-                                           samtools_exe=args.samtools_exe,
-                                           keep_unmapped_reads=False)
+            for cmd in extract_convert_assemble_cmds:
+                logger.debug(cmd)
+                subprocess.run([cmd],
+                               shell=sys.platform != "win32",
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               check=True)
         else:
             pool = multiprocessing.Pool(processes=args.cores)
-            nseqs = len(seedGenome.loci_clusters)
-            results = [pool.apply_async(assemble_iterative_mapping,
-                                        (cluster.index,),
-                                        {"nseqs": nseqs,
-                                         "args": args,
-                                         "fetch_mates": False,
-                                         "include_short_contigs": False,
-                                         "min_contig_len": args.min_assembly_len,
-                                         "target_len": args.target_len,
-                                         "final_contigs_dir": seedGenome.final_contigs_dir,
-                                         "samtools_exe": args.samtools_exe,
-                                         "keep_unmapped_reads": False})
-                       for cluster in seedGenome.loci_clusters]
+            # nseqs = len(seedGenome.loci_clusters)
+            results = [
+                pool.apply_async(subprocess.run,
+                                 (cmd,),
+                                 {"shell": sys.platform != "win32",
+                                  "stdout": subprocess.PIPE,
+                                  "stderr": subprocess.PIPE,
+                                  "check": True})
+                for cmd in extract_convert_assemble_cmds]
             pool.close()
             pool.join()
-            logger.info(results)
-            logger.info(sum([r.get() for r in results]))
-        faux_genome_path = make_faux_genome(cluster_list=clusters_to_process)
-        loggerer.info("Length of buffered 'genome' for mapping: %i",
-                      len(faux_genome_path))
-        if faux_genome == 1:
+            # logger.info(sum([r.get() for r in results]))
+            logger.info([r.get() for r in results])
+
+        ### evaluate mapping (cant be multiprocessed
+        for cluster in clusters_to_process:
+            evaluate_spades_success(
+                clu=cluster,
+                include_short_contigs=args.include_short_contigs,
+                mapping_ob=cluster.mappings[-1], keep_best_contig=True,
+                seqname='', logger=logger,
+                min_assembly_len=args.min_assembly_len,
+                min_growth=args.min_growth,
+                proceed_to_target=proceed_to_target,
+                target_len=args.target_len)
+        logger.error(seedGenome.loci_clusters[0].mappings[0].__dict__)
+        faux_genome_path = make_faux_genome(seedGenome=seedGenome,
+                                            iteration=seedGenome.this_iteration,
+                                            output_root=seedGenome.output_root,
+                                            nbuff=5000,
+                                            cluster_list=clusters_to_process)
+        if faux_genome_path == 1:
             seedGenome.this_iteration = args.iterations
         else:
-            run_next_mapping(ref=faux_genome_path,
-                             seedGenome=seedGenome, logger=logger)
-
-
-def run_next_mapping(ref, seedGenome, logger):
-    mapping_n = LociMapping(iteration=seedGenome.this_iteration,
-                            assembly_subdir_needed=False,
-                            mapping_subdir=os.path.join(
-                                seedGenome.output_root,
-                                "{0}_grouped_mapping_iteration_{1}".format(
-                                    seedGenome.name, seedGenome.this_iteration)),
-                            merge_map_bam=seedGenome.unmapped_bam)
-
-    new_prefix = os.path.join(
-        mapping_n.mapping_subdir,
-        "{0}_grouped_iteration_{1}".format(
-            seedGenome.name, seedGenome.this_iteration))
-    ngslib = convert_bams_to_fastq(
-        mapping_ob=clu.mappings[-1],
-        which='mapped',
-        samtools_exe=samtools_exe,
-        logger=logger)
-
-    map_to_genome_ref_smalt(  # seed_genome=seedGenome,
-        ref=ref,
-        ngsLib=clu.master_ngs_ob,
-        map_results_prefix=new_prefix,
-        cores=args.cores,
-        samtools_exe=args.samtools_exe,
-        smalt_exe=args.smalt_exe,
-        score_minimum=None,
-        step=3, k=5,
-        scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-        logger=logger)
-
-    extract_mapped_reads(mapping_ob=mapping_n,
-                         fetch_mates=False,  # fetch_mates,
-                         samtools_exe=samtools_exe,
-                         keep_unmapped=False,
-                         logger=logger)
-
-    clu.mappings.append(mapping_n)
-
-    assemble_iterative_mapping(
-        clu=clu.index, args=args, nseqs=nseqs, target_len=target_len,
-        fetch_mates=fetch_mates, min_growth=min_growth,
-        # master_ngs_ob=clu.master_ngs_ob,
-        samtools_exe=samtools_exe,
-        final_contigs_dir=final_contigs_dir,
-        min_contig_len=min_contig_len,
-        proceed_to_target=proceed_to_target,
-        keep_unmapped_reads=keep_unmapped_reads,
-        include_short_contigs=include_short_contigs,
-        prelim=prelim)
-    return(0)
-    # elif not clu.keep_contig:
-    #     logger.warning("Excluding contig seeded by %s!", prelog)
-    #     return(1)
-
+            logger.info("Length of buffered 'genome' for mapping: %i",
+                        len(faux_genome_path))
 
     ##################################################################
     logging.info("combinging contigs from %s", seedGenome.final_contigs_dir)
