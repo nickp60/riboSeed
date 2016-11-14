@@ -96,75 +96,75 @@ class riboSeed2TestCase(unittest.TestCase):
             os.makedirs(self.test_dir)
         self.assertTrue(os.path.exists(self.test_dir))
 
-    # def test_LociMapping(self):
-    #     testmapping = LociMapping(
-    #         iteration=1,
-    #         mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-    #     self.assertTrue(os.path.isdir(testmapping.mapping_subdir))
+    def test_LociMapping(self):
+        testmapping = LociMapping(
+            iteration=1,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        self.assertTrue(os.path.isdir(testmapping.mapping_subdir))
 
-    # def test_ngsLib(self):
-    #     testlib = ngsLib(
-    #         name="test",
-    #         master=True,
-    #         readF=self.ref_Ffastq,
-    #         readR=self.ref_Rfastq,
-    #         readS0=None,
-    #         ref_fasta=self.ref_fasta,
-    #         smalt_dist_path=None,
-    #         readlen=None,
-    #         smalt_exe=self.smalt_exe)
-    #     self.to_be_removed.append(testlib.smalt_dist_path)
+    def test_ngsLib(self):
+        testlib = ngsLib(
+            name="test",
+            master=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            readS0=None,
+            ref_fasta=self.ref_fasta,
+            smalt_dist_path=None,
+            readlen=None,
+            smalt_exe=self.smalt_exe)
+        self.to_be_removed.append(testlib.smalt_dist_path)
 
-    # def test_SeedGenome(self):
-    #     gen = SeedGenome(
-    #         genbank_path=self.ref_gb,
-    #         loci_clusters=None,
-    #         output_root=self.test_dir)
-    #     self.assertTrue(os.path.exists(os.path.join(self.test_dir,
-    #                                                 "NC_011751.1.fasta")))
+    def test_SeedGenome(self):
+        gen = SeedGenome(
+            genbank_path=self.ref_gb,
+            loci_clusters=None,
+            output_root=self.test_dir)
+        self.assertTrue(os.path.exists(os.path.join(self.test_dir,
+                                                    "NC_011751.1.fasta")))
 
 
-    # def test_add_coords_to_SeedGenome(self):
-    #     gen = SeedGenome(
-    #         genbank_path=self.ref_gb,
-    #         riboSelect_path=self.test_loci_file,
-    #         output_root=self.test_dir,
-    #         logger=logger)
-    #     gen.loci_clusters = parse_clustered_loci_file(
-    #         filepath=gen.riboSelect_path,
-    #         gb_filepath=gen.genbank_path,
-    #         output_root=self.test_dir,
-    #         padding=100,
-    #         circular=False,
-    #         logger=logger)
-    #     add_coords_to_clusters(seedGenome=gen, logger=logger)
+    def test_add_coords_to_SeedGenome(self):
+        gen = SeedGenome(
+            genbank_path=self.ref_gb,
+            riboSelect_path=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.riboSelect_path,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=100,
+            circular=False,
+            logger=logger)
+        add_coords_to_clusters(seedGenome=gen, logger=logger)
 
-    # def test_map_to_genome_ref_smalt(self):
-    #     gen = SeedGenome(
-    #         genbank_path=self.ref_gb,
-    #         output_root=self.test_dir)
-    #     gen.seq_ob = ngsLib(
-    #         name="test",
-    #         readF=self.ref_Ffastq,
-    #         readR=self.ref_Rfastq,
-    #         readS0=None,
-    #         ref_fasta=gen.ref_fasta,
-    #         smalt_dist_path=None,
-    #         readlen=None,
-    #         smalt_exe=self.smalt_exe)
-    #     map_to_genome_ref_smalt(
-    #         seed_genome=gen,
-    #         ngsLib=gen.seq_ob,
-    #         map_results_prefix=gen.initial_map_prefix,
-    #         cores=2,
-    #         samtools_exe=self.samtools_exe,
-    #         smalt_exe=self.smalt_exe,
-    #         score_minimum=None,
-    #         step=3, k=5,
-    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-    #         logger=logger)
-    #     print(gen.__dict__)
-    #     print(gen.seq_ob.__dict__)
+    def test_map_to_genome_ref_smalt(self):
+        gen = SeedGenome(
+            genbank_path=self.ref_gb,
+            output_root=self.test_dir)
+        gen.seq_ob = ngsLib(
+            name="test",
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            readS0=None,
+            ref_fasta=gen.ref_fasta,
+            smalt_dist_path=None,
+            readlen=None,
+            smalt_exe=self.smalt_exe)
+        map_to_genome_ref_smalt(
+            seed_genome=gen,
+            ngsLib=gen.seq_ob,
+            map_results_prefix=gen.initial_map_prefix,
+            cores=2,
+            samtools_exe=self.samtools_exe,
+            smalt_exe=self.smalt_exe,
+            score_minimum=None,
+            step=3, k=5,
+            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+            logger=logger)
+        print(gen.__dict__)
+        print(gen.seq_ob.__dict__)
 
     def test_partition_mapped_reads(self):
         gen = SeedGenome(
@@ -209,7 +209,7 @@ class riboSeed2TestCase(unittest.TestCase):
             flank=[0, 0],
             logger=logger)
         logger.warning("running without multiprocessing!")
-        for cluster in gen.loci_clusters:
+        for cluster in gen.loci_clusters[0]:
             assemble_iterative_mapping(
                 clu=cluster,
                 master_ngs_ob=gen.ngs_ob,
