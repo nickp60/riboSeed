@@ -28,9 +28,11 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
-
+# need this line for unittesting
+sys.path.append(os.path.join('..', 'riboSeed'))
+# print(sys.path)
 from pyutilsnrw.utils3_5 import set_up_logging, make_outdir, \
-    combine_contigs, run_quast, \
+    combine_contigs, \
     copy_file, check_installed_tools, get_ave_read_len_from_fastq, \
     get_number_mapped, extract_mapped_and_mappedmates, clean_temp_dir, \
     output_from_subprocess_exists, keep_only_first_contig, get_fasta_lengths, \
@@ -44,6 +46,7 @@ from riboSnag import parse_clustered_loci_file, \
     annotate_msa_conensus, plot_scatter_with_anno, \
     profile_kmer_occurances, plot_pairwise_least_squares, make_msa, \
     LociCluster, Locus
+
 
 ## GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
@@ -60,7 +63,7 @@ class SeedGenome(object):
                  loci_clusters=None, output_root=None, initial_map_bam=None,
                  final_contigs_dir=None, unmapped_ngsLib=None, name=None, iter_mapping_list=None,
                  reads_mapped_txt=None, unmapped_mapping_list=None, max_iterations=None,
-                 initial_map_sam=None, unmapped_sam=None, # initial_mapping_ob=None,
+                 initial_map_sam=None, unmapped_sam=None,  # initial_mapping_ob=None,
                  clustered_loci_txt=None, seq_records=None, initial_map_prefix=None,
                  initial_map_sorted_bam=None, master_ngs_ob=None, logger=None):
         self.name = name  # get from commsanline in case running multiple
@@ -100,19 +103,30 @@ class SeedGenome(object):
         self.reads_mapped_txt = reads_mapped_txt
         # destination for seeded contigs prior to final assemblies
         self.final_contigs_dir = final_contigs_dir
-        # a logger
+        # after faux genome construction, store path here
         self.next_reference_path = next_reference_path
+        # a logger
         self.logger = logger
-        # self.set_up_iterdirs()
+        self.check_mands()
         self.write_fasta_genome()
         self.attach_genome_seqRecords()
         self.check_records()
         self.make_map_paths_and_dir()
         # self.make_initial_mapping_ob()
 
+    def check_mands(self):
+        """ checks that all mandatory arguments are not none
+        """
+        mandatory = [self.genbank_path, self.max_iterations,
+                     self.output_root]
+        if any([x is None for x in mandatory]):
+            raise ValueError("SeedGenome must be instantiated with at least "
+                             "genbank_path, max_iterations, and output_root")
+
     def make_map_paths_and_dir(self):
         """ Given a output root, this prepares all the needed subdirs and paths
         """
+        self.iter_mapping_list = []
         for i in range(0, self.max_iterations):
             self.iter_mapping_list.append(LociMapping(
                 name="{0}_mapping_for_iter_{1}".format(self.name, i),
@@ -146,6 +160,48 @@ class SeedGenome(object):
         assert len(list(SeqIO.parse(self.ref_fasta, "fasta"))) == \
             len(self.seq_records), "Error parsing genbank file!"
 
+
+# class LociCluster(object):
+#     """ organizes the clustering process instead of dealing with nested lists
+#     This holds the whole cluster of one to several individual loci
+#     """
+#     def __init__(self, index, sequence_id, loci_list, padding=None,
+#                  global_start_coord=None, global_end_coord=None,
+#                  seq_record=None, feat_of_interest=None, mappings=None,
+#                  extractedSeqRecord=None, cluster_dir_name=None,
+#                  circular=False, output_root=None, final_contigs_path=None):
+#         # int: unique identifier for cluster
+#         self.index = index
+#         # str: sequence name, usually looks like 'NC_17777373.1' or similar
+#         self.sequence_id = sequence_id
+#         # list: hold locus objects for each item in cluster
+#         self.loci_list = loci_list  # this holds the Locus objects
+#         # int: bounds ____[___.....rRNA....rRNA..rRNA....__]_________
+#         self.global_start_coord = global_start_coord
+#         self.global_end_coord = global_end_coord
+#         # int: how much to pad sequences y if treating as circular
+#         self.padding = padding
+#         # str: feature for filtering: rRNA, cDNA, exon, etc
+#         self.feat_of_interest = feat_of_interest
+#         # Bool: treat seqs as circular by padding the ends
+#         self.circular = circular
+#         # path: where your cluster-specific output goes
+#         self.cluster_dir_name = cluster_dir_name  # named dynamically
+#         # path: where the overall output goes
+#         self.output_root = output_root
+#         # list: lociMapping objects that hold mappinging paths
+#         self.mappings = mappings
+#         # SeqRecord: holds SeqIO Seqrecord for sequence_id
+#         self.seq_record = seq_record
+#         # SeqRecord: holds SeqIO Seqrecord for seq extracted from global coords
+#         self.extractedSeqRecord = extractedSeqRecord
+#         # path: for best contig after riboseed2 iterations
+#         self.final_contig_path = final_contigs_path
+#         self.name_mapping_dir()
+
+#     def name_mapping_dir(self):
+#         self.cluster_dir_name = str("{0}_cluster_{1}").format(
+#             self.sequence_id, self.index)
 
 
 class ngsLib(object):
@@ -181,9 +237,19 @@ class ngsLib(object):
         # results of distance mapping
         self.smalt_dist_path = smalt_dist_path  # set this dynamically
         self.logger = logger
+        self.check_mands()
         self.set_libtype()
         self.get_readlen()
         self.smalt_insert_file()
+
+    def check_mands(self):
+        """ checks that all mandatory arguments are not none
+        """
+        mandatory = [self.genbank_path, self.max_iterations,
+                     self.output_root]
+        if any([x is None for x in mandatory]):
+            raise ValueError("SeedGenome must be instantiated with at least "
+                             "genbank_path, max_iterations, and output_root")
 
     def set_libtype(self):
         """sets to either s_1, pe, pe_s
@@ -612,13 +678,13 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
                      "{0}").format(score_min))
     # index the reference
     cmdindex = str("{0} index -k {1} -s {2} {3} {3}").format(
-        smalt_exe, k, step, mapping_ob.ref_fasta)
+        smalt_exe, k, step, ngsLib.ref_fasta)
     # map paired end reads to reference index
     cmdmap = str('{0} map -l pe -S {1} ' +
                  '-m {2} -n {3} -g {4} -f bam -o {5} {6} {7} ' +
                  '{8}').format(smalt_exe, scoring,
                                score_min, cores, ngsLib.smalt_dist_path,
-                               mapping_ob.pe_map_bam, mapping_ob.ref_fasta,
+                               mapping_ob.pe_map_bam, ngsLib.ref_fasta,
                                ngsLib.readF,
                                ngsLib.readR)
 
@@ -628,11 +694,11 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     if ngsLib.readS0 is not None:
         # cmdindexS = str('{0} index -k {1} -s {2} {3} {3}').format(
         #     smalt_exe, k, step, mapping_ob.ref_fasta)
-        cmdmapS = str("{0} map -S {1} -m {2} -n {3} -g {4} -f bam -o {5}" +
+        cmdmapS = str("{0} map -S {1} -m {2} -n {3} -g {4} -f bam -o {5} " +
                       "{6} {7}").format(
                           smalt_exe, scoring, score_min, cores,
                           ngsLib.smalt_dist_path, mapping_ob.s_map_bam,
-                          mapping_ob.ref_fasta, ngsLib.readS0)
+                          ngsLib.ref_fasta, ngsLib.readS0)
         # merge together the singleton and pe reads
         cmdmergeS = str('{0} merge -f  {1} {2} ' +
                         '{3}').format(samtools_exe, mapping_ob.pe_map_bam,
@@ -683,7 +749,7 @@ def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
     if which == 'mapped':
             source_ext = '_bam'
 
-    samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
+    samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4} -0 ./test.fastq".format(
         samtools_exe,
         getattr(mapping_ob, str(which + source_ext)),
         read_path_dict['readF'],
@@ -698,7 +764,7 @@ def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
 
 
 def generate_spades_cmd(
-        mapping_ob, ngs_ob, ref_as_contig, as_paired=True, prelim=False,
+        mapping_ob, ngs_ob, ref_as_contig, as_paired=True, addLibs="", prelim=False,
         k="21,33,55,77,99", spades_exe="spades.py", logger=None):
     """return spades command so we can multiprocess the assemblies
     wrapper for common spades setting for long illumina reads
@@ -741,12 +807,12 @@ def generate_spades_cmd(
     if prelim:
         prelim_cmd = str(
             "{0} --only-assembler --cov-cutoff off --sc --careful -k {1} " +
-            "{2} {3} -o {4}").format(spades_exe, kmers, reads, alt_contig,
+            "{2} {3} {4} -o {5}").format(spades_exe, kmers, reads, alt_contig, addLibs,
                                      mapping_ob.assembly_subdir)
         return prelim_cmd
     else:
-        spades_cmd = "{0} --careful -k {1} {2} {3} -o {4}".format(
-            spades_exe, kmers, reads, alt_contig, mapping_ob.assembly_subdir)
+        spades_cmd = "{0} --careful -k {1} {2} {3} {4} -o {5}".format(
+            spades_exe, kmers, reads, alt_contig, addLibs, mapping_ob.assembly_subdir)
         logger.debug("Running the following command:\n{0}".format(spades_cmd))
         return spades_cmd
 
@@ -1461,7 +1527,9 @@ if __name__ == "__main__":
             logger.error("No clusters had sufficient mapping! Exiting")
             sys.exit(1)
         logger.warning("clusters excluded from this iteration \n%s",
-                       "".join([x.id for x in seedGenome.loci_clusters if x.])
+                       "".join([x.index for x in seedGenome.loci_clusters if
+                                x.index not in [y.index for
+                                                y in clusters_to_process]]))
         ####
         if not seedGenome.this_iteration == 0:
             convert_cmds, unmapped_ngsLib = convert_bams_to_fastq_cmds(
@@ -1484,11 +1552,12 @@ if __name__ == "__main__":
                                stderr=subprocess.PIPE,
                                check=True)
         else:
-            pass
+            # start with whole lib if first time through
+            unmapped_ngsLib = seedGenome.master_ngs_ob
         # Run commands to map to the genome
         map_to_genome_ref_smalt(
-            mapping_ob=seedGenome.iter_mapping_list[0],
-            ngsLib=seedGenome.master_ngs_ob,
+            mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
+            ngsLib=unmapped_ngsLib,
             cores=args.cores,
             samtools_exe=args.samtools_exe,
             smalt_exe=args.smalt_exe,
@@ -1538,8 +1607,9 @@ if __name__ == "__main__":
                 for cmd in extract_convert_assemble_cmds]
             pool.close()
             pool.join()
+            reslist = []
             # logger.info(sum([r.get() for r in results]))
-            logger.info([r.get() for r in results])
+            reslist.append([r.get() for r in results])
 
         ### evaluate mapping (cant be multiprocessed
         for cluster in clusters_to_process:
