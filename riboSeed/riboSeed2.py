@@ -667,7 +667,7 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
 
 
 def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
-                               which='mapped', logger=None):
+                               which='mapped', source_ext ="_sam", logger=None):
     """returns ngslib
     """
     if which not in ['mapped', 'unmapped']:
@@ -675,23 +675,26 @@ def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
     read_path_dict = {'readF': None, 'readR': None, 'readS': None}
     for key, value in read_path_dict.items():
         read_path_dict[key] = str(os.path.splitext(
-            mapping_ob.mapped_bam)[0] + which + key + '.fastq')
+            mapping_ob.mapped_bam)[0] + "_" + which + key + '.fastq')
+        logger.debug(read_path_dict[key])
 
     if any([x is None for x in read_path_dict.values()]):
         raise ValueError("Could not properly construct fastq names!")
+    if which == 'mapped':
+            source_ext = '_bam'
 
     samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
         samtools_exe,
-        getattr(mapping_ob, str(which + "_bam")),
+        getattr(mapping_ob, str(which + source_ext)),
         read_path_dict['readF'],
         read_path_dict['readR'],
         read_path_dict['readS'])
-    return(samfilter, ngsLib(name=which, master=False,
-                             logger=logger,
-                             readF=read_path_dict['readF'],
-                             readR=read_path_dict['readR'],
-                             readS0=read_path_dict['readS'],
-                             ref_fasta=ref_fasta))
+    return([samfilter], ngsLib(name=which, master=False,
+                               logger=logger,
+                               readF=read_path_dict['readF'],
+                               readR=read_path_dict['readR'],
+                               readS0=read_path_dict['readS'],
+                               ref_fasta=ref_fasta))
 
 
 def generate_spades_cmd(
@@ -760,7 +763,7 @@ def get_extract_convert_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
     # commands.append(extract_cmd)
     convert_cmds, new_ngslib = convert_bams_to_fastq_cmds(
         mapping_ob=mapping_ob, samtools_exe=samtools_exe,
-        ref_fasta=mapping_ob.ref_fasta, which='mapped', logger=None)
+        ref_fasta=mapping_ob.ref_fasta, which='mapped', logger=logger)
     commands.append(convert_cmds)
     spades_cmd = generate_spades_cmd(
         mapping_ob=mapping_ob,
@@ -1245,19 +1248,23 @@ def run_final_assemblies(args, seedGenome, logger=None):
     return(spades_quast_cmds, quast_reports)
 
 
-def make_faux_genome(cluster_list, seedGenome, iteration, output_root, nbuff=5000):
-    """ stictch together viable assembled contigs
+def make_faux_genome(cluster_list, seedGenome, iteration, output_root, nbuff=10000):
+    """ stictch together viable assembled contigs.  perhaps more importnatly,
+    this also re-write thes coords relative to the new "genome"
     """
     nbuffer = "N" * nbuff
-    faux_genome = ""
+    faux_genome = nbuffer[:]
     counter = 0
+    index = 0
     for clu in cluster_list:
         if not clu.keep_contig or not clu.continue_iterating:
             pass
         else:
+            clu.global_start_coord = len(faux_genome)
             with open(clu.mappings[-1].assembled_contig, 'r') as con:
                 contig_rec = list(SeqIO.parse(con, 'fasta'))[0]
             faux_genome = str(faux_genome + nbuffer + contig_rec.seq)
+            clu.global_end_coord = len(faux_genome)
             counter = counter + 1
     if counter == 0:
         logger.warning("No viable contigs for faux genome construction!")
@@ -1265,9 +1272,9 @@ def make_faux_genome(cluster_list, seedGenome, iteration, output_root, nbuff=500
     else:
         logger.info("combined %s records as genome for next round of mapping",
                     counter)
-    record = SeqRecord(Seq(str(nbuffer + faux_genome + nbuffer),
+    record = SeqRecord(Seq(str(faux_genome + nbuffer),
                            IUPAC.IUPACAmbiguousDNA()),
-                       id=str(clu.sequence_id + "iter_" + str(iteration)))
+                       id=str(clu.sequence_id + "_iter_" + str(iteration)))
 
     outpath = os.path.join(output_root,
                            "iter_{0}_buffered_genome.fasta".format(iteration))
@@ -1453,6 +1460,8 @@ if __name__ == "__main__":
         if len(clusters_to_process) == 0:
             logger.error("No clusters had sufficient mapping! Exiting")
             sys.exit(1)
+        logger.warning("clusters excluded from this iteration \n%s",
+                       "".join([x.id for x in seedGenome.loci_clusters if x.])
         ####
         if not seedGenome.this_iteration == 0:
             convert_cmds, unmapped_ngsLib = convert_bams_to_fastq_cmds(
@@ -1460,8 +1469,11 @@ if __name__ == "__main__":
                 samtools_exe=args.samtools_exe,
                 ref_fasta=seedGenome.next_reference_path,  # used to make index cmd
                 which='unmapped', logger=logger)
+            # logger.info(seedGenome.iter_mapping_list[seedGenome.this_iteration - 1].__dict__)
+            # logger.warning(unmapped_ngsLib.__dict__)
+            # logger.warning(convert_cmds)
             unmapped_ngsLib.readlen = seedGenome.master_ngs_ob.readlen
-            unmapped_ngsLib.ref_fasta = seedGenome.next_reference_path
+            # unmapped_ngsLib.ref_fasta = seedGenome.next_reference_path
             unmapped_ngsLib.smalt_dist_path = seedGenome.master_ngs_ob.smalt_dist_path
             logger.debug("converting unmapped bam into reads:")
             for cmd in convert_cmds:
