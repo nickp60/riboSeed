@@ -34,13 +34,13 @@ from Bio.SeqRecord import SeqRecord
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
-from pyutilsnrw.utils3_5 import check_installed_tools, md5, file_len
+from pyutilsnrw.utils3_5 import check_installed_tools, md5, file_len, copy_file
 
 
 from riboSeed.riboSeed2 import SeedGenome, ngsLib,  LociMapping, \
     map_to_genome_ref_smalt, add_coords_to_clusters, partition_mapping, \
     extract_mapped_reads, convert_bams_to_fastq_cmds, \
-    generate_spades_cmd
+    generate_spades_cmd, estimate_distances_smalt
 
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
@@ -74,7 +74,7 @@ class riboSeed2TestCase(unittest.TestCase):
         self.ref_dir = os.path.join(os.path.dirname(__file__), "references")
         self.ref_gb = os.path.join(self.ref_dir,
                                    'NC_011751.1.gb')
-        self.ref_fasta = os.path.join(self.ref_dir,
+        self.ref_fasta = os.path.join(self.test_dir,
                                       'cluster1.fasta')
         self.ref_Ffastq = os.path.join(self.ref_dir,
                                        'toy_reads1.fq')
@@ -95,41 +95,75 @@ class riboSeed2TestCase(unittest.TestCase):
                                                'grouped_loci_reference.txt'))
         self.cores = 2
         self.to_be_removed = []
+        self.copy_fasta()
 
-    # def test_make_testing_dir(self):
-    #     """ creates temp dir for all the files created in these tests
-    #     """
-    #     if not os.path.exists(self.test_dir):
-    #         os.makedirs(self.test_dir)
-    #     self.assertTrue(os.path.exists(self.test_dir))
+    def test_make_testing_dir(self):
+        """ creates temp dir for all the files created in these tests
+        """
+        if not os.path.exists(self.test_dir):
+            os.makedirs(self.test_dir)
+        self.assertTrue(os.path.exists(self.test_dir))
 
-    # def test_LociMapping(self):
-    #     testmapping = LociMapping(
-    #         iteration=1,
-    #         mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-    #     self.assertTrue(os.path.isdir(testmapping.mapping_subdir))
+    def copy_fasta(self):
+        """ make a disposable copy
+        """
+        copy_file(os.path.join(self.ref_dir, 'cluster1.fasta'), os.path.dirname(self.ref_fasta),
+                  name="cluster1.fasta")
+        self.to_be_removed.append(self.ref_fasta)
+
+    def test_estimate_distances_smalt(self):
+        """ test estimate insert disances
+        """
+        if os.path.exists(self.test_estimation_file):
+            print("warning! existing distance esimation file!")
+        est_file = estimate_distances_smalt(outfile=self.test_estimation_file,
+                                            smalt_exe=self.smalt_exe,
+                                            ref_genome=self.ref_fasta,
+                                            fastq1=self.ref_Ffastq,
+                                            fastq2=self.ref_Rfastq,
+                                            cores=1,
+                                            logger=logger)
+        ref_smi_md5 = "a444ccbcb486a8af29736028640e87cf"  # determined manually
+        ref_sma_md5 = "4ce0c8b453f2bdabd73eaf8b5ee4f376"  # determined manually
+        ref_mapping_len = 9271  # mapping doesnt have exact order, so cant md5
+        self.assertEqual(ref_smi_md5, md5(str(est_file + ".smi")))
+        self.assertEqual(ref_sma_md5, md5(str(est_file + ".sma")))
+        self.assertEqual(ref_mapping_len, file_len(est_file))
+        self.to_be_removed.append(self.test_estimation_file)
 
     def test_ngsLib(self):
+        # make a non-master object
+        testlib_pe_s = ngsLib(
+            name="test",
+            master=False,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            readS0="dummy",
+            ref_fasta=self.ref_fasta,
+            smalt_exe=self.smalt_exe)
+        self.assertFalse(os.path.exists(os.path.join(
+            self.test_dir, "smalt_distance_est.sam")))
+        self.assertEqual(testlib_pe_s.libtype, "pe_s")
+        self.assertEqual(testlib_pe_s.readlen, None)
+
         # check master (ie, generate a distance file with smalt
         testlib_pe = ngsLib(
             name="test",
             master=True,
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
-            readS0=None,
             ref_fasta=self.ref_fasta,
-            smalt_dist_path=None,
-            readlen=None,
             smalt_exe=self.smalt_exe)
-        self.assertTrue(os.path.exists(os.path.join(self.test_dir,
-                                                    "smalt_distance_est.sam")))
-        self.assertTrue(testlib_pe.libtype == "pe")
-        self.assertTrue(testlib_pe.readlen == 145.0)
+        self.assertTrue(os.path.exists(os.path.join(
+            self.test_dir, "smalt_distance_est.sam")))
+        self.assertEqual(testlib_pe.libtype, "pe")
+        self.assertEqual(testlib_pe.readlen, 145.0)
         self.to_be_removed.append(testlib_pe.smalt_dist_path)
 
     def test_SeedGenome(self):
         gen = SeedGenome(
             max_iterations=2,
+            clustered_loci_txt=self.test_loci_file,
             genbank_path=self.ref_gb,
             loci_clusters=None,
             output_root=self.test_dir)
@@ -141,48 +175,65 @@ class riboSeed2TestCase(unittest.TestCase):
             SeedGenome(
                 max_iterations=2,
                 genbank_path=self.ref_gb,
+                clustered_loci_txt=self.test_loci_file,
                 loci_clusters=None,
                 output_root=None)
 
-    # def test_add_coords_to_SeedGenome(self):
-    #     gen = SeedGenome(
-    #         genbank_path=self.ref_gb,
-    #         riboSelect_path=self.test_loci_file,
-    #         output_root=self.test_dir,
-    #         logger=logger)
-    #     gen.loci_clusters = parse_clustered_loci_file(
-    #         filepath=gen.riboSelect_path,
-    #         gb_filepath=gen.genbank_path,
-    #         output_root=self.test_dir,
-    #         padding=100,
-    #         circular=False,
-    #         logger=logger)
-    #     add_coords_to_clusters(seedGenome=gen, logger=logger)
+    def test_LociMapping(self):
+        with self.assertRaises(ValueError):
+            LociMapping(
+                name=None,
+                iteration=1,
+                mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        self.assertTrue(os.path.isdir(testmapping.mapping_subdir))
 
-    # def test_map_to_genome_ref_smalt(self):
-    #     gen = SeedGenome(
-    #         genbank_path=self.ref_gb,
-    #         output_root=self.test_dir)
-    #     gen.seq_ob = ngsLib(
-    #         name="test",
-    #         readF=self.ref_Ffastq,
-    #         readR=self.ref_Rfastq,
-    #         readS0=None,
-    #         ref_fasta=gen.ref_fasta,
-    #         smalt_dist_path=None,
-    #         readlen=None,
-    #         smalt_exe=self.smalt_exe)
-    #     map_to_genome_ref_smalt(
-    #         seed_genome=gen,
-    #         ngsLib=gen.seq_ob,
-    #         map_results_prefix=gen.initial_map_prefix,
-    #         cores=2,
-    #         samtools_exe=self.samtools_exe,
-    #         smalt_exe=self.smalt_exe,
-    #         score_minimum=None,
-    #         step=3, k=5,
-    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-    #         logger=logger)
+    def test_add_coords_to_SeedGenome(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=100,
+            circular=False,
+            logger=logger)
+        add_coords_to_clusters(seedGenome=gen, logger=logger)
+        print(gen.loci_clusters[0].loci_list[0].__dict__)
+        self.assertEqual(gen.loci_clusters[0].loci_list[0].start_coord, 4656045)
+        self.assertEqual(gen.loci_clusters[0].loci_list[0].end_coord, 4657586)
+
+    def test_map_to_genome_ref_smalt(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        gen.seq_ob = ngsLib(
+            name="test",
+            master=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            smalt_exe=self.smalt_exe)
+        map_to_genome_ref_smalt(
+            ngsLib=gen.seq_ob,
+            map_results_prefix=gen.initial_map_prefix,
+            cores=2,
+            samtools_exe=self.samtools_exe,
+            smalt_exe=self.smalt_exe,
+            score_minimum=None,
+            step=3, k=5,
+            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+            logger=logger)
     #     print(gen.__dict__)
     #     print(gen.seq_ob.__dict__)
 

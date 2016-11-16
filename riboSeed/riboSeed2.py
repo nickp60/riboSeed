@@ -108,9 +108,8 @@ class SeedGenome(object):
         # a logger
         self.logger = logger
         self.check_mands()
-        self.write_fasta_genome()
-        self.attach_genome_seqRecords()
-        self.check_records()
+        self.attach_genome_seqRecords()  # this method comes first,
+        self.write_fasta_genome()  # because this method relies on it
         self.make_map_paths_and_dir()
         # self.make_initial_mapping_ob()
 
@@ -118,10 +117,11 @@ class SeedGenome(object):
         """ checks that all mandatory arguments are not none
         """
         mandatory = [self.genbank_path, self.max_iterations,
-                     self.output_root]
+                     self.output_root, self.clustered_loci_txt]
         if any([x is None for x in mandatory]):
             raise ValueError("SeedGenome must be instantiated with at least "
-                             "genbank_path, max_iterations, and output_root")
+                             "genbank_path, max_iterations, cluster file, " +
+                             "and output_root")
 
     def make_map_paths_and_dir(self):
         """ Given a output root, this prepares all the needed subdirs and paths
@@ -147,6 +147,7 @@ class SeedGenome(object):
             with open(self.ref_fasta, 'w') as outfh:
                 sequences = SeqIO.parse(fh, "genbank")
                 count = SeqIO.write(sequences, outfh, "fasta")
+        assert count == len(self.seq_records), "Error parsing genbank file!"
                 # print("re-wrote %i sequences as fasta" % count)
 
     def attach_genome_seqRecords(self):
@@ -154,54 +155,6 @@ class SeedGenome(object):
         """
         with open(self.genbank_path, 'r') as fh:
             self.seq_records = list(SeqIO.parse(fh, "genbank"))
-
-    def check_records(self):
-        # ensures we have a entry for each record
-        assert len(list(SeqIO.parse(self.ref_fasta, "fasta"))) == \
-            len(self.seq_records), "Error parsing genbank file!"
-
-
-# class LociCluster(object):
-#     """ organizes the clustering process instead of dealing with nested lists
-#     This holds the whole cluster of one to several individual loci
-#     """
-#     def __init__(self, index, sequence_id, loci_list, padding=None,
-#                  global_start_coord=None, global_end_coord=None,
-#                  seq_record=None, feat_of_interest=None, mappings=None,
-#                  extractedSeqRecord=None, cluster_dir_name=None,
-#                  circular=False, output_root=None, final_contigs_path=None):
-#         # int: unique identifier for cluster
-#         self.index = index
-#         # str: sequence name, usually looks like 'NC_17777373.1' or similar
-#         self.sequence_id = sequence_id
-#         # list: hold locus objects for each item in cluster
-#         self.loci_list = loci_list  # this holds the Locus objects
-#         # int: bounds ____[___.....rRNA....rRNA..rRNA....__]_________
-#         self.global_start_coord = global_start_coord
-#         self.global_end_coord = global_end_coord
-#         # int: how much to pad sequences y if treating as circular
-#         self.padding = padding
-#         # str: feature for filtering: rRNA, cDNA, exon, etc
-#         self.feat_of_interest = feat_of_interest
-#         # Bool: treat seqs as circular by padding the ends
-#         self.circular = circular
-#         # path: where your cluster-specific output goes
-#         self.cluster_dir_name = cluster_dir_name  # named dynamically
-#         # path: where the overall output goes
-#         self.output_root = output_root
-#         # list: lociMapping objects that hold mappinging paths
-#         self.mappings = mappings
-#         # SeqRecord: holds SeqIO Seqrecord for sequence_id
-#         self.seq_record = seq_record
-#         # SeqRecord: holds SeqIO Seqrecord for seq extracted from global coords
-#         self.extractedSeqRecord = extractedSeqRecord
-#         # path: for best contig after riboseed2 iterations
-#         self.final_contig_path = final_contigs_path
-#         self.name_mapping_dir()
-
-#     def name_mapping_dir(self):
-#         self.cluster_dir_name = str("{0}_cluster_{1}").format(
-#             self.sequence_id, self.index)
 
 
 class ngsLib(object):
@@ -245,11 +198,10 @@ class ngsLib(object):
     def check_mands(self):
         """ checks that all mandatory arguments are not none
         """
-        mandatory = [self.genbank_path, self.max_iterations,
-                     self.output_root]
+        mandatory = [self.name, self.readF, self.readR, self.ref_fasta]
         if any([x is None for x in mandatory]):
-            raise ValueError("SeedGenome must be instantiated with at least "
-                             "genbank_path, max_iterations, and output_root")
+            raise ValueError("SeedGenome must be instantiated with name, "
+                             "forward reads, reverse reads, and ref fasta")
 
     def set_libtype(self):
         """sets to either s_1, pe, pe_s
@@ -292,6 +244,8 @@ class ngsLib(object):
                 fastq1=self.readF, fastq2=self.readR,
                 logger=self.logger)
         else:
+            print("cannot create distance estimate for lib type %s" %
+                  self.libtype)
             return None
 
 
@@ -340,12 +294,20 @@ class LociMapping(object):
         self.unmapped_ngsLib = unmapped_ngsLib
         self.assembled_contig = assembled_contig
         ###
+        self.check_mands()
         self.make_mapping_subdir_and_prefix()
         self.make_assembly_subdir()
         self.name_bams_and_sams()
 
+    def check_mands(self):
+        """ checks that all mandatory arguments are not none
+        """
+        mandatory = [self.name, self.iteration, self.mapping_subdir]
+        if any([x is None for x in mandatory]):
+            raise ValueError("SeedGenome must be instantiated with name, "
+                             "iteration, mapping_subdir name")
+
     def make_mapping_subdir_and_prefix(self):
-        print("making subdir")
         if self.mapping_subdir is None:
             pass
         else:
@@ -661,13 +623,30 @@ def estimate_distances_smalt(outfile, smalt_exe, ref_genome,
     return outfile
 
 
+def check_libs_before_mapping(ngsLib, logger=None):
+    # sometimes, if no singletons are found, we get an empt file.
+    #  this shoudl weed out any empy files
+    for f in ["readF", "readR", "readS0"]:
+        # ignore if lib is None, as those wont be used anyway
+        if getattr(ngsLib, f) is None:
+            continue
+        # if lib is not none but file is of size 0
+        if not os.path.getsize(getattr(ngsLib, f)) > 0:
+            logger.warning("read file %s is empty and will not be used " +
+                           "for mapping!", f)
+            # set to None so mapper will ignore
+            setattr(ngsLib, f, None)
+
+
 def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
-                            samtools_exe, smalt_exe, score_minimum=None, step=3,
-                            k=5, scoring="match=1,subst=-4,gapopen=-4,gapext=-3", logger=None):
+                            samtools_exe, smalt_exe, score_minimum=None,
+                            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+                            step=3, k=5, logger=None):
     """run smalt based on pased args
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
+    check_libs_before_mapping(ngsLib, logger=logger)
     logger.info("Mapping reads to reference genome")
     # check min score
     if score_minimum is None:
@@ -694,18 +673,18 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     if ngsLib.readS0 is not None:
         # cmdindexS = str('{0} index -k {1} -s {2} {3} {3}').format(
         #     smalt_exe, k, step, mapping_ob.ref_fasta)
-        cmdmapS = str("{0} map -S {1} -m {2} -n {3} -g {4} -f bam -o {5} " +
-                      "{6} {7}").format(
-                          smalt_exe, scoring, score_min, cores,
-                          ngsLib.smalt_dist_path, mapping_ob.s_map_bam,
-                          ngsLib.ref_fasta, ngsLib.readS0)
+        cmdmapS = str(
+            "{0} map -S {1} -m {2} -n {3} -g {4} -f bam -o {5} " +
+            "{6} {7}").format(smalt_exe, scoring, score_min, cores,
+                              ngsLib.smalt_dist_path, mapping_ob.s_map_bam,
+                              ngsLib.ref_fasta, ngsLib.readS0)
         # merge together the singleton and pe reads
-        cmdmergeS = str('{0} merge -f  {1} {2} ' +
-                        '{3}').format(samtools_exe, mapping_ob.pe_map_bam,
-                                           mapping_ob.s_map_bam, mapping_ob.mapped_bam)
-        # smaltcommands.extend([cmdindexS, cmdmapS, cmdmergeS])
+        cmdmergeS = '{0} merge -f  {1} {2} {3}'.format(
+            samtools_exe, mapping_ob.pe_map_bam,
+            mapping_ob.s_map_bam, mapping_ob.mapped_bam)
         smaltcommands.extend([cmdmapS, cmdmergeS])
     else:
+        # 'merge', but reallt just converts
         cmdmerge = str("{0} view -bh {1} >" +
                        "{2}").format(samtools_exe, mapping_ob.pe_map_bam, mapping_ob.mapped_bam)
         smaltcommands.extend([cmdmerge])
@@ -733,7 +712,7 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
 
 
 def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
-                               which='mapped', source_ext ="_sam", logger=None):
+                               which='mapped', source_ext="_sam", logger=None):
     """returns ngslib
     """
     if which not in ['mapped', 'unmapped']:
@@ -1544,6 +1523,7 @@ if __name__ == "__main__":
             # unmapped_ngsLib.ref_fasta = seedGenome.next_reference_path
             unmapped_ngsLib.smalt_dist_path = seedGenome.master_ngs_ob.smalt_dist_path
             logger.debug("converting unmapped bam into reads:")
+            seedGenome.master_ngs_ob.ref_fasta = seedGenome.next_reference_path
             for cmd in convert_cmds:
                 logger.debug(cmd)
                 subprocess.run([cmd],
@@ -1557,7 +1537,8 @@ if __name__ == "__main__":
         # Run commands to map to the genome
         map_to_genome_ref_smalt(
             mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
-            ngsLib=unmapped_ngsLib,
+            # ngsLib=unmapped_ngsLib,
+            ngsLib=seedGenome.master_ngs_ob,
             cores=args.cores,
             samtools_exe=args.samtools_exe,
             smalt_exe=args.smalt_exe,
