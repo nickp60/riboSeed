@@ -59,9 +59,10 @@ class SeedGenome(object):
     seeds alone
     This holds all he data pertaining to te clustering of a scaffold
     """
-    def __init__(self, genbank_path, this_iteration=0, ref_fasta=None, next_reference_path=None,
+    def __init__(self, genbank_path, final_contigs_dir=None,
+                 this_iteration=0, ref_fasta=None, next_reference_path=None,
                  loci_clusters=None, output_root=None, initial_map_bam=None,
-                 final_contigs_dir=None, unmapped_ngsLib=None, name=None, iter_mapping_list=None,
+                 unmapped_ngsLib=None, name=None, iter_mapping_list=None,
                  reads_mapped_txt=None, unmapped_mapping_list=None, max_iterations=None,
                  initial_map_sam=None, unmapped_sam=None,  # initial_mapping_ob=None,
                  clustered_loci_txt=None, seq_records=None, initial_map_prefix=None,
@@ -135,6 +136,11 @@ class SeedGenome(object):
                     self.output_root,
                     "{0}_mapping_for_iter_{1}".format(self.name, i)),
                 assembly_subdir_needed=False))
+        if self.final_contigs_dir is None:
+            self.final_contigs_dir = os.path.join(self.output_root,
+                                                  "final_contigs")
+        if not os.path.isdir(self.final_contigs_dir):
+            os.makedirs(self.final_contigs_dir)
 
     def write_fasta_genome(self):
         """Given a genbank file, this writes out as (multi)fasta
@@ -1040,42 +1046,46 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
             assembly_subdir_needed=True,
             mapping_subdir=mapping_subdir,
             assembly_subdir=assembly_subdir)
+        # if first time through, ge tthe global start adn end coords.
+        if cluster.global_start_coord is None or cluster.global_end_coord is None:
+            if sorted([x.start_coord for x in cluster.loci_list]) != \
+               [x.start_coord for x in cluster.loci_list]:
+                logger.warning("Coords are not in increasing order; " +
+                               "you've been warned")
+            start_list = sorted([x.start_coord for x in cluster.loci_list])
+            logger.debug("Start_list: {0}".format(start_list))
 
-        if sorted([x.start_coord for x in cluster.loci_list]) != \
-           [x.start_coord for x in cluster.loci_list]:
-            logger.warning("Coords are not in increasing order; " +
-                           "you've been warned")
-        start_list = sorted([x.start_coord for x in cluster.loci_list])
-        logger.debug("Start_list: {0}".format(start_list))
-
-        logger.debug("Find coordinates to gather reads from the following coords:")
-        for i in cluster.loci_list:
-            logger.debug(str(i.__dict__))
-        #  This works as long as coords are never in reverse order
-        cluster.global_start_coord = min([x.start_coord for
-                                          x in cluster.loci_list]) - flank[0]
-        # if start is negative, just use 1, the beginning of the sequence
-        if cluster.global_start_coord < 1:
-            logger.warning(
-                "Caution! Cannot retrieve full flanking region, as " +
-                "the 5' flanking region extends past start of " +
-                "sequence. If this is a problem, try using a smaller " +
-                "--flanking region, and/or if  appropriate, run with " +
-                "--circular.")
-            cluster.global_start_coord = 1
-        cluster.global_end_coord = max([x.end_coord for
-                                        x in cluster.loci_list]) + flank[1]
-        if cluster.global_end_coord > len(cluster.seq_record):
-            logger.warning(
-                "Caution! Cannot retrieve full flanking region, as " +
-                "the 5' flanking region extends past start of " +
-                "sequence. If this is a problem, try using a smaller " +
-                "--flanking region, and/or if  appropriate, run with " +
-                "--circular.")
-            cluster.global_end_coord = len(cluster.seq_record)
-        logger.debug("global start and end: %s %s", cluster.global_start_coord,
-                     cluster.global_end_coord)
-
+            logger.debug("Find coordinates to gather reads from the following coords:")
+            for i in cluster.loci_list:
+                logger.debug(str(i.__dict__))
+            #  This works as long as coords are never in reverse order
+            cluster.global_start_coord = min([x.start_coord for
+                                              x in cluster.loci_list]) - flank[0]
+            # if start is negative, just use 1, the beginning of the sequence
+            if cluster.global_start_coord < 1:
+                logger.warning(
+                    "Caution! Cannot retrieve full flanking region, as " +
+                    "the 5' flanking region extends past start of " +
+                    "sequence. If this is a problem, try using a smaller " +
+                    "--flanking region, and/or if  appropriate, run with " +
+                    "--circular.")
+                cluster.global_start_coord = 1
+            cluster.global_end_coord = max([x.end_coord for
+                                            x in cluster.loci_list]) + flank[1]
+            if cluster.global_end_coord > len(cluster.seq_record):
+                logger.warning(
+                    "Caution! Cannot retrieve full flanking region, as " +
+                    "the 5' flanking region extends past start of " +
+                    "sequence. If this is a problem, try using a smaller " +
+                    "--flanking region, and/or if  appropriate, run with " +
+                    "--circular.")
+                cluster.global_end_coord = len(cluster.seq_record)
+            logger.debug("global start and end: %s %s", cluster.global_start_coord,
+                         cluster.global_end_coord)
+            #  if no the first time though, fuhgetaboudit.
+            #  Ie, the coords have been reassigned by the faux_genome function
+        else:
+            pass
         logger.warning("Extracting the sequence: %s %s",
                        cluster.global_start_coord,
                        cluster.global_end_coord)
@@ -1175,71 +1185,62 @@ def add_coords_to_clusters(seedGenome, logger=None):
         logger.info(str(cluster.__dict__))
 
 
-def extract_mapped_reads(mapping_ob, fetch_mates,
-                         keep_unmapped, samtools_exe, logger=None):
-    """
-    IF fetch_mates is true, mapped reads are extracted,
-    and mates are feteched with the LC_ALL line.If not, that part is
-    skipped, and just the mapped reads are extracted.
-    Setting keep_unmapped to true will output a bam file with
-    all the remaining reads. This could be used if you are really confident
-    there are no duplicate mapping_obs you are interested in.
-     -F 4 option selects mapped reads
-    Note that the umapped output includes reads whose pairs were mapped.
-    This is to try to catch the stragglers.
-    LC_ALL=C  call from pierre lindenbaum. No idea how it can magically
-    speed up grep, but its magic
-    """
-    all_files = {'sam': ['merge_map_sam', 'unmapped_sam', 'mapped_sam'],
-                 'txt': ['unmapped_ids_txt', 'mapped_ids_txt'],
-                 'bam': ['unmapped_bam', 'mapped_bam']}
-    extract_cmds = []
-    for key, values in all_files.items():
-        for value in values:
-            setattr(mapping_ob, value,
-                    str(os.path.splitext(mapping_ob.mapped_bam)[0] +
-                        "_" + value + "." + key))
+# def extract_mapped_reads(mapping_ob, fetch_mates,
+#                          keep_unmapped, samtools_exe, logger=None):
+#     """
+#     IF fetch_mates is true, mapped reads are extracted,
+#     and mates are feteched with the LC_ALL line.If not, that part is
+#     skipped, and just the mapped reads are extracted.
+#     Setting keep_unmapped to true will output a bam file with
+#     all the remaining reads. This could be used if you are really confident
+#     there are no duplicate mapping_obs you are interested in.
+#      -F 4 option selects mapped reads
+#     Note that the umapped output includes reads whose pairs were mapped.
+#     This is to try to catch the stragglers.
+#     LC_ALL=C  call from pierre lindenbaum. No idea how it can magically
+#     speed up grep, but its magic
+#     """
+#     all_files = {'sam': ['merge_map_sam', 'unmapped_sam', 'mapped_sam'],
+#                  'txt': ['unmapped_ids_txt', 'mapped_ids_txt'],
+#                  'bam': ['unmapped_bam', 'mapped_bam']}
+#     extract_cmds = []
+#     for key, values in all_files.items():
+#         for value in values:
+#             setattr(mapping_ob, value,
+#                     str(os.path.splitext(mapping_ob.mapped_bam)[0] +
+#                         "_" + value + "." + key))
 
-    # Either get nates or ignore mates
-    if fetch_mates:
-        raise ValueError("Fetch mates option no longer supported")
-        # makesam = "{0} view -o {1} {2}".format(samtools_exe, mapping_ob.mapped_bam,
-        #                                    mapping_ob.mapped_sam)
-        # # get list of mapped
-        # samview = str("{0} view -h -F 4 {1} | cut -f1 > {2}").format(
-        #     samtools_exe, mapping_ob.mapped_bam, mapping_ob.mapped_ids_txt)
-        # get
-        # lc_cmd = str("LC_ALL=C grep -w -F -f {0}  < {1} > {2}").format(
-        #     mapping_ob.mapped_ids_txt, mapping_ob.merge_map_sam, mapping_ob.mapped_sam)
-        # extract_cmds.extend([makesam, samview, lc_cmd])
-    else:
-        samview = str("{0} view -hS -F 4 {1} > {2}").format(
-            samtools_exe, mapping_ob.merge_map_bam, mapping_ob.mapped_sam)
-        extract_cmds.extend([samview])
-    samsort = str("{0} view -bhS {1} | samtools sort - > {2}").format(
-        samtools_exe, mapping_ob.mapped_sam, mapping_ob.mapped_bam)
-    samindex = " {0} index {1}".format(samtools_exe, mapping_ob.mapped_bam)
-    extract_cmds.extend([samsort, samindex])
-    if keep_unmapped:
-        samviewU = str("{0} view -f 4 {1} | cut -f1 > {2}").format(
-            samtools_exe, mapping_ob.mapped_bam, mapping_ob.unmapped_ids_txt)
-        lc_cmdU = str("LC_ALL=C grep -w -F -f {0} < {1} > {2}").format(
-            mapping_ob.unmapped_ids_txt, mapping_ob.merge_map_sam,
-            mapping_ob.unmapped_sam)
-        samindexU = str("{0} view -bhS {1} " +
-                        "| {0} sort - -o {2} && {0} index {2}").format(
-            samtools_exe, mapping_ob.unmapped_sam, mapping_ob.unmapped_bam,)
-        extract_cmds.extend([samviewU, lc_cmdU, samindexU])
-    # if logger:
-    #     logger.debug("running the following commands to extract reads:")
-    # for i in extract_cmds:
-    #     if logger:
-    #         logger.debug(i)
-    #     subprocess.run(i, shell=sys.platform != "win32",
-    #                    stdout=subprocess.PIPE,
-    #                    stderr=subprocess.PIPE, check=True)
-    return extract_cmds
-
+#     # Either get nates or ignore mates
+#     if fetch_mates:
+#         raise ValueError("Fetch mates option no longer supported")
+#         # makesam = "{0} view -o {1} {2}".format(samtools_exe, mapping_ob.mapped_bam,
+#         #                                    mapping_ob.mapped_sam)
+#         # # get list of mapped
+#         # samview = str("{0} view -h -F 4 {1} | cut -f1 > {2}").format(
+#         #     samtools_exe, mapping_ob.mapped_bam, mapping_ob.mapped_ids_txt)
+#         # get
+#         # lc_cmd = str("LC_ALL=C grep -w -F -f {0}  < {1} > {2}").format(
+#         #     mapping_ob.mapped_ids_txt, mapping_ob.merge_map_sam, mapping_ob.mapped_sam)
+#         # extract_cmds.extend([makesam, samview, lc_cmd])
+#     else:
+#         samview = str("{0} view -hS -F 4 {1} > {2}").format(
+#             samtools_exe, mapping_ob.merge_map_bam, mapping_ob.mapped_sam)
+#         extract_cmds.extend([samview])
+#     samsort = str("{0} view -bhS {1} | samtools sort - > {2}").format(
+#         samtools_exe, mapping_ob.mapped_sam, mapping_ob.mapped_bam)
+#     samindex = " {0} index {1}".format(samtools_exe, mapping_ob.mapped_bam)
+#     extract_cmds.extend([samsort, samindex])
+#     if keep_unmapped:
+#         samviewU = str("{0} view -f 4 {1} | cut -f1 > {2}").format(
+#             samtools_exe, mapping_ob.mapped_bam, mapping_ob.unmapped_ids_txt)
+#         lc_cmdU = str("LC_ALL=C grep -w -F -f {0} < {1} > {2}").format(
+#             mapping_ob.unmapped_ids_txt, mapping_ob.merge_map_sam,
+#             mapping_ob.unmapped_sam)
+#         samindexU = str("{0} view -bhS {1} " +
+#                         "| {0} sort - -o {2} && {0} index {2}").format(
+#             samtools_exe, mapping_ob.unmapped_sam, mapping_ob.unmapped_bam,)
+#         extract_cmds.extend([samviewU, lc_cmdU, samindexU])
+#     return extract_cmds
 
 
 def run_final_assemblies(args, seedGenome, logger=None):
@@ -1257,15 +1258,7 @@ def run_final_assemblies(args, seedGenome, logger=None):
                                     assembly_subdir_needed=True,
                                     assembly_subdir=os.path.join(
                                         seedGenome.output_root,
-                                        "final_{0}_assembly".format(j)),
-                                    # ref_fasta=seedGenome.ref_fasta,
-                                    pe_map_bam=None,
-                                    s_map_bam=None,
-                                    merge_map_bam=None,
-                                    mapped_sam=None,
-                                    unmapped_sam=None, mappedF=None,
-                                    mappedR=None,
-                                    mappedS=None)
+                                        "final_{0}_assembly".format(j)))
         logging.info("\n\nRunning %s SPAdes \n" % j)
         if j == "de_novo":
             final_mapping.ref_fasta = ''
@@ -1300,8 +1293,9 @@ def make_faux_genome(cluster_list, seedGenome, iteration, output_root, nbuff=100
     nbuffer = "N" * nbuff
     faux_genome = nbuffer[:]
     counter = 0
-    index = 0
+    new_seq_name = "{0}_iter_{1}".format(seedGenome.name, iteration)
     for clu in cluster_list:
+        logger.error("before start coord: %s", clu.global_start_coord)
         if not clu.keep_contig or not clu.continue_iterating:
             pass
         else:
@@ -1310,16 +1304,20 @@ def make_faux_genome(cluster_list, seedGenome, iteration, output_root, nbuff=100
                 contig_rec = list(SeqIO.parse(con, 'fasta'))[0]
             faux_genome = str(faux_genome + nbuffer + contig_rec.seq)
             clu.global_end_coord = len(faux_genome)
+            # lastly, set cluster name to new sequence name
+            clu.sequence_id = new_seq_name
             counter = counter + 1
+            logger.error("after start coord: %s", clu.global_start_coord)
     if counter == 0:
         logger.warning("No viable contigs for faux genome construction!")
         return 1
     else:
         logger.info("combined %s records as genome for next round of mapping",
                     counter)
+    logger.error("after loop first start coord: %s", cluster_list[0].global_start_coord)
     record = SeqRecord(Seq(str(faux_genome + nbuffer),
                            IUPAC.IUPACAmbiguousDNA()),
-                       id=str(clu.sequence_id + "_iter_" + str(iteration)))
+                       id=new_seq_name)
 
     outpath = os.path.join(output_root,
                            "iter_{0}_buffered_genome.fasta".format(iteration))
@@ -1447,6 +1445,8 @@ if __name__ == "__main__":
 
 # make seedGenome object
     seedGenome = SeedGenome(
+        name=os.path.basename(os.path.splitext(args.reference_genbank)[0]),
+        # this needs to be zero indexed to access mappings by iter
         this_iteration=0,
         iter_mapping_list=[],
         max_iterations=args.iterations,
@@ -1511,6 +1511,7 @@ if __name__ == "__main__":
                                                 y in clusters_to_process]]))
         ####
         if not seedGenome.this_iteration == 0:
+            logger.error("starting sencond iter  first start coord: %s", clusters_to_process[0].global_start_coord)
             convert_cmds, unmapped_ngsLib = convert_bams_to_fastq_cmds(
                 mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration - 1],
                 samtools_exe=args.samtools_exe,
@@ -1535,6 +1536,7 @@ if __name__ == "__main__":
             # start with whole lib if first time through
             unmapped_ngsLib = seedGenome.master_ngs_ob
         # Run commands to map to the genome
+        logger.error("starting  %i iter  first start coord: %s", seedGenome.this_iteration, clusters_to_process[0].global_start_coord)
         map_to_genome_ref_smalt(
             mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
             # ngsLib=unmapped_ngsLib,
@@ -1610,6 +1612,8 @@ if __name__ == "__main__":
             output_root=seedGenome.output_root,
             nbuff=5000,
             cluster_list=clusters_to_process)
+        logger.error("after funtion first start coord: %s", clusters_to_process[0].global_start_coord)
+
         if faux_genome_path == 1:
             seedGenome.this_iteration = args.iterations
         else:
@@ -1617,12 +1621,20 @@ if __name__ == "__main__":
                         faux_genome_len)
         seedGenome.this_iteration = seedGenome.this_iteration + 1
         seedGenome.next_reference_path = faux_genome_path
-        logger.info("Moving on to iteration: %i",
-                    seedGenome.this_iteration)
+        if seedGenome.this_iteration + 1 <= args.iterations:
+            logger.info("moving on to final assemblies!")
+        else:
+            logger.info("Moving on to iteration: %i",
+                        seedGenome.this_iteration + 1)
 
     ##################################################################
     logging.info("combinging contigs from ")
     logging.info("combinging contigs from %s", seedGenome.final_contigs_dir)
+    for clu in [x for x in seedGenome.loci_clusters if x.keep_contig]:
+        copy_file(current_file=clu.mappings[-1].assembled_contig,
+                  dest_dir=seedGenome.final_contigs_dir,
+                  name=str(clu.sequence_id + "_cluster_" + str(clu.index) + ".fasta"),
+                  overwrite=False, logger=logger)
     seedGenome.assembled_contig = combine_contigs(
         contigs_dir=seedGenome.final_contigs_dir,
         contigs_name="riboSeedContigs",

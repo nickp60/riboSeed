@@ -210,32 +210,72 @@ class riboSeed2TestCase(unittest.TestCase):
         self.assertEqual(gen.loci_clusters[0].loci_list[0].start_coord, 4656045)
         self.assertEqual(gen.loci_clusters[0].loci_list[0].end_coord, 4657586)
 
-    def test_map_to_genome_ref_smalt(self):
-        gen = SeedGenome(
-            max_iterations=1,
-            genbank_path=self.ref_gb,
-            clustered_loci_txt=self.test_loci_file,
-            output_root=self.test_dir,
-            logger=logger)
-        gen.seq_ob = ngsLib(
+    # def test_map_to_genome_ref_smalt(self):
+    #     gen = SeedGenome(
+    #         max_iterations=1,
+    #         genbank_path=self.ref_gb,
+    #         clustered_loci_txt=self.test_loci_file,
+    #         output_root=self.test_dir,
+    #         logger=logger)
+    #     gen.seq_ob = ngsLib(
+    #         name="test",
+    #         master=True,
+    #         readF=self.ref_Ffastq,
+    #         readR=self.ref_Rfastq,
+    #         ref_fasta=self.ref_fasta,
+    #         smalt_exe=self.smalt_exe)
+    #     map_to_genome_ref_smalt(
+    #         ngsLib=gen.seq_ob,
+    #         map_results_prefix=gen.initial_map_prefix,
+    #         cores=2,
+    #         samtools_exe=self.samtools_exe,
+    #         smalt_exe=self.smalt_exe,
+    #         score_minimum=None,
+    #         step=3, k=5,
+    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+    #         logger=logger)
+
+    # def test_convert_bams_to_fastq_cmds(self):
+    #     testmapping = LociMapping(
+    #         name="test",
+    #         iteration=1,
+    #         mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+    #     print(testmapping.__dict__)
+    #     cmds = convert_bams_to_fastq_cmds(mapping_ob=testmapping,
+    #                                       ref_fasta="test_reference.fasta",
+    #                                       samtools_exe=self.samtools_exe,
+    #                                       which='mapped', source_ext="_bam",
+    #                                       logger=logger)
+
+    def test_generate_spades_cmds(self):
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        testngs = ngsLib(
             name="test",
             master=True,
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
             ref_fasta=self.ref_fasta,
             smalt_exe=self.smalt_exe)
-        map_to_genome_ref_smalt(
-            ngsLib=gen.seq_ob,
-            map_results_prefix=gen.initial_map_prefix,
-            cores=2,
-            samtools_exe=self.samtools_exe,
-            smalt_exe=self.smalt_exe,
-            score_minimum=None,
-            step=3, k=5,
-            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-            logger=logger)
-    #     print(gen.__dict__)
-    #     print(gen.seq_ob.__dict__)
+
+        cmd1 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs,
+                                  ref_as_contig='trusted',
+                                  as_paired=True, addLibs="",
+                                  prelim=False,
+                                  k="21,33,55,77,99",
+                                  spades_exe="spades.py",
+                                  logger=logger)
+        cmd1_ref = str("spades.py --careful -k 21,33,55,77,99 --pe1-1 {0} " +
+                       "--pe1-2 {1}  --trusted-contigs {2}  -o {3}").format(
+                           self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta,
+                           self.output_root)
+        self.assertEqual(cmd1, cmd1_ref)
+        self.to_be_removed.append(testngs.smalt_dist_path)
+
 
     # def test_partition_mapped_reads(self):
     #     gen = SeedGenome(
