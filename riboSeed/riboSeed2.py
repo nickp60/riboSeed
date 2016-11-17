@@ -66,7 +66,8 @@ class SeedGenome(object):
                  reads_mapped_txt=None, unmapped_mapping_list=None, max_iterations=None,
                  initial_map_sam=None, unmapped_sam=None,  # initial_mapping_ob=None,
                  clustered_loci_txt=None, seq_records=None, initial_map_prefix=None,
-                 initial_map_sorted_bam=None, master_ngs_ob=None, logger=None):
+                 initial_map_sorted_bam=None, master_ngs_ob=None,
+                 assembled_seeds=None, logger=None):
         self.name = name  # get from commsanline in case running multiple
         self.this_iteration = this_iteration  # this should always start at 0
         self.max_iterations = max_iterations  # this should always start at 0
@@ -106,6 +107,8 @@ class SeedGenome(object):
         self.final_contigs_dir = final_contigs_dir
         # after faux genome construction, store path here
         self.next_reference_path = next_reference_path
+        # where to put the combined contigs at the end:
+        self.assembled_seeds = assembled_seeds
         # a logger
         self.logger = logger
         self.check_mands()
@@ -776,21 +779,21 @@ def generate_spades_cmd(
         alt_contig = ''
     # prepare read types, etc
     if as_paired and ngs_ob.readS0 is not None:  # for lib with both
-        singles = "--pe1-s {0} ".format(ngs_ob.readS)
+        singles = "--pe1-s {0}".format(ngs_ob.readS)
         pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
             ngs_ob.readF, ngs_ob.readR)
     elif as_paired and ngs_ob.readS0 is None:  # for lib with just PE
         singles = ""
-        pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
+        pairs = "--pe1-1 {0} --pe1-2 {1}".format(
             ngs_ob.readF, ngs_ob.readR)
     # for libraries treating paired ends as two single-end libs
     elif not as_paired and ngs_ob.readS0 is None:
         singles = ''
-        pairs = "--pe1-s {0} --pe2-s {1} ".format(
+        pairs = "--pe1-s {0} --pe2-s {1}".format(
             ngs_ob.readF, ngs_ob.readR)
     else:  # for 3 single end libraries
-        singles = "--pe1-s {0} ".format(ngs_ob.readS0)
-        pairs = str("--pe2-s {0} --pe3-s {1} ".format(
+        singles = "--pe3-s {0} ".format(ngs_ob.readS0)
+        pairs = str("--pe1-s {0} --pe3-s {1} ".format(
             ngs_ob.readF, ngs_ob.readR))
     reads = str(pairs + singles)
     if prelim:
@@ -1182,30 +1185,32 @@ def add_coords_to_clusters(seedGenome, logger=None):
         logger.info(str(cluster.__dict__))
 
 
-
-def run_final_assemblies(args, seedGenome, logger=None):
+def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
+                         skip_control=True,
+                         kmers="21,33,55,77,99", logger=None):
     """
     """
     logger.info("\n\n Starting Final Assemblies\n\n")
     quast_reports = []
     spades_quast_cmds = []
     final_list = ["de_fere_novo"]
-    if not args.skip_control:
+    if not skip_control:
         final_list.append("de_novo")
     for j in final_list:
-        final_mapping = LociMapping(iteration=0,
-                                    name=j,
-                                    mapping_subdir="testdirthatshouldntbemade",
-                                    assembly_subdir_needed=True,
-                                    assembly_subdir=os.path.join(
-                                        seedGenome.output_root,
-                                        "final_{0}_assembly".format(j)))
+        final_mapping = LociMapping(
+            iteration=0,
+            name=j,
+            mapping_subdir="testdirthatshouldntbemade",
+            assembly_subdir_needed=True,
+            assembly_subdir=os.path.join(
+                seedGenome.output_root,
+                "final_{0}_assembly".format(j)))
         logging.info("\n\nRunning %s SPAdes \n" % j)
         if j == "de_novo":
             final_mapping.ref_fasta = ''
             assembly_ref_as_contig = None
         elif j == "de_fere_novo":
-            final_mapping.ref_fasta = seedGenome.assembled_contig
+            final_mapping.ref_fasta = seedGenome.assembled_seeds
             assembly_ref_as_contig = 'trusted'
         else:
             raise ValueError("Only valid cases are de novo and de fere novo!")
@@ -1213,16 +1218,17 @@ def run_final_assemblies(args, seedGenome, logger=None):
         spades_cmd = generate_spades_cmd(
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
-            k=args.kmers, spades_exe=args.spades_exe, logger=logger)
+            k=kmers, spades_exe=spades_exe, logger=logger)
         spades_quast_cmds.append(spades_cmd)
 
         ref = str("-R %s" % seedGenome.ref_fasta)
-        quast_cmd = str("{0}  {1} {2} {3} -t {4} -o {5}").format(
-            args.quast_python_exe,
-            args.quast_exe,
-            seedGenome.assembled_contig,
+        # quast_cmd = str("{0} {1} {2} {3} -t {4} -o {5}").format(
+        quast_cmd = str("{0} {1} {2} {3} -o {4}").format(
+            quast_python_exe,
+            quast_exe,
+            seedGenome.assembled_seeds,
             ref,
-            args.cores,
+            # args.cores,
             os.path.join(seedGenome.output_root, str("quast_" + j)))
         spades_quast_cmds.append(quast_cmd)
         quast_reports.append(os.path.join(seedGenome.output_root,
@@ -1341,6 +1347,10 @@ if __name__ == "__main__":
         logger.debug("All needed system executables found!")
         logger.debug(str([shutil.which(i) for i in executables]))
 
+    # hack together a proper executable for quast, as it needs to
+    # be run via python2
+    args.quast_exe = str(shutil.which(args.quast_exe))
+    logger.debug("FULL quast execuatble path: %s", args.quast_exe)
     # check samtools verison
     try:
         samtools_verison = check_version_from_cmd(
@@ -1579,18 +1589,20 @@ if __name__ == "__main__":
                   dest_dir=seedGenome.final_contigs_dir,
                   name=str(clu.sequence_id + "_cluster_" + str(clu.index) + ".fasta"),
                   overwrite=False, logger=logger)
-    seedGenome.assembled_contig = combine_contigs(
+    seedGenome.assembled_seeds = combine_contigs(
         contigs_dir=seedGenome.final_contigs_dir,
         contigs_name="riboSeedContigs",
         logger=logger)
     # except Exception as e:
     #     logger.error(e)
     #     sys.exit(1)
-    logger.info("Combined Seed Contigs: %s", seedGenome.assembled_contig)
+    logger.info("Combined Seed Contigs: %s", seedGenome.assembled_seeds)
     logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
     # run final contigs
     spades_quast_cmds, quast_reports = run_final_assemblies(
-        args=args, seedGenome=seedGenome, logger=logger)
+        seedGenome=seedGenome, spades_exe=args.spades_exe,
+        quast_exe=args.quast_exe, quast_python_exe=args.quast_python_exe,
+        skip_control=args.skip_control, kmers=args.kmers, logger=logger)
 
     if args.DEBUG_multiprocessing:
         logger.warning("running without multiprocessing!")
@@ -1640,5 +1652,5 @@ if __name__ == "__main__":
     logger.info("Done: %s", time.asctime())
     logger.info("riboSeed Assembly: %s", seedGenome.output_root)
     logger.info("Combined Contig Seeds (for validation or alternate " +
-                "assembly): %s", seedGenome.assembled_contig)
+                "assembly): %s", seedGenome.assembled_seeds)
     logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
