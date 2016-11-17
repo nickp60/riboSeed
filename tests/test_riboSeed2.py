@@ -30,17 +30,19 @@ import unittest
 import multiprocessing
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from argparse import Namespace
+
 # I hate this line but it works :(
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
-from pyutilsnrw.utils3_5 import check_installed_tools, md5, file_len, copy_file
+from pyutilsnrw.utils3_5 import md5, file_len, copy_file
 
 
 from riboSeed.riboSeed2 import SeedGenome, ngsLib,  LociMapping, \
     map_to_genome_ref_smalt, add_coords_to_clusters, partition_mapping, \
-    extract_mapped_reads, convert_bams_to_fastq_cmds, \
-    generate_spades_cmd, estimate_distances_smalt
+     convert_bams_to_fastq_cmds, \
+    generate_spades_cmd, estimate_distances_smalt, run_final_assemblies
 
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
@@ -50,8 +52,6 @@ from riboSeed.riboSnag import parse_clustered_loci_file, \
     calc_Shannon_entropy, calc_entropy_msa, \
     annotate_msa_conensus, plot_scatter_with_anno, \
     profile_kmer_occurances, plot_pairwise_least_squares, make_msa
-
-
 
 
 sys.dont_write_bytecode = True
@@ -93,6 +93,9 @@ class riboSeed2TestCase(unittest.TestCase):
         self.test_loci_file = os.path.join(os.path.dirname(__file__),
                                            str("references" + os.path.sep +
                                                'grouped_loci_reference.txt'))
+        self.args = Namespace(skip_contol=False, kmers="21,33,55,77,99",
+                              spades_exe="spades.py", quast_exe="python2.7 quast.py",
+                              cores=2)
         self.cores = 2
         self.to_be_removed = []
         self.copy_fasta()
@@ -263,12 +266,12 @@ class riboSeed2TestCase(unittest.TestCase):
             smalt_exe=self.smalt_exe)
 
         cmd1 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs,
-                                  ref_as_contig='trusted',
-                                  as_paired=True, addLibs="",
-                                  prelim=False,
-                                  k="21,33,55,77,99",
-                                  spades_exe="spades.py",
-                                  logger=logger)
+                                   ref_as_contig='trusted',
+                                   as_paired=True, addLibs="",
+                                   prelim=False,
+                                   k="21,33,55,77,99",
+                                   spades_exe="spades.py",
+                                   logger=logger)
         cmd1_ref = str("spades.py --careful -k 21,33,55,77,99 --pe1-1 {0} " +
                        "--pe1-2 {1}  --trusted-contigs {2}  -o {3}").format(
                            self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta,
@@ -276,7 +279,24 @@ class riboSeed2TestCase(unittest.TestCase):
         self.assertEqual(cmd1, cmd1_ref)
         self.to_be_removed.append(testngs.smalt_dist_path)
 
+    def test_run_final_assembliies(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
 
+        final_cmds = run_final_assemblies(args=self.args,
+                                          seedGenome=gen, logger=logger)
+        for i in final_cmds:
+            print(i)
+        pass
+
+
+    # def test_convert_spades_cmds(self):
+    #     get_extract_convert_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
+    #                                     spades_exe, ref_as_contig, logger)
     # def test_partition_mapped_reads(self):
     #     gen = SeedGenome(
     #         max_iterations=1,
