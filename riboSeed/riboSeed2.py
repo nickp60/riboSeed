@@ -310,7 +310,7 @@ class LociMapping(object):
         """
         mandatory = [self.name, self.iteration, self.mapping_subdir]
         if any([x is None for x in mandatory]):
-            raise ValueError("SeedGenome must be instantiated with name, "
+            raise ValueError("mapping ob must be instantiated with name, "
                              "iteration, mapping_subdir name")
 
     def make_mapping_subdir_and_prefix(self):
@@ -543,6 +543,10 @@ def get_args():  # pragma: no cover
                           " default: %(default)s")
     optional.add_argument("--quast_exe", dest="quast_exe",
                           action="store", default="quast.py",
+                          help="Path to quast executable; " +
+                          "default: %(default)s")
+    optional.add_argument("--quast_python_exe", dest="quast_python_exe",
+                          action="store", default="python2.7",
                           help="Path to quast executable; " +
                           "default: %(default)s")
     args = parser.parse_args()
@@ -793,7 +797,7 @@ def generate_spades_cmd(
         prelim_cmd = str(
             "{0} --only-assembler --cov-cutoff off --sc --careful -k {1} " +
             "{2} {3} {4} -o {5}").format(spades_exe, kmers, reads, alt_contig, addLibs,
-                                     mapping_ob.assembly_subdir)
+                                         mapping_ob.assembly_subdir)
         return prelim_cmd
     else:
         spades_cmd = "{0} --careful -k {1} {2} {3} {4} -o {5}".format(
@@ -805,13 +809,6 @@ def generate_spades_cmd(
 def get_extract_convert_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
                                     spades_exe, ref_as_contig, logger):
     commands = []
-    # extract_cmd = extract_mapped_reads(
-    #     mapping_ob=mapping_ob,
-    #     fetch_mates=fetch_mates,
-    #     samtools_exe=samtools_exe,
-    #     keep_unmapped=False,
-    #     logger=logger)
-    # commands.append(extract_cmd)
     convert_cmds, new_ngslib = convert_bams_to_fastq_cmds(
         mapping_ob=mapping_ob, samtools_exe=samtools_exe,
         ref_fasta=mapping_ob.ref_fasta, which='mapped', logger=logger)
@@ -1185,63 +1182,6 @@ def add_coords_to_clusters(seedGenome, logger=None):
         logger.info(str(cluster.__dict__))
 
 
-# def extract_mapped_reads(mapping_ob, fetch_mates,
-#                          keep_unmapped, samtools_exe, logger=None):
-#     """
-#     IF fetch_mates is true, mapped reads are extracted,
-#     and mates are feteched with the LC_ALL line.If not, that part is
-#     skipped, and just the mapped reads are extracted.
-#     Setting keep_unmapped to true will output a bam file with
-#     all the remaining reads. This could be used if you are really confident
-#     there are no duplicate mapping_obs you are interested in.
-#      -F 4 option selects mapped reads
-#     Note that the umapped output includes reads whose pairs were mapped.
-#     This is to try to catch the stragglers.
-#     LC_ALL=C  call from pierre lindenbaum. No idea how it can magically
-#     speed up grep, but its magic
-#     """
-#     all_files = {'sam': ['merge_map_sam', 'unmapped_sam', 'mapped_sam'],
-#                  'txt': ['unmapped_ids_txt', 'mapped_ids_txt'],
-#                  'bam': ['unmapped_bam', 'mapped_bam']}
-#     extract_cmds = []
-#     for key, values in all_files.items():
-#         for value in values:
-#             setattr(mapping_ob, value,
-#                     str(os.path.splitext(mapping_ob.mapped_bam)[0] +
-#                         "_" + value + "." + key))
-
-#     # Either get nates or ignore mates
-#     if fetch_mates:
-#         raise ValueError("Fetch mates option no longer supported")
-#         # makesam = "{0} view -o {1} {2}".format(samtools_exe, mapping_ob.mapped_bam,
-#         #                                    mapping_ob.mapped_sam)
-#         # # get list of mapped
-#         # samview = str("{0} view -h -F 4 {1} | cut -f1 > {2}").format(
-#         #     samtools_exe, mapping_ob.mapped_bam, mapping_ob.mapped_ids_txt)
-#         # get
-#         # lc_cmd = str("LC_ALL=C grep -w -F -f {0}  < {1} > {2}").format(
-#         #     mapping_ob.mapped_ids_txt, mapping_ob.merge_map_sam, mapping_ob.mapped_sam)
-#         # extract_cmds.extend([makesam, samview, lc_cmd])
-#     else:
-#         samview = str("{0} view -hS -F 4 {1} > {2}").format(
-#             samtools_exe, mapping_ob.merge_map_bam, mapping_ob.mapped_sam)
-#         extract_cmds.extend([samview])
-#     samsort = str("{0} view -bhS {1} | samtools sort - > {2}").format(
-#         samtools_exe, mapping_ob.mapped_sam, mapping_ob.mapped_bam)
-#     samindex = " {0} index {1}".format(samtools_exe, mapping_ob.mapped_bam)
-#     extract_cmds.extend([samsort, samindex])
-#     if keep_unmapped:
-#         samviewU = str("{0} view -f 4 {1} | cut -f1 > {2}").format(
-#             samtools_exe, mapping_ob.mapped_bam, mapping_ob.unmapped_ids_txt)
-#         lc_cmdU = str("LC_ALL=C grep -w -F -f {0} < {1} > {2}").format(
-#             mapping_ob.unmapped_ids_txt, mapping_ob.merge_map_sam,
-#             mapping_ob.unmapped_sam)
-#         samindexU = str("{0} view -bhS {1} " +
-#                         "| {0} sort - -o {2} && {0} index {2}").format(
-#             samtools_exe, mapping_ob.unmapped_sam, mapping_ob.unmapped_bam,)
-#         extract_cmds.extend([samviewU, lc_cmdU, samindexU])
-#     return extract_cmds
-
 
 def run_final_assemblies(args, seedGenome, logger=None):
     """
@@ -1253,8 +1193,9 @@ def run_final_assemblies(args, seedGenome, logger=None):
     if not args.skip_control:
         final_list.append("de_novo")
     for j in final_list:
-        final_mapping = LociMapping(iteration=None,
-                                    mapping_subdir=None,
+        final_mapping = LociMapping(iteration=0,
+                                    name=j,
+                                    mapping_subdir="testdirthatshouldntbemade",
                                     assembly_subdir_needed=True,
                                     assembly_subdir=os.path.join(
                                         seedGenome.output_root,
@@ -1272,14 +1213,17 @@ def run_final_assemblies(args, seedGenome, logger=None):
         spades_cmd = generate_spades_cmd(
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
-            k=args.kmer, spades_exe=args.spades_exe, logger=logger)
+            k=args.kmers, spades_exe=args.spades_exe, logger=logger)
         spades_quast_cmds.append(spades_cmd)
 
         ref = str("-R %s" % seedGenome.ref_fasta)
-        quast_cmd = str("{0}  {1} {2} -t {3} -o {4}").format(
-            args.quast_exe, seedGenome.assembled_contig, ref,
-            threads=args.cores,
-            output=os.path.join(seedGenome.output_root, str("quast_" + j)))
+        quast_cmd = str("{0}  {1} {2} {3} -t {4} -o {5}").format(
+            args.quast_python_exe,
+            args.quast_exe,
+            seedGenome.assembled_contig,
+            ref,
+            args.cores,
+            os.path.join(seedGenome.output_root, str("quast_" + j)))
         spades_quast_cmds.append(quast_cmd)
         quast_reports.append(os.path.join(seedGenome.output_root,
                                           str("quast_" + j), "report.tsv"))
