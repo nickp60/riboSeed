@@ -578,23 +578,24 @@ def check_smalt_full_install(smalt_exe, logger=None):
                                                             test_bam,
                                                             index,
                                                             test_reads))
-    logger.debug("testing instalation of smalt and bambamc")
-    for i in [testindexcmd, testmapcmd]:
-        try:
-            logger.debug(i)
-            subprocess.run([i],
-                           shell=sys.platform != "win32",
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE,
-                           check=True)
-        except:
-            raise ValueError("Error running test to check bambamc lib is " +
-                             "installed! See github.com/gt1/bambamc " +
-                             "and the smalt install guide for more details." +
-                             "https://sourceforge.net/projects/smalt/files/")
-    os.remove(test_bam)
-    os.remove(str(index + ".sma"))
-    os.remove(str(index + ".smi"))
+    return([testindexcmd, testmapcmd])
+    # logger.debug("testing instalation of smalt and bambamc")
+    # for i in [testindexcmd, testmapcmd]:
+    #     try:
+    #         logger.debug(i)
+    #         subprocess.run([i],
+    #                        shell=sys.platform != "win32",
+    #                        stdout=subprocess.PIPE,
+    #                        stderr=subprocess.PIPE,
+    #                        check=True)
+    #     except:
+    #         raise ValueError("Error running test to check bambamc lib is " +
+    #                          "installed! See github.com/gt1/bambamc " +
+    #                          "and the smalt install guide for more details." +
+    #                          "https://sourceforge.net/projects/smalt/files/")
+    # os.remove(test_bam)
+    # os.remove(str(index + ".sma"))
+    # os.remove(str(index + ".smi"))
 
 
 def estimate_distances_smalt(outfile, smalt_exe, ref_genome,
@@ -741,7 +742,8 @@ def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
     if which == 'mapped':
             source_ext = '_bam'
 
-    samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4} -0 ./test.fastq".format(
+    # samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4} -0 ./test.fastq".format(
+    samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
         samtools_exe,
         getattr(mapping_ob, str(which + source_ext)),
         read_path_dict['readF'],
@@ -1190,7 +1192,7 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
                          kmers="21,33,55,77,99", logger=None):
     """
     """
-    logger.info("\n\n Starting Final Assemblies\n\n")
+    logger.info("\n\nStarting Final Assemblies\n\n")
     quast_reports = []
     spades_quast_cmds = []
     final_list = ["de_fere_novo"]
@@ -1363,11 +1365,28 @@ if __name__ == "__main__":
     logger.debug("samtools version: %s", samtools_verison)
     # check bambamc is installed proper if using smalt
     if args.method == "smalt":
-        try:
-            check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
-        except Exception as e:
-            logger.error(e)
-            sys.exit(1)
+        check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
+        logger.info("testing instalation of smalt and bambamc")
+        for i in [testindexcmd, testmapcmd]:
+            try:
+                logger.debug(i)
+                subprocess.run([i],
+                               shell=sys.platform != "win32",
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               check=True)
+            except:
+                logger.error(
+                    "Error running test to check bambamc lib is " +
+                    "installed! See github.com/gt1/bambamc " +
+                    "and the smalt install guide for more details." +
+                    "https://sourceforge.net/projects/smalt/files/")
+                sys.exit(1)
+
+            # remove the temp files
+        os.remove(test_bam)
+        os.remove(str(index + ".sma"))
+        os.remove(str(index + ".smi"))
 
     # check equal length fastq.  This doesnt actually check propper pairs
     if file_len(args.fastq1) != file_len(args.fastq2):

@@ -36,13 +36,14 @@ from argparse import Namespace
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
-from pyutilsnrw.utils3_5 import md5, file_len, copy_file
+from pyutilsnrw.utils3_5 import md5, file_len, copy_file, get_number_mapped
 
 
 from riboSeed.riboSeed2 import SeedGenome, ngsLib,  LociMapping, \
     map_to_genome_ref_smalt, add_coords_to_clusters, partition_mapping, \
-     convert_bams_to_fastq_cmds, \
-    generate_spades_cmd, estimate_distances_smalt, run_final_assemblies
+    convert_bams_to_fastq_cmds, check_smalt_full_install,\
+    generate_spades_cmd, estimate_distances_smalt, run_final_assemblies,\
+    check_libs_before_mapping
 
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
@@ -118,54 +119,43 @@ class riboSeed2TestCase(unittest.TestCase):
                   name="cluster1.fasta")
         self.to_be_removed.append(self.ref_fasta)
 
-    # def test_estimate_distances_smalt(self):
-    #     """ test estimate insert disances
-    #     """
-    #     if os.path.exists(self.test_estimation_file):
-    #         print("warning! existing distance esimation file!")
-    #     est_file = estimate_distances_smalt(outfile=self.test_estimation_file,
-    #                                         smalt_exe=self.smalt_exe,
-    #                                         ref_genome=self.ref_fasta,
-    #                                         fastq1=self.ref_Ffastq,
-    #                                         fastq2=self.ref_Rfastq,
-    #                                         cores=1,
-    #                                         logger=logger)
-    #     ref_smi_md5 = "a444ccbcb486a8af29736028640e87cf"  # determined manually
-    #     ref_sma_md5 = "4ce0c8b453f2bdabd73eaf8b5ee4f376"  # determined manually
-    #     ref_mapping_len = 9271  # mapping doesnt have exact order, so cant md5
-    #     self.assertEqual(ref_smi_md5, md5(str(est_file + ".smi")))
-    #     self.assertEqual(ref_sma_md5, md5(str(est_file + ".sma")))
-    #     self.assertEqual(ref_mapping_len, file_len(est_file))
-    #     self.to_be_removed.append(self.test_estimation_file)
+    def test_ngsLib(self):
+        # make a non-master object
+        testlib_pe_s = ngsLib(
+            name="test",
+            master=False,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            readS0="dummy",
+            ref_fasta=self.ref_fasta,
+            smalt_exe=self.smalt_exe)
+        with self.assertRaises(ValueError):
+            testlib_pe_s = ngsLib(
+                name=None,
+                master=False,
+                readF=self.ref_Ffastq,
+                readR=self.ref_Rfastq,
+                readS0="dummy",
+                ref_fasta=self.ref_fasta,
+                smalt_exe=self.smalt_exe)
+        # self.assertFalse(os.path.exists(os.path.join(
+        #     self.test_dir, "smalt_distance_est.sam")))
+        self.assertEqual(testlib_pe_s.libtype, "pe_s")
+        self.assertEqual(testlib_pe_s.readlen, None)
 
-    # def test_ngsLib(self):
-    #     # make a non-master object
-    #     testlib_pe_s = ngsLib(
-    #         name="test",
-    #         master=False,
-    #         readF=self.ref_Ffastq,
-    #         readR=self.ref_Rfastq,
-    #         readS0="dummy",
-    #         ref_fasta=self.ref_fasta,
-    #         smalt_exe=self.smalt_exe)
-    #     self.assertFalse(os.path.exists(os.path.join(
-    #         self.test_dir, "smalt_distance_est.sam")))
-    #     self.assertEqual(testlib_pe_s.libtype, "pe_s")
-    #     self.assertEqual(testlib_pe_s.readlen, None)
-
-    #     # check master (ie, generate a distance file with smalt
-    #     testlib_pe = ngsLib(
-    #         name="test",
-    #         master=True,
-    #         readF=self.ref_Ffastq,
-    #         readR=self.ref_Rfastq,
-    #         ref_fasta=self.ref_fasta,
-    #         smalt_exe=self.smalt_exe)
-    #     self.assertTrue(os.path.exists(os.path.join(
-    #         self.test_dir, "smalt_distance_est.sam")))
-    #     self.assertEqual(testlib_pe.libtype, "pe")
-    #     self.assertEqual(testlib_pe.readlen, 145.0)
-    #     self.to_be_removed.append(testlib_pe.smalt_dist_path)
+        # check master (ie, generate a distance file with smalt
+        testlib_pe = ngsLib(
+            name="test",
+            master=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            smalt_exe=self.smalt_exe)
+        self.assertTrue(os.path.exists(os.path.join(
+            self.test_dir, "smalt_distance_est.sam")))
+        self.assertEqual(testlib_pe.libtype, "pe")
+        self.assertEqual(testlib_pe.readlen, 145.0)
+        self.to_be_removed.append(testlib_pe.smalt_dist_path)
 
     def test_SeedGenome(self):
         gen = SeedGenome(
@@ -198,6 +188,45 @@ class riboSeed2TestCase(unittest.TestCase):
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
         self.assertTrue(os.path.isdir(testmapping.mapping_subdir))
 
+    def test_check_smalt_full_install(self):
+        """ TODO: how would I test this?
+        """
+        smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                    "sample_data",
+                                    "smalt_test", "")
+        ref = os.path.join(smalttestdir, "ref_to_test_bambamc.fasta")
+        index = os.path.join(smalttestdir, "test_index")
+        test_bam = os.path.join(smalttestdir, "test_mapping.bam")
+        test_reads = os.path.join(smalttestdir, "reads_to_test_bambamc.fastq")
+
+        check_cmds = check_smalt_full_install(self.smalt_exe, logger=logger)
+        check_cmds_ref = [
+            "{0} index {1} {2}".format(
+                self.smalt_exe, index, ref),
+            "{0} map -f bam -o {1} {2} {3}".format(
+                self.smalt_exe, test_bam, index, test_reads)]
+        for index, cmd in enumerate(check_cmds):
+            self.assertEqual(cmd, check_cmds_ref[index])
+
+    def test_estimate_distances_smalt(self):
+        """ test estimate insert disances
+        """
+        if os.path.exists(self.test_estimation_file):
+            print("warning! existing distance esimation file!")
+        est_file = estimate_distances_smalt(outfile=self.test_estimation_file,
+                                            smalt_exe=self.smalt_exe,
+                                            ref_genome=self.ref_fasta,
+                                            fastq1=self.ref_Ffastq,
+                                            fastq2=self.ref_Rfastq,
+                                            cores=1,
+                                            logger=logger)
+        ref_smi_md5 = "a444ccbcb486a8af29736028640e87cf"  # determined manually
+        ref_sma_md5 = "4ce0c8b453f2bdabd73eaf8b5ee4f376"  # determined manually
+        ref_mapping_len = 9271  # mapping doesnt have exact order, so cant md5
+        self.assertEqual(ref_smi_md5, md5(str(est_file + ".smi")))
+        self.assertEqual(ref_sma_md5, md5(str(est_file + ".sma")))
+        self.assertEqual(ref_mapping_len, file_len(est_file))
+
     def test_add_coords_to_SeedGenome(self):
         gen = SeedGenome(
             max_iterations=1,
@@ -213,22 +242,31 @@ class riboSeed2TestCase(unittest.TestCase):
             circular=False,
             logger=logger)
         add_coords_to_clusters(seedGenome=gen, logger=logger)
-        print(gen.loci_clusters[0].loci_list[0].__dict__)
-        self.assertEqual(gen.loci_clusters[0].loci_list[0].start_coord, 4656045)
-        self.assertEqual(gen.loci_clusters[0].loci_list[0].end_coord, 4657586)
+        self.assertEqual(
+            gen.loci_clusters[0].loci_list[0].start_coord, 4656045)
+        self.assertEqual(
+            gen.loci_clusters[0].loci_list[0].end_coord, 4657586)
 
     def test_convert_bams_to_fastq_cmds(self):
         testmapping = LociMapping(
             name="test",
             iteration=1,
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-        print(testmapping.__dict__)
-        cmds = convert_bams_to_fastq_cmds(mapping_ob=testmapping,
-                                          ref_fasta="test_reference.fasta",
-                                          samtools_exe=self.samtools_exe,
-                                          which='mapped', source_ext="_bam",
-                                          logger=logger)
-        print(cmds)
+        cmd, ngs = convert_bams_to_fastq_cmds(mapping_ob=testmapping,
+                                              ref_fasta="test_reference.fasta",
+                                              samtools_exe=self.samtools_exe,
+                                              which='mapped',
+                                              source_ext="_bam",
+                                              logger=logger)
+        cmd_ref = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
+            self.samtools_exe, testmapping.mapped_bam,
+            os.path.join(testmapping.mapping_subdir,
+                         "test_iteration_1_mappedreadF.fastq"),
+            os.path.join(testmapping.mapping_subdir,
+                         "test_iteration_1_mappedreadR.fastq"),
+            os.path.join(testmapping.mapping_subdir,
+                         "test_iteration_1_mappedreadS.fastq"), )
+        self.assertEqual(cmd[0], cmd_ref)
 
     def test_generate_spades_cmds(self):
         """Question: why the heck is there a space before the -o?
@@ -260,7 +298,53 @@ class riboSeed2TestCase(unittest.TestCase):
             "--pe1-2 {1} --trusted-contigs {2}  -o {3}").format(
             self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir)
         self.assertEqual(cmd1, cmd1_ref)
-        self.to_be_removed.append(testngs.smalt_dist_path)
+
+    def test_lib_check(self):
+        empty_file = os.path.join(self.test_dir, "test_not_real_file")
+        # make an empty file
+        with open(empty_file, 'w') as ef:
+            pass
+        ngs_ob = ngsLib(
+            name="test",
+            master=False,
+            readF=self.ref_Ffastq,
+            readR=empty_file,
+            ref_fasta=self.ref_fasta,
+            smalt_exe=self.smalt_exe)
+        check_libs_before_mapping(ngsLib=ngs_ob, logger=logger)
+        self.assertTrue(ngs_ob.readR is None)
+        self.to_be_removed.append(empty_file)
+
+    def test_map_with_smalt(self):
+        # becasue multiple mapping are assingmed randomly (pseudorandomly?),
+        # this accepts a range of expected results
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        testngs = ngsLib(
+            name="test",
+            master=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            smalt_exe=self.smalt_exe)
+
+        map_to_genome_ref_smalt(mapping_ob=testmapping, ngsLib=testngs,
+                                cores=4, samtools_exe=self.samtools_exe,
+                                smalt_exe=self.smalt_exe, score_minimum=45,
+                                scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+                                step=3, k=5, logger=logger)
+        mapped_str = get_number_mapped(testmapping.pe_map_bam,
+                                           samtools_exe=self.samtools_exe)
+        nmapped = int(mapped_str[0:5])
+        nperc = float(mapped_str[-13:-8])
+        print(nmapped)
+        print(nperc)
+        self.assertTrue(12585 < nmapped < 12635)
+        self.assertTrue(34.6 < nperc < 34.7)
 
     def test_run_final_assembliies(self):
         gen = SeedGenome(
@@ -277,27 +361,36 @@ class riboSeed2TestCase(unittest.TestCase):
                 readR=self.ref_Rfastq,
                 ref_fasta=self.ref_fasta,
                 smalt_exe=self.smalt_exe))
-
-        final_cmds = run_final_assemblies(
+        gen.ref_fasta = self.ref_fasta
+        final_cmds, quast_reports = run_final_assemblies(
             seedGenome=gen, spades_exe=self.spades_exe,
             quast_exe=self.quast_exe, quast_python_exe=self.quast_python_exe,
             skip_control=False, kmers="33,77,99", logger=logger)
         final_cmds_ref = [
             str(
                 "{0} --careful -k 33,77,99 --pe1-1 {1} " +
-                "--pe1-2 {2} --trusted-contigs tralalalala  -o {3}").format(
+                "--pe1-2 {2} --trusted-contigs {3}  -o {4}").format(
+                    self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
+                    gen.assembled_seeds,
+                    os.path.join(self.test_dir,
+                                 "final_de_fere_novo_assembly")),
+            str(
+                '{0} {1} tralalalala -R {2} -o {3}').format(
+                    self.quast_python_exe, self.quast_exe,
+                    self.ref_fasta,
+                    os.path.join(self.test_dir, "quast_de_fere_novo")),
+            str(
+                "{0} --careful -k 33,77,99 --pe1-1 {1} " +
+                "--pe1-2 {2}   -o {3}").format(
                     self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
                     os.path.join(self.test_dir, "final_de_novo_assembly")),
             str(
-                '{0} {1} tralalalala -R {2} -o {3})'.format(
+                '{0} {1} tralalalala -R {2} -o {3}').format(
                     self.quast_python_exe, self.quast_exe,
                     self.ref_fasta,
-                    os.path.join(self.test_dir, "quast_de_novo")))]
+                    os.path.join(self.test_dir, "quast_de_novo"))]
         for i, ref in enumerate(final_cmds_ref):
             self.assertEqual(final_cmds[i], ref)
-
-        # 'spades.py --careful -k 33,77,99 --pe1-1 /home/nicholas/GitHub/riboSeed/tests/references/toy_reads1.fq --pe1-2 /home/nicholas/GitHub/riboSeed/tests/references/toy_reads2.fq   -o /home/nicholas/GitHub/riboSeed/tests/output_riboseed2_tests/final_de_novo_assembly',
-        # 'python2 quast.py tralalalala -R /home/nicholas/GitHub/riboSeed/tests/output_riboseed2_tests/NC_011751.1.fasta -o /home/nicholas/GitHub/riboSeed/tests/output_riboseed2_tests/quast_de_novo'
 
     # def test_convert_spades_cmds(self):
     #     get_extract_convert_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
