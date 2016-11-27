@@ -52,7 +52,8 @@ class LociCluster(object):
                  global_start_coord=None, global_end_coord=None,
                  seq_record=None, feat_of_interest=None, mappings=None,
                  extractedSeqRecord=None, cluster_dir_name=None,
-                 circular=False, output_root=None, final_contigs_path=None):
+                 circular=False, output_root=None, final_contigs_path=None,
+                 continue_iterating=True, keep_contig=True):
         # int: unique identifier for cluster
         self.index = index
         # str: sequence name, usually looks like 'NC_17777373.1' or similar
@@ -79,6 +80,9 @@ class LociCluster(object):
         # SeqRecord: holds SeqIO Seqrecord for seq extracted from global coords
         self.extractedSeqRecord = extractedSeqRecord
         # path: for best contig after riboseed2 iterations
+        self.keep_contig = keep_contig  # by default, include all
+        self.continue_iterating = continue_iterating  # by default, keep going
+
         self.final_contig_path = final_contigs_path
         self.name_mapping_dir()
 
