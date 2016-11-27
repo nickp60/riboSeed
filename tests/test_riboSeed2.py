@@ -24,27 +24,27 @@ md5: 27944249bf064ba54576be83053e82b0
 __version__ = "0.0.3"
 import sys
 import logging
-import subprocess
+# import subprocess
 import os
 import unittest
-import multiprocessing
-from Bio.Seq import Seq
+# import multiprocessing
+
+# from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from argparse import Namespace
 
 # I hate this line but it works :(
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
+sys.path.append(os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
 from pyutilsnrw.utils3_5 import md5, file_len, copy_file, get_number_mapped
-
 
 from riboSeed.riboSeed2 import SeedGenome, ngsLib,  LociMapping, \
     map_to_genome_ref_smalt, add_coords_to_clusters, partition_mapping, \
     convert_bams_to_fastq_cmds, check_smalt_full_install,\
     generate_spades_cmd, estimate_distances_smalt, run_final_assemblies,\
-    check_libs_before_mapping
-
+    check_libs_before_mapping, make_faux_genome
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
@@ -338,13 +338,59 @@ class riboSeed2TestCase(unittest.TestCase):
                                 scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                                 step=3, k=5, logger=logger)
         mapped_str = get_number_mapped(testmapping.pe_map_bam,
-                                           samtools_exe=self.samtools_exe)
+                                       samtools_exe=self.samtools_exe)
         nmapped = int(mapped_str[0:5])
         nperc = float(mapped_str[-13:-8])
         print(nmapped)
         print(nperc)
-        self.assertTrue(12585 < nmapped < 12635)
-        self.assertTrue(34.6 < nperc < 34.7)
+        self.assertTrue(12575 < nmapped < 12635)
+        self.assertTrue(34.6 < nperc < 34.8)
+
+    def test_make_faux_genome(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=100,
+            circular=False,
+            logger=logger)
+        add_coords_to_clusters(seedGenome=gen, logger=logger)
+
+        for loci in gen.loci_clusters:
+            loci.keep_contig = True
+            loci.mappings[0] = LociMapping(
+                name="test",
+                iteration=1,
+                assembly_subdir=self.test_dir,
+                ref_fasta=self.ref_fasta,
+                assembled_contig=self.ref_fasta,
+                mapping_subdir=os.path.join(self.test_dir, "LociMapping_for_text_faux_genome"))
+
+        # map_to_genome_ref_smalt(
+        #     mapping_ob=gen.iter_mapping_list[0],
+        #     ngsLib=gen.master_ngs_ob,
+        #     cores=4,
+        #     samtools_exe=self.samtools_exe,
+        #     smalt_exe=self.smalt_exe,
+        #     score_minimum=None,
+        #     step=3, k=5,
+        #     scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+        #     logger=logger)
+        # partition_mapping(seedGenome=gen,
+        #                   logger=logger,
+        #                   samtools_exe=self.samtools_exe,
+        #                   flank="50:50",
+        #                   cluster_list=gen.loci_clusters)
+
+        make_faux_genome(cluster_list=gen.loci_clusters, seedGenome=gen,
+                         iteration=1, output_root=self.test_dir, nbuff=10000,
+                         logger=logger)
 
     def test_run_final_assembliies(self):
         gen = SeedGenome(
@@ -369,90 +415,31 @@ class riboSeed2TestCase(unittest.TestCase):
         final_cmds_ref = [
             str(
                 "{0} --careful -k 33,77,99 --pe1-1 {1} " +
-                "--pe1-2 {2} --trusted-contigs {3}  -o {4}").format(
-                    self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
-                    gen.assembled_seeds,
-                    os.path.join(self.test_dir,
-                                 "final_de_fere_novo_assembly")),
+                "--pe1-2 {2} --trusted-contigs {3}  -o {4}"
+            ).format(
+                self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
+                gen.assembled_seeds,
+                os.path.join(self.test_dir, "final_de_fere_novo_assembly")),
             str(
-                '{0} {1} tralalalala -R {2} -o {3}').format(
-                    self.quast_python_exe, self.quast_exe,
-                    self.ref_fasta,
-                    os.path.join(self.test_dir, "quast_de_fere_novo")),
+                '{0} {1} tralalalala -R {2} -o {3}'
+            ).format(
+                self.quast_python_exe, self.quast_exe,
+                self.ref_fasta,
+                os.path.join(self.test_dir, "quast_de_fere_novo")),
             str(
                 "{0} --careful -k 33,77,99 --pe1-1 {1} " +
-                "--pe1-2 {2}   -o {3}").format(
-                    self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
-                    os.path.join(self.test_dir, "final_de_novo_assembly")),
+                "--pe1-2 {2}   -o {3}"
+            ).format(
+                self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
+                os.path.join(self.test_dir, "final_de_novo_assembly")),
             str(
-                '{0} {1} tralalalala -R {2} -o {3}').format(
-                    self.quast_python_exe, self.quast_exe,
-                    self.ref_fasta,
-                    os.path.join(self.test_dir, "quast_de_novo"))]
+                '{0} {1} tralalalala -R {2} -o {3}'
+            ).format(
+                self.quast_python_exe, self.quast_exe,
+                self.ref_fasta,
+                os.path.join(self.test_dir, "quast_de_novo"))]
         for i, ref in enumerate(final_cmds_ref):
             self.assertEqual(final_cmds[i], ref)
-
-    # def test_convert_spades_cmds(self):
-    #     get_extract_convert_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
-    #                                     spades_exe, ref_as_contig, logger)
-    # def test_partition_mapped_reads(self):
-    #     gen = SeedGenome(
-    #         max_iterations=1,
-    #         genbank_path=self.ref_gb,
-    #         clustered_loci_txt=self.test_loci_file,
-    #         output_root=self.test_dir,
-    #         # initial_map_prefix=os.path.join(self.test_dir, "LociMapping"),
-    #         logger=logger)
-    #     gen.ngs_ob = ngsLib(
-    #         name="test",
-    #         master=True,
-    #         readF=self.ref_Ffastq,
-    #         readR=self.ref_Rfastq,
-    #         readS0=None,
-    #         ref_fasta=gen.ref_fasta,
-    #         smalt_dist_path=None,
-    #         # readlen=None,
-    #         smalt_exe=self.smalt_exe)
-    #     gen.loci_clusters = parse_clustered_loci_file(
-    #         filepath=gen.riboSelect_path,
-    #         output_root=self.test_dir,
-    #         gb_filepath=gen.genbank_path,
-    #         padding=100,
-    #         circular=False,
-    #         logger=logger)
-    #     add_coords_to_clusters(seedGenome=gen, logger=logger)
-    #     map_to_genome_ref_smalt(
-    #         ref=gen.ref_fasta,
-    #         ngsLib=gen.ngs_ob,
-    #         map_results_prefix=gen.initial_map_prefix,
-    #         cores=2,
-    #         samtools_exe=self.samtools_exe,
-    #         smalt_exe=self.smalt_exe,
-    #         score_minimum=None,
-    #         step=3, k=5,
-    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-    #         logger=logger)
-    #     # add output root to each
-    #     partition_mapping(
-    #         seedGenome=gen,
-    #         samtools_exe=self.samtools_exe,
-    #         flank=[0, 0],
-    #         logger=logger)
-    #     logger.warning("running without multiprocessing!")
-    #     for cluster in gen.loci_clusters:
-    #         assemble_iterative_mapping(
-    #             clu=cluster,
-    #             master_ngs_ob=gen.ngs_ob,
-    #             args=self,
-    #             nseqs=len(gen.loci_clusters),
-    #             fetch_mates=False,
-    #             include_short_contigs=True,
-    #             max_iterations=2,
-    #             min_contig_len=3000,
-    #             target_len=7000,
-    #             samtools_exe=self.samtools_exe,
-    #             keep_unmapped_reads=False,
-    #             logger=logger)
 
     def tearDown(self):
         """ delete temp files if no errors

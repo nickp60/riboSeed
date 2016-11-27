@@ -813,6 +813,7 @@ def generate_spades_cmd(
 
 def get_extract_convert_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
                                     spades_exe, ref_as_contig, logger):
+    logger.debug("generating commands to convert bam to fastq and map to ref")
     commands = []
     convert_cmds, new_ngslib = convert_bams_to_fastq_cmds(
         mapping_ob=mapping_ob, samtools_exe=samtools_exe,
@@ -826,9 +827,6 @@ def get_extract_convert_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
         k="21,33,55,77,99",
         spades_exe=spades_exe, logger=logger)
     commands.append(spades_cmd)
-# except Exception as e:
-#         logger.error(e)
-#         sys.exit(1)
     return(commands, new_ngslib)
 
 
@@ -1030,7 +1028,8 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
     """
     ####    deal with extracting all the reads that mapp to a cluster
     mapped_regions = []
-    logger.info("processing intial mapping")
+    logger.info("processing mapping for iteration %i",
+                seedGenome.this_iteration)
     for cluster in cluster_list:
         mapping_subdir = os.path.join(
             output_root, cluster.cluster_dir_name,
@@ -1050,6 +1049,8 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
             assembly_subdir=assembly_subdir)
         # if first time through, ge tthe global start adn end coords.
         if cluster.global_start_coord is None or cluster.global_end_coord is None:
+            if seedGenome.this_iteration != 0:
+                raise ValueError("global start and end should be defined previously! Exiting")
             if sorted([x.start_coord for x in cluster.loci_list]) != \
                [x.start_coord for x in cluster.loci_list]:
                 logger.warning("Coords are not in increasing order; " +
@@ -1087,10 +1088,13 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
             #  if no the first time though, fuhgetaboudit.
             #  Ie, the coords have been reassigned by the faux_genome function
         else:
-            pass
-        logger.warning("Extracting the sequence: %s %s",
+            logger.info("using coords from previous iteration:")
+            logger.debug("global start for cluster %i: %i", cluster.index, cluster.global_start_coord)
+            logger.debug("global end for cluster %i: %i", cluster.index, cluster.global_end_coord)
+        logger.warning("Extracting %s to %s from %s",
                        cluster.global_start_coord,
-                       cluster.global_end_coord)
+                       cluster.global_end_coord,
+                       cluster.seq_record.id)
 
         cluster.extractedSeqRecord = SeqRecord(
             cluster.seq_record.seq[
@@ -1166,6 +1170,8 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
 
 
 def add_coords_to_clusters(seedGenome, logger=None):
+    """
+    """
     for cluster in seedGenome.loci_clusters:  # for each cluster of loci
         # get seq record that cluster is  from
         try:
@@ -1238,16 +1244,18 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
     return(spades_quast_cmds, quast_reports)
 
 
-def make_faux_genome(cluster_list, seedGenome, iteration, output_root, nbuff=10000):
+def make_faux_genome(cluster_list, seedGenome, iteration,
+                     output_root, nbuff, logger=None):
     """ stictch together viable assembled contigs.  perhaps more importnatly,
     this also re-write thes coords relative to the new "genome"
     """
+    logger.info("prepparing extracted region genome for next round of mapping")
+    logger.debug("using %i sequences", len(cluster_list))
     nbuffer = "N" * nbuff
-    faux_genome = nbuffer[:]
+    faux_genome = str("" + nbuffer)
     counter = 0
     new_seq_name = "{0}_iter_{1}".format(seedGenome.name, iteration)
     for clu in cluster_list:
-        logger.error("before start coord: %s", clu.global_start_coord)
         if not clu.keep_contig or not clu.continue_iterating:
             pass
         else:
@@ -1259,14 +1267,12 @@ def make_faux_genome(cluster_list, seedGenome, iteration, output_root, nbuff=100
             # lastly, set cluster name to new sequence name
             clu.sequence_id = new_seq_name
             counter = counter + 1
-            logger.error("after start coord: %s", clu.global_start_coord)
     if counter == 0:
         logger.warning("No viable contigs for faux genome construction!")
         return 1
     else:
         logger.info("combined %s records as genome for next round of mapping",
                     counter)
-    logger.error("after loop first start coord: %s", cluster_list[0].global_start_coord)
     record = SeqRecord(Seq(str(faux_genome + nbuffer),
                            IUPAC.IUPACAmbiguousDNA()),
                        id=new_seq_name)
@@ -1276,20 +1282,6 @@ def make_faux_genome(cluster_list, seedGenome, iteration, output_root, nbuff=100
     with open(outpath, 'w') as outf:
         SeqIO.write(record, outf, 'fasta')
     return (outpath, len(record))
-
-
-# def run_multi(cmd):
-#     """ This function has the singular purpose of having better error handline
-#     """
-#     try:
-#         subprocess.run([cmd],
-#                        shell=sys.platform != "win32",
-#                        stdout=subprocess.PIPE,
-#                        stderr=subprocess.PIPE,
-#                        check=True)
-#     except Exception as e:
-#         logger.
-#         return 1
 
 
 if __name__ == "__main__":
@@ -1358,16 +1350,22 @@ if __name__ == "__main__":
         samtools_verison = check_version_from_cmd(
             exe='samtools', cmd='', line=3, where='stderr',
             pattern=r"\s*Version: (?P<version>[^(]+)",
-            min_version=SAMTOOLS_MIN_VERSION)
+            min_version=SAMTOOLS_MIN_VERSION, logger=logger)
     except Exception as e:
         logger.error(e)
         sys.exit(1)
     logger.debug("samtools version: %s", samtools_verison)
     # check bambamc is installed proper if using smalt
     if args.method == "smalt":
-        check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
+        test_smalt_cmds = check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
         logger.info("testing instalation of smalt and bambamc")
-        for i in [testindexcmd, testmapcmd]:
+        smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                    "sample_data",
+                                    "smalt_test", "")
+        test_index = os.path.join(smalttestdir, "test_index")
+        test_bam = os.path.join(smalttestdir, "test_mapping.bam")
+
+        for i in test_smalt_cmds:
             try:
                 logger.debug(i)
                 subprocess.run([i],
@@ -1383,10 +1381,13 @@ if __name__ == "__main__":
                     "https://sourceforge.net/projects/smalt/files/")
                 sys.exit(1)
 
-            # remove the temp files
+        # remove the temp files
         os.remove(test_bam)
-        os.remove(str(index + ".sma"))
-        os.remove(str(index + ".smi"))
+        os.remove(str(test_index + ".sma"))
+        os.remove(str(test_index + ".smi"))
+    else:
+        logger.error("Currently, SMALT is the only supported mapper")
+        sys.exit(1)
 
     # check equal length fastq.  This doesnt actually check propper pairs
     if file_len(args.fastq1) != file_len(args.fastq2):
@@ -1458,10 +1459,8 @@ if __name__ == "__main__":
                            logger=logger)
     # make first iteration look like future iterations
     seedGenome.next_reference_path = seedGenome.ref_fasta
-    # add keep_contigs and continue iterating attribute
+    #
     for cluster in seedGenome.loci_clusters:
-        cluster.keep_contig = True  # by default, include all
-        cluster.continue_iterating = True  # by default, keep going
         cluster.master_ngs_ob = seedGenome.master_ngs_ob
 #################################################################################
     # now, we need to assemble each mapping object
@@ -1469,9 +1468,6 @@ if __name__ == "__main__":
     while seedGenome.this_iteration  < args.iterations:
         logger.info("processing iteration %i", seedGenome.this_iteration)
         logger.debug("with new seed: %s", seedGenome.next_reference_path)
-        # logger.debug("from")
-        # logger.debug(seedGenome.iter_mapping_list[seedGenome.this_iteration - 1].__dict__)
-        # this should be all first time through
         clusters_to_process = [x for x in seedGenome.loci_clusters if
                                x.continue_iterating and
                                x.keep_contig]
@@ -1484,15 +1480,17 @@ if __name__ == "__main__":
                                                 y in clusters_to_process]]))
         ####
         if not seedGenome.this_iteration == 0:
-            logger.error("starting sencond iter  first start coord: %s", clusters_to_process[0].global_start_coord)
+            ## sewq seqrecords for the clusters to be gen.next_reference_path
+            with open(seedGenome.next_reference_path, 'r') as nextref:
+                next_seqrec = list(SeqIO.parse(nextref, 'fasta'))[0]  # next?
+            for clu in clusters_to_process:
+                clu.seq_record = next_seqrec
+            #make new ngslib from unampped reads
             convert_cmds, unmapped_ngsLib = convert_bams_to_fastq_cmds(
                 mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration - 1],
                 samtools_exe=args.samtools_exe,
                 ref_fasta=seedGenome.next_reference_path,  # used to make index cmd
                 which='unmapped', logger=logger)
-            # logger.info(seedGenome.iter_mapping_list[seedGenome.this_iteration - 1].__dict__)
-            # logger.warning(unmapped_ngsLib.__dict__)
-            # logger.warning(convert_cmds)
             unmapped_ngsLib.readlen = seedGenome.master_ngs_ob.readlen
             # unmapped_ngsLib.ref_fasta = seedGenome.next_reference_path
             unmapped_ngsLib.smalt_dist_path = seedGenome.master_ngs_ob.smalt_dist_path
@@ -1509,11 +1507,10 @@ if __name__ == "__main__":
             # start with whole lib if first time through
             unmapped_ngsLib = seedGenome.master_ngs_ob
         # Run commands to map to the genome
-        logger.error("starting  %i iter  first start coord: %s", seedGenome.this_iteration, clusters_to_process[0].global_start_coord)
         map_to_genome_ref_smalt(
             mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
-            # ngsLib=unmapped_ngsLib,
-            ngsLib=seedGenome.master_ngs_ob,
+            ngsLib=unmapped_ngsLib,
+            # ngsLib=seedGenome.master_ngs_ob,
             cores=args.cores,
             samtools_exe=args.samtools_exe,
             smalt_exe=args.smalt_exe,
@@ -1521,12 +1518,17 @@ if __name__ == "__main__":
             step=3, k=5,
             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
             logger=logger)
-        partition_mapping(seedGenome=seedGenome,
-                          logger=logger,
-                          samtools_exe=args.samtools_exe,
-                          flank=flank,
-                          cluster_list=seedGenome.loci_clusters)
-
+        try:
+            partition_mapping(seedGenome=seedGenome,
+                              logger=logger,
+                              samtools_exe=args.samtools_exe,
+                              flank=flank,
+                              cluster_list=seedGenome.loci_clusters)
+        except Exception as e:
+            logger.error("Error while partitioning reads from iteration %i",
+                         seedGenome.this_iteration)
+            logger.error(e)
+            sys.exit(1)
         extract_convert_assemble_cmds = []
         # generate spades cmds (cannot be multiprocessed)
         for cluster in clusters_to_process:
@@ -1583,9 +1585,9 @@ if __name__ == "__main__":
             seedGenome=seedGenome,
             iteration=seedGenome.this_iteration,
             output_root=seedGenome.output_root,
-            nbuff=5000,
-            cluster_list=clusters_to_process)
-        logger.error("after funtion first start coord: %s", clusters_to_process[0].global_start_coord)
+            nbuff=10000,
+            cluster_list=clusters_to_process,
+            logger=logger)
 
         if faux_genome_path == 1:
             seedGenome.this_iteration = args.iterations
@@ -1601,7 +1603,6 @@ if __name__ == "__main__":
                         seedGenome.this_iteration + 1)
 
     ##################################################################
-    logging.info("combinging contigs from ")
     logging.info("combinging contigs from %s", seedGenome.final_contigs_dir)
     for clu in [x for x in seedGenome.loci_clusters if x.keep_contig]:
         copy_file(current_file=clu.mappings[-1].assembled_contig,
@@ -1612,9 +1613,6 @@ if __name__ == "__main__":
         contigs_dir=seedGenome.final_contigs_dir,
         contigs_name="riboSeedContigs",
         logger=logger)
-    # except Exception as e:
-    #     logger.error(e)
-    #     sys.exit(1)
     logger.info("Combined Seed Contigs: %s", seedGenome.assembled_seeds)
     logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
     # run final contigs
