@@ -1208,7 +1208,9 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
         final_mapping = LociMapping(
             iteration=0,
             name=j,
-            mapping_subdir="testdirthatshouldntbemade",
+            mapping_subdir=os.path.join(
+                seedGenome.output_root,
+                "final_{0}_mapping".format(j)),
             assembly_subdir_needed=True,
             assembly_subdir=os.path.join(
                 seedGenome.output_root,
@@ -1222,6 +1224,9 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
             assembly_ref_as_contig = 'trusted'
         else:
             raise ValueError("Only valid cases are de novo and de fere novo!")
+        # remove unneeded dir
+        os.rmdir(final_mapping.mapping_subdir)
+
         logger.info("Running %s SPAdes" % j)
         spades_cmd = generate_spades_cmd(
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
@@ -1230,13 +1235,12 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
         spades_quast_cmds.append(spades_cmd)
 
         ref = str("-R %s" % seedGenome.ref_fasta)
-        # quast_cmd = str("{0} {1} {2} {3} -t {4} -o {5}").format(
-        quast_cmd = str("{0} {1} {2} {3} -o {4}").format(
+        quast_cmd = str("{0} {1} {2} {3} {4} -o {5}").format(
             quast_python_exe,
             quast_exe,
             seedGenome.assembled_seeds,
             ref,
-            # args.cores,
+            os.path.join(final_mapping.assembly_subdir, "contigs.fasta"),
             os.path.join(seedGenome.output_root, str("quast_" + j)))
         spades_quast_cmds.append(quast_cmd)
         quast_reports.append(os.path.join(seedGenome.output_root,
@@ -1567,9 +1571,7 @@ if __name__ == "__main__":
                 for cmd in extract_convert_assemble_cmds]
             pool.close()
             pool.join()
-            reslist = []
-            # logger.info(sum([r.get() for r in results]))
-            reslist.append([r.get() for r in results])
+            logger.info(sum([r.get().returncode for r in results]))
 
         ### evaluate mapping (cant be multiprocessed
         for cluster in clusters_to_process:
@@ -1637,6 +1639,8 @@ if __name__ == "__main__":
         pool = multiprocessing.Pool(processes=int(
             args.cores / len(quast_reports)))
         # nseqs = len(seedGenome.loci_clusters)
+        logger.debug("running the following commands:")
+        logger.debug("\n".join([x for x in spades_quast_cmds]))
         results = [
             pool.apply_async(subprocess.run,
                              (cmd,),
@@ -1648,7 +1652,8 @@ if __name__ == "__main__":
         pool.close()
         pool.join()
         # logger.info(sum([r.get() for r in results]))
-        logger.info([r.get() for r in results])
+        logger.info("Sum of return codes (should be 0):")
+        logger.info(sum([r.get().returncode for r in results]))
 
     ###
     if not args.skip_control:
@@ -1673,3 +1678,13 @@ if __name__ == "__main__":
     logger.info("Combined Contig Seeds (for validation or alternate " +
                 "assembly): %s", seedGenome.assembled_seeds)
     logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
+
+# def multi_subprocess(cmd, check=True):
+#     try:
+#         subprocess.run([cmd],
+#                        shell=sys.platform != "win32",
+#                        stdout=subprocess.PIPE,
+#                        stderr=subprocess.PIPE,
+#                        check=check)
+#     except Exception as e:
+#         raise e

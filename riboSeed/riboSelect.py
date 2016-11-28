@@ -405,8 +405,8 @@ if __name__ == "__main__":
         with open(output_path, "a") as outfile:
             outfile.write("# Generated cluters for {0} on {1}\n".format(
                 i, date))
-            outfile.write("#$ FEATURE {0}".format(args.feature))
-            sys.stdout.write("#$ FEATURE {0}".format(args.feature))
+            outfile.write("#$ FEATURE {0}\n".format(args.feature))
+            sys.stdout.write("#$ FEATURE {0}\n".format(args.feature))
             sys.stdout.write("# Generated cluters for {0} on {1}\n".format(
                 i, date))
             for k, v in indexClusters.items():
