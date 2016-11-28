@@ -1476,7 +1476,8 @@ if __name__ == "__main__":
             logger.error("No clusters had sufficient mapping! Exiting")
             sys.exit(1)
         logger.warning("clusters excluded from this iteration \n%s",
-                       " ".join([x.index for x in seedGenome.loci_clusters if
+                       " ".join([str(x.index) for x in
+                                 seedGenome.loci_clusters if
                                  x.index not in [y.index for
                                                  y in clusters_to_process]]))
         ####
@@ -1597,7 +1598,7 @@ if __name__ == "__main__":
                         faux_genome_len)
         seedGenome.this_iteration = seedGenome.this_iteration + 1
         seedGenome.next_reference_path = faux_genome_path
-        if seedGenome.this_iteration + 1 <= args.iterations:
+        if seedGenome.this_iteration + 1 >= args.iterations:
             logger.info("moving on to final assemblies!")
         else:
             logger.info("Moving on to iteration: %i",
