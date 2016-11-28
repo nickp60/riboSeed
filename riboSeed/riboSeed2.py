@@ -1252,14 +1252,15 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     logger.info("prepparing extracted region genome for next round of mapping")
     logger.debug("using %i sequences", len(cluster_list))
     nbuffer = "N" * nbuff
-    faux_genome = str("" + nbuffer)
+    # faux_genome = str("" + nbuffer)
+    faux_genome = ""
     counter = 0
     new_seq_name = "{0}_iter_{1}".format(seedGenome.name, iteration)
     for clu in cluster_list:
         if not clu.keep_contig or not clu.continue_iterating:
             pass
         else:
-            clu.global_start_coord = len(faux_genome)
+            clu.global_start_coord = len(faux_genome) + nbuff
             with open(clu.mappings[-1].assembled_contig, 'r') as con:
                 contig_rec = list(SeqIO.parse(con, 'fasta'))[0]
             faux_genome = str(faux_genome + nbuffer + contig_rec.seq)
@@ -1475,9 +1476,9 @@ if __name__ == "__main__":
             logger.error("No clusters had sufficient mapping! Exiting")
             sys.exit(1)
         logger.warning("clusters excluded from this iteration \n%s",
-                       "".join([x.index for x in seedGenome.loci_clusters if
-                                x.index not in [y.index for
-                                                y in clusters_to_process]]))
+                       " ".join([x.index for x in seedGenome.loci_clusters if
+                                 x.index not in [y.index for
+                                                 y in clusters_to_process]]))
         ####
         if not seedGenome.this_iteration == 0:
             ## sewq seqrecords for the clusters to be gen.next_reference_path
