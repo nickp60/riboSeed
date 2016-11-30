@@ -1,4 +1,6 @@
 LOCUS       toy_genome            105425 bp    DNA     linear   UNC 05-OCT-2016
+ACCESSION   SCANSCAF_0
+VERSION     SCANSCAF_0.1
 FEATURES             Location/Qualifiers
      rRNA            5001..6538
                      /note="*Name 16S_rRNA"

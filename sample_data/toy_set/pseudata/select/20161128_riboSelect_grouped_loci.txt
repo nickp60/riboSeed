@@ -1,0 +1,8 @@
+#$ FEATURE rRNA
+toy_genome combined_colapsed.fa7:combined_colapsed.fa8:combined_colapsed.fa9
+toy_genome combined_colapsed.fa13:combined_colapsed.fa14:combined_colapsed.fa15
+toy_genome combined_colapsed.fa1:combined_colapsed.fa2:combined_colapsed.fa3
+toy_genome combined_colapsed.fa10:combined_colapsed.fa11:combined_colapsed.fa12
+toy_genome combined_colapsed.fa4:combined_colapsed.fa5:combined_colapsed.fa6
+toy_genome combined_colapsed.fa20:combined_colapsed.fa21:combined_colapsed.fa22
+toy_genome combined_colapsed.fa16:combined_colapsed.fa17:combined_colapsed.fa18:combined_colapsed.fa19

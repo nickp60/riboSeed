@@ -15,7 +15,7 @@
 # output scanScaffolds_combined.gb in current directory
 echo 'USAGE: /path/to/contigs/dir/ *ext /path/to/outdir/ kingdom threshold'
 echo 'example: $ barrnap'
-if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3"]
+if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]
 then
     echo "mandatory arguments: dir, extension, and output_dir"
     exit 1
@@ -56,6 +56,7 @@ fi
 
 THISFILE=1 # counter to increment
 mkdir "$3"  # make destination directory
+
 for i in "$1"*"$2";  # for each file matching extension
 do
 BASENAME=$(basename "$i")  # get the basename of the file without path
@@ -64,6 +65,9 @@ BASENAME=$(basename "$i")  # get the basename of the file without path
 #echo "Processing ${BASENAME}, item ${THISFILE} out of ${NFILES}"
 outdir="$3"${BASENAME}_barrnap
 sed 's/^[^ ]*[|]\([^|]*\)[|] .*$/>\1/' ${i} > ${outdir}_renamed${2}
+
+#get accession name
+ACCNAME=$(grep "^>" ${outdir}_renamed${2} |sed -e "s/>//")
 
 barrnap -kingdom "$KINGDOM" ${outdir}_renamed${2} --reject "$THRESH" > ${outdir}.gff
 # add dumb locus tags
@@ -77,11 +81,23 @@ while read j; do
     LOCUS=$((LOCUS+1))
 done < ${outdir}.gff
 
-
+OUTGB=$(echo ${outdir}.gb)
 # merge fasta and gff3 back to a genbank
-seqret -sequence ${outdir}_renamed${2} -feature -fformat gff3 -fopenfile ${outdir}_renamed.gff -osformat genbank -auto  -outseq ${outdir}.gb
+seqret -sequence ${outdir}_renamed${2} -feature -fformat gff3 -fopenfile ${outdir}_renamed.gff -osformat genbank -auto  -outseq ${OUTGB}
+
+# add version and accession cause biopython complains otherwise
+sed -i "1 aVERSION     $ACCNAME" $OUTGB
+sed -i "1 aACCESSION   $ACCNAME" $OUTGB
+
+if [ $THISFILE == 1 ]; 
+then # write
+cat $OUTGB > ${3}scannedScaffolds.gb
+else # append
+cat $OUTGB >> ${3}scannedScaffolds.gb
+fi
+
 THISFILE=$((THISFILE+1))
 done
-# combine results
 
-cat "$3"*.gb > ${3}scanScaffolds_combined.gb
+echo "Combined $((THISFILE-1)) gb file(s)"
+echo "Results gb file: ${3}scannedScaffolds.gb"
