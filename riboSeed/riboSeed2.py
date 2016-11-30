@@ -317,16 +317,16 @@ class LociMapping(object):
                              "iteration, mapping_subdir name")
 
     def make_mapping_subdir_and_prefix(self):
-        if self.mapping_subdir is None:
-            pass
+        # if self.mapping_subdir is None:
+        #     pass
+        # else:
+        if not os.path.isdir(self.mapping_subdir):
+            os.makedirs(self.mapping_subdir)
         else:
-            if not os.path.isdir(self.mapping_subdir):
-                os.makedirs(self.mapping_subdir)
-            else:
-                pass
-            self.mapping_prefix = os.path.join(
-                self.mapping_subdir,
-                "{0}_iteration_{1}".format(self.name, self.iteration))
+            pass
+        self.mapping_prefix = os.path.join(
+            self.mapping_subdir,
+            "{0}_iteration_{1}".format(self.name, self.iteration))
 
     def name_bams_and_sams(self):
         self.pe_map_bam = str(self.mapping_prefix + "_pe.bam")
@@ -352,6 +352,11 @@ class LociMapping(object):
 
 
 def get_args():  # pragma: no cover
+    """#TODO:     for cli mods:
+    http://stackoverflow.com/questions/18025646/
+         python-argparse-conditional-requirements
+    make this able to handle different library types such as two unpaired runs
+    """
     parser = argparse.ArgumentParser(
         description="Given regions from riboSnag, assembles the mapped reads",
         add_help=False)  # to allow for custom help
@@ -549,7 +554,7 @@ def get_args():  # pragma: no cover
                           help="Path to quast executable; " +
                           "default: %(default)s")
     optional.add_argument("--quast_python_exe", dest="quast_python_exe",
-                          action="store", default="python2.7",
+                          action="store", default="python2",
                           help="Path to quast executable; " +
                           "default: %(default)s")
     args = parser.parse_args()
@@ -657,6 +662,7 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
                             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                             step=3, k=5, logger=None):
     """run smalt based on pased args
+    #TODO rework this to read libtype of ngslib object
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
@@ -729,8 +735,10 @@ def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
                                which='mapped', source_ext="_sam", logger=None):
     """returns ngslib
     """
-    if which not in ['mapped', 'unmapped']:
-        raise ValueError("only valid options are mapped and unmapped")
+    # if which not in ['mapped', 'unmapped']:
+    #     raise ValueError("only valid options are mapped and unmapped")
+    assert which not in ['mapped', 'unmapped'], \
+        "only valid options are mapped and unmapped"
     read_path_dict = {'readF': None, 'readR': None, 'readS': None}
     for key, value in read_path_dict.items():
         read_path_dict[key] = str(os.path.splitext(
@@ -1200,7 +1208,8 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
     """
     logger.info("\n\nStarting Final Assemblies\n\n")
     quast_reports = []
-    spades_quast_cmds = []
+    spades_cmds = []
+    quast_cmds = []
     final_list = ["de_fere_novo"]
     if not skip_control:
         final_list.append("de_novo")
@@ -1232,20 +1241,21 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
             k=kmers, spades_exe=spades_exe, logger=logger)
-        spades_quast_cmds.append(spades_cmd)
+        spades_cmds.append(spades_cmd)
 
         ref = str("-R %s" % seedGenome.ref_fasta)
-        quast_cmd = str("{0} {1} {2} {3} {4} -o {5}").format(
-            quast_python_exe,
+        quast_cmd = str("{0} {1} {2} {3} -o {4}").format(
+            # quast_python_exe,
+            "",
             quast_exe,
-            seedGenome.assembled_seeds,
+            # seedGenome.assembled_seeds,
             ref,
             os.path.join(final_mapping.assembly_subdir, "contigs.fasta"),
             os.path.join(seedGenome.output_root, str("quast_" + j)))
-        spades_quast_cmds.append(quast_cmd)
+        quast_cmds.append(quast_cmd)
         quast_reports.append(os.path.join(seedGenome.output_root,
                                           str("quast_" + j), "report.tsv"))
-    return(spades_quast_cmds, quast_reports)
+    return(spades_cmds, quast_cmds, quast_reports)
 
 
 def make_faux_genome(cluster_list, seedGenome, iteration,
@@ -1287,6 +1297,17 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     with open(outpath, 'w') as outf:
         SeqIO.write(record, outf, 'fasta')
     return (outpath, len(record))
+
+def multi_subprocess(cmd, check=True):
+    try:
+        subprocess.run([cmd],
+                       shell=sys.platform != "win32",
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE,
+                       check=check)
+    except Exception as e:
+        raise e
+    return 0
 
 
 if __name__ == "__main__":
@@ -1349,6 +1370,7 @@ if __name__ == "__main__":
     # hack together a proper executable for quast, as it needs to
     # be run via python2
     args.quast_exe = str(shutil.which(args.quast_exe))
+    args.quast_python_exe = str(shutil.which(args.quast_python_exe))
     logger.debug("FULL quast execuatble path: %s", args.quast_exe)
     # check samtools verison
     try:
@@ -1620,14 +1642,21 @@ if __name__ == "__main__":
     logger.info("Combined Seed Contigs: %s", seedGenome.assembled_seeds)
     logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
     # run final contigs
-    spades_quast_cmds, quast_reports = run_final_assemblies(
+    spades_cmds, quast_cmds, quast_reports = run_final_assemblies(
         seedGenome=seedGenome, spades_exe=args.spades_exe,
         quast_exe=args.quast_exe, quast_python_exe=args.quast_python_exe,
         skip_control=args.skip_control, kmers=args.kmers, logger=logger)
 
     if args.DEBUG_multiprocessing:
         logger.warning("running without multiprocessing!")
-        for cmd in spades_quast_cmds:
+        for cmd in spades_cmds:
+            logger.debug(cmd)
+            subprocess.run([cmd],
+                           shell=sys.platform != "win32",
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           check=True)
+        for cmd in quast_cmds:
             logger.debug(cmd)
             subprocess.run([cmd],
                            shell=sys.platform != "win32",
@@ -1635,12 +1664,12 @@ if __name__ == "__main__":
                            stderr=subprocess.PIPE,
                            check=True)
     else:
-        # split the processors based on how many quast reports are on the list
+        # split the processors based on how many spades_cmds are on the list
         pool = multiprocessing.Pool(processes=int(
-            args.cores / len(quast_reports)))
+            args.cores / len(spades_cmds)))
         # nseqs = len(seedGenome.loci_clusters)
         logger.debug("running the following commands:")
-        logger.debug("\n".join([x for x in spades_quast_cmds]))
+        logger.debug("\n".join([x for x in spades_cmds]))
         results = [
             pool.apply_async(subprocess.run,
                              (cmd,),
@@ -1648,12 +1677,31 @@ if __name__ == "__main__":
                               "stdout": subprocess.PIPE,
                               "stderr": subprocess.PIPE,
                               "check": True})
-            for cmd in spades_quast_cmds]
+            for cmd in spades_cmds]
         pool.close()
         pool.join()
+        logger.info(sum([r.get().returncode for r in results]))
+
+        # split the processors based on how many spades_cmds are on the list
+        qpool = multiprocessing.Pool(processes=int(
+            args.cores / len(spades_cmds)))
+        # nseqs = len(seedGenome.loci_clusters)
+        logger.debug("running the quast following commands:")
+        logger.debug("\n".join([x for x in spades_cmds]))
+        qresults = [
+            qpool.apply_async(subprocess.run,
+                             (cmd,),
+                             {"shell": sys.platform != "win32",
+                              "stdout": subprocess.PIPE,
+                              "stderr": subprocess.PIPE,
+                              "check": True})
+            for cmd in quast_cmds]
+        qpool.close()
+        qpool.join()
         # logger.info(sum([r.get() for r in results]))
         logger.info("Sum of return codes (should be 0):")
-        logger.info(sum([r.get().returncode for r in results]))
+        logger.info([r.get() for r in qresults])
+        logger.info(sum([r.get().returncode for r in qresults]))
 
     ###
     if not args.skip_control:
@@ -1678,13 +1726,3 @@ if __name__ == "__main__":
     logger.info("Combined Contig Seeds (for validation or alternate " +
                 "assembly): %s", seedGenome.assembled_seeds)
     logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
-
-# def multi_subprocess(cmd, check=True):
-#     try:
-#         subprocess.run([cmd],
-#                        shell=sys.platform != "win32",
-#                        stdout=subprocess.PIPE,
-#                        stderr=subprocess.PIPE,
-#                        check=check)
-#     except Exception as e:
-#         raise e

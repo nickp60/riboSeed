@@ -129,8 +129,19 @@ class riboSeed2TestCase(unittest.TestCase):
             readS0="dummy",
             ref_fasta=self.ref_fasta,
             smalt_exe=self.smalt_exe)
+        testlib_s = ngsLib(
+            name="test",
+            master=False,
+            readF=None,
+            readR=None,
+            readS0=self.ref_Ffastq,
+            ref_fasta=self.ref_fasta,
+            smalt_exe=self.smalt_exe)
+        self.assertEqual(testlib_s.libtype, "s_1")
+        self.assertEqual(testlib_s.readlen, 145.0)
+        # test unnamed fails
         with self.assertRaises(ValueError):
-            testlib_pe_s = ngsLib(
+            ngsLib(
                 name=None,
                 master=False,
                 readF=self.ref_Ffastq,
@@ -142,6 +153,16 @@ class riboSeed2TestCase(unittest.TestCase):
         #     self.test_dir, "smalt_distance_est.sam")))
         self.assertEqual(testlib_pe_s.libtype, "pe_s")
         self.assertEqual(testlib_pe_s.readlen, None)
+        # test fails with singe PE file
+        with self.assertRaises(ValueError):
+            ngsLib(
+                name=None,
+                master=False,
+                readF=self.ref_Ffastq,
+                readR=None,
+                readS0="dummy",
+                ref_fasta=self.ref_fasta,
+                smalt_exe=self.smalt_exe)
 
         # check master (ie, generate a distance file with smalt
         testlib_pe = ngsLib(
@@ -150,7 +171,8 @@ class riboSeed2TestCase(unittest.TestCase):
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
             ref_fasta=self.ref_fasta,
-            smalt_exe=self.smalt_exe)
+            smalt_exe=self.smalt_exe,
+            logger=logger)
         self.assertTrue(os.path.exists(os.path.join(
             self.test_dir, "smalt_distance_est.sam")))
         self.assertEqual(testlib_pe.libtype, "pe")
