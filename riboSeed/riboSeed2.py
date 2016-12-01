@@ -419,12 +419,12 @@ def get_args():  # pragma: no cover
                           help="kmers used during seeding assemblies, " +
                           "separated bt commas" +
                           "; default: %(default)s")
-    optional.add_argument("-g", "--min_growth", dest='min_growth',
-                          action="store",
-                          default=None, type=int,
-                          help="skip remaining iterations if contig doesnt " +
-                          "extend by --min_growth. ignored" +
-                          "by default")
+    # optional.add_argument("-g", "--min_growth", dest='min_growth',
+    #                       action="store",
+    #                       default=None, type=int,
+    #                       help="skip remaining iterations if contig doesnt " +
+    #                       "extend by --min_growth. ignored" +
+    #                       "by default")
     optional.add_argument("-s", "--min_score_SMALT", dest='min_score_SMALT',
                           action="store",
                           default=None, type=int,
@@ -841,7 +841,7 @@ def get_convert_run_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
 
 
 def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
-                            min_assembly_len, min_growth,
+                            min_assembly_len,
                             include_short_contigs, keep_best_contig=True,
                             seqname='', logger=None):
     """return sucess codes:
@@ -851,7 +851,8 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     3 = exclude, error ocurred
     """
     prelog = "{0}-{1}-iter{2}:".format("SEED_cluster", clu.index,
-                                       clu.mappings[-1].iteration)
+                                       # clu.mappings[-1].iteration)
+                                       mapping_ob.iteration)
     # if logger is None:
     #     raise ValueError("this must be used with a logger!")
     assert logger is not None, "Must Use Logging"
@@ -859,9 +860,10 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         seqname = os.path.splitext(os.path.basename(mapping_ob.ref_fasta))[0]
     mapping_ob.assembled_contig = os.path.join(
         mapping_ob.assembly_subdir, "contigs.fasta")
-    logger.info("checking for the following file: \n{0}".format(
+    logger.debug("checking for the following file: \n{0}".format(
         mapping_ob.assembled_contig))
-    if not output_from_subprocess_exists(mapping_ob.assembled_contig):
+    if not (os.path.isfile(mapping_ob.assembled_contig) and
+            os.path.getsize(mapping_ob.assembled_contig) > 0):
         logger.warning("%s No output from SPAdes this time around", prelog)
         return 3
     if keep_best_contig:
@@ -925,29 +927,30 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         #     clu.keep_contig = False  # flags contig for exclusion
         # clu.continue_iterating = False  # skip remaining iterations
     else:
-        pass
-    # This is a feature that is supposed to help skip unneccesary
-    # iterations. If the difference is negative (new contig is shorter)
-    # continue, as this may happen (especially in first mapping if
-    # reference is not closely related to Sample), continue to map.
-    # If the contig length increases, but not as much as min_growth,
-    # skip future iterations
-    if min_growth is not None and contig_length_diff > 0 and contig_length_diff < min_growth:
-        logger.info("the length of the new contig was only 0bp changed " +
-                    "from previous iteration; skipping future iterations")
-        return 1
-        # this_iteration = max_iterations + 1  # skip remaining iterations
-    # if continuing til reaching the target lenth of the seed
-    elif proceed_to_target and contig_len >= target_seed_len:
-        logger.info("target length threshold! has been reached; " +
-                    "skipping future iterations")
-        return 1
-    # clu.continue_iterating = False  # skip remaining iterations
-    else:
-        # nothing to see here
-        clu.continue_iterating = True
-    # if clu.continue_iterating:
         return 0
+        pass
+
+    # # This is a feature that is supposed to help skip unneccesary
+    # # iterations. If the difference is negative (new contig is shorter)
+    # # continue, as this may happen (especially in first mapping if
+    # # reference is not closely related to Sample), continue to map.
+    # # If the contig length increases, but not as much as min_growth,
+    # # skip future iterations
+    # if min_growth is not None and contig_length_diff > 0 and contig_length_diff < min_growth:
+    #     logger.info("the length of the new contig was only 0bp changed " +
+    #                 "from previous iteration; skipping future iterations")
+    #     return 1
+    #     # this_iteration = max_iterations + 1  # skip remaining iterations
+    # # if continuing til reaching the target lenth of the seed
+    # elif proceed_to_target and contig_len >= target_seed_len:
+    #     logger.info("target length threshold! has been reached; " +
+    #                 "skipping future iterations")
+    #     return 1
+    # # clu.continue_iterating = False  # skip remaining iterations
+    # else:
+    #     # nothing to see here
+    #     clu.continue_iterating = True
+    # # if clu.continue_iterating:
 
 
 def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
@@ -1583,9 +1586,10 @@ if __name__ == "__main__":
                 keep_best_contig=True,
                 seqname='', logger=logger,
                 min_assembly_len=args.min_assembly_len,
-                min_growth=args.min_growth,
+                # min_growth=args.min_growth,
                 proceed_to_target=proceed_to_target,
                 target_len=args.target_len)
+
             if cluster.assembly_success == 3:
                 # other error handling; failed counter?
                 cluster.continue_iterating = False
@@ -1596,12 +1600,12 @@ if __name__ == "__main__":
             elif cluster.assembly_success == 1:
                 try:
                     clu.contigs_new_path = copy_file(
-                        current_file=mapping_ob.assembled_contig,
-                        dest_dir=final_contigs_dir,
+                        current_file=cluster.mappings[-1].assembled_contig,
+                        dest_dir=seedGenome.final_contigs_dir,
                         name=os.path.join(
-                            os.path.basename(mapping_ob.assembled_contig),
+                            os.path.basename(cluster.mappings[-1].assembled_contig),
                             "cluster_{0}_final_iter_{1}.fasta".format(
-                                cluster.index, sluster.mappings[-1],
+                                cluster.index, cluster.mappings[-1],
                                 clu.mappings[-1].iteration)),
                         logger=logger)
                 except:

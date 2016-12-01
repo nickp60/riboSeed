@@ -23,6 +23,7 @@ import sys
 import math
 import re
 import shutil
+import itertools
 
 import numpy as np
 import matplotlib as mpl
@@ -48,14 +49,17 @@ class LociCluster(object):
     """ organizes the clustering process instead of dealing with nested lists
     This holds the whole cluster of one to several individual loci
     """
-    def __init__(self, index, sequence_id, loci_list, padding=None,
+    newid = itertools.count()
+
+    def __init__(self, sequence_id, loci_list, padding=None,
                  global_start_coord=None, global_end_coord=None,
                  seq_record=None, feat_of_interest=None, mappings=None,
                  extractedSeqRecord=None, cluster_dir_name=None,
                  circular=False, output_root=None, final_contigs_path=None,
                  continue_iterating=True, keep_contig=True):
         # int: unique identifier for cluster
-        self.index = index
+        self.index = next(LociCluster.newid)
+        # self.index = index
         # str: sequence name, usually looks like 'NC_17777373.1' or similar
         self.sequence_id = sequence_id
         # list: hold locus objects for each item in cluster
@@ -85,10 +89,14 @@ class LociCluster(object):
 
         self.final_contig_path = final_contigs_path
         self.name_mapping_dir()
+    #     self.printid()
+    # def printid(self):
+    #     print(self.index)
 
     def name_mapping_dir(self):
         self.cluster_dir_name = str("{0}_cluster_{1}").format(
             self.sequence_id, self.index)
+
 
 
 class Locus(object):
@@ -248,7 +256,6 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
     if not (os.path.isfile(filepath) and os.path.getsize(filepath) > 0):
         raise ValueError("Cluster File not found!")
     clusters = []
-    cluster_index = 0
     # this covers common case where user submits genbank and cluster file
     # in the wrong order.
     if filepath.endswith(("gb", "genbank", "gbk")):
@@ -285,14 +292,15 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
                                    locus_tag=loc,
                                    sequence_id=seqname))
         # make and append LociCluster objects
-        clusters.append(LociCluster(index=cluster_index,
+        clusters.append(LociCluster(  #index=cluster_index,
                                     mappings=[],
                                     output_root=output_root,
                                     sequence_id=seqname,
                                     loci_list=loci_list,
                                     padding=padding,
                                     circular=circular))
-        cluster_index = cluster_index + 1
+        # cluster_index = cluster_index + 1
+
     ### check feature; if still none or starts with #$ (ie, no split)
     if feature is None:
         raise ValueError("no feature extracted from coords file! This " +
