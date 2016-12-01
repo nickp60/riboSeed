@@ -44,7 +44,7 @@ from riboSeed.riboSeed2 import SeedGenome, ngsLib,  LociMapping, \
     map_to_genome_ref_smalt, add_coords_to_clusters, partition_mapping, \
     convert_bams_to_fastq_cmds, check_smalt_full_install,\
     generate_spades_cmd, estimate_distances_smalt, run_final_assemblies,\
-    check_libs_before_mapping, make_faux_genome
+    check_libs_before_mapping, make_faux_genome, get_convert_run_spades_cmds
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
@@ -129,16 +129,18 @@ class riboSeed2TestCase(unittest.TestCase):
             readS0="dummy",
             ref_fasta=self.ref_fasta,
             smalt_exe=self.smalt_exe)
-        testlib_s = ngsLib(
-            name="test",
-            master=False,
-            readF=None,
-            readR=None,
-            readS0=self.ref_Ffastq,
-            ref_fasta=self.ref_fasta,
-            smalt_exe=self.smalt_exe)
-        self.assertEqual(testlib_s.libtype, "s_1")
-        self.assertEqual(testlib_s.readlen, 145.0)
+        #  this test should go away when we allow running with single lib
+        with self.assertRaises(ValueError):
+            testlib_s = ngsLib(
+                name="test",
+                master=False,
+                readF=None,
+                readR=None,
+                readS0=self.ref_Ffastq,
+                ref_fasta=self.ref_fasta,
+                smalt_exe=self.smalt_exe)
+            self.assertEqual(testlib_s.libtype, "s_1")
+            self.assertEqual(testlib_s.readlen, 145.0)
         # test unnamed fails
         with self.assertRaises(ValueError):
             ngsLib(
@@ -288,7 +290,7 @@ class riboSeed2TestCase(unittest.TestCase):
                          "test_iteration_1_mappedreadR.fastq"),
             os.path.join(testmapping.mapping_subdir,
                          "test_iteration_1_mappedreadS.fastq"), )
-        self.assertEqual(cmd[0], cmd_ref)
+        self.assertEqual(cmd, cmd_ref)
 
     def test_generate_spades_cmds(self):
         """Question: why the heck is there a space before the -o?
@@ -300,26 +302,83 @@ class riboSeed2TestCase(unittest.TestCase):
             assembly_subdir=self.test_dir,
             ref_fasta=self.ref_fasta,
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-        testngs = ngsLib(
+        testngs1 = ngsLib(
             name="test",
             master=False,
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
             ref_fasta=self.ref_fasta,
             smalt_exe=self.smalt_exe)
-
-        cmd1 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs,
+        testngs2 = ngsLib(
+            name="test",
+            master=False,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            readS0=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            smalt_exe=self.smalt_exe)
+        # PE reads, prelim
+        cmd1 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs1,
+                                   ref_as_contig='trusted',
+                                   as_paired=True, addLibs="",
+                                   prelim=True,
+                                   k="21,33,55,77,99",
+                                   spades_exe="spades.py",
+                                   logger=logger)
+        # PE with singletons
+        cmd2 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs2,
                                    ref_as_contig='trusted',
                                    as_paired=True, addLibs="",
                                    prelim=False,
                                    k="21,33,55,77,99",
                                    spades_exe="spades.py",
                                    logger=logger)
+        # PE as sngle libraries
+        cmd3 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs1,
+                                   ref_as_contig='trusted',
+                                   as_paired=False, addLibs="",
+                                   prelim=False,
+                                   k="21,33,55,77,99",
+                                   spades_exe="spades.py",
+                                   logger=logger)
+        # PE and singletons all as single libraries
+        cmd4 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs2,
+                                   ref_as_contig='trusted',
+                                   as_paired=False, addLibs="",
+                                   prelim=False,
+                                   k="21,33,55,77,99",
+                                   spades_exe="spades.py",
+                                   logger=logger)
         cmd1_ref = str(
-            "spades.py --careful -k 21,33,55,77,99 --pe1-1 {0} " +
-            "--pe1-2 {1} --trusted-contigs {2}  -o {3}").format(
+            "spades.py --only-assembler --cov-cutoff off --sc --careful " +
+            "-k 21,33,55,77,99 --pe1-1 {0} " +
+            "--pe1-2 {1} --trusted-contigs {2}  -o {3}"
+        ).format(
             self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir)
         self.assertEqual(cmd1, cmd1_ref)
+
+        cmd2_ref = str(
+            "spades.py --careful -k 21,33,55,77,99 --pe1-1 {0} " +
+            "--pe1-2 {1} --pe1-s {2} --trusted-contigs {3}  -o {4}"
+        ).format(
+            self.ref_Ffastq, self.ref_Rfastq, self.ref_Rfastq,
+            self.ref_fasta, self.test_dir)
+        self.assertEqual(cmd2, cmd2_ref)
+
+        cmd3_ref = str(
+            "spades.py --careful -k 21,33,55,77,99 --pe1-s {0} " +
+            "--pe2-s {1} --trusted-contigs {2}  -o {3}"
+        ).format(
+            self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir)
+        self.assertEqual(cmd3, cmd3_ref)
+
+        cmd4_ref = str(
+            "spades.py --careful -k 21,33,55,77,99 --pe1-s {0} " +
+            "--pe2-s {1} --pe3-s {1}  --trusted-contigs {2}  -o {3}"
+        ).format(
+            self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir)
+        self.assertEqual(cmd4, cmd4_ref)
+
 
     def test_lib_check(self):
         empty_file = os.path.join(self.test_dir, "test_not_real_file")
@@ -352,21 +411,96 @@ class riboSeed2TestCase(unittest.TestCase):
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
             ref_fasta=self.ref_fasta,
-            smalt_exe=self.smalt_exe)
+            smalt_exe=self.smalt_exe,
+            logger=logger)
 
         map_to_genome_ref_smalt(mapping_ob=testmapping, ngsLib=testngs,
                                 cores=4, samtools_exe=self.samtools_exe,
-                                smalt_exe=self.smalt_exe, score_minimum=45,
+                                smalt_exe=self.smalt_exe, score_minimum=None,
                                 scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                                 step=3, k=5, logger=logger)
         mapped_str = get_number_mapped(testmapping.pe_map_bam,
                                        samtools_exe=self.samtools_exe)
         nmapped = int(mapped_str[0:5])
         nperc = float(mapped_str[-13:-8])
-        print(nmapped)
-        print(nperc)
-        self.assertTrue(12575 < nmapped < 12635)
+        print("number of PE reads mapped: %f2" % nmapped)
+        print("percentage of PE reads mapped: %2f" % nperc)
+        ###
+        testngs2 = ngsLib(
+            name="test",
+            master=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            readS0=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            smalt_exe=self.smalt_exe,
+            logger=logger)
+
+        map_to_genome_ref_smalt(mapping_ob=testmapping, ngsLib=testngs2,
+                                cores=4, samtools_exe=self.samtools_exe,
+                                smalt_exe=self.smalt_exe, score_minimum=None,
+                                scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+                                step=3, k=5, logger=logger)
+        mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
+                                       samtools_exe=self.samtools_exe)
+        mapped_str2 = get_number_mapped(testmapping.s_map_bam,
+                                       samtools_exe=self.samtools_exe)
+        nmapped2 = int(mapped_str2[0:5])
+        nperc2 = float(mapped_str2[-13:-8])
+        print("number of s reads mapped: %f2" % nmapped2)
+        print("percentage of s reads mapped: %f2" % nperc2)
+
+        ###
+        self.assertTrue(12575 < nmapped < 12645)
         self.assertTrue(34.6 < nperc < 34.8)
+        ###
+        self.assertTrue(6400 < nmapped2 < 6500)
+        self.assertTrue(34.6 < nperc2 < 35.8)
+
+    def test_convert_run_spades(self):
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+
+        cmds, newngsslib = \
+            get_convert_run_spades_cmds(
+                mapping_ob=testmapping,
+                fetch_mates=False,
+                samtools_exe=self.samtools_exe,
+                spades_exe=self.spades_exe,
+                ref_as_contig="trusted", logger=logger)
+        print(cmds)
+        print(newngsslib.__dict__)
+        test_cmds = [
+            str(
+                "{0} fastq {1} -1 {2} -2 {3} -s {4}"
+            ).format(
+                self.samtools_exe, testmapping.mapped_bam,
+                os.path.join(testmapping.mapping_subdir,
+                             "test_iteration_1_mappedreadF.fastq"),
+                os.path.join(testmapping.mapping_subdir,
+                             "test_iteration_1_mappedreadR.fastq"),
+                os.path.join(testmapping.mapping_subdir,
+                             "test_iteration_1_mappedreadS.fastq")),
+            str(
+                "{0} --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s {1} " +
+                "--pe2-s {2} --pe3-s {3}  --trusted-contigs {4}  -o {5}"
+            ).format(
+                self.spades_exe,
+                os.path.join(self.test_dir, "LociMapping",
+                             "test_iteration_1_mappedreadF.fastq"),
+                os.path.join(self.test_dir, "LociMapping",
+                             "test_iteration_1_mappedreadR.fastq"),
+                os.path.join(self.test_dir, "LociMapping",
+                             "test_iteration_1_mappedreadS.fastq"),
+                self.ref_fasta, self.test_dir)]
+        for i, ref in enumerate(test_cmds):
+            self.assertEqual(cmds[i], ref)
+
+    def test_evaluate_spades(self):
 
     def test_make_faux_genome(self):
         gen = SeedGenome(
@@ -384,15 +518,16 @@ class riboSeed2TestCase(unittest.TestCase):
             logger=logger)
         add_coords_to_clusters(seedGenome=gen, logger=logger)
 
-        for loci in gen.loci_clusters:
-            loci.keep_contig = True
-            loci.mappings[0] = LociMapping(
+        for clu in gen.loci_clusters:
+            clu.keep_contig = True
+            clu.mappings.append(LociMapping(
                 name="test",
                 iteration=1,
                 assembly_subdir=self.test_dir,
                 ref_fasta=self.ref_fasta,
                 assembled_contig=self.ref_fasta,
-                mapping_subdir=os.path.join(self.test_dir, "LociMapping_for_text_faux_genome"))
+                mapping_subdir=os.path.join(
+                    self.test_dir, "LociMapping_for_text_faux_genome")))
 
         # map_to_genome_ref_smalt(
         #     mapping_ob=gen.iter_mapping_list[0],
@@ -430,11 +565,11 @@ class riboSeed2TestCase(unittest.TestCase):
                 ref_fasta=self.ref_fasta,
                 smalt_exe=self.smalt_exe))
         gen.ref_fasta = self.ref_fasta
-        final_cmds, quast_reports = run_final_assemblies(
+        final_spades_cmds, final_quast_cmds, quast_reports = run_final_assemblies(
             seedGenome=gen, spades_exe=self.spades_exe,
             quast_exe=self.quast_exe, quast_python_exe=self.quast_python_exe,
             skip_control=False, kmers="33,77,99", logger=logger)
-        final_cmds_ref = [
+        final_spades_cmds_ref = [
             str(
                 "{0} --careful -k 33,77,99 --pe1-1 {1} " +
                 "--pe1-2 {2} --trusted-contigs {3}  -o {4}"
@@ -443,25 +578,32 @@ class riboSeed2TestCase(unittest.TestCase):
                 gen.assembled_seeds,
                 os.path.join(self.test_dir, "final_de_fere_novo_assembly")),
             str(
-                '{0} {1} tralalalala -R {2} -o {3}'
-            ).format(
-                self.quast_python_exe, self.quast_exe,
-                self.ref_fasta,
-                os.path.join(self.test_dir, "quast_de_fere_novo")),
-            str(
                 "{0} --careful -k 33,77,99 --pe1-1 {1} " +
                 "--pe1-2 {2}   -o {3}"
             ).format(
                 self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
-                os.path.join(self.test_dir, "final_de_novo_assembly")),
+                os.path.join(self.test_dir, "final_de_novo_assembly"))]
+        final_quast_cmds_ref = [
             str(
-                '{0} {1} tralalalala -R {2} -o {3}'
+                '{0} {1} -R {2} {3} -o {4}'
             ).format(
                 self.quast_python_exe, self.quast_exe,
                 self.ref_fasta,
+                os.path.join(self.test_dir, "final_de_fere_novo_assembly",
+                             "contigs.fasta"),
+                os.path.join(self.test_dir, "quast_de_fere_novo")),
+            str(
+                '{0} {1} -R {2} {3} -o {4}'
+            ).format(
+                self.quast_python_exe, self.quast_exe,
+                self.ref_fasta,
+                os.path.join(self.test_dir, "final_de_novo_assembly",
+                             "contigs.fasta"),
                 os.path.join(self.test_dir, "quast_de_novo"))]
-        for i, ref in enumerate(final_cmds_ref):
-            self.assertEqual(final_cmds[i], ref)
+        for i, ref in enumerate(final_spades_cmds_ref):
+            self.assertEqual(final_spades_cmds[i], ref)
+        for i, ref in enumerate(final_quast_cmds_ref):
+            self.assertEqual(final_quast_cmds[i], ref)
 
     def tearDown(self):
         """ delete temp files if no errors

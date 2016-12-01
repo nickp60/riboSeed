@@ -122,7 +122,7 @@ class SeedGenome(object):
         """
         mandatory = [self.genbank_path, self.max_iterations,
                      self.output_root, self.clustered_loci_txt]
-        if any([x is None for x in mandatory]):
+        if None in mandatory:
             raise ValueError("SeedGenome must be instantiated with at least "
                              "genbank_path, max_iterations, cluster file, " +
                              "and output_root")
@@ -208,7 +208,7 @@ class ngsLib(object):
         """ checks that all mandatory arguments are not none
         """
         mandatory = [self.name, self.readF, self.readR, self.ref_fasta]
-        if any([x is None for x in mandatory]):
+        if None in mandatory:
             raise ValueError("SeedGenome must be instantiated with name, "
                              "forward reads, reverse reads, and ref fasta")
 
@@ -312,7 +312,7 @@ class LociMapping(object):
         """ checks that all mandatory arguments are not none
         """
         mandatory = [self.name, self.iteration, self.mapping_subdir]
-        if any([x is None for x in mandatory]):
+        if None in mandatory:
             raise ValueError("mapping ob must be instantiated with name, "
                              "iteration, mapping_subdir name")
 
@@ -421,10 +421,10 @@ def get_args():  # pragma: no cover
                           "; default: %(default)s")
     optional.add_argument("-g", "--min_growth", dest='min_growth',
                           action="store",
-                          default=0, type=int,
+                          default=None, type=int,
                           help="skip remaining iterations if contig doesnt " +
-                          "extend by --min_growth. if 0, ignore" +
-                          "; default: %(default)s")
+                          "extend by --min_growth. ignored" +
+                          "by default")
     optional.add_argument("-s", "--min_score_SMALT", dest='min_score_SMALT',
                           action="store",
                           default=None, type=int,
@@ -567,8 +567,7 @@ def check_smalt_full_install(smalt_exe, logger=None):
     smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                 "sample_data",
                                 "smalt_test", "")
-    if logger is None:
-        raise ValueError("Must Use Logging")
+    assert logger is not None, "Must Use Logging"
     logger.debug("looking for smalt test dir: {0}".format(
         smalttestdir))
     if not os.path.exists(smalttestdir):
@@ -737,7 +736,7 @@ def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
     """
     # if which not in ['mapped', 'unmapped']:
     #     raise ValueError("only valid options are mapped and unmapped")
-    assert which not in ['mapped', 'unmapped'], \
+    assert which in ['mapped', 'unmapped'], \
         "only valid options are mapped and unmapped"
     read_path_dict = {'readF': None, 'readR': None, 'readS': None}
     for key, value in read_path_dict.items():
@@ -745,8 +744,8 @@ def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
             mapping_ob.mapped_bam)[0] + "_" + which + key + '.fastq')
         logger.debug(read_path_dict[key])
 
-    if any([x is None for x in read_path_dict.values()]):
-        raise ValueError("Could not properly construct fastq names!")
+    assert None not in read_path_dict.values(), \
+        "Could not properly construct fastq names!"
     if which == 'mapped':
             source_ext = '_bam'
 
@@ -757,7 +756,7 @@ def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
         read_path_dict['readF'],
         read_path_dict['readR'],
         read_path_dict['readS'])
-    return([samfilter], ngsLib(name=which, master=False,
+    return(samfilter, ngsLib(name=which, master=False,
                                logger=logger,
                                readF=read_path_dict['readF'],
                                readR=read_path_dict['readR'],
@@ -778,8 +777,9 @@ def generate_spades_cmd(
     but that is changed with each iteration. This should probably be addressed
     before next major version change
     """
-    if logger is None:
-        raise ValueError("this must be used with a logger!")
+    # if logger is None:
+    #     raise ValueError("this must be used with a logger!")
+    assert logger is not None, "Must Use Logging"
     kmers = k  # .split[","]
     #  prepare reference, if being used
     if not ref_as_contig is None:
@@ -789,7 +789,7 @@ def generate_spades_cmd(
         alt_contig = ''
     # prepare read types, etc
     if as_paired and ngs_ob.readS0 is not None:  # for lib with both
-        singles = "--pe1-s {0}".format(ngs_ob.readS)
+        singles = "--pe1-s {0}".format(ngs_ob.readS0)
         pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
             ngs_ob.readF, ngs_ob.readR)
     elif as_paired and ngs_ob.readS0 is None:  # for lib with just PE
@@ -803,7 +803,7 @@ def generate_spades_cmd(
             ngs_ob.readF, ngs_ob.readR)
     else:  # for 3 single end libraries
         singles = "--pe3-s {0} ".format(ngs_ob.readS0)
-        pairs = str("--pe1-s {0} --pe3-s {1} ".format(
+        pairs = str("--pe1-s {0} --pe2-s {1} ".format(
             ngs_ob.readF, ngs_ob.readR))
     reads = str(pairs + singles)
     if prelim:
@@ -819,13 +819,15 @@ def generate_spades_cmd(
         return spades_cmd
 
 
-def get_extract_convert_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
+def get_convert_run_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
                                     spades_exe, ref_as_contig, logger):
     logger.debug("generating commands to convert bam to fastq and map to ref")
     commands = []
     convert_cmds, new_ngslib = convert_bams_to_fastq_cmds(
         mapping_ob=mapping_ob, samtools_exe=samtools_exe,
         ref_fasta=mapping_ob.ref_fasta, which='mapped', logger=logger)
+    # print("HAHAHAHAHAHAHAH")
+    # logger.error(convert_cmds)
     commands.append(convert_cmds)
     spades_cmd = generate_spades_cmd(
         mapping_ob=mapping_ob,
@@ -842,19 +844,27 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
                             min_assembly_len, min_growth,
                             include_short_contigs, keep_best_contig=True,
                             seqname='', logger=None):
-    """return path to contigs
-s    #TODO
+    """return sucess codes:
+    0 = all good
+    1 = include, but dont keep iterating
+    2 = exclude, and keep from iterating
+    3 = exclude, error ocurred
     """
-    prelog = "{0}-{1}:".format("SEED_cluster", clu.index)
-    if logger is None:
-        raise ValueError("this must be used with a logger!")
+    prelog = "{0}-{1}-iter{2}:".format("SEED_cluster", clu.index,
+                                       clu.mappings[-1].iteration)
+    # if logger is None:
+    #     raise ValueError("this must be used with a logger!")
+    assert logger is not None, "Must Use Logging"
     if seqname == '':
         seqname = os.path.splitext(os.path.basename(mapping_ob.ref_fasta))[0]
+    mapping_ob.assembled_contig = os.path.join(
+        mapping_ob.assembly_subdir, "contigs.fasta")
     logger.info("checking for the following file: \n{0}".format(
-        os.path.join(mapping_ob.assembly_subdir, "contigs.fasta")))
-    mapping_ob.assembly_success = output_from_subprocess_exists(
-        os.path.join(mapping_ob.assembly_subdir, "contigs.fasta"))
-    if keep_best_contig and mapping_ob.assembly_success:
+        mapping_ob.assembled_contig))
+    if not output_from_subprocess_exists(mapping_ob.assembled_contig):
+        logger.warning("%s No output from SPAdes this time around", prelog)
+        return 3
+    if keep_best_contig:
         logger.info("reserving first contig")
         try:
             keep_only_first_contig(
@@ -863,18 +873,9 @@ s    #TODO
         except Exception as f:
             logger.error(f)
             raise f
-    elif not mapping_ob.assembly_success:
-        logger.warning("No output from SPAdes this time around")
-    else:
-        pass
-    mapping_ob.assembled_contig = os.path.join(
-        mapping_ob.assembly_subdir, "contigs.fasta")
     ########################################################
 
-    prelog = "{0}-{1}-iter{2}:".format("SEED_cluster", clu.index,
-                                       clu.mappings[-1].iteration)
-    if clu.mappings[-1].iteration == 0:
-        logger.info("%s analyzing  initial mapping", prelog)
+    logger.info("%s analyzing  mapping", prelog)
     seed_len = get_fasta_lengths(mapping_ob.ref_fasta)[0]
     # set proceed_to_target params
     if proceed_to_target:
@@ -889,12 +890,8 @@ s    #TODO
             sys.exit(1)
     else:
         pass
-    if not clu.mappings[-1].assembly_success:
-        logger.warning("%s Assembly failed: no spades output for %s",
-                       prelog, os.path.basename(mapping_ob.ref_fasta))
     # compare lengths of reference and freshly assembled contig
     contig_len = get_fasta_lengths(mapping_ob.assembled_contig)[0]
-    # contig_len = get_fasta_lengths(mapping_ob.assembled_contig)[0]
     ref_len = get_fasta_lengths(mapping_ob.ref_fasta)[0]
     contig_length_diff = contig_len - ref_len
     logger.info("%s Seed length: %i", prelog, seed_len)
@@ -922,9 +919,11 @@ s    #TODO
                            "than one seed, we reccommend  you abort and " +
                            "retry with longer seeds, a different ref, " +
                            "or re-examine the riboSnag clustering")
+            return 1
         else:
-            clu.keep_contig = False  # flags contig for exclusion
-        clu.continue_iterating = False  # skip remaining iterations
+            return 2
+        #     clu.keep_contig = False  # flags contig for exclusion
+        # clu.continue_iterating = False  # skip remaining iterations
     else:
         pass
     # This is a feature that is supposed to help skip unneccesary
@@ -933,48 +932,30 @@ s    #TODO
     # reference is not closely related to Sample), continue to map.
     # If the contig length increases, but not as much as min_growth,
     # skip future iterations
-    if contig_length_diff > 0 and contig_length_diff < min_growth and \
-       min_growth > 0:  # ie, ignore by default
+    if min_growth is not None and contig_length_diff > 0 and contig_length_diff < min_growth:
         logger.info("the length of the new contig was only 0bp changed " +
                     "from previous iteration; skipping future iterations")
+        return 1
         # this_iteration = max_iterations + 1  # skip remaining iterations
     # if continuing til reaching the target lenth of the seed
     elif proceed_to_target and contig_len >= target_seed_len:
         logger.info("target length threshold! has been reached; " +
                     "skipping future iterations")
-        clu.continue_iterating = False  # skip remaining iterations
+        return 1
+    # clu.continue_iterating = False  # skip remaining iterations
     else:
         # nothing to see here
         clu.continue_iterating = True
-    if clu.continue_iterating:
-        return seedGenome
-    elif not clu.keep_contig:
-        return 1
-    else:
-        try:
-            clu.contigs_new_path = copy_file(
-                current_file=mapping_ob.assembled_contig,
-                dest_dir=final_contigs_dir,
-                name=os.path.join(os.path.basename(mapping_ob.assembled_contig),
-                                  "cluster_{0}_final_iter_{1}.fasta".format(
-                                      clu.index, mapping_ob.iteration)),
-                logger=logger)
-        except:
-            logger.warning("no contigs moved for %s_%i! Check  SPAdes log " +
-                           "in results dir if worried", clu.sequence_id,
-                           clu.index)
-            return seedGenome
-    # logger.debug("moved {0} to {1}".format(contigs_path, contigs_new_path))
-    # if no_temps:
-    #     logger.info("removing temporary files from {0}".format(mapping_dir))
-    #     clean_temp_dir(clu.output_root)
+    # if clu.continue_iterating:
+        return 0
 
 
 def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     """This skips any fields not in first report, for better or worse...
     """
-    if logger is None:
-        raise ValueError("Logging must be enabled for make_quick_quast_table")
+    # if logger is None:
+    #     raise ValueError("Logging must be enabled for make_quick_quast_table")
+    assert logger is not None, "Must Use Logging"
     if not isinstance(pathlist, list):
         logger.warning("paths for quast reports must be in a list!")
         return None
@@ -1245,10 +1226,8 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
 
         ref = str("-R %s" % seedGenome.ref_fasta)
         quast_cmd = str("{0} {1} {2} {3} -o {4}").format(
-            # quast_python_exe,
-            "",
+            quast_python_exe,
             quast_exe,
-            # seedGenome.assembled_seeds,
             ref,
             os.path.join(final_mapping.assembly_subdir, "contigs.fasta"),
             os.path.join(seedGenome.output_root, str("quast_" + j)))
@@ -1514,7 +1493,7 @@ if __name__ == "__main__":
             for clu in clusters_to_process:
                 clu.seq_record = next_seqrec
             #make new ngslib from unampped reads
-            convert_cmds, unmapped_ngsLib = convert_bams_to_fastq_cmds(
+            convert_cmd, unmapped_ngsLib = convert_bams_to_fastq_cmds(
                 mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration - 1],
                 samtools_exe=args.samtools_exe,
                 ref_fasta=seedGenome.next_reference_path,  # used to make index cmd
@@ -1524,7 +1503,7 @@ if __name__ == "__main__":
             unmapped_ngsLib.smalt_dist_path = seedGenome.master_ngs_ob.smalt_dist_path
             logger.debug("converting unmapped bam into reads:")
             seedGenome.master_ngs_ob.ref_fasta = seedGenome.next_reference_path
-            for cmd in convert_cmds:
+            for cmd in [convert_cmd]:  # may have more cmds here in future
                 logger.debug(cmd)
                 subprocess.run([cmd],
                                shell=sys.platform != "win32",
@@ -1562,7 +1541,7 @@ if __name__ == "__main__":
         for cluster in clusters_to_process:
             logger.debug("getting extract convert cmds for %s cluster %i",
                          cluster.sequence_id, cluster.index)
-            cmdlist, new_ngslib = get_extract_convert_spades_cmds(
+            cmdlist, new_ngslib = get_convert_run_spades_cmds(
                 mapping_ob=cluster.mappings[-1], fetch_mates=False,
                 samtools_exe=args.samtools_exe,
                 spades_exe=args.spades_exe,
@@ -1597,15 +1576,46 @@ if __name__ == "__main__":
 
         ### evaluate mapping (cant be multiprocessed
         for cluster in clusters_to_process:
-            evaluate_spades_success(
+            cluster.assembly_success = evaluate_spades_success(
                 clu=cluster,
+                mapping_ob=cluster.mappings[-1],
                 include_short_contigs=args.include_short_contigs,
-                mapping_ob=cluster.mappings[-1], keep_best_contig=True,
+                keep_best_contig=True,
                 seqname='', logger=logger,
                 min_assembly_len=args.min_assembly_len,
                 min_growth=args.min_growth,
                 proceed_to_target=proceed_to_target,
                 target_len=args.target_len)
+            if cluster.assembly_success == 3:
+                # other error handling; failed counter?
+                cluster.continue_iterating = False
+                cluster.keep_contigs = False
+            elif cluster.assembly_success == 2:
+                cluster.continue_iterating = False
+                cluster.keep_contigs = False
+            elif cluster.assembly_success == 1:
+                try:
+                    clu.contigs_new_path = copy_file(
+                        current_file=mapping_ob.assembled_contig,
+                        dest_dir=final_contigs_dir,
+                        name=os.path.join(
+                            os.path.basename(mapping_ob.assembled_contig),
+                            "cluster_{0}_final_iter_{1}.fasta".format(
+                                cluster.index, sluster.mappings[-1],
+                                clu.mappings[-1].iteration)),
+                        logger=logger)
+                except:
+                    logger.warning("no contigs moved for %s_%i! Check  SPAdes log " +
+                                   "in results dir if worried", clu.sequence_id,
+                                   clu.index)
+                cluster.continue_iterating = False
+                cluster.keep_contigs = True
+
+            elif cluster.assembly_success == 0:
+                cluster.continue_iterating = True
+                cluster.keep_contigs = True
+            else:
+                raise ValueError("Error evaluating spades results return!")
         # logger.error(seedGenome.loci_clusters[0].mappings[0].__dict__)
         faux_genome_path, faux_genome_len = make_faux_genome(
             seedGenome=seedGenome,
