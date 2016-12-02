@@ -926,16 +926,19 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
             return 2
         #     clu.keep_contig = False  # flags contig for exclusion
         # clu.continue_iterating = False  # skip remaining iterations
+    elif proceed_to_target and contig_len >= target_seed_len:
+        logger.info("target length threshold! has been reached; " +
+                    "skipping future iterations")
+        return 1
     else:
         return 0
-        pass
 
-    # # This is a feature that is supposed to help skip unneccesary
-    # # iterations. If the difference is negative (new contig is shorter)
-    # # continue, as this may happen (especially in first mapping if
-    # # reference is not closely related to Sample), continue to map.
-    # # If the contig length increases, but not as much as min_growth,
-    # # skip future iterations
+    # This is a feature that is supposed to help skip unneccesary
+    # iterations. If the difference is negative (new contig is shorter)
+    # continue, as this may happen (especially in first mapping if
+    # reference is not closely related to Sample), continue to map.
+    # If the contig length increases, but not as much as min_growth,
+    # skip future iterations
     # if min_growth is not None and contig_length_diff > 0 and contig_length_diff < min_growth:
     #     logger.info("the length of the new contig was only 0bp changed " +
     #                 "from previous iteration; skipping future iterations")
@@ -1013,129 +1016,121 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     return mainDict
 
 
-def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
-                      cluster_list=None, logger=None):
-    """ Extract interesting stuff based on coords, not a binary
-    mapped/not_mapped condition
+def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
+                            logger=None):
+    """use withing PArtition mapping funtion;
+    makes LociMapping, get region coords, write extracted region,
     """
-    ####    deal with extracting all the reads that mapp to a cluster
-    mapped_regions = []
-    logger.info("processing mapping for iteration %i",
-                seedGenome.this_iteration)
-    for cluster in cluster_list:
-        mapping_subdir = os.path.join(
-            output_root, cluster.cluster_dir_name,
-            "{0}_cluster_{1}_mapping_iteration_{2}".format(
-                cluster.sequence_id, cluster.index, seedGenome.this_iteration))
-        assembly_subdir = os.path.join(
-            output_root, cluster.cluster_dir_name,
-            "{0}_cluster_{1}_assembly_iteration_{2}".format(
-                cluster.sequence_id, cluster.index, seedGenome.this_iteration))
+    mapping_subdir = os.path.join(
+        seedGenome.output_root, cluster.cluster_dir_name,
+        "{0}_cluster_{1}_mapping_iteration_{2}".format(
+            cluster.sequence_id, cluster.index, seedGenome.this_iteration))
+    assembly_subdir = os.path.join(
+        seedGenome.output_root, cluster.cluster_dir_name,
+        "{0}_cluster_{1}_assembly_iteration_{2}".format(
+            cluster.sequence_id, cluster.index, seedGenome.this_iteration))
 
-        mapping0 = LociMapping(
-            name="{0}_cluster_{1}_iter{2}".format(
-                cluster.sequence_id, cluster.index, seedGenome.this_iteration),
-            iteration=seedGenome.this_iteration,
-            assembly_subdir_needed=True,
-            mapping_subdir=mapping_subdir,
-            assembly_subdir=assembly_subdir)
-        # if first time through, ge tthe global start adn end coords.
-        if cluster.global_start_coord is None or cluster.global_end_coord is None:
-            if seedGenome.this_iteration != 0:
-                raise ValueError("global start and end should be defined previously! Exiting")
-            if sorted([x.start_coord for x in cluster.loci_list]) != \
-               [x.start_coord for x in cluster.loci_list]:
-                logger.warning("Coords are not in increasing order; " +
-                               "you've been warned")
-            start_list = sorted([x.start_coord for x in cluster.loci_list])
-            logger.debug("Start_list: {0}".format(start_list))
+    mapping0 = LociMapping(
+        name="{0}_cluster_{1}_iter{2}".format(
+            cluster.sequence_id, cluster.index, seedGenome.this_iteration),
+        iteration=seedGenome.this_iteration,
+        assembly_subdir_needed=True,
+        mapping_success=False,
+        mapping_subdir=mapping_subdir,
+        assembly_subdir=assembly_subdir)
+    # if first time through, ge tthe global start adn end coords.
+    if cluster.global_start_coord is None or cluster.global_end_coord is None:
+        if seedGenome.this_iteration != 0:
+            raise ValueError("global start and end should be defined previously! Exiting")
+        if sorted([x.start_coord for x in cluster.loci_list]) != \
+           [x.start_coord for x in cluster.loci_list]:
+            logger.warning("Coords are not in increasing order; " +
+                           "you've been warned")
+        start_list = sorted([x.start_coord for x in cluster.loci_list])
+        logger.debug("Start_list: {0}".format(start_list))
 
-            logger.debug("Find coordinates to gather reads from the following coords:")
-            for i in cluster.loci_list:
-                logger.debug(str(i.__dict__))
-            #  This works as long as coords are never in reverse order
-            cluster.global_start_coord = min([x.start_coord for
-                                              x in cluster.loci_list]) - flank[0]
-            # if start is negative, just use 1, the beginning of the sequence
-            if cluster.global_start_coord < 1:
-                logger.warning(
-                    "Caution! Cannot retrieve full flanking region, as " +
-                    "the 5' flanking region extends past start of " +
-                    "sequence. If this is a problem, try using a smaller " +
-                    "--flanking region, and/or if  appropriate, run with " +
-                    "--circular.")
-                cluster.global_start_coord = 1
-            cluster.global_end_coord = max([x.end_coord for
-                                            x in cluster.loci_list]) + flank[1]
-            if cluster.global_end_coord > len(cluster.seq_record):
-                logger.warning(
-                    "Caution! Cannot retrieve full flanking region, as " +
-                    "the 5' flanking region extends past start of " +
-                    "sequence. If this is a problem, try using a smaller " +
-                    "--flanking region, and/or if  appropriate, run with " +
-                    "--circular.")
-                cluster.global_end_coord = len(cluster.seq_record)
-            logger.debug("global start and end: %s %s", cluster.global_start_coord,
-                         cluster.global_end_coord)
-            #  if no the first time though, fuhgetaboudit.
-            #  Ie, the coords have been reassigned by the faux_genome function
-        else:
-            logger.info("using coords from previous iteration:")
-            logger.debug("global start for cluster %i: %i", cluster.index, cluster.global_start_coord)
-            logger.debug("global end for cluster %i: %i", cluster.index, cluster.global_end_coord)
-        logger.warning("Extracting %s to %s from %s",
-                       cluster.global_start_coord,
-                       cluster.global_end_coord,
-                       cluster.seq_record.id)
+        logger.debug("Find coordinates to gather reads from the following coords:")
+        for i in cluster.loci_list:
+            logger.debug(str(i.__dict__))
+        #  This works as long as coords are never in reverse order
+        cluster.global_start_coord = min([x.start_coord for
+                                          x in cluster.loci_list]) - flank[0]
+        # if start is negative, just use 1, the beginning of the sequence
+        if cluster.global_start_coord < 1:
+            logger.warning(
+                "Caution! Cannot retrieve full flanking region, as " +
+                "the 5' flanking region extends past start of " +
+                "sequence. If this is a problem, try using a smaller " +
+                "--flanking region, and/or if  appropriate, run with " +
+                "--circular.")
+            cluster.global_start_coord = 1
+        cluster.global_end_coord = max([x.end_coord for
+                                        x in cluster.loci_list]) + flank[1]
+        if cluster.global_end_coord > len(cluster.seq_record):
+            logger.warning(
+                "Caution! Cannot retrieve full flanking region, as " +
+                "the 5' flanking region extends past start of " +
+                "sequence. If this is a problem, try using a smaller " +
+                "--flanking region, and/or if  appropriate, run with " +
+                "--circular.")
+            cluster.global_end_coord = len(cluster.seq_record)
+        logger.debug("global start and end: %s %s",
+                     cluster.global_start_coord,
+                     cluster.global_end_coord)
+        #  if no the first time though, fuhgetaboudit.
+        #  Ie, the coords have been reassigned by the faux_genome function
+    else:
+        logger.info("using coords from previous iteration:")
+        logger.debug("global start for cluster %i: %i", cluster.index,
+                     cluster.global_start_coord)
+        logger.debug("global end for cluster %i: %i", cluster.index,
+                     cluster.global_end_coord)
+    logger.warning("Extracting %s to %s from %s",
+                   cluster.global_start_coord,
+                   cluster.global_end_coord,
+                   cluster.seq_record.id)
 
-        cluster.extractedSeqRecord = SeqRecord(
-            cluster.seq_record.seq[
-                cluster.global_start_coord:
-                cluster.global_end_coord])
+    cluster.extractedSeqRecord = SeqRecord(
+        cluster.seq_record.seq[
+            cluster.global_start_coord:
+            cluster.global_end_coord])
 
-        mapping0.ref_fasta = os.path.join(mapping0.mapping_subdir,
-                                          "extracted_seed_sequence.fasta")
-        with open(mapping0.ref_fasta, "w") as writepath:
-            SeqIO.write(cluster.extractedSeqRecord, writepath, 'fasta')
+    mapping0.ref_fasta = os.path.join(mapping0.mapping_subdir,
+                                      "extracted_seed_sequence.fasta")
+    with open(mapping0.ref_fasta, "w") as writepath:
+        SeqIO.write(cluster.extractedSeqRecord, writepath, 'fasta')
+    cluster.mappings.append(mapping0)
 
-        # Prepare for partitioning
-        partition_cmds = []
-        # sort our source bam
-        sort_cmd = str("{0} sort {1} > {2}").format(
-            samtools_exe,
-            seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_bam,
-            seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam)
-        # index it
-        index_cmd = str("{0} index {1}").format(
-            samtools_exe, seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam)
-        partition_cmds.extend([sort_cmd, index_cmd])
-        # define the region to extract
-        region_to_extract = "{0}:{1}-{2}".format(
-            cluster.sequence_id, cluster.global_start_coord,
-            cluster.global_end_coord)
-        # make a subser from of reads in that region
-        view_cmd = str("{0} view -o {1} {2} {3}").format(
-            samtools_exe, mapping0.mapped_bam,
-            seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
-            region_to_extract)
-        partition_cmds.append(view_cmd)
-        mapped_regions.append(region_to_extract)
-        ### run cmds
-        for cmd in partition_cmds:
-            logger.debug(cmd)
-            subprocess.run([cmd],
-                           shell=sys.platform != "win32",
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE,
-                           check=True)
-        # add mapping to cluster's mapping list
-        cluster.mappings.append(mapping0)
-    logger.info("mapped regions in initial mapping:\n %s",
-                "\n".join([x for x in mapped_regions]))
-    ########
-    # make unmapped for next time around make
-    ########
-    # make a sam from the global mapping bam
+
+def make_mapped_partition_cmds(mapping_ob, seedGenome, samtools_exe, flank,
+                               logger=None):
+    """ returns cmds and region
+    """
+    # Prepare for partitioning
+    partition_cmds = []
+    # sort our source bam
+    sort_cmd = str("{0} sort {1} > {2}").format(
+        samtools_exe,
+        seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_bam,
+        seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam)
+    # index it
+    index_cmd = str("{0} index {1}").format(
+        samtools_exe, seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam)
+    partition_cmds.extend([sort_cmd, index_cmd])
+    # define the region to extract
+    region_to_extract = "{0}:{1}-{2}".format(
+        cluster.sequence_id, cluster.global_start_coord,
+        cluster.global_end_coord)
+    # make a subser from of reads in that region
+    view_cmd = str("{0} view -o {1} {2} {3}").format(
+        samtools_exe, mapping_ob.mapped_bam,
+        seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
+        region_to_extract)
+    partition_cmds.append(view_cmd)
+    return (partition_cmds, region_to_extract)
+
+
+def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
     make_mapped_sam = "{0} view -o {1} -h {2}".format(
         samtools_exe,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
@@ -1152,7 +1147,45 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].unmapped_sam)
-    for cmd in [make_mapped_sam, update_readlist, uniquify_list, get_unmapped]:
+    return [make_mapped_sam, update_readlist, uniquify_list, get_unmapped]
+
+
+def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
+                      cluster_list=None, logger=None):
+    """ Extract interesting stuff based on coords, not a binary
+    mapped/not_mapped condition
+    """
+    ####    deal with extracting all the reads that mapp to a cluster
+    mapped_regions = []
+    logger.info("processing mapping for iteration %i",
+                seedGenome.this_iteration)
+    for cluster in cluster_list:
+        prepare_next_mapping(cluster=cluster, seedGenome=seedGenome,
+                             samtools_exe=samtools_exe, flank=flank,
+                             logger=logger)
+
+    mapped_regions = []
+    for cluster in cluster_list:
+        mapped_partition_cmds, reg_to_extract = make_mapped_partition_cmds(
+            mapping_ob=cluster.mappings[-1],
+            seedGenome=seedGenome, samtools_exe=samtools_exe, flank=flank,
+            logger=logger)
+        for cmd in mapped_partition_cmds:
+            logger.debug(cmd)
+            subprocess.run([cmd],
+                           shell=sys.platform != "win32",
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           check=True)
+        mapped_regions.append(reg_to_extract)
+    logger.info("mapped regionsfor iteration %i:\n %s",
+                seedGenome.this_iteration,
+                "\n".join([x for x in mapped_regions]))
+
+    unmapped_partition_cmds = make_unmapped_partition_cmds(
+        mapped_regions=mapped_regions, samtools_exe=samtools_exe,
+        seedGenome=seedGenome)
+    for cmd in unmapped_partition_cmds:
         logger.debug(cmd)
         subprocess.run([cmd],
                        shell=sys.platform != "win32",
@@ -1280,16 +1313,16 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
         SeqIO.write(record, outf, 'fasta')
     return (outpath, len(record))
 
-def multi_subprocess(cmd, check=True):
-    try:
-        subprocess.run([cmd],
-                       shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       check=check)
-    except Exception as e:
-        raise e
-    return 0
+# def multi_subprocess(cmd, check=True):
+#     try:
+#         subprocess.run([cmd],
+#                        shell=sys.platform != "win32",
+#                        stdout=subprocess.PIPE,
+#                        stderr=subprocess.PIPE,
+#                        check=check)
+#     except Exception as e:
+#         raise e
+#     return 0
 
 
 if __name__ == "__main__":
@@ -1640,7 +1673,7 @@ if __name__ == "__main__":
             logger.info("moving on to final assemblies!")
         else:
             logger.info("Moving on to iteration: %i",
-                        seedGenome.this_iteration + 1)
+                        seedGenome.this_iteration)
 
     ##################################################################
     logging.info("combinging contigs from %s", seedGenome.final_contigs_dir)
