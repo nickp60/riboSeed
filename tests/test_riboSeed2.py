@@ -46,7 +46,7 @@ from riboSeed.riboSeed2 import SeedGenome, ngsLib,  LociMapping, \
     convert_bams_to_fastq_cmds, check_smalt_full_install,\
     generate_spades_cmd, estimate_distances_smalt, run_final_assemblies,\
     check_libs_before_mapping, make_faux_genome, get_convert_run_spades_cmds, \
-    evaluate_spades_success
+    evaluate_spades_success, prepare_next_mapping, make_mapped_partition_cmds
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
@@ -567,6 +567,14 @@ class riboSeed2TestCase(unittest.TestCase):
             include_short_contigs=True, keep_best_contig=True,
             seqname='', logger=logger)
         self.assertEqual(code_1, 1)
+        code_1a = evaluate_spades_success(  # test proceed_to_target
+            clu,
+            mapping_ob=testmapping,
+            proceed_to_target=True, target_len=6000,
+            min_assembly_len=5000,
+            include_short_contigs=True, keep_best_contig=True,
+            seqname='', logger=logger)
+        self.assertEqual(code_1a, 1)
         code_2 = evaluate_spades_success(
             clu,
             mapping_ob=testmapping,
@@ -584,109 +592,188 @@ class riboSeed2TestCase(unittest.TestCase):
             seqname='', logger=logger)
         self.assertEqual(code_3, 3)
 
+    def test_make_quast_table(self):
+        pass
 
-    # def test_make_faux_genome(self):
-    #     gen = SeedGenome(
-    #         max_iterations=1,
-    #         genbank_path=self.ref_gb,
-    #         clustered_loci_txt=self.test_loci_file,
-    #         output_root=self.test_dir,
-    #         logger=logger)
-    #     gen.loci_clusters = parse_clustered_loci_file(
-    #         filepath=gen.clustered_loci_txt,
-    #         gb_filepath=gen.genbank_path,
-    #         output_root=self.test_dir,
-    #         padding=100,
-    #         circular=False,
-    #         logger=logger)
-    #     add_coords_to_clusters(seedGenome=gen, logger=logger)
+    def test_partition_mapping(self):
+        pass
 
-    #     for clu in gen.loci_clusters:
-    #         clu.keep_contig = True
-    #         clu.mappings.append(LociMapping(
-    #             name="test",
-    #             iteration=1,
-    #             assembly_subdir=self.test_dir,
-    #             ref_fasta=self.ref_fasta,
-    #             assembled_contig=self.ref_fasta,
-    #             mapping_subdir=os.path.join(
-    #                 self.test_dir, "LociMapping_for_text_faux_genome")))
+    def test_prepare_next_mapping(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        testngs = ngsLib(
+            name="test",
+            master=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            smalt_exe=self.smalt_exe,
+            logger=logger)
+        gen.master_ngs_ob = testngs
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=1000,
+            circular=False,
+            logger=logger)
+        add_coords_to_clusters(seedGenome=gen,
+                               logger=logger)
+        gen.next_reference_path = gen.ref_fasta
+        #
+        for cluster in gen.loci_clusters:
+            cluster.master_ngs_ob = gen.master_ngs_ob
 
-    #     # map_to_genome_ref_smalt(
-    #     #     mapping_ob=gen.iter_mapping_list[0],
-    #     #     ngsLib=gen.master_ngs_ob,
-    #     #     cores=4,
-    #     #     samtools_exe=self.samtools_exe,
-    #     #     smalt_exe=self.smalt_exe,
-    #     #     score_minimum=None,
-    #     #     step=3, k=5,
-    #     #     scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-    #     #     logger=logger)
-    #     # partition_mapping(seedGenome=gen,
-    #     #                   logger=logger,
-    #     #                   samtools_exe=self.samtools_exe,
-    #     #                   flank="50:50",
-    #     #                   cluster_list=gen.loci_clusters)
+        map_to_genome_ref_smalt(mapping_ob=testmapping, ngsLib=testngs,
+                                cores=4, samtools_exe=self.samtools_exe,
+                                smalt_exe=self.smalt_exe, score_minimum=None,
+                                scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+                                step=3, k=5, logger=logger)
+        clu = gen.loci_clusters[0]
+        self.assertEqual(len(clu.mappings), 0)
+        prepare_next_mapping(
+            cluster=clu, seedGenome=gen, samtools_exe=self.samtools_exe,
+            flank=[0, 0],
+            logger=logger)
+        self.assertEqual(clu.mappings[-1].index, 0)
 
-    #     make_faux_genome(cluster_list=gen.loci_clusters, seedGenome=gen,
-    #                      iteration=1, output_root=self.test_dir, nbuff=10000,
-    #                      logger=logger)
+    def test_mapped_partition_cmds(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        cmds, region = make_mapped_partition_cmds(
+            mapping_ob=testmapping,
+            seedGenome=gen,
+            samtools_exe=self.samtools_exe,
+            flank=[0,0],
+            logger=logger)
+        self.assert
 
-    # def test_run_final_assembliies(self):
-    #     gen = SeedGenome(
-    #         max_iterations=1,
-    #         genbank_path=self.ref_gb,
-    #         clustered_loci_txt=self.test_loci_file,
-    #         output_root=self.test_dir,
-    #         assembled_seeds="tralalalala",
-    #         logger=logger,
-    #         master_ngs_ob=ngsLib(
-    #             name="test",
-    #             master=False,
-    #             readF=self.ref_Ffastq,
-    #             readR=self.ref_Rfastq,
-    #             ref_fasta=self.ref_fasta,
-    #             smalt_exe=self.smalt_exe))
-    #     gen.ref_fasta = self.ref_fasta
-    #     final_spades_cmds, final_quast_cmds, quast_reports = run_final_assemblies(
-    #         seedGenome=gen, spades_exe=self.spades_exe,
-    #         quast_exe=self.quast_exe, quast_python_exe=self.quast_python_exe,
-    #         skip_control=False, kmers="33,77,99", logger=logger)
-    #     final_spades_cmds_ref = [
-    #         str(
-    #             "{0} --careful -k 33,77,99 --pe1-1 {1} " +
-    #             "--pe1-2 {2} --trusted-contigs {3}  -o {4}"
-    #         ).format(
-    #             self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
-    #             gen.assembled_seeds,
-    #             os.path.join(self.test_dir, "final_de_fere_novo_assembly")),
-    #         str(
-    #             "{0} --careful -k 33,77,99 --pe1-1 {1} " +
-    #             "--pe1-2 {2}   -o {3}"
-    #         ).format(
-    #             self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
-    #             os.path.join(self.test_dir, "final_de_novo_assembly"))]
-    #     final_quast_cmds_ref = [
-    #         str(
-    #             '{0} {1} -R {2} {3} -o {4}'
-    #         ).format(
-    #             self.quast_python_exe, self.quast_exe,
-    #             self.ref_fasta,
-    #             os.path.join(self.test_dir, "final_de_fere_novo_assembly",
-    #                          "contigs.fasta"),
-    #             os.path.join(self.test_dir, "quast_de_fere_novo")),
-    #         str(
-    #             '{0} {1} -R {2} {3} -o {4}'
-    #         ).format(
-    #             self.quast_python_exe, self.quast_exe,
-    #             self.ref_fasta,
-    #             os.path.join(self.test_dir, "final_de_novo_assembly",
-    #                          "contigs.fasta"),
-    #             os.path.join(self.test_dir, "quast_de_novo"))]
-    #     for i, ref in enumerate(final_spades_cmds_ref):
-    #         self.assertEqual(final_spades_cmds[i], ref)
-    #     for i, ref in enumerate(final_quast_cmds_ref):
-    #         self.assertEqual(final_quast_cmds[i], ref)
+    def test_unmapped_partition_cmds(self):
+        make_mapped_partition_cmds(mapping_ob, seedGenome, samtools_exe, flank,
+                               logger=None)
+
+    def test_make_faux_genome(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=100,
+            circular=False,
+            logger=logger)
+        add_coords_to_clusters(seedGenome=gen, logger=logger)
+
+        for clu in gen.loci_clusters:
+            clu.keep_contig = True
+            clu.mappings.append(LociMapping(
+                name="test",
+                iteration=1,
+                assembly_subdir=self.test_dir,
+                ref_fasta=self.ref_fasta,
+                assembled_contig=self.ref_fasta,
+                mapping_subdir=os.path.join(
+                    self.test_dir, "LociMapping_for_text_faux_genome")))
+
+        # map_to_genome_ref_smalt(
+        #     mapping_ob=gen.iter_mapping_list[0],
+        #     ngsLib=gen.master_ngs_ob,
+        #     cores=4,
+        #     samtools_exe=self.samtools_exe,
+        #     smalt_exe=self.smalt_exe,
+        #     score_minimum=None,
+        #     step=3, k=5,
+        #     scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+        #     logger=logger)
+        # partition_mapping(seedGenome=gen,
+        #                   logger=logger,
+        #                   samtools_exe=self.samtools_exe,
+        #                   flank="50:50",
+        #                   cluster_list=gen.loci_clusters)
+
+        make_faux_genome(cluster_list=gen.loci_clusters, seedGenome=gen,
+                         iteration=1, output_root=self.test_dir, nbuff=10000,
+                         logger=logger)
+
+    def test_run_final_assembliies(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            assembled_seeds="tralalalala",
+            logger=logger,
+            master_ngs_ob=ngsLib(
+                name="test",
+                master=False,
+                readF=self.ref_Ffastq,
+                readR=self.ref_Rfastq,
+                ref_fasta=self.ref_fasta,
+                smalt_exe=self.smalt_exe))
+        gen.ref_fasta = self.ref_fasta
+        final_spades_cmds, final_quast_cmds, quast_reports = run_final_assemblies(
+            seedGenome=gen, spades_exe=self.spades_exe,
+            quast_exe=self.quast_exe, quast_python_exe=self.quast_python_exe,
+            skip_control=False, kmers="33,77,99", logger=logger)
+        final_spades_cmds_ref = [
+            str(
+                "{0} --careful -k 33,77,99 --pe1-1 {1} " +
+                "--pe1-2 {2} --trusted-contigs {3}  -o {4}"
+            ).format(
+                self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
+                gen.assembled_seeds,
+                os.path.join(self.test_dir, "final_de_fere_novo_assembly")),
+            str(
+                "{0} --careful -k 33,77,99 --pe1-1 {1} " +
+                "--pe1-2 {2}   -o {3}"
+            ).format(
+                self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
+                os.path.join(self.test_dir, "final_de_novo_assembly"))]
+        final_quast_cmds_ref = [
+            str(
+                '{0} {1} -R {2} {3} -o {4}'
+            ).format(
+                self.quast_python_exe, self.quast_exe,
+                self.ref_fasta,
+                os.path.join(self.test_dir, "final_de_fere_novo_assembly",
+                             "contigs.fasta"),
+                os.path.join(self.test_dir, "quast_de_fere_novo")),
+            str(
+                '{0} {1} -R {2} {3} -o {4}'
+            ).format(
+                self.quast_python_exe, self.quast_exe,
+                self.ref_fasta,
+                os.path.join(self.test_dir, "final_de_novo_assembly",
+                             "contigs.fasta"),
+                os.path.join(self.test_dir, "quast_de_novo"))]
+        for i, ref in enumerate(final_spades_cmds_ref):
+            self.assertEqual(final_spades_cmds[i], ref)
+        for i, ref in enumerate(final_quast_cmds_ref):
+            self.assertEqual(final_quast_cmds[i], ref)
 
     def tearDown(self):
         """ delete temp files if no errors
