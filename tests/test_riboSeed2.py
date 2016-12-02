@@ -126,6 +126,19 @@ class riboSeed2TestCase(unittest.TestCase):
                   name="cluster1.fasta")
         self.to_be_removed.append(self.ref_fasta)
 
+    def test_print_headsup(self):
+        print("""
+        Thanks for running these tests!! You will see several logger warning
+        messages that you should IGNORE. **sigh of relief** They verify error
+        reporting in the actual function, and cannot be removed. You should
+        see the following errors if all went properly:
+        \t WARNING:root:The first iteration's assembly's best contig is not greater than length set by --min_assembly_len. Assembly will likely fail if the contig does not meet the length of the seed
+        \t WARNING:root:Continuing, but if this occurs for more than one seed, we reccommend  you abort and retry with longer seeds, a different ref, or re-examine the riboSnag clustering
+        \t WARNING:root:The first iteration's assembly's best contig is not greater than length set by --min_assembly_len. Assembly will likely fail if the contig does not meet the length of the seed
+        \tWARNING:root:SEED_cluster-7-iter1: No output from SPAdes this time around...
+        \tWARNING:root:read file readR is empty and will not be used for mapping!
+        """)
+
     def test_ngsLib(self):
         # make a non-master object
         testlib_pe_s = ngsLib(
@@ -696,7 +709,7 @@ class riboSeed2TestCase(unittest.TestCase):
         add_coords_to_clusters(seedGenome=gen, logger=logger)
         gen.loci_clusters[0].global_start_coord = 5000
         gen.loci_clusters[0].global_end_coord = 10000
-        print(gen.loci_clusters[0].__dict__)
+        # print(gen.loci_clusters[0].__dict__)
         cmds, region = make_mapped_partition_cmds(
             cluster=gen.loci_clusters[0],
             mapping_ob=testmapping,
@@ -729,7 +742,7 @@ class riboSeed2TestCase(unittest.TestCase):
                     self.test_dir,
                     "NC_011751.1_mapping_for_iter_0/" +
                     "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"))]
-        print(region)
+        # print(region)
         self.assertEqual(region, "NC_011751.1:5000-10000")
         for i, cmd in enumerate(cmds):
             self.assertEqual(ref_cmds[i], cmd)
@@ -758,7 +771,13 @@ class riboSeed2TestCase(unittest.TestCase):
                 os.path.join(self.test_dir,
                              "NC_011751.1_mapping_for_iter_0/" +
                              "NC_011751.1_mapping_for_iter_0_iteration_0.bam")),
-            "{0} view {1} -U test:1-6 test:3-77 | cut -f1 >> {2}".format(
+            "{0} view {1} test:1-6 | cut -f1 >> {2}".format(
+                self.samtools_exe,
+                os.path.join(self.test_dir,
+                             "NC_011751.1_mapping_for_iter_0/" +
+                             "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"),
+                mapped_txt),
+            "{0} view {1} test:3-77 | cut -f1 >> {2}".format(
                 self.samtools_exe,
                 os.path.join(self.test_dir,
                              "NC_011751.1_mapping_for_iter_0/" +

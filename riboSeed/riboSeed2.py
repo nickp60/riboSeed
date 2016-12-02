@@ -933,28 +933,6 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     else:
         return 0
 
-    # This is a feature that is supposed to help skip unneccesary
-    # iterations. If the difference is negative (new contig is shorter)
-    # continue, as this may happen (especially in first mapping if
-    # reference is not closely related to Sample), continue to map.
-    # If the contig length increases, but not as much as min_growth,
-    # skip future iterations
-    # if min_growth is not None and contig_length_diff > 0 and contig_length_diff < min_growth:
-    #     logger.info("the length of the new contig was only 0bp changed " +
-    #                 "from previous iteration; skipping future iterations")
-    #     return 1
-    #     # this_iteration = max_iterations + 1  # skip remaining iterations
-    # # if continuing til reaching the target lenth of the seed
-    # elif proceed_to_target and contig_len >= target_seed_len:
-    #     logger.info("target length threshold! has been reached; " +
-    #                 "skipping future iterations")
-    #     return 1
-    # # clu.continue_iterating = False  # skip remaining iterations
-    # else:
-    #     # nothing to see here
-    #     clu.continue_iterating = True
-    # # if clu.continue_iterating:
-
 
 def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     """This skips any fields not in first report, for better or worse...
@@ -1084,7 +1062,7 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
                      cluster.global_start_coord)
         logger.debug("global end for cluster %i: %i", cluster.index,
                      cluster.global_end_coord)
-    logger.warning("Extracting %s to %s from %s",
+    logger.info("Extracting %s to %s from %s",
                    cluster.global_start_coord,
                    cluster.global_end_coord,
                    cluster.seq_record.id)
@@ -1130,23 +1108,30 @@ def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe, fl
 
 
 def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
+    unmapped_cmds = []
     make_mapped_sam = "{0} view -o {1} -h {2}".format(
         samtools_exe,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_bam)
-    update_readlist = "{0} view {1} -U {2} | cut -f1 >> {3}".format(
-        samtools_exe,
-        seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
-        ' '.join([x for x in mapped_regions]),
-        seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt)
+    unmapped_cmds.append(make_mapped_sam)
+    # for each region, add read names in that region to list
+    for region in mapped_regions:
+        unmapped_cmds.append(
+            "{0} view {1} {2} | cut -f1 >> {3}".format(
+                samtools_exe,
+                seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
+                region,
+                seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt))
     uniquify_list = "sort -u {0}".format(
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt)
+    unmapped_cmds.append(uniquify_list)
     # from the global sam mapping filter out those in the reads_mapped_txt list
     get_unmapped = "LC_ALL=C grep -w -v -F -f {0} < {1} > {2}".format(
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].unmapped_sam)
-    return [make_mapped_sam, update_readlist, uniquify_list, get_unmapped]
+    unmapped_cmds.append(get_unmapped)
+    return unmapped_cmds
 
 
 def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
