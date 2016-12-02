@@ -962,9 +962,8 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     # if logger is None:
     #     raise ValueError("Logging must be enabled for make_quick_quast_table")
     assert logger is not None, "Must Use Logging"
-    if not isinstance(pathlist, list):
-        logger.warning("paths for quast reports must be in a list!")
-        return None
+    assert isinstance(pathlist, list) is True,\
+        "paths for quast reports must be in a list!"
     filelist = pathlist
     logger.debug("Quast reports to combine: %s", str(filelist))
     mainDict = {}
@@ -1017,7 +1016,7 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
 
 
 def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
-                            logger=None):
+                         logger=None):
     """use withing PArtition mapping funtion;
     makes LociMapping, get region coords, write extracted region,
     """
@@ -1102,7 +1101,7 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
     cluster.mappings.append(mapping0)
 
 
-def make_mapped_partition_cmds(mapping_ob, seedGenome, samtools_exe, flank,
+def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe, flank,
                                logger=None):
     """ returns cmds and region
     """
@@ -1135,7 +1134,7 @@ def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
         samtools_exe,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_bam)
-    update_readlist = str("{0} view  {1} -U {2} | cut -f1 >> {3}").format(
+    update_readlist = "{0} view {1} -U {2} | cut -f1 >> {3}".format(
         samtools_exe,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
         ' '.join([x for x in mapped_regions]),
@@ -1143,7 +1142,7 @@ def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
     uniquify_list = "sort -u {0}".format(
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt)
     # from the global sam mapping filter out those in the reads_mapped_txt list
-    get_unmapped = "LC_ALL=C grep -w -v -F -f {0}  < {1} > {2}".format(
+    get_unmapped = "LC_ALL=C grep -w -v -F -f {0} < {1} > {2}".format(
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].unmapped_sam)
@@ -1167,7 +1166,7 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
     mapped_regions = []
     for cluster in cluster_list:
         mapped_partition_cmds, reg_to_extract = make_mapped_partition_cmds(
-            mapping_ob=cluster.mappings[-1],
+            cluster=cluster, mapping_ob=cluster.mappings[-1],
             seedGenome=seedGenome, samtools_exe=samtools_exe, flank=flank,
             logger=logger)
         for cmd in mapped_partition_cmds:
@@ -1245,11 +1244,12 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
         if j == "de_novo":
             final_mapping.ref_fasta = ''
             assembly_ref_as_contig = None
-        elif j == "de_fere_novo":
+        else:
+            assert j == "de_fere_novo", \
+                "Only valid cases are de novo and de fere novo!"
             final_mapping.ref_fasta = seedGenome.assembled_seeds
             assembly_ref_as_contig = 'trusted'
-        else:
-            raise ValueError("Only valid cases are de novo and de fere novo!")
+
         # remove unneeded dir
         os.rmdir(final_mapping.mapping_subdir)
 
@@ -1312,17 +1312,6 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     with open(outpath, 'w') as outf:
         SeqIO.write(record, outf, 'fasta')
     return (outpath, len(record))
-
-# def multi_subprocess(cmd, check=True):
-#     try:
-#         subprocess.run([cmd],
-#                        shell=sys.platform != "win32",
-#                        stdout=subprocess.PIPE,
-#                        stderr=subprocess.PIPE,
-#                        check=check)
-#     except Exception as e:
-#         raise e
-#     return 0
 
 
 if __name__ == "__main__":

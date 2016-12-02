@@ -46,7 +46,8 @@ from riboSeed.riboSeed2 import SeedGenome, ngsLib,  LociMapping, \
     convert_bams_to_fastq_cmds, check_smalt_full_install,\
     generate_spades_cmd, estimate_distances_smalt, run_final_assemblies,\
     check_libs_before_mapping, make_faux_genome, get_convert_run_spades_cmds, \
-    evaluate_spades_success, prepare_next_mapping, make_mapped_partition_cmds
+    evaluate_spades_success, prepare_next_mapping, make_mapped_partition_cmds,\
+    make_unmapped_partition_cmds, make_quick_quast_table
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
@@ -550,7 +551,7 @@ class riboSeed2TestCase(unittest.TestCase):
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
         add_coords_to_clusters(seedGenome=gen, logger=logger)
         clu = gen.loci_clusters[0]
-        # print(calu.index)
+
         code_0 = evaluate_spades_success(
             clu,
             mapping_ob=testmapping,
@@ -593,9 +594,33 @@ class riboSeed2TestCase(unittest.TestCase):
         self.assertEqual(code_3, 3)
 
     def test_make_quast_table(self):
-        pass
+        paths = [os.path.join(self.ref_dir, "quast_1", "report.tsv"),
+                 os.path.join(self.ref_dir, "quast_2", "report.tsv")]
+        quast_dict = make_quick_quast_table(
+            pathlist=paths, write=False, writedir=None, logger=logger)
+        first10_printout = [
+            "# N's per 100 kbp: ['0.00', '0.00']",
+            "# contigs: ['2', '11']",
+            "# contigs (>= 0 bp): ['3', '20']",
+            "# contigs (>= 1000 bp): ['2', '10']",
+            "# contigs (>= 10000 bp): ['2', '3']",
+            "# contigs (>= 25000 bp): ['1', '0']",
+            "# contigs (>= 5000 bp): ['2', '7']",
+            "# contigs (>= 50000 bp): ['1', '0']",
+            "# indels per 100 kbp: ['3.98', '0.00']",
+            "# local misassemblies: ['0', '0']",
+            "# misassembled contigs: ['0', '0']"]
+        counter = 0
+        for k, v in sorted(quast_dict.items()):
+            self.assertEqual(first10_printout[counter],
+                             "{0}: {1}".format(k, v))
+            if counter == 10:
+                break
+            else:
+                counter = counter + 1
 
     def test_partition_mapping(self):
+        # this mostly does system calls; cant really test smoothlu
         pass
 
     def test_prepare_next_mapping(self):
@@ -645,7 +670,8 @@ class riboSeed2TestCase(unittest.TestCase):
             cluster=clu, seedGenome=gen, samtools_exe=self.samtools_exe,
             flank=[0, 0],
             logger=logger)
-        self.assertEqual(clu.mappings[-1].index, 0)
+        new_name = "NC_011751.1_cluster_{0}_iter0".format(clu.index)
+        self.assertEqual(clu.mappings[-1].name, new_name)
 
     def test_mapped_partition_cmds(self):
         gen = SeedGenome(
@@ -660,17 +686,97 @@ class riboSeed2TestCase(unittest.TestCase):
             assembly_subdir=self.test_dir,
             ref_fasta=self.ref_fasta,
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=1000,
+            circular=False,
+            logger=logger)
+        add_coords_to_clusters(seedGenome=gen, logger=logger)
+        gen.loci_clusters[0].global_start_coord = 5000
+        gen.loci_clusters[0].global_end_coord = 10000
+        print(gen.loci_clusters[0].__dict__)
         cmds, region = make_mapped_partition_cmds(
+            cluster=gen.loci_clusters[0],
             mapping_ob=testmapping,
             seedGenome=gen,
             samtools_exe=self.samtools_exe,
-            flank=[0,0],
+            flank=[0, 0],
             logger=logger)
-        self.assert
+        ref_cmds = [
+            '{0} sort {1} > {2}'.format(
+                self.samtools_exe,
+                os.path.join(
+                    self.test_dir,
+                    "NC_011751.1_mapping_for_iter_0/" +
+                    "NC_011751.1_mapping_for_iter_0_iteration_0.bam"),
+                os.path.join(
+                    self.test_dir,
+                    "NC_011751.1_mapping_for_iter_0/" +
+                    "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam")),
+            "{0} index {1}".format(
+                self.samtools_exe,
+                os.path.join(
+                    self.test_dir,
+                    "NC_011751.1_mapping_for_iter_0/" +
+                    "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam")),
+            '{0} view -o {1} {2} NC_011751.1:5000-10000'.format(
+                self.samtools_exe,
+                os.path.join(self.test_dir,
+                             "LociMapping/test_iteration_1.bam"),
+                os.path.join(
+                    self.test_dir,
+                    "NC_011751.1_mapping_for_iter_0/" +
+                    "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"))]
+        print(region)
+        self.assertEqual(region, "NC_011751.1:5000-10000")
+        for i, cmd in enumerate(cmds):
+            self.assertEqual(ref_cmds[i], cmd)
 
     def test_unmapped_partition_cmds(self):
-        make_mapped_partition_cmds(mapping_ob, seedGenome, samtools_exe, flank,
-                               logger=None)
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+
+        unmapped_cmds = make_unmapped_partition_cmds(mapped_regions=[
+            "test:1-6", "test:3-77"], samtools_exe=self.samtools_exe,
+                                                     seedGenome=gen)
+        mapped_txt = os.path.join(self.test_dir,
+                             "NC_011751.1_mapping_for_iter_0/" +
+                             "NC_011751.1_mapping_for_iter_0_iteration_0_mapped.txt")
+
+        ref_unmapped_cmds = [
+            "{0} view -o {1} -h {2}".format(
+                self.samtools_exe,
+                os.path.join(self.test_dir,
+                             "NC_011751.1_mapping_for_iter_0/" +
+                             "NC_011751.1_mapping_for_iter_0_iteration_0.sam"),
+                os.path.join(self.test_dir,
+                             "NC_011751.1_mapping_for_iter_0/" +
+                             "NC_011751.1_mapping_for_iter_0_iteration_0.bam")),
+            "{0} view {1} -U test:1-6 test:3-77 | cut -f1 >> {2}".format(
+                self.samtools_exe,
+                os.path.join(self.test_dir,
+                             "NC_011751.1_mapping_for_iter_0/" +
+                             "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"),
+                mapped_txt),
+            "sort -u {0}".format(mapped_txt),
+            "LC_ALL=C grep -w -v -F -f {0} < {1} > {2}".format(
+                mapped_txt,
+                os.path.join(self.test_dir,
+                             "NC_011751.1_mapping_for_iter_0/" +
+                             "NC_011751.1_mapping_for_iter_0_iteration_0.sam"),
+                os.path.join(self.test_dir,
+                             "NC_011751.1_mapping_for_iter_0/" +
+                             "NC_011751.1_mapping_for_iter_0_iteration_0_unmapped.sam"))
+        ]
+        for i, ref in enumerate(ref_unmapped_cmds):
+            self.assertEqual(unmapped_cmds[i], ref)
+        # self.to_be_removed.append(mapped_txt)
 
     def test_make_faux_genome(self):
         gen = SeedGenome(
