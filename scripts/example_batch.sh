@@ -41,4 +41,4 @@ python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${GB} -o ${OUTDIR}select/ -v 
 ## RiboSnag
 # python3.5 ~/GitHub/riboSeed/riboSeed/riboSnag.py ${GB} ${OUTDIR}select/riboSelect_grouped_loci.txt -o ${OUTDIR}snag/ -l $FLANK -v 1
 # RiboSeed
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py ${OUTDIR}snag/ ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -r ${GB} -v 1 -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed2.py ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -r ${GB} -v 1 -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1
