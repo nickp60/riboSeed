@@ -28,6 +28,7 @@ import itertools
 import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')
+# from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import pandas as pd
@@ -499,7 +500,8 @@ def stitch_together_target_regions(cluster,
             id=seq_id)
     ### last minuete check
     for property, value in vars(cluster).items():
-        assert value is not None, "%s has a value of None!" % property
+        if value is None:
+            logger.debug("%s has a value of None!", property)
     return cluster
 
 
@@ -766,6 +768,7 @@ def plot_scatter_with_anno(data,
     fig.subplots_adjust(hspace=0)
     fig.set_size_inches(12, 7.5)
     fig.savefig(str(output_prefix + '.png'), dpi=(200))
+    fig.savefig(str(output_prefix + '.pdf'), dpi=(200))
     return 0
 
 
@@ -849,6 +852,7 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     plt.tight_layout()  # pad=0, w_pad=5, h_pad=.0)
     fig.set_size_inches(8, 8)
     fig.savefig(str(output_prefix + "heatmap.png"), dpi=(200))
+    fig.savefig(str(output_prefix + "heatmap.pdf"), dpi=(200))
     ####  plot clustered heatmap
     plt.close('all')
     plt.figure(1, figsize=(6, 6))
@@ -863,6 +867,7 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     # plt.tight_layout()  # pad=0, w_pad=5, h_pad=.0)
     # fig2.set_size_inches(16, 16)
     plt.savefig(str(output_prefix + "clustered_heatmap.png"), dpi=(200))
+    plt.savefig(str(output_prefix + "clustered_heatmap.pdf"), dpi=(200))
     return lsdf_wNA
 
 
@@ -940,6 +945,7 @@ def plot_alignment_3d(consensus, tseq, output_prefix):
     ax.scatter(X, Y, Z)#, rstride=1, cstride=1, cmap=cm.jet)
     ax.set_xticks([])
     fig.savefig(str(output_prefix + '3d..png'), dpi=(200))
+    fig.savefig(str(output_prefix + '3d..pdf'), dpi=(200))
 
 
 def main(clusters, genome_records, logger, verbose, no_revcomp,
