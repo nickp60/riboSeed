@@ -8,7 +8,7 @@ The pipeline (currently) consists of optional preprocessing and two main stages:
 
 ### 0: Preprocessing with scanScaffolds.sh
 
-This is an (ever-growing) shell script to preprocess seqeuencees straight from DNA fasta.  The issue with many legacy annotations, assemblies, and scaffold collections is they are often poorly annotated at best, and unannoated at worst.  This is a quick way to happiness without using the full Prokka annotation path. It requires barrnap [cite] and seqret [cite] to be availible in your path.
+This is an (ever-growing) shell script to preprocess seqeuences straight from DNA fasta.  The issue with many legacy annotations, assemblies, and scaffold collections is they are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires barrnap [cite] and seqret [cite] to be availible in your path.
 
 #### Usage
 
@@ -39,7 +39,10 @@ For fungal or other Eukaryotic genomes, reannotation is frequently required.  Fo
 
 NOTE: the format is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropiate. The format is "genome_sequence_id locus_tag1:locus_tag2", where each line represents a cluster. See example below, where 14 rRNA's are clustered into 6 groups:
 
+NOTE 2: In order to stremline things, as of version 0.0.3 there will be a commented header line with the feature type in the format "#$ FEATURE <featuretype>", such as "#S FEATURE rRNA".
+
 ```
+#$ FEATURE rRNA
 CM000577.1 FGSG_20052:FGSG_20051:FGSG_20053
 CM000577.1 FGSG_20048:FGSG_20047
 CM000577.1 FGSG_20049:FGSG_20050
@@ -91,6 +94,8 @@ optional arguments:
 
 
 * `riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
+
+THIS SCRIPT IS NOT LONGER A REQUIRED PART OF THE PIPELINE! It is still included as the plots it generates can be useful for troubleshooting.
 
 #### Usage:
 
@@ -145,79 +150,92 @@ optional arguments:
 ```
 
 ## 2: Seeded Assebly
-
-* `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.
+* `riboSeed2.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads into long reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.  RiboSeed2 differs from the legacy version of riboSeed as riboSeed2 maps to all the regions at once, which minimizes the complications asscociated with multiple mappings. Instead of mapping to all the regions individually, it concatenates them into a faux genome with 10kb spacers of N's in between.  Because of this, it has the added benefit of running much faster.
 
 #### Output
 
-This outputs two main directories: `map` and `results`.  If `--temps` is true, temporary files from the mapping scheme will be retained, and is useful for assessing problems.
-
-The results directory will contain a 'mauve' directory with all the extended fragments, the mapped fastq files, and a `de_novo` and `de_fere_novo` folder, containing the results with the *de novo* mapping and supplemented mapping, respectively.
+The results directory will contain a 'final_long_reads' directory with all the extended fragments, the mapped fastq files, and a `de_novo` and `de_fere_novo` folder, containing the results with the *de novo* mapping and supplemented mapping, respectively.
 
 #### Usage:
+minimal usage: riboSeed.py clustered\_accession\_list.txt -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT
 
 ```
-usage: riboSeed.py -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT
-                   [-S FASTQS] [-n EXP_NAME] [-m METHOD] [-c CORES] [-k KMERS]
-                   [-p PRE_KMERS] [-g MIN_GROWTH] [-s MIN_SCORE_SMALT]
-                   [-a MIN_ASSEMBLY_LEN] [--paired_inference] [--subtract]
-                   [--keep_unmapped]
-                   [--ref_as_contig {None,trusted,untrusted}] [--no_temps]
-                   [--skip_control] [-i ITERATIONS] [-v {1,2,3,4,5}]
-                   [--target_len TARGET_LEN] [--DEBUG] [--DEBUG_multi]
-                   [--smalt_scoring SMALT_SCORING] [-h]
-                   [--spades_exe SPADES_EXE] [--samtools_exe SAMTOOLS_EXE]
-                   [--smalt_exe SMALT_EXE] [--quast_exe QUAST_EXE]
-                   seed_dir
+usage: riboSeed2.py -F FASTQ1 -R FASTQ2 -r REFERENCE_GENBANK -o OUTPUT
+                    [-S FASTQS] [-n EXP_NAME] [-l FLANKING] [-m METHOD]
+                    [-c CORES] [-k KMERS] [-p PRE_KMERS] [-s MIN_SCORE_SMALT]
+                    [--include_shorts] [-a MIN_ASSEMBLY_LEN]
+                    [--paired_inference] [--subtract] [--circular]
+                    [--padding PADDING] [--keep_unmapped]
+                    [--ref_as_contig {None,trusted,untrusted}] [--no_temps]
+                    [--skip_control] [-i ITERATIONS] [-v {1,2,3,4,5}]
+                    [--target_len TARGET_LEN] [--DEBUG] [--DEBUG_multi]
+                    [--smalt_scoring SMALT_SCORING] [-h]
+                    [--spades_exe SPADES_EXE] [--samtools_exe SAMTOOLS_EXE]
+                    [--smalt_exe SMALT_EXE] [--quast_exe QUAST_EXE]
+                    [--python2_7_exe PYTHON2_7_EXE]
+                    clustered_loci_txt
 
 Given regions from riboSnag, assembles the mapped reads
 
 positional arguments:
-  seed_dir              path to roboSnag results directory
+  clustered_loci_txt    output from riboSelect
 
 required named arguments:
   -F FASTQ1, --fastq1 FASTQ1
                         forward fastq reads, can be compressed
   -R FASTQ2, --fastq2 FASTQ2
                         reverse fastq reads, can be compressed
-  -r REFERENCE_GENOME, --reference_genome REFERENCE_GENOME
+  -r REFERENCE_GENBANK, --reference_genbank REFERENCE_GENBANK
                         fasta reference, used to estimate insert sizes, and
                         compare with QUAST
   -o OUTPUT, --output OUTPUT
-                        output directory; default: cwd
+                        output directory; default:
+                        /home/nicholas/GitHub/riboSeed
 
 optional arguments:
   -S FASTQS, --fastq_single FASTQS
                         single fastq reads
   -n EXP_NAME, --experiment_name EXP_NAME
                         prefix for results files; default: riboSeed
+  -l FLANKING, --flanking_length FLANKING
+                        length of flanking regions, can be colon-separated to
+                        give separate upstream and downstream flanking
+                        regions; default: 1000
   -m METHOD, --method_for_map METHOD
                         available mappers: smalt; default: smalt
   -c CORES, --cores CORES
-                        cores for multiprocessing workers; default: 1
+                        cores for multiprocessing workers; default: None
   -k KMERS, --kmers KMERS
                         kmers used for final assembly, separated by commas;
                         default: 21,33,55,77,99,127
   -p PRE_KMERS, --pre_kmers PRE_KMERS
                         kmers used during seeding assemblies, separated bt
                         commas; default: 21,33,55
-  -g MIN_GROWTH, --min_growth MIN_GROWTH
-                        skip remaining iterations if contig doesnt extend by
-                        --min_growth. if 0, ignore; default: 0
   -s MIN_SCORE_SMALT, --min_score_SMALT MIN_SCORE_SMALT
                         min score forsmalt mapping; inferred from read length;
                         default: inferred
+  --include_shorts      if assembled contig is smaller than
+                        --min_assembly_len, contig will still be included in
+                        assembly; default: inferred
   -a MIN_ASSEMBLY_LEN, --min_assembly_len MIN_ASSEMBLY_LEN
                         if initial SPAdes assembly largest contig is not at
                         least as long as --min_assembly_len, exit. Set this to
                         the length of the seed sequence; if it is not
                         achieved, seeding across regions will likely fail;
-                        default: 4000
+                        default: 6000
   --paired_inference    if --paired_inference, mapped read's pairs are
                         included; default: False
   --subtract            if --subtract, reads aligned to each reference will
                         not be aligned to future iterations. Probably you
                         shouldnt do thisunless you really happen to want to
+  --circular            if the genome is known to be circular, and an region
+                        of interest (including flanking bits) extends past
+                        chromosome end, this extends the seqence past
+                        chromosome origin forward by 5kb; default: False
+  --padding PADDING     if treating as circular, this controls the length of
+                        sequence added to the 5' and 3' ends to allow for
+                        selecting regions that cross the chromosom's origin;
+                        default: 5000
   --keep_unmapped       if --keep_unmapped, fastqs are generated containing
                         unmapped reads; default: False
   --ref_as_contig {None,trusted,untrusted}
@@ -262,6 +280,127 @@ optional arguments:
                         Path to smalt executable; default: smalt
   --quast_exe QUAST_EXE
                         Path to quast executable; default: quast.py
+  --python2_7_exe PYTHON2_7_EXE
+                        Path to pyython2.7 executable, cause; QUAST won't run
+                        on python3. default: python2.7
+
+
+<!-- * `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions. -->
+
+<!-- #### Output -->
+
+<!-- This outputs two main directories: `map` and `results`.  If `--temps` is true, temporary files from the mapping scheme will be retained, and is useful for assessing problems. -->
+
+<!-- The results directory will contain a 'mauve' directory with all the extended fragments, the mapped fastq files, and a `de_novo` and `de_fere_novo` folder, containing the results with the *de novo* mapping and supplemented mapping, respectively. -->
+
+<!-- #### Usage: -->
+
+<!-- ``` -->
+<!-- usage: riboSeed.py -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT -->
+<!--                    [-S FASTQS] [-n EXP_NAME] [-m METHOD] [-c CORES] [-k KMERS] -->
+<!--                    [-p PRE_KMERS] [-g MIN_GROWTH] [-s MIN_SCORE_SMALT] -->
+<!--                    [-a MIN_ASSEMBLY_LEN] [--paired_inference] [--subtract] -->
+<!--                    [--keep_unmapped] -->
+<!--                    [--ref_as_contig {None,trusted,untrusted}] [--no_temps] -->
+<!--                    [--skip_control] [-i ITERATIONS] [-v {1,2,3,4,5}] -->
+<!--                    [--target_len TARGET_LEN] [--DEBUG] [--DEBUG_multi] -->
+<!--                    [--smalt_scoring SMALT_SCORING] [-h] -->
+<!--                    [--spades_exe SPADES_EXE] [--samtools_exe SAMTOOLS_EXE] -->
+<!--                    [--smalt_exe SMALT_EXE] [--quast_exe QUAST_EXE] -->
+<!--                    seed_dir -->
+
+<!-- Given regions from riboSnag, assembles the mapped reads -->
+
+<!-- positional arguments: -->
+<!--   seed_dir              path to roboSnag results directory -->
+
+<!-- required named arguments: -->
+<!--   -F FASTQ1, --fastq1 FASTQ1 -->
+<!--                         forward fastq reads, can be compressed -->
+<!--   -R FASTQ2, --fastq2 FASTQ2 -->
+<!--                         reverse fastq reads, can be compressed -->
+<!--   -r REFERENCE_GENOME, --reference_genome REFERENCE_GENOME -->
+<!--                         fasta reference, used to estimate insert sizes, and -->
+<!--                         compare with QUAST -->
+<!--   -o OUTPUT, --output OUTPUT -->
+<!--                         output directory; default: cwd -->
+
+<!-- optional arguments: -->
+<!--   -S FASTQS, --fastq_single FASTQS -->
+<!--                         single fastq reads -->
+<!--   -n EXP_NAME, --experiment_name EXP_NAME -->
+<!--                         prefix for results files; default: riboSeed -->
+<!--   -m METHOD, --method_for_map METHOD -->
+<!--                         available mappers: smalt; default: smalt -->
+<!--   -c CORES, --cores CORES -->
+<!--                         cores for multiprocessing workers; default: 1 -->
+<!--   -k KMERS, --kmers KMERS -->
+<!--                         kmers used for final assembly, separated by commas; -->
+<!--                         default: 21,33,55,77,99,127 -->
+<!--   -p PRE_KMERS, --pre_kmers PRE_KMERS -->
+<!--                         kmers used during seeding assemblies, separated bt -->
+<!--                         commas; default: 21,33,55 -->
+<!--   -g MIN_GROWTH, --min_growth MIN_GROWTH -->
+<!--                         skip remaining iterations if contig doesnt extend by -->
+<!--                         --min_growth. if 0, ignore; default: 0 -->
+<!--   -s MIN_SCORE_SMALT, --min_score_SMALT MIN_SCORE_SMALT -->
+<!--                         min score forsmalt mapping; inferred from read length; -->
+<!--                         default: inferred -->
+<!--   -a MIN_ASSEMBLY_LEN, --min_assembly_len MIN_ASSEMBLY_LEN -->
+<!--                         if initial SPAdes assembly largest contig is not at -->
+<!--                         least as long as --min_assembly_len, exit. Set this to -->
+<!--                         the length of the seed sequence; if it is not -->
+<!--                         achieved, seeding across regions will likely fail; -->
+<!--                         default: 4000 -->
+<!--   --paired_inference    if --paired_inference, mapped read's pairs are -->
+<!--                         included; default: False -->
+<!--   --subtract            if --subtract, reads aligned to each reference will -->
+<!--                         not be aligned to future iterations. Probably you -->
+<!--                         shouldnt do thisunless you really happen to want to -->
+<!--   --keep_unmapped       if --keep_unmapped, fastqs are generated containing -->
+<!--                         unmapped reads; default: False -->
+<!--   --ref_as_contig {None,trusted,untrusted} -->
+<!--                         if 'trusted', SPAdes will use the seed sequences as a -->
+<!--                         --trusted-contig; if 'untrusted', SPAdes will treat as -->
+<!--                         --untrusted-contig. if '', seeds will not be used -->
+<!--                         during assembly. See SPAdes docs; default: untrusted -->
+<!--   --no_temps            if --no_temps, mapping files will be removed after all -->
+<!--                         iterations completed; default: False -->
+<!--   --skip_control        if --skip_control, no SPAdes-only de novo assembly -->
+<!--                         will be done; default: False -->
+<!--   -i ITERATIONS, --iterations ITERATIONS -->
+<!--                         if iterations>1, multiple seedings will occur after -->
+<!--                         assembly of seed regions; if setting --target_len, -->
+<!--                         seedings will continue until --iterations are -->
+<!--                         completed or target_len is matched or exceeded; -->
+<!--                         default: 3 -->
+<!--   -v {1,2,3,4,5}, --verbosity {1,2,3,4,5} -->
+<!--                         Logger writes debug to file in output dir; this sets -->
+<!--                         verbosity level sent to stderr. 1 = debug(), 2 = -->
+<!--                         info(), 3 = warning(), 4 = error() and 5 = critical(); -->
+<!--                         default: 2 -->
+<!--   --target_len TARGET_LEN -->
+<!--                         if set, iterations will continue until contigs reach -->
+<!--                         this length, or max iterations (set by --iterations) -->
+<!--                         have been completed. Set as fraction of original seed -->
+<!--                         length by giving a decimal between 0 and 5, or set as -->
+<!--                         an absolute number of base pairs by giving an integer -->
+<!--                         greater than 50. Not used by default -->
+<!--   --DEBUG               if --DEBUG, test data will be used; default: False -->
+<!--   --DEBUG_multi         if --DEBUG_multiprocessing, runs seeding in single -->
+<!--                         loop instead of a multiprocessing pool: False -->
+<!--   --smalt_scoring SMALT_SCORING -->
+<!--                         submit custom smalt scoring via smalt -S scorespec -->
+<!--                         option; default: match=1,subst=-4,gapopen=-4,gapext=-3 -->
+<!--   -h, --help            Displays this help message -->
+<!--   --spades_exe SPADES_EXE -->
+<!--                         Path to SPAdes executable; default: spades.py -->
+<!--   --samtools_exe SAMTOOLS_EXE -->
+<!--                         Path to samtools executable; default: samtools -->
+<!--   --smalt_exe SMALT_EXE -->
+<!--                         Path to smalt executable; default: smalt -->
+<!--   --quast_exe QUAST_EXE -->
+<!--                         Path to quast executable; default: quast.py -->
 
 ```
 
@@ -285,12 +424,12 @@ Installing with pip3.5 will be the easiest way, but prior to release, clone this
 
 ### External Requirements
 
-* R (don't ask...)
 * SPAdes v3.8 or higher
 * SMALT (tested with 0.7.6)
 ** see notes below
 * SAMTools (must be 1.3.1 or above)
 * QUAST (tested with 4.1)
+* R (don't ask...)
 * Barrnap (must be 0.7 or above)
 ** note that barrnap has certain Perl requirements that may not be included on your machine.  Ensure barrnap runs fine before trying riboSnag.py
 ## Note on installation of SMALT
@@ -348,4 +487,4 @@ example:
 ./example_batch.sh ./sample_data/NC_011751.1.gb ./sample_data/NC_011751.1.fasta ./sample_data/toy_set/toy_reads1.fq  ./sample_data/toy_set/toy_reads2.fq ./results_dir/ 3 1000 4
 
 ```
-We reccommend copying this file to your project directory, and customizing it as needed.
+We recommend copying this file to your project directory, and customizing it as needed.
