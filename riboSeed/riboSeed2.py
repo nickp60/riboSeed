@@ -59,7 +59,7 @@ class SeedGenome(object):
     seeds alone
     This holds all he data pertaining to te clustering of a scaffold
     """
-    def __init__(self, genbank_path, final_contigs_dir=None,
+    def __init__(self, genbank_path, final_long_reads_dir=None,
                  this_iteration=0, ref_fasta=None, next_reference_path=None,
                  loci_clusters=None, output_root=None, initial_map_bam=None,
                  unmapped_ngsLib=None, name=None, iter_mapping_list=None,
@@ -104,7 +104,7 @@ class SeedGenome(object):
         # path to file mapped readnames are appended to
         self.reads_mapped_txt = reads_mapped_txt
         # destination for seeded contigs prior to final assemblies
-        self.final_contigs_dir = final_contigs_dir
+        self.final_long_reads_dir = final_long_reads_dir
         # after faux genome construction, store path here
         self.next_reference_path = next_reference_path
         # where to put the combined contigs at the end:
@@ -139,11 +139,11 @@ class SeedGenome(object):
                     self.output_root,
                     "{0}_mapping_for_iter_{1}".format(self.name, i)),
                 assembly_subdir_needed=False))
-        if self.final_contigs_dir is None:
-            self.final_contigs_dir = os.path.join(self.output_root,
-                                                  "final_contigs")
-        if not os.path.isdir(self.final_contigs_dir):
-            os.makedirs(self.final_contigs_dir)
+        if self.final_long_reads_dir is None:
+            self.final_long_reads_dir = os.path.join(self.output_root,
+                                                  "final_long_reads")
+        if not os.path.isdir(self.final_long_reads_dir):
+            os.makedirs(self.final_long_reads_dir)
 
     def write_fasta_genome(self):
         """Given a genbank file, this writes out as (multi)fasta
@@ -553,10 +553,10 @@ def get_args():  # pragma: no cover
                           action="store", default="quast.py",
                           help="Path to quast executable; " +
                           "default: %(default)s")
-    optional.add_argument("--quast_python_exe", dest="quast_python_exe",
-                          action="store", default="python2",
-                          help="Path to quast executable; " +
-                          "default: %(default)s")
+    optional.add_argument("--python2_7_exe", dest="python2_7_exe",
+                          action="store", default="python2.7",
+                          help="Path to pyython2.7 executable, cause; " +
+                          "QUAST won't run on python3. default: %(default)s")
     args = parser.parse_args()
     return args
 
@@ -1202,7 +1202,7 @@ def add_coords_to_clusters(seedGenome, logger=None):
         logger.info(str(cluster.__dict__))
 
 
-def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
+def run_final_assemblies(seedGenome, spades_exe, quast_exe, python2_7_exe,
                          skip_control=True,
                          kmers="21,33,55,77,99", logger=None):
     """
@@ -1247,7 +1247,7 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, quast_python_exe,
 
         ref = str("-R %s" % seedGenome.ref_fasta)
         quast_cmd = str("{0} {1} {2} {3} -o {4}").format(
-            quast_python_exe,
+            python2_7_exe,
             quast_exe,
             ref,
             os.path.join(final_mapping.assembly_subdir, "contigs.fasta"),
@@ -1608,7 +1608,7 @@ if __name__ == "__main__":
                 try:
                     clu.contigs_new_path = copy_file(
                         current_file=cluster.mappings[-1].assembled_contig,
-                        dest_dir=seedGenome.final_contigs_dir,
+                        dest_dir=seedGenome.final_long_reads_dir,
                         name=os.path.join(
                             os.path.basename(cluster.mappings[-1].assembled_contig),
                             "cluster_{0}_final_iter_{1}.fasta".format(
@@ -1650,14 +1650,14 @@ if __name__ == "__main__":
                         seedGenome.this_iteration)
 
     ##################################################################
-    logging.info("combinging contigs from %s", seedGenome.final_contigs_dir)
+    logging.info("combinging contigs from %s", seedGenome.final_long_reads_dir)
     for clu in [x for x in seedGenome.loci_clusters if x.keep_contig]:
         copy_file(current_file=clu.mappings[-1].assembled_contig,
-                  dest_dir=seedGenome.final_contigs_dir,
+                  dest_dir=seedGenome.final_long_reads_dir,
                   name=str(clu.sequence_id + "_cluster_" + str(clu.index) + ".fasta"),
                   overwrite=False, logger=logger)
     seedGenome.assembled_seeds = combine_contigs(
-        contigs_dir=seedGenome.final_contigs_dir,
+        contigs_dir=seedGenome.final_long_reads_dir,
         contigs_name="riboSeedContigs",
         logger=logger)
     logger.info("Combined Seed Contigs: %s", seedGenome.assembled_seeds)
@@ -1706,22 +1706,20 @@ if __name__ == "__main__":
         # split the processors based on how many spades_cmds are on the list
         qpool = multiprocessing.Pool(processes=int(
             args.cores / len(spades_cmds)))
-        # nseqs = len(seedGenome.loci_clusters)
         logger.debug("running the quast following commands:")
         logger.debug("\n".join([x for x in spades_cmds]))
         qresults = [
             qpool.apply_async(subprocess.run,
                              (cmd,),
-                             {"shell": sys.platform != "win32",
-                              "stdout": subprocess.PIPE,
-                              "stderr": subprocess.PIPE,
-                              "check": True})
+                              {"shell": sys.platform != "win32",
+                               "stdout": subprocess.PIPE,
+                               "stderr": subprocess.PIPE,
+                               "check": True})
             for cmd in quast_cmds]
         qpool.close()
         qpool.join()
         # logger.info(sum([r.get() for r in results]))
         logger.info("Sum of return codes (should be 0):")
-        logger.info([r.get() for r in qresults])
         logger.info(sum([r.get().returncode for r in qresults]))
 
     ###
