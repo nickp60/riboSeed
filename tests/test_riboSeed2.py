@@ -94,7 +94,7 @@ class riboSeed2TestCase(unittest.TestCase):
         self.samtools_exe = "samtools"
         self.spades_exe = "spades.py"
         self.quast_exe = "quast.py"
-        self.quast_python_exe = "python2"
+        self.python2_7_exe = "python2"
         self.test_estimation_file = os.path.join(self.test_dir,
                                                  "est_distance.sam")
         self.map_results_prefix = os.path.join(self.test_dir,
@@ -435,7 +435,7 @@ class riboSeed2TestCase(unittest.TestCase):
 
         map_to_genome_ref_smalt(mapping_ob=testmapping, ngsLib=testngs,
                                 cores=4, samtools_exe=self.samtools_exe,
-                                smalt_exe=self.smalt_exe, score_minimum=None,
+                                smalt_exe=self.smalt_exe, score_minimum=48,
                                 scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                                 step=3, k=5, logger=logger)
         mapped_str = get_number_mapped(testmapping.pe_map_bam,
@@ -457,7 +457,7 @@ class riboSeed2TestCase(unittest.TestCase):
 
         map_to_genome_ref_smalt(mapping_ob=testmapping, ngsLib=testngs2,
                                 cores=4, samtools_exe=self.samtools_exe,
-                                smalt_exe=self.smalt_exe, score_minimum=None,
+                                smalt_exe=self.smalt_exe, score_minimum=48,
                                 scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                                 step=3, k=5, logger=logger)
         mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
@@ -674,7 +674,7 @@ class riboSeed2TestCase(unittest.TestCase):
 
         map_to_genome_ref_smalt(mapping_ob=testmapping, ngsLib=testngs,
                                 cores=4, samtools_exe=self.samtools_exe,
-                                smalt_exe=self.smalt_exe, score_minimum=None,
+                                smalt_exe=self.smalt_exe, score_minimum=48,
                                 scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                                 step=3, k=5, logger=logger)
         clu = gen.loci_clusters[0]
@@ -862,7 +862,7 @@ class riboSeed2TestCase(unittest.TestCase):
         gen.ref_fasta = self.ref_fasta
         final_spades_cmds, final_quast_cmds, quast_reports = run_final_assemblies(
             seedGenome=gen, spades_exe=self.spades_exe,
-            quast_exe=self.quast_exe, quast_python_exe=self.quast_python_exe,
+            quast_exe=self.quast_exe, python2_7_exe=self.python2_7_exe,
             skip_control=False, kmers="33,77,99", logger=logger)
         final_spades_cmds_ref = [
             str(
@@ -882,7 +882,7 @@ class riboSeed2TestCase(unittest.TestCase):
             str(
                 '{0} {1} -R {2} {3} -o {4}'
             ).format(
-                self.quast_python_exe, self.quast_exe,
+                self.python2_7_exe, self.quast_exe,
                 self.ref_fasta,
                 os.path.join(self.test_dir, "final_de_fere_novo_assembly",
                              "contigs.fasta"),
@@ -890,7 +890,7 @@ class riboSeed2TestCase(unittest.TestCase):
             str(
                 '{0} {1} -R {2} {3} -o {4}'
             ).format(
-                self.quast_python_exe, self.quast_exe,
+                self.python2_7_exe, self.quast_exe,
                 self.ref_fasta,
                 os.path.join(self.test_dir, "final_de_novo_assembly",
                              "contigs.fasta"),
