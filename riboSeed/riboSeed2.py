@@ -172,8 +172,8 @@ class ngsLib(object):
     """
     def __init__(self, name, master=False, readF=None, readR=None,
                  readS0=None, readS1=None, mapping_success=False,
-                 smalt_dist_path=None, readlen=None,
-                 libtype=None, logger=None, smalt_exe=None,
+                 smalt_dist_path=None, readlen=None,make_dist=False,
+                 libtype=None, logger=None, mapper_exe=None,
                  ref_fasta=None):
         self.name = name
         # Bool: whether this is a master record
@@ -193,7 +193,9 @@ class ngsLib(object):
         # bool: did mapping have errors?
         self.mapping_success = mapping_success
         # needed to generate distance file if master
-        self.smalt_exe = smalt_exe
+        self.mapper_exe = mapper_exe
+        # whether to make a distance file for smalt
+        self.make_dist = make_dist
         # also needed to generate distance file if master
         self.ref_fasta = ref_fasta
         # results of distance mapping
@@ -244,11 +246,13 @@ class ngsLib(object):
         # if intermediate mapping data, not original datasets
         if self.master is not True:
             return None
+        if not self.make_dist:
+            return None
         if self.libtype in ['pe', 'pe_s']:
             self.smalt_dist_path = estimate_distances_smalt(
                 outfile=os.path.join(os.path.dirname(self.ref_fasta),
                                      "smalt_distance_est.sam"),
-                smalt_exe=self.smalt_exe,
+                smalt_exe=self.mapper_exe,
                 ref_genome=self.ref_fasta,
                 fastq1=self.readF, fastq2=self.readR,
                 logger=self.logger)
@@ -419,13 +423,14 @@ def get_args():  # pragma: no cover
                           help="kmers used during seeding assemblies, " +
                           "separated bt commas" +
                           "; default: %(default)s")
-    # optional.add_argument("-g", "--min_growth", dest='min_growth',
-    #                       action="store",
-    #                       default=None, type=int,
-    #                       help="skip remaining iterations if contig doesnt " +
-    #                       "extend by --min_growth. ignored" +
-    #                       "by default")
-    optional.add_argument("-s", "--min_score_SMALT", dest='min_score_SMALT',
+    optional.add_argument("-I", "--ignoreS", dest='ignoreS',
+                          action="store",
+                          default=None, type=int,
+                          help="If true, singletons from previous mappings" +
+                          "will be ignored.  try this if you see" +
+                          "samtools merge errors in tracebacks" +
+                          "; default: %(default)s")
+    optional.add_argument("-s", "--score_min", dest='score_min',
                           action="store",
                           default=None, type=int,
                           help="min score forsmalt mapping; inferred from " +
@@ -549,6 +554,10 @@ def get_args():  # pragma: no cover
                           action="store", default="smalt",
                           help="Path to smalt executable;" +
                           " default: %(default)s")
+    optional.add_argument("--bwa_exe", dest="bwa_exe",
+                          action="store", default="bwa",
+                          help="Path to BWA executable;" +
+                          " default: %(default)s")
     optional.add_argument("--quast_exe", dest="quast_exe",
                           action="store", default="quast.py",
                           help="Path to quast executable; " +
@@ -644,11 +653,14 @@ def estimate_distances_smalt(outfile, smalt_exe, ref_genome,
 def check_libs_before_mapping(ngsLib, logger=None):
     # sometimes, if no singletons are found, we get an empt file.
     #  this shoudl weed out any empy files
+    logger.info("checking for empty read files")
     for f in ["readF", "readR", "readS0"]:
         # ignore if lib is None, as those wont be used anyway
         if getattr(ngsLib, f) is None:
             continue
         # if lib is not none but file is of size 0
+        logger.debug("size of %s: %f", getattr(ngsLib, f),
+                     os.path.getsize(getattr(ngsLib, f)) )
         if not os.path.getsize(getattr(ngsLib, f)) > 0:
             logger.warning("read file %s is empty and will not be used " +
                            "for mapping!", f)
@@ -656,7 +668,7 @@ def check_libs_before_mapping(ngsLib, logger=None):
             setattr(ngsLib, f, None)
 
 
-def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
+def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores, ignore_singletons,
                             samtools_exe, smalt_exe, score_minimum=None,
                             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                             step=3, k=5, logger=None):
@@ -666,13 +678,11 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     of singleton reads. Will not work on just singletons
     """
     check_libs_before_mapping(ngsLib, logger=logger)
-    logger.info("Mapping reads to reference genome")
+    logger.info("Mapping reads to reference genome with SMALT")
     # check min score
-    if score_minimum is None:
-        score_min = int(ngsLib.readlen * .3)
-    else:
-        score_min = score_minimum
-    logger.debug(str("mapping with smalt using a score min of " +
+    assert score_minimum is not None, "must assign score outside map function!"
+    score_min = score_minimum
+    logger.debug(str("using a score min of " +
                      "{0}").format(score_min))
     # index the reference
     cmdindex = str("{0} index -k {1} -s {2} {3} {3}").format(
@@ -689,16 +699,18 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     smaltcommands = [cmdindex, cmdmap]
 
     # if singletons are present, map those too.  Index is already made
-    if ngsLib.readS0 is not None:
-        # cmdindexS = str('{0} index -k {1} -s {2} {3} {3}').format(
-        #     smalt_exe, k, step, mapping_ob.ref_fasta)
+    if ngsLib.readS0 is not None and not ignore_singletons:
+        # because erros are thrown if there is no file, this
+        # makes a dummmy file to prevent the merge errorrs
         cmdmapS = str(
             "{0} map -S {1} -m {2} -n {3} -g {4} -f bam -o {5} " +
             "{6} {7}").format(smalt_exe, scoring, score_min, cores,
                               ngsLib.smalt_dist_path, mapping_ob.s_map_bam,
                               ngsLib.ref_fasta, ngsLib.readS0)
+        with open(mapping_ob.s_map_bam, 'w') as tempfile:
+            tempfile.write("@HD riboseed_dummy_file")
         # merge together the singleton and pe reads
-        cmdmergeS = '{0} merge -f  {1} {2} {3}'.format(
+        cmdmergeS = '{0} merge -f {3} {1} {2}'.format(
             samtools_exe, mapping_ob.pe_map_bam,
             mapping_ob.s_map_bam, mapping_ob.mapped_bam)
         smaltcommands.extend([cmdmapS, cmdmergeS])
@@ -710,6 +722,91 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     logger.info("running SMALT:")
     logger.debug("with the following SMALT commands:")
     for i in smaltcommands:
+        logger.debug(i)
+        subprocess.run(i, shell=sys.platform != "win32",
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE, check=True)
+    # report simgpleton reads mapped
+    if ngsLib.readS0 is not None:
+        logger.info(str("Singleton mapped reads: " +
+                        get_number_mapped(mapping_ob.s_map_bam,
+                                          samtools_exe=samtools_exe)))
+    # report paired reads mapped
+    logger.info(str("PE mapped reads: " +
+                    get_number_mapped(mapping_ob.pe_map_bam,
+                                      samtools_exe=samtools_exe)))
+    logger.info(str("Combined mapped reads: " +
+                    get_number_mapped(mapping_ob.mapped_bam,
+                                      samtools_exe=samtools_exe)))
+    # apparently there have been no errors, so mapping success!
+    ngsLib.mapping_success = True
+
+
+def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores, ignore_singletons,
+                          samtools_exe, bwa_exe, score_minimum=None,
+                          add_args='-L 0,0 -U 0', logger=None):
+    """
+    #TODO rework this to read libtype of ngslib object
+    requires at least paired end input, but can handle an additional library
+    of singleton reads. Will not work on just singletons
+    """
+    check_libs_before_mapping(ngsLib, logger=logger)
+    logger.info("Mapping reads to reference genome with BWA")
+    # check min score
+    assert score_minimum is not None, "must assign score outside map function!"
+    score_min = score_minimum
+    logger.debug(str("using a score min of " +
+                     "{0}").format(score_min))
+    # index the reference
+    cmdindex = str("{0} index {1}").format(
+        bwa_exe, ngsLib.ref_fasta)
+    # map paired end reads to reference index
+    cmdmap = str('{0} mem -t {1} {2} -T {3} ' +
+                 '{4} {5} {6} | {7} view -bh - |' +
+                 '{7} sort -o' +
+                 '{8} - ').format(bwa_exe,  # 0
+                                  cores,  # 1
+                                  add_args,  # 2
+                                  score_min,  # 3
+                                  ngsLib.ref_fasta,  # 4
+                                  ngsLib.readF,  # 5
+                                  ngsLib.readR,  # 6
+                                  samtools_exe,  # 7
+                                  mapping_ob.pe_map_bam)  # 8)
+
+    bwacommands = [cmdindex, cmdmap]
+
+    # if singletons are present, map those too.  Index is already made
+    if ngsLib.readS0 is not None and not ignore_singletons:
+        # cmdindexS = str('{0} index -k {1} -s {2} {3} {3}').format(
+        #     smalt_exe, k, step, mapping_ob.ref_fasta)
+        cmdmapS = str(
+            '{0} mem -t {1} {2} -T {3} ' +
+            '{4} {5} | {6} view -bh - |' +
+            '{6} sort -o {7} - ').format(bwa_exe,  # 0
+                                         cores,  # 1
+                                         add_args,  # 2
+                                         score_min,  # 3
+                                         ngsLib.ref_fasta,  # 4
+                                         ngsLib.readS0,  # 5
+                                         samtools_exe,  # 6
+                                         mapping_ob.pe_map_bam)  # 7)
+
+        with open(mapping_ob.s_map_bam, 'w') as tempfile:
+            tempfile.write("@HD riboseed_dummy_file")
+        # merge together the singleton and pe reads
+        cmdmergeS = '{0} merge -f {3}  {1} {2}'.format(
+            samtools_exe, mapping_ob.pe_map_bam,
+            mapping_ob.s_map_bam, mapping_ob.mapped_bam)
+        bwacommands.extend([cmdmapS, cmdmergeS])
+    else:
+        # 'merge', but reallt just converts
+        cmdmerge = str("{0} view -bh {1} > " +
+                       "{2}").format(samtools_exe, mapping_ob.pe_map_bam, mapping_ob.mapped_bam)
+        bwacommands.extend([cmdmerge])
+    logger.info("running BWA:")
+    logger.debug("with the following BWA commands:")
+    for i in bwacommands:
         logger.debug(i)
         subprocess.run(i, shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
@@ -850,9 +947,9 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     2 = exclude, and keep from iterating
     3 = exclude, error ocurred
     """
-    prelog = "{0}-{1}-iter{2}:".format("SEED_cluster", clu.index,
-                                       # clu.mappings[-1].iteration)
-                                       mapping_ob.iteration)
+    prelog = "{0}-{1}-iter-{2}:".format("SEED_cluster", clu.index,
+                                        # clu.mappings[-1].iteration)
+                                        mapping_ob.iteration)
     # if logger is None:
     #     raise ValueError("this must be used with a logger!")
     assert logger is not None, "Must Use Logging"
@@ -1162,7 +1259,7 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
                            stderr=subprocess.PIPE,
                            check=True)
         mapped_regions.append(reg_to_extract)
-    logger.info("mapped regionsfor iteration %i:\n %s",
+    logger.info("mapped regions for iteration %i:\n\t %s",
                 seedGenome.this_iteration,
                 "\n".join([x for x in mapped_regions]))
 
@@ -1299,7 +1396,7 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     return (outpath, len(record))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     args = get_args()
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
@@ -1340,13 +1437,17 @@ if __name__ == "__main__":
         raise ValueError("Error parsing flanking value; must either be " +
                          "integer or two colon-seapred integers")
 
-    if args.method not in ["smalt"]:
-        logger.error("'smalt' only method currently supported")
+    if args.method not in ["smalt", 'bwa']:
+        logger.error("'smalt' and 'bwa' only methods currently supported")
         sys.exit(1)
     logger.debug("checking for installations of all required external tools")
     executables = [args.samtools_exe, args.spades_exe, args.quast_exe]
     if args.method == "smalt":
+        mapper_exe = args.smalt_exe
         executables.append(args.smalt_exe)
+    elif args.method == "bwa":
+        mapper_exe = args.bwa_exe
+        executables.append(args.bwa_exe)
     else:
         logger.error("Mapping method not found!")
         sys.exit(1)
@@ -1359,7 +1460,7 @@ if __name__ == "__main__":
     # hack together a proper executable for quast, as it needs to
     # be run via python2
     args.quast_exe = str(shutil.which(args.quast_exe))
-    args.quast_python_exe = str(shutil.which(args.quast_python_exe))
+    args.python2_7_exe = str(shutil.which(args.python2_7_exe))
     logger.debug("FULL quast execuatble path: %s", args.quast_exe)
     # check samtools verison
     try:
@@ -1373,8 +1474,9 @@ if __name__ == "__main__":
     logger.debug("samtools version: %s", samtools_verison)
     # check bambamc is installed proper if using smalt
     if args.method == "smalt":
+        logger.info("SMALT is the selected mapper")
         test_smalt_cmds = check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
-        logger.info("testing instalation of smalt and bambamc")
+        logger.info("testing instalation of SMALT and bambamc")
         smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                     "sample_data",
                                     "smalt_test", "")
@@ -1402,10 +1504,13 @@ if __name__ == "__main__":
         os.remove(str(test_index + ".sma"))
         os.remove(str(test_index + ".smi"))
     else:
-        logger.error("Currently, SMALT is the only supported mapper")
-        sys.exit(1)
+        logger.info("BWA is the selected mapper")
+        pass
+        # logger.error("Currently, SMALT is the only supported mapper")
+        # sys.exit(1)
 
     # check equal length fastq.  This doesnt actually check propper pairs
+    logger.debug("Checking that the fastq pair have equal number of reads")
     if file_len(args.fastq1) != file_len(args.fastq2):
         logger.error("Input Fastq's are of unequal length! Try " +
                      "fixing with this script: " +
@@ -1433,7 +1538,8 @@ if __name__ == "__main__":
 
 ###############################################################################
 
-# make seedGenome object
+    # make seedGenome object
+    logger.debug("constructing the seedGenome object")
     seedGenome = SeedGenome(
         name=os.path.basename(os.path.splitext(args.reference_genbank)[0]),
         # this needs to be zero indexed to access mappings by iter
@@ -1453,11 +1559,12 @@ if __name__ == "__main__":
     seedGenome.master_ngs_ob = ngsLib(
         name="master",
         master=True,
+        make_dist=args.method == "smalt",
         readF=args.fastq1,
         readR=args.fastq2,
         readS0=args.fastqS,
         logger=logger,
-        smalt_exe=args.smalt_exe,
+        mapper_exe=mapper_exe,
         ref_fasta=seedGenome.ref_fasta)
 
     # read in riboSelect clusters, make a lociCluster ob for each,
@@ -1490,11 +1597,13 @@ if __name__ == "__main__":
         if len(clusters_to_process) == 0:
             logger.error("No clusters had sufficient mapping! Exiting")
             sys.exit(1)
-        logger.warning("clusters excluded from this iteration \n%s",
-                       " ".join([str(x.index) for x in
-                                 seedGenome.loci_clusters if
-                                 x.index not in [y.index for
-                                                 y in clusters_to_process]]))
+        if len(clusters_to_process) < len(seedGenome.loci_clusters):
+            logger.warning(
+                "clusters excluded from this iteration \n%s",
+                " ".join([str(x.index) for x in
+                          seedGenome.loci_clusters if
+                          x.index not in [y.index for
+                                          y in clusters_to_process]]))
         ####
         if not seedGenome.this_iteration == 0:
             ## sewq seqrecords for the clusters to be gen.next_reference_path
@@ -1524,17 +1633,44 @@ if __name__ == "__main__":
             # start with whole lib if first time through
             unmapped_ngsLib = seedGenome.master_ngs_ob
         # Run commands to map to the genome
-        map_to_genome_ref_smalt(
-            mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
-            ngsLib=unmapped_ngsLib,
-            # ngsLib=seedGenome.master_ngs_ob,
-            cores=args.cores,
-            samtools_exe=args.samtools_exe,
-            smalt_exe=args.smalt_exe,
-            score_minimum=None,
-            step=3, k=5,
-            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-            logger=logger)
+        #  This makes it such that score minimum is now more stringent with each mapping.
+        if not args.score_min:
+            scaling_factor = 1.0 - (1.0 / (2.0 + float(seedGenome.this_iteration)))
+            score_minimum = int(unmapped_ngsLib.readlen * scaling_factor)
+            logger.info(
+                "Mapping with min_score of %f2 (%f2 of read length, %f2)",
+                scaling_factor, score_minimum, unmapped_ngsLib.readlen)
+        else:
+            score_minimum = args.score_min
+            logger.info(
+                "Mapping with min_score of %f2 (read length: %f2)",
+                score_minimum, unmapped_ngsLib.readlen)
+        ##
+        if args.method == "smalt":
+            map_to_genome_ref_smalt(
+                mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
+                ngsLib=unmapped_ngsLib,
+                cores=args.cores,
+                ignore_singletons=args.ignoreS,
+                samtools_exe=args.samtools_exe,
+                smalt_exe=args.smalt_exe,
+                score_minimum=score_minimum,
+                step=3, k=5,
+                scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+                logger=logger)
+        else:
+            assert args.method == "bwa", "must be either bwa or smalt"
+            map_to_genome_ref_bwa(
+                mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
+                ngsLib=unmapped_ngsLib,
+                ignore_singletons=args.ignoreS,
+                cores=args.cores,
+                samtools_exe=args.samtools_exe,
+                bwa_exe=args.bwa_exe,
+                score_minimum=score_minimum,
+                add_args='-L 0,0 -U 0',
+                logger=logger)
+        ##
         try:
             partition_mapping(seedGenome=seedGenome,
                               logger=logger,
@@ -1665,7 +1801,7 @@ if __name__ == "__main__":
     # run final contigs
     spades_cmds, quast_cmds, quast_reports = run_final_assemblies(
         seedGenome=seedGenome, spades_exe=args.spades_exe,
-        quast_exe=args.quast_exe, quast_python_exe=args.quast_python_exe,
+        quast_exe=args.quast_exe, python2_7_exe=args.python2_7_exe,
         skip_control=args.skip_control, kmers=args.kmers, logger=logger)
 
     if args.DEBUG_multiprocessing:
