@@ -166,7 +166,7 @@ class SeedGenome(object):
             self.seq_records = list(SeqIO.parse(fh, "genbank"))
 
 
-class ngsLib(object):
+class NgsLib(object):
     """paired end data object
     This is made post mapping, prior to extraction.
     """
@@ -424,8 +424,8 @@ def get_args():  # pragma: no cover
                           "separated bt commas" +
                           "; default: %(default)s")
     optional.add_argument("-I", "--ignoreS", dest='ignoreS',
-                          action="store",
-                          default=None, type=int,
+                          action="store_true",
+                          default=False,
                           help="If true, singletons from previous mappings" +
                           "will be ignored.  try this if you see" +
                           "samtools merge errors in tracebacks" +
@@ -657,6 +657,13 @@ def check_libs_before_mapping(ngsLib, logger=None):
     for f in ["readF", "readR", "readS0"]:
         # ignore if lib is None, as those wont be used anyway
         if getattr(ngsLib, f) is None:
+            logger.debug("%s is set to None, and will be ignored")
+            continue
+        if not os.path.exists(getattr(ngsLib, f)):
+            logger.warning("read file %s not found and can not be used " +
+                           "for mapping!", f)
+            # set to None so mapper will ignore
+            setattr(ngsLib, f, None)
             continue
         # if lib is not none but file is of size 0
         logger.debug("size of %s: %f", getattr(ngsLib, f),
@@ -670,6 +677,7 @@ def check_libs_before_mapping(ngsLib, logger=None):
 
 def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores, ignore_singletons,
                             samtools_exe, smalt_exe, score_minimum=None,
+                            single_lib=False,
                             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                             step=3, k=5, logger=None):
     """run smalt based on pased args
@@ -688,16 +696,20 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores, ignore_singletons,
     cmdindex = str("{0} index -k {1} -s {2} {3} {3}").format(
         smalt_exe, k, step, ngsLib.ref_fasta)
     # map paired end reads to reference index
-    cmdmap = str('{0} map -l pe -S {1} ' +
-                 '-m {2} -n {3} -g {4} -f bam -o {5} {6} {7} ' +
-                 '{8}').format(smalt_exe, scoring,
-                               score_min, cores, ngsLib.smalt_dist_path,
-                               mapping_ob.pe_map_bam, ngsLib.ref_fasta,
-                               ngsLib.readF,
-                               ngsLib.readR)
-
-    smaltcommands = [cmdindex, cmdmap]
-
+    smaltcommands = [cmdindex]
+    if not single_lib:
+        cmdmap = str('{0} map -l pe -S {1} ' +
+                     '-m {2} -n {3} -g {4} -f bam -o {5} {6} {7} ' +
+                     '{8}').format(smalt_exe, scoring,
+                                   score_min, cores, ngsLib.smalt_dist_path,
+                                   mapping_ob.pe_map_bam, ngsLib.ref_fasta,
+                                   ngsLib.readF,
+                                   ngsLib.readR)
+        smaltcommands.append(cmdmap)
+    else:
+        with open(mapping_ob.pe_map_bam, 'w') as tempfile:
+            tempfile.write("@HD riboseed_dummy_file")
+        pass
     # if singletons are present, map those too.  Index is already made
     if ngsLib.readS0 is not None and not ignore_singletons:
         # because erros are thrown if there is no file, this
@@ -715,6 +727,8 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores, ignore_singletons,
             mapping_ob.s_map_bam, mapping_ob.mapped_bam)
         smaltcommands.extend([cmdmapS, cmdmergeS])
     else:
+        # if not already none, set to None when ignoring singleton
+        ngsLib.readS0 = None
         # 'merge', but reallt just converts
         cmdmerge = str("{0} view -bh {1} >" +
                        "{2}").format(samtools_exe, mapping_ob.pe_map_bam, mapping_ob.mapped_bam)
@@ -732,9 +746,10 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores, ignore_singletons,
                         get_number_mapped(mapping_ob.s_map_bam,
                                           samtools_exe=samtools_exe)))
     # report paired reads mapped
-    logger.info(str("PE mapped reads: " +
-                    get_number_mapped(mapping_ob.pe_map_bam,
-                                      samtools_exe=samtools_exe)))
+    if not single_lib:
+        logger.info(str("PE mapped reads: " +
+                        get_number_mapped(mapping_ob.pe_map_bam,
+                                          samtools_exe=samtools_exe)))
     logger.info(str("Combined mapped reads: " +
                     get_number_mapped(mapping_ob.mapped_bam,
                                       samtools_exe=samtools_exe)))
@@ -744,6 +759,7 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores, ignore_singletons,
 
 def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores, ignore_singletons,
                           samtools_exe, bwa_exe, score_minimum=None,
+                          single_lib=False,
                           add_args='-L 0,0 -U 0', logger=None):
     """
     #TODO rework this to read libtype of ngslib object
@@ -761,28 +777,33 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores, ignore_singletons,
     cmdindex = str("{0} index {1}").format(
         bwa_exe, ngsLib.ref_fasta)
     # map paired end reads to reference index
-    cmdmap = str('{0} mem -t {1} {2} -T {3} ' +
-                 '{4} {5} {6} | {7} view -bh - |' +
-                 '{7} sort -o' +
-                 '{8} - ').format(bwa_exe,  # 0
-                                  cores,  # 1
-                                  add_args,  # 2
-                                  score_min,  # 3
-                                  ngsLib.ref_fasta,  # 4
-                                  ngsLib.readF,  # 5
-                                  ngsLib.readR,  # 6
-                                  samtools_exe,  # 7
-                                  mapping_ob.pe_map_bam)  # 8)
-
-    bwacommands = [cmdindex, cmdmap]
+    bwacommands = [cmdindex]
+    if not single_lib:
+        cmdmap = str('{0} mem -t {1} {2} -T {3} -k 15 ' +
+                     '{4} {5} {6} | {7} view -bh - | ' +
+                     '{7} sort -o ' +
+                     '{8} - ').format(bwa_exe,  # 0
+                                      cores,  # 1
+                                      add_args,  # 2
+                                      score_min,  # 3
+                                      ngsLib.ref_fasta,  # 4
+                                      ngsLib.readF,  # 5
+                                      ngsLib.readR,  # 6
+                                      samtools_exe,  # 7
+                                      mapping_ob.pe_map_bam)  # 8)
+        bwacommands.append(cmdmap)
+    else:
+        with open(mapping_ob.pe_map_bam, 'w') as tempfile:
+            tempfile.write("@HD riboseed_dummy_file")
+        pass
 
     # if singletons are present, map those too.  Index is already made
     if ngsLib.readS0 is not None and not ignore_singletons:
         # cmdindexS = str('{0} index -k {1} -s {2} {3} {3}').format(
         #     smalt_exe, k, step, mapping_ob.ref_fasta)
         cmdmapS = str(
-            '{0} mem -t {1} {2} -T {3} ' +
-            '{4} {5} | {6} view -bh - |' +
+            '{0} mem -t {1} {2} -T {3} -k 15 ' +
+            '{4} {5} | {6} view -bh - | ' +
             '{6} sort -o {7} - ').format(bwa_exe,  # 0
                                          cores,  # 1
                                          add_args,  # 2
@@ -790,7 +811,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores, ignore_singletons,
                                          ngsLib.ref_fasta,  # 4
                                          ngsLib.readS0,  # 5
                                          samtools_exe,  # 6
-                                         mapping_ob.pe_map_bam)  # 7)
+                                         mapping_ob.s_map_bam)  # 7)
 
         with open(mapping_ob.s_map_bam, 'w') as tempfile:
             tempfile.write("@HD riboseed_dummy_file")
@@ -800,9 +821,12 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores, ignore_singletons,
             mapping_ob.s_map_bam, mapping_ob.mapped_bam)
         bwacommands.extend([cmdmapS, cmdmergeS])
     else:
+        # if not already none, set to None when ignoring singleton
+        ngsLib.readS0 = None
         # 'merge', but reallt just converts
         cmdmerge = str("{0} view -bh {1} > " +
-                       "{2}").format(samtools_exe, mapping_ob.pe_map_bam, mapping_ob.mapped_bam)
+                       "{2}").format(samtools_exe, mapping_ob.pe_map_bam,
+                                     mapping_ob.mapped_bam)
         bwacommands.extend([cmdmerge])
     logger.info("running BWA:")
     logger.debug("with the following BWA commands:")
@@ -817,9 +841,10 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores, ignore_singletons,
                         get_number_mapped(mapping_ob.s_map_bam,
                                           samtools_exe=samtools_exe)))
     # report paired reads mapped
-    logger.info(str("PE mapped reads: " +
-                    get_number_mapped(mapping_ob.pe_map_bam,
-                                      samtools_exe=samtools_exe)))
+    if not single_lib:
+        logger.info(str("PE mapped reads: " +
+                        get_number_mapped(mapping_ob.pe_map_bam,
+                                          samtools_exe=samtools_exe)))
     logger.info(str("Combined mapped reads: " +
                     get_number_mapped(mapping_ob.mapped_bam,
                                       samtools_exe=samtools_exe)))
@@ -827,8 +852,9 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores, ignore_singletons,
     ngsLib.mapping_success = True
 
 
-def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
-                               which='mapped', source_ext="_sam", logger=None):
+def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
+                              which='mapped', source_ext="_sam",
+                              single=False, logger=None):
     """returns ngslib
     """
     # if which not in ['mapped', 'unmapped']:
@@ -846,24 +872,37 @@ def convert_bams_to_fastq_cmds(mapping_ob, ref_fasta, samtools_exe,
     if which == 'mapped':
             source_ext = '_bam'
 
-    # samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4} -0 ./test.fastq".format(
-    samfilter = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
-        samtools_exe,
-        getattr(mapping_ob, str(which + source_ext)),
-        read_path_dict['readF'],
-        read_path_dict['readR'],
-        read_path_dict['readS'])
-    return(samfilter, ngsLib(name=which, master=False,
-                               logger=logger,
-                               readF=read_path_dict['readF'],
-                               readR=read_path_dict['readR'],
-                               readS0=read_path_dict['readS'],
-                               ref_fasta=ref_fasta))
+    if not single:
+        samfastq = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
+            samtools_exe,
+            getattr(mapping_ob, str(which + source_ext)),
+            read_path_dict['readF'],
+            read_path_dict['readR'],
+            read_path_dict['readS'])
+    else:
+        # This option outputs all the reads in a single fastq
+        # its needed for low coverage mappings when the F and R
+        # file may end up empty.  Since default behaviour is to
+        # treat F and R as single libraries anyway, this works
+        samfastq = "{0} fastq {1} > {2} ".format(
+            samtools_exe,
+            getattr(mapping_ob, str(which + source_ext)),
+            read_path_dict['readS'])
+        # Flag the others for ignoral
+        # read_path_dict['readF'] = None
+        # read_path_dict['readR'] = None
+    return(samfastq, NgsLib(name=which, master=False,
+                            logger=logger,
+                            readF=read_path_dict['readF'],
+                            readR=read_path_dict['readR'],
+                            readS0=read_path_dict['readS'],
+                            ref_fasta=ref_fasta))
 
 
 def generate_spades_cmd(
-        mapping_ob, ngs_ob, ref_as_contig, as_paired=True, addLibs="", prelim=False,
-        k="21,33,55,77,99", spades_exe="spades.py", logger=None):
+        mapping_ob, ngs_ob, ref_as_contig, as_paired=True, addLibs="",
+        prelim=False, k="21,33,55,77,99", spades_exe="spades.py",
+        single_lib=False, logger=None):
     """return spades command so we can multiprocess the assemblies
     wrapper for common spades setting for long illumina reads
     ref_as_contig should be either blank, 'trusted', or 'untrusted'
@@ -885,7 +924,10 @@ def generate_spades_cmd(
     else:
         alt_contig = ''
     # prepare read types, etc
-    if as_paired and ngs_ob.readS0 is not None:  # for lib with both
+    if single_lib:
+        singles = "--pe1-s {0}".format(ngs_ob.readS0)
+        pairs = ""
+    elif as_paired and ngs_ob.readS0 is not None:  # for lib with both
         singles = "--pe1-s {0}".format(ngs_ob.readS0)
         pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
             ngs_ob.readF, ngs_ob.readR)
@@ -916,25 +958,23 @@ def generate_spades_cmd(
         return spades_cmd
 
 
-def get_convert_run_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
-                                    spades_exe, ref_as_contig, logger):
-    logger.debug("generating commands to convert bam to fastq and map to ref")
-    commands = []
-    convert_cmds, new_ngslib = convert_bams_to_fastq_cmds(
-        mapping_ob=mapping_ob, samtools_exe=samtools_exe,
-        ref_fasta=mapping_ob.ref_fasta, which='mapped', logger=logger)
-    # print("HAHAHAHAHAHAHAH")
-    # logger.error(convert_cmds)
-    commands.append(convert_cmds)
-    spades_cmd = generate_spades_cmd(
-        mapping_ob=mapping_ob,
-        ngs_ob=new_ngslib,
-        ref_as_contig='trusted',
-        as_paired=False, prelim=True,
-        k="21,33,55,77,99",
-        spades_exe=spades_exe, logger=logger)
-    commands.append(spades_cmd)
-    return(commands, new_ngslib)
+# def get_convert_run_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
+#                                 spades_exe, ref_as_contig, logger):
+#     logger.debug("generating commands to convert bam to fastqs and assemble long reads")
+#     commands = []
+#     convert_cmds, new_ngslib = convert_bam_to_fastqs_cmd(
+#         mapping_ob=mapping_ob, samtools_exe=samtools_exe, single=True,
+#         ref_fasta=mapping_ob.ref_fasta, which='mapped', logger=logger)
+#     commands.append(convert_cmds)
+#     spades_cmd = generate_spades_cmd(
+#         mapping_ob=mapping_ob,
+#         ngs_ob=new_ngslib, single_lib=True,
+#         ref_as_contig='trusted',
+#         as_paired=False, prelim=True,
+#         k="21,33,55,77,99",
+#         spades_exe=spades_exe, logger=logger)
+#     commands.append(spades_cmd)
+#     return(commands, new_ngslib)
 
 
 def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
@@ -1337,6 +1377,7 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, python2_7_exe,
 
         logger.info("Running %s SPAdes" % j)
         spades_cmd = generate_spades_cmd(
+            single_lib=False,
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
             k=kmers, spades_exe=spades_exe, logger=logger)
@@ -1556,7 +1597,7 @@ if __name__ == "__main__":  # pragma: no cover
     ### add ngslib object for user supplied NGS data
     # this will automatically generate a distance file because
     # it is a 'master' lib
-    seedGenome.master_ngs_ob = ngsLib(
+    seedGenome.master_ngs_ob = NgsLib(
         name="master",
         master=True,
         make_dist=args.method == "smalt",
@@ -1612,9 +1653,9 @@ if __name__ == "__main__":  # pragma: no cover
             for clu in clusters_to_process:
                 clu.seq_record = next_seqrec
             #make new ngslib from unampped reads
-            convert_cmd, unmapped_ngsLib = convert_bams_to_fastq_cmds(
+            convert_cmd, unmapped_ngsLib = convert_bam_to_fastqs_cmd(
                 mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration - 1],
-                samtools_exe=args.samtools_exe,
+                samtools_exe=args.samtools_exe, single=True,
                 ref_fasta=seedGenome.next_reference_path,  # used to make index cmd
                 which='unmapped', logger=logger)
             unmapped_ngsLib.readlen = seedGenome.master_ngs_ob.readlen
@@ -1635,11 +1676,15 @@ if __name__ == "__main__":  # pragma: no cover
         # Run commands to map to the genome
         #  This makes it such that score minimum is now more stringent with each mapping.
         if not args.score_min:
-            scaling_factor = 1.0 - (1.0 / (2.0 + float(seedGenome.this_iteration)))
-            score_minimum = int(unmapped_ngsLib.readlen * scaling_factor)
-            logger.info(
-                "Mapping with min_score of %f2 (%f2 of read length, %f2)",
-                scaling_factor, score_minimum, unmapped_ngsLib.readlen)
+            if args.method == 'smalt':
+                scaling_factor = 1.0 - (1.0 / (2.0 + float(seedGenome.this_iteration)))
+                score_minimum = int(unmapped_ngsLib.readlen * scaling_factor)
+                logger.info(
+                    "Mapping with min_score of %f2 (%f2 of read length, %f2)",
+                    scaling_factor, score_minimum, unmapped_ngsLib.readlen)
+            else:
+                assert args.method == 'bwa', "must be wither smalt or bwa"
+                score_minimum = .2 * unmapped_ngsLib.readlen
         else:
             score_minimum = args.score_min
             logger.info(
@@ -1653,6 +1698,7 @@ if __name__ == "__main__":  # pragma: no cover
                 cores=args.cores,
                 ignore_singletons=args.ignoreS,
                 samtools_exe=args.samtools_exe,
+                single_lib=seedGenome.this_iteration != 0,
                 smalt_exe=args.smalt_exe,
                 score_minimum=score_minimum,
                 step=3, k=5,
@@ -1665,6 +1711,7 @@ if __name__ == "__main__":  # pragma: no cover
                 ngsLib=unmapped_ngsLib,
                 ignore_singletons=args.ignoreS,
                 cores=args.cores,
+                single_lib=seedGenome.this_iteration != 0,
                 samtools_exe=args.samtools_exe,
                 bwa_exe=args.bwa_exe,
                 score_minimum=score_minimum,
@@ -1685,18 +1732,37 @@ if __name__ == "__main__":  # pragma: no cover
         extract_convert_assemble_cmds = []
         # generate spades cmds (cannot be multiprocessed)
         for cluster in clusters_to_process:
-            logger.debug("getting extract convert cmds for %s cluster %i",
-                         cluster.sequence_id, cluster.index)
-            cmdlist, new_ngslib = get_convert_run_spades_cmds(
-                mapping_ob=cluster.mappings[-1], fetch_mates=False,
+            # logger.debug("getting extract convert cmds for %s cluster %i",
+            #              cluster.sequence_id, cluster.index)
+            ###
+            cmdlist = []
+            logger.debug("generating commands to convert bam to fastqs and assemble long reads")
+            convert_cmds, new_ngslib = convert_bam_to_fastqs_cmd(
+                mapping_ob=cluster.mappings[-1], which='mapped',
+                single=True,
                 samtools_exe=args.samtools_exe,
-                spades_exe=args.spades_exe,
-                ref_as_contig=args.ref_as_contig, logger=logger)
+                ref_fasta=cluster.mappings[-1].ref_fasta, logger=logger)
+            cmdlist.append(convert_cmds)
+            spades_cmd = generate_spades_cmd(
+                mapping_ob=cluster.mappings[-1],
+                ngs_ob=new_ngslib, single_lib=True,
+                ref_as_contig='trusted',
+                as_paired=False, prelim=True,
+                k="21,33,55,77,99",
+                spades_exe=args.spades_exe, logger=logger)
+            cmdlist.append(spades_cmd)
+
+            ###
+            # cmdlist, new_ngslib = get_convert_run_spades_cmds(
+            #     mapping_ob=cluster.mappings[-1], fetch_mates=False,
+            #     samtools_exe=args.samtools_exe,
+            #     spades_exe=args.spades_exe,
+            #     ref_as_contig=args.ref_as_contig, logger=logger)
             cluster.mappings[-1].mapped_ngslib = new_ngslib
             extract_convert_assemble_cmds.extend(cmdlist)
 
         # run all those commands!
-        logger.warning("running %i cmds", len(extract_convert_assemble_cmds))
+        logger.info("running %i cmds", len(extract_convert_assemble_cmds))
         if args.DEBUG_multiprocessing:
             logger.warning("running without multiprocessing!")
             for cmd in extract_convert_assemble_cmds:
@@ -1707,6 +1773,10 @@ if __name__ == "__main__":  # pragma: no cover
                                stderr=subprocess.PIPE,
                                check=True)
         else:
+            logger.debug("\n running %i cmds \n %s",
+                         len(extract_convert_assemble_cmds),
+                         "\n".join([x for x in extract_convert_assemble_cmds]))
+
             pool = multiprocessing.Pool(processes=args.cores)
             results = [
                 pool.apply_async(subprocess.run,

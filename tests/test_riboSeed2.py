@@ -41,7 +41,7 @@ sys.path.append(os.path.join(
 
 from pyutilsnrw.utils3_5 import md5, file_len, copy_file, get_number_mapped
 
-from riboSeed.riboSeed2 import SeedGenome, ngsLib,  LociMapping, \
+from riboSeed.riboSeed2 import SeedGenome, NgsLib,  LociMapping, \
     map_to_genome_ref_smalt, add_coords_to_clusters, partition_mapping, \
     convert_bams_to_fastq_cmds, check_smalt_full_install,\
     generate_spades_cmd, estimate_distances_smalt, run_final_assemblies,\
@@ -139,9 +139,9 @@ class riboSeed2TestCase(unittest.TestCase):
         \tWARNING:root:read file readR is empty and will not be used for mapping!
         """)
 
-    def test_ngsLib(self):
+    def test_NgsLib(self):
         # make a non-master object
-        testlib_pe_s = ngsLib(
+        testlib_pe_s = NgsLib(
             name="test",
             master=False,
             readF=self.ref_Ffastq,
@@ -151,7 +151,7 @@ class riboSeed2TestCase(unittest.TestCase):
             smalt_exe=self.smalt_exe)
         #  this test should go away when we allow running with single lib
         with self.assertRaises(ValueError):
-            testlib_s = ngsLib(
+            testlib_s = NgsLib(
                 name="test",
                 master=False,
                 readF=None,
@@ -163,7 +163,7 @@ class riboSeed2TestCase(unittest.TestCase):
             self.assertEqual(testlib_s.readlen, 145.0)
         # test unnamed fails
         with self.assertRaises(ValueError):
-            ngsLib(
+            NgsLib(
                 name=None,
                 master=False,
                 readF=self.ref_Ffastq,
@@ -177,7 +177,7 @@ class riboSeed2TestCase(unittest.TestCase):
         self.assertEqual(testlib_pe_s.readlen, None)
         # test fails with singe PE file
         with self.assertRaises(ValueError):
-            ngsLib(
+            NgsLib(
                 name=None,
                 master=False,
                 readF=self.ref_Ffastq,
@@ -187,7 +187,7 @@ class riboSeed2TestCase(unittest.TestCase):
                 smalt_exe=self.smalt_exe)
 
         # check master (ie, generate a distance file with smalt
-        testlib_pe = ngsLib(
+        testlib_pe = NgsLib(
             name="test",
             master=True,
             readF=self.ref_Ffastq,
@@ -322,14 +322,14 @@ class riboSeed2TestCase(unittest.TestCase):
             assembly_subdir=self.test_dir,
             ref_fasta=self.ref_fasta,
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-        testngs1 = ngsLib(
+        testngs1 = NgsLib(
             name="test",
             master=False,
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
             ref_fasta=self.ref_fasta,
             smalt_exe=self.smalt_exe)
-        testngs2 = ngsLib(
+        testngs2 = NgsLib(
             name="test",
             master=False,
             readF=self.ref_Ffastq,
@@ -404,7 +404,7 @@ class riboSeed2TestCase(unittest.TestCase):
         # make an empty file
         with open(empty_file, 'w') as ef:
             pass
-        ngs_ob = ngsLib(
+        ngs_ob = NgsLib(
             name="test",
             master=False,
             readF=self.ref_Ffastq,
@@ -424,7 +424,7 @@ class riboSeed2TestCase(unittest.TestCase):
             assembly_subdir=self.test_dir,
             ref_fasta=self.ref_fasta,
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-        testngs = ngsLib(
+        testngs = NgsLib(
             name="test",
             master=True,
             readF=self.ref_Ffastq,
@@ -445,7 +445,7 @@ class riboSeed2TestCase(unittest.TestCase):
         print("number of PE reads mapped: %f2" % nmapped)
         print("percentage of PE reads mapped: %2f" % nperc)
         ###
-        testngs2 = ngsLib(
+        testngs2 = NgsLib(
             name="test",
             master=True,
             readF=self.ref_Ffastq,
@@ -649,7 +649,7 @@ class riboSeed2TestCase(unittest.TestCase):
             assembly_subdir=self.test_dir,
             ref_fasta=self.ref_fasta,
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-        testngs = ngsLib(
+        testngs = NgsLib(
             name="test",
             master=True,
             readF=self.ref_Ffastq,
@@ -852,7 +852,7 @@ class riboSeed2TestCase(unittest.TestCase):
             output_root=self.test_dir,
             assembled_seeds="tralalalala",
             logger=logger,
-            master_ngs_ob=ngsLib(
+            master_ngs_ob=NgsLib(
                 name="test",
                 master=False,
                 readF=self.ref_Ffastq,
