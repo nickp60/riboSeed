@@ -172,7 +172,7 @@ class NgsLib(object):
     """
     def __init__(self, name, master=False, readF=None, readR=None,
                  readS0=None, readS1=None, mapping_success=False,
-                 smalt_dist_path=None, readlen=None,make_dist=False,
+                 smalt_dist_path=None, readlen=None, make_dist=False,
                  libtype=None, logger=None, mapper_exe=None,
                  ref_fasta=None):
         self.name = name
@@ -657,7 +657,7 @@ def check_libs_before_mapping(ngsLib, logger=None):
     for f in ["readF", "readR", "readS0"]:
         # ignore if lib is None, as those wont be used anyway
         if getattr(ngsLib, f) is None:
-            logger.debug("%s is set to None, and will be ignored")
+            logger.debug("%s is set to None, and will be ignored", f)
             continue
         if not os.path.exists(getattr(ngsLib, f)):
             logger.warning("read file %s not found and can not be used " +
@@ -675,8 +675,9 @@ def check_libs_before_mapping(ngsLib, logger=None):
             setattr(ngsLib, f, None)
 
 
-def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores, ignore_singletons,
-                            samtools_exe, smalt_exe, score_minimum=None,
+def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
+                            samtools_exe, smalt_exe, ignore_singletons=False,
+                            score_minimum=None,
                             single_lib=False,
                             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                             step=3, k=5, logger=None):
@@ -757,9 +758,9 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores, ignore_singletons,
     ngsLib.mapping_success = True
 
 
-def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores, ignore_singletons,
+def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                           samtools_exe, bwa_exe, score_minimum=None,
-                          single_lib=False,
+                          single_lib=False, ignore_singletons=False,
                           add_args='-L 0,0 -U 0', logger=None):
     """
     #TODO rework this to read libtype of ngslib object
@@ -1684,7 +1685,8 @@ if __name__ == "__main__":  # pragma: no cover
                     scaling_factor, score_minimum, unmapped_ngsLib.readlen)
             else:
                 assert args.method == 'bwa', "must be wither smalt or bwa"
-                score_minimum = .2 * unmapped_ngsLib.readlen
+                # score_minimum = int(.15 * unmapped_ngsLib.readlen)
+                score_minimum = 25
         else:
             score_minimum = args.score_min
             logger.info(
@@ -1838,7 +1840,7 @@ if __name__ == "__main__":  # pragma: no cover
             seedGenome=seedGenome,
             iteration=seedGenome.this_iteration,
             output_root=seedGenome.output_root,
-            nbuff=10000,
+            nbuff=5000,
             cluster_list=clusters_to_process,
             logger=logger)
 
