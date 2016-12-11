@@ -1499,6 +1499,7 @@ if __name__ == "__main__":  # pragma: no cover
         logger.error("Mapping method not found!")
         sys.exit(1)
     pre_executables.append(mapper_exe)
+    exe_names.append("--{0}_exe".format(args.method))
     test_ex = []
     executables = []
     for i, ex in enumerate(pre_executables):
