@@ -1490,6 +1490,7 @@ if __name__ == "__main__":  # pragma: no cover
         sys.exit(1)
     logger.debug("checking for installations of all required external tools")
     pre_executables = [args.samtools_exe, args.spades_exe, args.quast_exe, args.python2_7_exe]
+    exe_names = ["--samtools_exe", "--spades_exe", "--quast_exe", "--python2_7_exe"]
     if args.method == "smalt":
         mapper_exe = args.smalt_exe
     elif args.method == "bwa":
@@ -1500,16 +1501,21 @@ if __name__ == "__main__":  # pragma: no cover
     pre_executables.append(mapper_exe)
     test_ex = []
     executables = []
-    for ex in pre_executables:
-        ex = shutil.which(os.path.expanduser(ex))
-        test_ex.append(check_installed_tools(ex, logger=logger))
-        executables.append(ex)
+    for i, ex in enumerate(pre_executables):
+        ex = os.path.expanduser(ex)
+        test_ex.append(shutil.which(ex))
+        if not test_ex[-1]:
+            logger.error(
+                "Must have %s installed in PATH as your %s executable!",
+                ex, exe_names[i])
+            sys.exit(1)
+        executables.append(shutil.which(ex))
+    assert all(test_ex), "error occured when checking executables"
+    logger.debug("All needed system executables found!")
+    logger.debug(str(executables))
     # executables = [os.path.expanduser(x) for x in executables]
     # logger.debug(str(executables))
     # test_ex = [check_installed_tools(x, logger=logger) for x in executables]
-    if all(test_ex):
-        logger.debug("All needed system executables found!")
-        logger.debug(str(executables))
         # logger.debug(str([shutil.which(i) for i in executables]))
 
     # hack together a proper executable for quast, as it needs to
