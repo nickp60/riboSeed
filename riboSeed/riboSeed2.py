@@ -405,10 +405,10 @@ def get_args():  # pragma: no cover
                           "downstream flanking regions; default: %(default)s",
                           default='1000', type=str, dest="flanking")
     optional.add_argument("-m", "--method_for_map", dest='method',
-                          action="store",
-                          help="available mappers: smalt; " +
+                          action="store", choices=["smalt", "bwa"],
+                          help="available mappers: smalt and bwa; " +
                           "default: %(default)s",
-                          default='smalt', type=str)
+                          default='bwa', type=str)
     optional.add_argument("-c", "--cores", dest='cores', action="store",
                           default=None, type=int,
                           help="cores for multiprocessing workers" +
@@ -1459,8 +1459,14 @@ if __name__ == "__main__":  # pragma: no cover
 
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug("All settings used:")
+    logger.debug("current PATH:")
     for k, v in sorted(vars(args).items()):
         logger.debug("{0}: {1}".format(k, v))
+    try:
+        logger.debug(os.environ['PATH'])
+    except KeyError:
+        logger.error("no PATH variable found in system environment.")
+        sys.exit(1)
     if args.cores is None:
         args.cores = multiprocessing.cpu_count()
         logger.info("Using %i cores", multiprocessing.cpu_count())
@@ -1483,31 +1489,39 @@ if __name__ == "__main__":  # pragma: no cover
         logger.error("'smalt' and 'bwa' only methods currently supported")
         sys.exit(1)
     logger.debug("checking for installations of all required external tools")
-    executables = [args.samtools_exe, args.spades_exe, args.quast_exe]
+    pre_executables = [args.samtools_exe, args.spades_exe, args.quast_exe, args.python2_7_exe]
     if args.method == "smalt":
         mapper_exe = args.smalt_exe
-        executables.append(args.smalt_exe)
     elif args.method == "bwa":
         mapper_exe = args.bwa_exe
-        executables.append(args.bwa_exe)
     else:
         logger.error("Mapping method not found!")
         sys.exit(1)
-    logger.debug(str(executables))
-    test_ex = [check_installed_tools(x, logger=logger) for x in executables]
+    pre_executables.append(mapper_exe)
+    test_ex = []
+    executables = []
+    for ex in pre_executables:
+        ex = shutil.which(os.path.expanduser(ex))
+        test_ex.append(check_installed_tools(ex, logger=logger))
+        executables.append(ex)
+    # executables = [os.path.expanduser(x) for x in executables]
+    # logger.debug(str(executables))
+    # test_ex = [check_installed_tools(x, logger=logger) for x in executables]
     if all(test_ex):
         logger.debug("All needed system executables found!")
-        logger.debug(str([shutil.which(i) for i in executables]))
+        logger.debug(str(executables))
+        # logger.debug(str([shutil.which(i) for i in executables]))
 
     # hack together a proper executable for quast, as it needs to
     # be run via python2
-    args.quast_exe = str(shutil.which(args.quast_exe))
-    args.python2_7_exe = str(shutil.which(args.python2_7_exe))
+    # args.quast_exe = str(shutil.which(args.quast_exe))
+    # args.python2_7_exe = str(shutil.which(args.python2_7_exe))
+    # mapper_exe = str(shutil.which(mapper_exe))
     logger.debug("FULL quast execuatble path: %s", args.quast_exe)
     # check samtools verison
     try:
         samtools_verison = check_version_from_cmd(
-            exe='samtools', cmd='', line=3, where='stderr',
+            exe=args.samtools_exe, cmd='', line=3, where='stderr',
             pattern=r"\s*Version: (?P<version>[^(]+)",
             min_version=SAMTOOLS_MIN_VERSION, logger=logger)
     except Exception as e:
