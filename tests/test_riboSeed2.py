@@ -41,7 +41,7 @@ sys.path.append(os.path.join(
 
 from pyutilsnrw.utils3_5 import md5, file_len, copy_file, get_number_mapped
 
-from riboSeed.riboSeed2 import SeedGenome, NgsLib,  LociMapping, \
+from riboSeed.riboSeed2 import SeedGenome, NgsLib,  LociMapping, Exes, \
     map_to_genome_ref_smalt, map_to_genome_ref_bwa, \
     add_coords_to_clusters, partition_mapping, \
     convert_bam_to_fastqs_cmd, check_smalt_full_install,\
@@ -140,6 +140,35 @@ class riboSeed2TestCase(unittest.TestCase):
         \tWARNING:root:SEED_cluster-7-iter1: No output from SPAdes this time around...
         \tWARNING:root:read file readR is empty and will not be used for mapping!
         """)
+
+    def test_Exes(self):
+        # check badd method arg
+        with self.assertRaises(ValueError):
+            Exes(samtools=self.samtools_exe,
+                 quast=self.quast_exe,
+                 smalt=self.smalt_exe,
+                 python2_7=self.python2_7_exe,
+                 spades=self.spades_exe,
+                 bwa=self.bwa_exe,
+                 method="bowtie")
+        # check bad instatiation
+        with self.assertRaises(AssertionError):
+            Exes(samtools=None,
+                 quast=self.quast_exe,
+                 spades=self.spades_exe,
+                 python2_7=self.python2_7_exe,
+                 smalt=self.smalt_exe,
+                 bwa=self.bwa_exe,
+                 method="bwa")
+        # check bad instatiation
+        with self.assertRaises(ValueError):
+            Exes(samtools="nottheactualsamtools_exe",
+                 quast=self.quast_exe,
+                 python2_7=self.python2_7_exe,
+                 smalt=self.smalt_exe,
+                 spades=self.spades_exe,
+                 bwa=self.bwa_exe,
+                 method="bwa")
 
     def test_NgsLib(self):
         # make a non-master object
