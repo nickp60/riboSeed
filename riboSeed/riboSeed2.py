@@ -352,6 +352,53 @@ class LociMapping(object):
             pass
 
 
+class Exes(object):
+    """
+    instantiate with iteration, mapping subdir, and ref
+    map_ref_genome_will use it and an ngslib for mapping
+    extract_
+    order of operations: map to reference, extract and convert,
+    assemble, save results here
+    """
+    def __init__(self, samtools, method, spades, quast, python2_7, smalt, bwa, mapper=None):
+        # int: current iteration (0 is initial)
+        self.samtools = samtools
+        self.method = method
+        self.mapper = mapper
+        self.spades = spades
+        self.quast = quast
+        self.smalt = smalt
+        self.bwa = bwa
+        self.python2_7 = python2_7
+        self.check_mands()
+        self.set_mapper()
+        self.check_expand_exes()
+
+    def check_mands(self):
+        """ checks that all mandatory arguments are not none
+        """
+        mandatory = [self.spades, self.quast, self.method, self.samtools, self.python2_7]
+        assert None not in mandatory, \
+            "must instantiate with samtools, spades, method, python2_7, quast!"
+
+    def set_mapper(self):
+        if self.method == "smalt":
+            self.mapper = self.smalt
+        elif self.method == "bwa":
+            self.mapper = self.bwa
+        else:
+            raise ValueError("Mapping method not found!")
+
+    def check_expand_exes(self):
+        for exe in ["mapper", "samtools", "spades",
+                    "quast", "python2_7", "mapper"]:
+            exe_groomed = os.path.expanduser(getattr(self, exe))
+            exe_groomed = shutil.which(exe_groomed)
+            if exe_groomed is None:
+                raise ValueError("%s not found in PATH!" % exe)
+            setattr(self, exe, exe_groomed)
+
+
 #################################### functions ###############################
 
 
@@ -1488,32 +1535,44 @@ if __name__ == "__main__":  # pragma: no cover
     if args.method not in ["smalt", 'bwa']:
         logger.error("'smalt' and 'bwa' only methods currently supported")
         sys.exit(1)
-    logger.debug("checking for installations of all required external tools")
-    pre_executables = [args.samtools_exe, args.spades_exe, args.quast_exe, args.python2_7_exe]
-    exe_names = ["--samtools_exe", "--spades_exe", "--quast_exe", "--python2_7_exe"]
-    if args.method == "smalt":
-        mapper_exe = args.smalt_exe
-    elif args.method == "bwa":
-        mapper_exe = args.bwa_exe
-    else:
-        logger.error("Mapping method not found!")
+    logger.info("checking for installations of all required external tools")
+    logger.debug("creating an Exes object")
+    try:
+        sys_exes = Exes(samtools=args.samtools_exe,
+                        spades=args.spades_exe,
+                        bwa=args.bwa_exe,
+                        smalt=args.smalt_exe,
+                        quast=args.quast_exe,
+                        python2_7=args.python2_7_exe,
+                        method=args.method)
+    except Exception as e:
+        logger.error(e)
         sys.exit(1)
-    pre_executables.append(mapper_exe)
-    exe_names.append("--{0}_exe".format(args.method))
-    test_ex = []
-    executables = []
-    for i, ex in enumerate(pre_executables):
-        ex = os.path.expanduser(ex)
-        test_ex.append(shutil.which(ex))
-        if not test_ex[-1]:
-            logger.error(
-                "Must have %s installed in PATH as your %s executable!",
-                ex, exe_names[i])
-            sys.exit(1)
-        executables.append(shutil.which(ex))
-    assert all(test_ex), "error occured when checking executables"
+
+    # exe_names = ["--samtools_exe", "--spades_exe", "--quast_exe", "--python2_7_exe"]
+    # if args.method == "smalt":
+    #     mapper_exe = args.smalt_exe
+    # elif args.method == "bwa":
+    #     mapper_exe = args.bwa_exe
+    # else:
+    #     logger.error("Mapping method not found!")
+    #     sys.exit(1)
+    # pre_executables.append(mapper_exe)
+    # exe_names.append("--{0}_exe".format(args.method))
+    # test_ex = []
+    # executables = []
+    # for i, ex in enumerate(pre_executables):
+    #     ex = os.path.expanduser(ex)
+    #     test_ex.append(shutil.which(ex))
+    #     if not test_ex[-1]:
+    #         logger.error(
+    #             "Must have %s installed in PATH as your %s executable!",
+    #             ex, exe_names[i])
+    #         sys.exit(1)
+    #     executables.append(shutil.which(ex))
+    # assert all(test_ex), "error occured when checking executables"
     logger.debug("All needed system executables found!")
-    logger.debug(str(executables))
+    logger.debug(str(sys_exes.__dict__))
     # executables = [os.path.expanduser(x) for x in executables]
     # logger.debug(str(executables))
     # test_ex = [check_installed_tools(x, logger=logger) for x in executables]
@@ -1521,14 +1580,14 @@ if __name__ == "__main__":  # pragma: no cover
 
     # hack together a proper executable for quast, as it needs to
     # be run via python2
-    # args.quast_exe = str(shutil.which(args.quast_exe))
+    # sys_exes.quast = str(shutil.which(sys_exes.quast))
     # args.python2_7_exe = str(shutil.which(args.python2_7_exe))
     # mapper_exe = str(shutil.which(mapper_exe))
-    logger.debug("FULL quast execuatble path: %s", args.quast_exe)
+    # logger.debug("FULL quast execuatble path: %s", sys_exes.quast)
     # check samtools verison
     try:
         samtools_verison = check_version_from_cmd(
-            exe=args.samtools_exe, cmd='', line=3, where='stderr',
+            exe=sys_exes.samtools, cmd='', line=3, where='stderr',
             pattern=r"\s*Version: (?P<version>[^(]+)",
             min_version=SAMTOOLS_MIN_VERSION, logger=logger)
     except Exception as e:
@@ -1538,7 +1597,7 @@ if __name__ == "__main__":  # pragma: no cover
     # check bambamc is installed proper if using smalt
     if args.method == "smalt":
         logger.info("SMALT is the selected mapper")
-        test_smalt_cmds = check_smalt_full_install(smalt_exe=args.smalt_exe, logger=logger)
+        test_smalt_cmds = check_smalt_full_install(smalt_exe=sys_exes.smalt, logger=logger)
         logger.info("testing instalation of SMALT and bambamc")
         smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                     "sample_data",
@@ -1627,7 +1686,7 @@ if __name__ == "__main__":  # pragma: no cover
         readR=args.fastq2,
         readS0=args.fastqS,
         logger=logger,
-        mapper_exe=mapper_exe,
+        mapper_exe=sys_exes.mapper,
         ref_fasta=seedGenome.ref_fasta)
 
     # read in riboSelect clusters, make a lociCluster ob for each,
@@ -1677,7 +1736,7 @@ if __name__ == "__main__":  # pragma: no cover
             #make new ngslib from unampped reads
             convert_cmd, unmapped_ngsLib = convert_bam_to_fastqs_cmd(
                 mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration - 1],
-                samtools_exe=args.samtools_exe, single=True,
+                samtools_exe=sys_exes.samtools, single=True,
                 ref_fasta=seedGenome.next_reference_path,  # used to make index cmd
                 which='unmapped', logger=logger)
             unmapped_ngsLib.readlen = seedGenome.master_ngs_ob.readlen
@@ -1714,15 +1773,17 @@ if __name__ == "__main__":  # pragma: no cover
                 "Mapping with min_score of %f2 (read length: %f2)",
                 score_minimum, unmapped_ngsLib.readlen)
         ##
+        # the exe argument is Exes.mapper becaus ethat is what is check
+        # durring object instantiation
         if args.method == "smalt":
             map_to_genome_ref_smalt(
                 mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
                 cores=args.cores,
                 ignore_singletons=args.ignoreS,
-                samtools_exe=args.samtools_exe,
+                samtools_exe=sys_exes.samtools,
                 single_lib=seedGenome.this_iteration != 0,
-                smalt_exe=args.smalt_exe,
+                smalt_exe=sys_exes.mapper,
                 score_minimum=score_minimum,
                 step=3, k=5,
                 scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
@@ -1735,8 +1796,8 @@ if __name__ == "__main__":  # pragma: no cover
                 ignore_singletons=args.ignoreS,
                 cores=args.cores,
                 single_lib=seedGenome.this_iteration != 0,
-                samtools_exe=args.samtools_exe,
-                bwa_exe=args.bwa_exe,
+                samtools_exe=sys_exes.samtools,
+                bwa_exe=sys_exes.mapper,
                 score_minimum=score_minimum,
                 add_args='-L 0,0 -U 0',
                 logger=logger)
@@ -1744,7 +1805,7 @@ if __name__ == "__main__":  # pragma: no cover
         try:
             partition_mapping(seedGenome=seedGenome,
                               logger=logger,
-                              samtools_exe=args.samtools_exe,
+                              samtools_exe=sys_exes.samtools,
                               flank=flank,
                               cluster_list=seedGenome.loci_clusters)
         except Exception as e:
@@ -1763,7 +1824,7 @@ if __name__ == "__main__":  # pragma: no cover
             convert_cmds, new_ngslib = convert_bam_to_fastqs_cmd(
                 mapping_ob=cluster.mappings[-1], which='mapped',
                 single=True,
-                samtools_exe=args.samtools_exe,
+                samtools_exe=sys_exes.samtools,
                 ref_fasta=cluster.mappings[-1].ref_fasta, logger=logger)
             cmdlist.append(convert_cmds)
             spades_cmd = generate_spades_cmd(
@@ -1772,14 +1833,14 @@ if __name__ == "__main__":  # pragma: no cover
                 ref_as_contig='trusted',
                 as_paired=False, prelim=True,
                 k="21,33,55,77,99",
-                spades_exe=args.spades_exe, logger=logger)
+                spades_exe=sys_exes.spades, logger=logger)
             cmdlist.append(spades_cmd)
 
             ###
             # cmdlist, new_ngslib = get_convert_run_spades_cmds(
             #     mapping_ob=cluster.mappings[-1], fetch_mates=False,
             #     samtools_exe=args.samtools_exe,
-            #     spades_exe=args.spades_exe,
+            #     spades_exe=sys_exes.spades,
             #     ref_as_contig=args.ref_as_contig, logger=logger)
             cluster.mappings[-1].mapped_ngslib = new_ngslib
             extract_convert_assemble_cmds.extend(cmdlist)
@@ -1893,8 +1954,8 @@ if __name__ == "__main__":  # pragma: no cover
     logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
     # run final contigs
     spades_cmds, quast_cmds, quast_reports = run_final_assemblies(
-        seedGenome=seedGenome, spades_exe=args.spades_exe,
-        quast_exe=args.quast_exe, python2_7_exe=args.python2_7_exe,
+        seedGenome=seedGenome, spades_exe=sys_exes.spades,
+        quast_exe=sys_exes.quast, python2_7_exe=sys_exes.python2_7,
         skip_control=args.skip_control, kmers=args.kmers, logger=logger)
 
     if args.DEBUG_multiprocessing:
