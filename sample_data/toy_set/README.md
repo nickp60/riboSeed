@@ -13,7 +13,7 @@ Riboseed was run on the dataset, and then visualized with mauve.
 ```python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py  ./pseudata/snag/ -F ./toy_reads1.fq -R toy_reads2.fq -r ./data/littlegenome.fa -v 1 -i 3 --ref_as_contig trusted -c 4 -o ./pseudata/seed1/```
 
 
-
+```
 ~/GitHub/riboSeed/scanScaffolds.sh ./data/seq/ .fasta ./data/scanned/ bac
 ~/GitHub/riboSeed/riboSeed/riboSelect.py ./data/scanned/scanScaffolds_combined.gb -o ./data/select/
 python3.5 ~/GitHub/riboSeed/riboSeed/riboSnag.py ./data/scanned/scanScaffolds_combined.gb ./data/select/20161005_riboSelect_grouped_loci.txt -l 5000 -o ./data/seed/
@@ -43,3 +43,4 @@ cat ./data/seed/20161005_region_* >./data/littlegenome.fa
 ├── toy_reads1.fq
 ├── toy_reads2.aln
 └── toy_reads2.fq
+```
