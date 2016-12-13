@@ -23,6 +23,7 @@ import os
 import shutil
 import multiprocessing
 import subprocess
+import traceback
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -568,10 +569,15 @@ def get_args():  # pragma: no cover
                           "decimal between 0 and 5, or set as an absolute " +
                           "number of base pairs by giving an integer greater" +
                           " than 50. Not used by default")
-    optional.add_argument("--DEBUG", dest='DEBUG', action="store_true",
-                          default=False,
-                          help="if --DEBUG, test data will be " +
-                          "used; default: %(default)s")
+    optional.add_argument("-t", "--threads", dest='threads',
+                          action="store",
+                          default=1, type=int,
+                          choices=[1, 2, 4],
+                          help="if your cores are hyperthreaded, set number " +
+                          "threads to the number of threads per processer." +
+                          "If unsure, see 'cat /proc/cpuinfo' under 'cpu " +
+                          "cores', or 'lscpu' under 'Thread(s) per core'." +
+                          ": %(default)s")
     optional.add_argument("--DEBUG_multi", dest='DEBUG_multiprocessing',
                           action="store_true",
                           default=False,
@@ -618,6 +624,14 @@ def get_args():  # pragma: no cover
 
 ########################  funtions adapted from elsewhere ###################
 
+
+# Report last exception as string (from Pyani)
+def last_exception():
+    """ Returns last exception as a string, or use in logging.
+    """
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    return ''.join(traceback.format_exception(exc_type, exc_value,
+                                              exc_traceback))
 
 def check_smalt_full_install(smalt_exe, logger=None):
     smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
@@ -1006,25 +1020,6 @@ def generate_spades_cmd(
         return spades_cmd
 
 
-# def get_convert_run_spades_cmds(mapping_ob, fetch_mates, samtools_exe,
-#                                 spades_exe, ref_as_contig, logger):
-#     logger.debug("generating commands to convert bam to fastqs and assemble long reads")
-#     commands = []
-#     convert_cmds, new_ngslib = convert_bam_to_fastqs_cmd(
-#         mapping_ob=mapping_ob, samtools_exe=samtools_exe, single=True,
-#         ref_fasta=mapping_ob.ref_fasta, which='mapped', logger=logger)
-#     commands.append(convert_cmds)
-#     spades_cmd = generate_spades_cmd(
-#         mapping_ob=mapping_ob,
-#         ngs_ob=new_ngslib, single_lib=True,
-#         ref_as_contig='trusted',
-#         as_paired=False, prelim=True,
-#         k="21,33,55,77,99",
-#         spades_exe=spades_exe, logger=logger)
-#     commands.append(spades_cmd)
-#     return(commands, new_ngslib)
-
-
 def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
                             min_assembly_len,
                             include_short_contigs, keep_best_contig=True,
@@ -1248,9 +1243,9 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
         logger.debug("global end for cluster %i: %i", cluster.index,
                      cluster.global_end_coord)
     logger.info("Extracting %s to %s from %s",
-                   cluster.global_start_coord,
-                   cluster.global_end_coord,
-                   cluster.seq_record.id)
+                cluster.global_start_coord,
+                cluster.global_end_coord,
+                cluster.seq_record.id)
 
     cluster.extractedSeqRecord = SeqRecord(
         cluster.seq_record.seq[
@@ -1374,16 +1369,14 @@ def add_coords_to_clusters(seedGenome, logger=None):
                     recordID=cluster.sequence_id,
                     genbank_records=seedGenome.seq_records)
         except Exception as e:
-            logger.error(e)
-            sys.exit(1)
+            raise(e)
         # make coord list
         try:
             extract_coords_from_locus(
                 cluster=cluster, feature=cluster.feat_of_interest,
                 logger=logger)
         except Exception as e:
-            logger.error(e)
-            sys.exit(1)
+            raise(e)
         logger.info(str(cluster.__dict__))
 
 
@@ -1549,42 +1542,8 @@ if __name__ == "__main__":  # pragma: no cover
         logger.error(e)
         sys.exit(1)
 
-    # exe_names = ["--samtools_exe", "--spades_exe", "--quast_exe", "--python2_7_exe"]
-    # if args.method == "smalt":
-    #     mapper_exe = args.smalt_exe
-    # elif args.method == "bwa":
-    #     mapper_exe = args.bwa_exe
-    # else:
-    #     logger.error("Mapping method not found!")
-    #     sys.exit(1)
-    # pre_executables.append(mapper_exe)
-    # exe_names.append("--{0}_exe".format(args.method))
-    # test_ex = []
-    # executables = []
-    # for i, ex in enumerate(pre_executables):
-    #     ex = os.path.expanduser(ex)
-    #     test_ex.append(shutil.which(ex))
-    #     if not test_ex[-1]:
-    #         logger.error(
-    #             "Must have %s installed in PATH as your %s executable!",
-    #             ex, exe_names[i])
-    #         sys.exit(1)
-    #     executables.append(shutil.which(ex))
-    # assert all(test_ex), "error occured when checking executables"
     logger.debug("All needed system executables found!")
     logger.debug(str(sys_exes.__dict__))
-    # executables = [os.path.expanduser(x) for x in executables]
-    # logger.debug(str(executables))
-    # test_ex = [check_installed_tools(x, logger=logger) for x in executables]
-        # logger.debug(str([shutil.which(i) for i in executables]))
-
-    # hack together a proper executable for quast, as it needs to
-    # be run via python2
-    # sys_exes.quast = str(shutil.which(sys_exes.quast))
-    # args.python2_7_exe = str(shutil.which(args.python2_7_exe))
-    # mapper_exe = str(shutil.which(mapper_exe))
-    # logger.debug("FULL quast execuatble path: %s", sys_exes.quast)
-    # check samtools verison
     try:
         samtools_verison = check_version_from_cmd(
             exe=sys_exes.samtools, cmd='', line=3, where='stderr',
@@ -1597,7 +1556,8 @@ if __name__ == "__main__":  # pragma: no cover
     # check bambamc is installed proper if using smalt
     if args.method == "smalt":
         logger.info("SMALT is the selected mapper")
-        test_smalt_cmds = check_smalt_full_install(smalt_exe=sys_exes.smalt, logger=logger)
+        test_smalt_cmds = check_smalt_full_install(smalt_exe=sys_exes.smalt,
+                                                   logger=logger)
         logger.info("testing instalation of SMALT and bambamc")
         smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                     "sample_data",
@@ -1627,9 +1587,6 @@ if __name__ == "__main__":  # pragma: no cover
         os.remove(str(test_index + ".smi"))
     else:
         logger.info("BWA is the selected mapper")
-        pass
-        # logger.error("Currently, SMALT is the only supported mapper")
-        # sys.exit(1)
 
     # check equal length fastq.  This doesnt actually check propper pairs
     logger.debug("Checking that the fastq pair have equal number of reads")
@@ -1677,7 +1634,7 @@ if __name__ == "__main__":  # pragma: no cover
     seedGenome.iter_mapping_list[0].ref_fasta = seedGenome.ref_fasta
     ### add ngslib object for user supplied NGS data
     # this will automatically generate a distance file because
-    # it is a 'master' lib
+    # it is a 'master' lib (if mapping with smalt)
     seedGenome.master_ngs_ob = NgsLib(
         name="master",
         master=True,
@@ -1700,8 +1657,13 @@ if __name__ == "__main__":  # pragma: no cover
         logger=logger)
 
     # add coordinates for each locus in lociCluster.loci_list
-    add_coords_to_clusters(seedGenome=seedGenome,
-                           logger=logger)
+    try:
+        add_coords_to_clusters(seedGenome=seedGenome,
+                               logger=logger)
+    except Exception as e:
+        logger.error(e)
+        logger.error(last_exception)
+        sys.exit(1)
     # make first iteration look like future iterations
     seedGenome.next_reference_path = seedGenome.ref_fasta
     #
@@ -1779,7 +1741,7 @@ if __name__ == "__main__":  # pragma: no cover
             map_to_genome_ref_smalt(
                 mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
-                cores=args.cores,
+                cores=(args.cores * args.threads),
                 ignore_singletons=args.ignoreS,
                 samtools_exe=sys_exes.samtools,
                 single_lib=seedGenome.this_iteration != 0,
@@ -1794,7 +1756,7 @@ if __name__ == "__main__":  # pragma: no cover
                 mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
                 ignore_singletons=args.ignoreS,
-                cores=args.cores,
+                cores=(args.cores * args.threads),
                 single_lib=seedGenome.this_iteration != 0,
                 samtools_exe=sys_exes.samtools,
                 bwa_exe=sys_exes.mapper,
@@ -1820,7 +1782,8 @@ if __name__ == "__main__":  # pragma: no cover
             #              cluster.sequence_id, cluster.index)
             ###
             cmdlist = []
-            logger.debug("generating commands to convert bam to fastqs and assemble long reads")
+            logger.debug("generating commands to convert bam to fastqs " +
+                         "and assemble long reads")
             convert_cmds, new_ngslib = convert_bam_to_fastqs_cmd(
                 mapping_ob=cluster.mappings[-1], which='mapped',
                 single=True,
@@ -1837,11 +1800,6 @@ if __name__ == "__main__":  # pragma: no cover
             cmdlist.append(spades_cmd)
 
             ###
-            # cmdlist, new_ngslib = get_convert_run_spades_cmds(
-            #     mapping_ob=cluster.mappings[-1], fetch_mates=False,
-            #     samtools_exe=args.samtools_exe,
-            #     spades_exe=sys_exes.spades,
-            #     ref_as_contig=args.ref_as_contig, logger=logger)
             cluster.mappings[-1].mapped_ngslib = new_ngslib
             extract_convert_assemble_cmds.extend(cmdlist)
 
@@ -1861,7 +1819,8 @@ if __name__ == "__main__":  # pragma: no cover
                          len(extract_convert_assemble_cmds),
                          "\n".join([x for x in extract_convert_assemble_cmds]))
 
-            pool = multiprocessing.Pool(processes=args.cores)
+            # pool = multiprocessing.Pool(processes=args.cores)
+            pool = multiprocessing.Pool(processes=(args.cores * args.threads))
             results = [
                 pool.apply_async(subprocess.run,
                                  (cmd,),
@@ -1944,7 +1903,8 @@ if __name__ == "__main__":  # pragma: no cover
     for clu in [x for x in seedGenome.loci_clusters if x.keep_contig]:
         copy_file(current_file=clu.mappings[-1].assembled_contig,
                   dest_dir=seedGenome.final_long_reads_dir,
-                  name=str(clu.sequence_id + "_cluster_" + str(clu.index) + ".fasta"),
+                  name=str(clu.sequence_id + "_cluster_" +
+                           str(clu.index) + ".fasta"),
                   overwrite=False, logger=logger)
     seedGenome.assembled_seeds = combine_contigs(
         contigs_dir=seedGenome.final_long_reads_dir,
@@ -1977,7 +1937,7 @@ if __name__ == "__main__":  # pragma: no cover
     else:
         # split the processors based on how many spades_cmds are on the list
         pool = multiprocessing.Pool(processes=int(
-            args.cores / len(spades_cmds)))
+            (args.cores * args.threads) / len(spades_cmds)))
         # nseqs = len(seedGenome.loci_clusters)
         logger.debug("running the following commands:")
         logger.debug("\n".join([x for x in spades_cmds]))
@@ -1995,7 +1955,7 @@ if __name__ == "__main__":  # pragma: no cover
 
         # split the processors based on how many spades_cmds are on the list
         qpool = multiprocessing.Pool(processes=int(
-            args.cores / len(spades_cmds)))
+            (args.cores * args.threads) / len(spades_cmds)))
         logger.debug("running the quast following commands:")
         logger.debug("\n".join([x for x in spades_cmds]))
         qresults = [
