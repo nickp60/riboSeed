@@ -23,14 +23,15 @@ sys.path.append(os.path.join(
 
 from pyutilsnrw.utils3_5 import md5, file_len, copy_file, get_number_mapped
 
-from riboSeed.riboSeed2 import SeedGenome, NgsLib,  LociMapping, Exes, \
+from riboSeed.riboSeed2 import SeedGenome, NgsLib, LociMapping, Exes, \
     map_to_genome_ref_smalt, map_to_genome_ref_bwa, \
     add_coords_to_clusters, partition_mapping, \
-    convert_bam_to_fastqs_cmd, check_smalt_full_install,\
+    convert_bam_to_fastqs_cmd, get_smalt_full_install_cmds,\
     generate_spades_cmd, estimate_distances_smalt, run_final_assemblies,\
     check_libs_before_mapping, make_faux_genome, \
     evaluate_spades_success, prepare_next_mapping, make_mapped_partition_cmds,\
-    make_unmapped_partition_cmds, make_quick_quast_table
+    make_unmapped_partition_cmds, make_quick_quast_table, \
+    check_fastqs_len_equal, parse_subassembly_return_code
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
@@ -95,14 +96,14 @@ class riboSeed2TestCase(unittest.TestCase):
         self.cores = 2
         self.maxDiff = 2000
         self.to_be_removed = []
+        self.make_test_dir()
         self.copy_fasta()
 
-    def test_make_testing_dir(self):
+    def make_test_dir(self):
         """ creates temp dir for all the files created in these tests
         """
         if not os.path.exists(self.test_dir):
-            os.makedirs(self.test_dir)
-        self.assertTrue(os.path.exists(self.test_dir))
+            os.makedirs(self.test_dir, exist_ok=True)
 
     def copy_fasta(self):
         """ make a disposable copy
@@ -124,8 +125,8 @@ class riboSeed2TestCase(unittest.TestCase):
         \tWARNING:root:read file readR is empty and will not be used for mapping!
         """)
 
-    def test_Exes(self):
-        # check badd method arg
+    def test_Exes_bad_method(self):
+        """check badd method arg"""
         with self.assertRaises(ValueError):
             Exes(samtools=self.samtools_exe,
                  quast=self.quast_exe,
@@ -134,7 +135,9 @@ class riboSeed2TestCase(unittest.TestCase):
                  spades=self.spades_exe,
                  bwa=self.bwa_exe,
                  method="bowtie")
-        # check bad instatiation
+
+    def test_Exes_bad_attribute(self):
+        """ check bad instatiation """
         with self.assertRaises(AssertionError):
             Exes(samtools=None,
                  quast=self.quast_exe,
@@ -143,7 +146,9 @@ class riboSeed2TestCase(unittest.TestCase):
                  smalt=self.smalt_exe,
                  bwa=self.bwa_exe,
                  method="bwa")
-        # check bad instatiation
+
+    def test_Exes_bad_exe(self):
+        """check with nonexistant executable"""
         with self.assertRaises(ValueError):
             Exes(samtools="nottheactualsamtools_exe",
                  quast=self.quast_exe,
@@ -227,6 +232,8 @@ class riboSeed2TestCase(unittest.TestCase):
                                                     "NC_011751.1.fasta")))
         self.assertTrue(os.path.exists(self.test_dir))
         self.assertTrue(isinstance(gen.seq_records[0], SeqRecord))
+
+    def test_SeedGenome_bad_instatiation(self):
         with self.assertRaises(ValueError):
             SeedGenome(
                 max_iterations=2,
@@ -247,7 +254,7 @@ class riboSeed2TestCase(unittest.TestCase):
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
         self.assertTrue(os.path.isdir(testmapping.mapping_subdir))
 
-    def test_check_smalt_full_install(self):
+    def test_get_smalt_full_install_cmds(self):
         """ TODO: how would I test this?
         """
         smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
@@ -258,7 +265,7 @@ class riboSeed2TestCase(unittest.TestCase):
         test_bam = os.path.join(smalttestdir, "test_mapping.bam")
         test_reads = os.path.join(smalttestdir, "reads_to_test_bambamc.fastq")
 
-        check_cmds = check_smalt_full_install(self.smalt_exe, logger=logger)
+        check_cmds = get_smalt_full_install_cmds(self.smalt_exe, logger=logger)
         check_cmds_ref = [
             "{0} index {1} {2}".format(
                 self.smalt_exe, index, ref),
@@ -472,15 +479,16 @@ class riboSeed2TestCase(unittest.TestCase):
             mapper_exe=self.smalt_exe,
             logger=logger)
 
-        map_to_genome_ref_smalt(mapping_ob=testmapping, ngsLib=testngs2,
-                                cores=4, samtools_exe=self.samtools_exe,
-                                smalt_exe=self.smalt_exe, score_minimum=48,
-                                scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-                                step=3, k=5, logger=logger)
+        map_to_genome_ref_smalt(
+            mapping_ob=testmapping, ngsLib=testngs2,
+            cores=4, samtools_exe=self.samtools_exe,
+            smalt_exe=self.smalt_exe, score_minimum=48,
+            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+            step=3, k=5, logger=logger)
         mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
-                                       samtools_exe=self.samtools_exe)
+                                        samtools_exe=self.samtools_exe)
         mapped_str2 = get_number_mapped(testmapping.s_map_bam,
-                                       samtools_exe=self.samtools_exe)
+                                        samtools_exe=self.samtools_exe)
         nmapped2 = int(mapped_str2[0:5])
         nperc2 = float(mapped_str2[-13:-8])
         print("SMALT: number of s reads mapped: %f2" % nmapped2)
@@ -492,6 +500,86 @@ class riboSeed2TestCase(unittest.TestCase):
         ###
         self.assertTrue(6400 < nmapped2 < 6500)
         self.assertTrue(34.3 < nperc2 < 35.8)
+
+    def test_parse_subassembly_return_code_0(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=100,
+            circular=False,
+            logger=logger)
+        gen.loci_clusters[0].assembly_success = 0
+        parse_subassembly_return_code(cluster=gen.loci_clusters[0],
+                                      logger=logger)
+        self.assertTrue(gen.loci_clusters[0].continue_iterating)
+        self.assertTrue(gen.loci_clusters[0].keep_contigs)
+
+    def test_parse_subassembly_return_code_1(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=100,
+            circular=False,
+            logger=logger)
+        gen.loci_clusters[0].assembly_success = 1
+        parse_subassembly_return_code(cluster=gen.loci_clusters[0],
+                                      logger=logger)
+        self.assertFalse(gen.loci_clusters[0].continue_iterating)
+        self.assertTrue(gen.loci_clusters[0].keep_contigs)
+
+    def test_parse_subassembly_return_code_2(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=100,
+            circular=False,
+            logger=logger)
+        gen.loci_clusters[0].assembly_success = 2
+        parse_subassembly_return_code(cluster=gen.loci_clusters[0],
+                                      logger=logger)
+        self.assertFalse(gen.loci_clusters[0].continue_iterating)
+        self.assertFalse(gen.loci_clusters[0].keep_contigs)
+
+    def test_parse_subassembly_return_code_3(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=100,
+            circular=False,
+            logger=logger)
+        gen.loci_clusters[0].assembly_success = 3
+        parse_subassembly_return_code(cluster=gen.loci_clusters[0],
+                                      logger=logger)
+        self.assertFalse(gen.loci_clusters[0].continue_iterating)
+        self.assertFalse(gen.loci_clusters[0].keep_contigs)
 
     def test_map_with_bwa(self):
         # becasue multiple mapping are assingmed randomly (pseudorandomly?),
@@ -607,6 +695,18 @@ class riboSeed2TestCase(unittest.TestCase):
     #     for i, ref in enumerate(test_cmds):
     #         self.assertEqual(cmds[i], ref)
 
+    def test_check_fastqs_len_equal(self):
+        failed = False
+        try:
+            check_fastqs_len_equal(self.ref_fasta, self.ref_fasta)
+        except:
+            failed = True
+        self.assertFalse(failed)
+
+    def test_check_fastqs_len_equal_fail(self):
+        with self.assertRaises(ValueError):
+            check_fastqs_len_equal(self.ref_fasta, self.ref_gb)
+
     def test_evaluate_spades(self):
 
         shutil.copyfile(self.good_contig,
@@ -635,6 +735,7 @@ class riboSeed2TestCase(unittest.TestCase):
         testmapping2 = LociMapping(
             name="test",
             iteration=1,
+            assembly_subdir_needed=False,
             assembly_subdir="nonexistantdir",
             ref_fasta=self.ref_fasta,
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
