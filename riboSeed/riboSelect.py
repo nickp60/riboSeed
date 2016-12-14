@@ -26,8 +26,7 @@ import sys
 import time
 from Bio import SeqIO
 
-from pyutilsnrw.utils3_5 import check_single_scaffold, \
-    set_up_logging, multisplit
+from pyutilsnrw.utils3_5 import set_up_logging, multisplit
 
 
 def get_args():  # pragma: no cover
@@ -81,7 +80,7 @@ def get_args():  # pragma: no cover
                           "4 = error() and 5 = critical(); "
                           "default: %(default)s")
     optional.add_argument("--debug", dest="debug", action="store_true",
-                          help="Enable debug messages")
+                          help="Enable debug messages", default=False)
     args = parser.parse_args()
     return args
 
