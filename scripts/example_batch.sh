@@ -1,5 +1,5 @@
 #!/bin/bash
-# version 0.0.4
+# version 0.0.5
 #$ -cwd
 #$ -j yes
 #$ -V
@@ -25,7 +25,6 @@ if [ -d "$4" ]; then
     exit 1
 fi
 GB="$1"
-# FASTA="$2"
 READ1="$2"
 READ2="$3"
 OUTDIR="$4"
@@ -38,7 +37,5 @@ mkdir ${OUTDIR}
 source ${VENVEXE}
 ## RiboSelect
 python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${GB} -o ${OUTDIR}select/ -v 1
-## RiboSnag
-# python3.5 ~/GitHub/riboSeed/riboSeed/riboSnag.py ${GB} ${OUTDIR}select/riboSelect_grouped_loci.txt -o ${OUTDIR}snag/ -l $FLANK -v 1
-# RiboSeed
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed2.py ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -r ${GB} -v 1 -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1
+## RiboSeed
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed2.py ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -r ${GB} -v 1 -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1 -c 4 -t 2

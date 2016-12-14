@@ -2,26 +2,8 @@
 """
 Created on Tue Aug 30 08:57:31 2016
 @author: nicholas
-The Goal of this is to have a unified place to put the useful
-python 3.5 functions or templates
-
-how I got the fastq file
-# seqtk sample -s 27 ~/GitHub/FA/pseudochromosome/data/20150803_Abram1/ \
-    reads/3123-1_1_trimmed.fastq .0005
-
-bam file was from a riboseed mapping; md5: 939fbf2c282091aec0dfa278b05e94ec
-
-mapped bam was made from bam file with the following command
- samtools view -Bh -F 4 /home/nicholas/GitHub/FB/Ecoli_comparative_genomics/
-    scripts/riboSeed_pipeline/batch_coli_unpaired/map/
-    mapping_20160906_region_7_riboSnag/
-    test_smalt4_20160906_region_7_riboSnagS.bam >
-     ~/GitHub/pyutilsnrw/tests/test_mapped.sam
-md5: 27944249bf064ba54576be83053e82b0
 
 """
-
-__version__ = "0.0.3"
 import sys
 import logging
 import shutil
@@ -84,7 +66,7 @@ class riboSeed2TestCase(unittest.TestCase):
         self.good_contig = os.path.join(self.ref_dir,
                                         'contigs.fasta')
         self.short_contig = os.path.join(self.ref_dir,
-                                        'contigs.fasta')
+                                         'contigs.fasta')
         self.ref_Ffastq = os.path.join(self.ref_dir,
                                        'toy_reads1.fq')
         self.ref_Rfastq = os.path.join(self.ref_dir,
@@ -107,7 +89,8 @@ class riboSeed2TestCase(unittest.TestCase):
                                            str("references" + os.path.sep +
                                                'grouped_loci_reference.txt'))
         self.args = Namespace(skip_contol=False, kmers="21,33,55,77,99",
-                              spades_exe="spades.py", quast_exe="python2.7 quast.py",
+                              spades_exe="spades.py",
+                              quast_exe="python2.7 quast.py",
                               cores=2)
         self.cores = 2
         self.maxDiff = 2000
@@ -849,12 +832,13 @@ class riboSeed2TestCase(unittest.TestCase):
             output_root=self.test_dir,
             logger=logger)
 
-        unmapped_cmds = make_unmapped_partition_cmds(mapped_regions=[
-            "test:1-6", "test:3-77"], samtools_exe=self.samtools_exe,
-                                                     seedGenome=gen)
-        mapped_txt = os.path.join(self.test_dir,
-                             "NC_011751.1_mapping_for_iter_0/" +
-                             "NC_011751.1_mapping_for_iter_0_iteration_0_mapped.txt")
+        unmapped_cmds = make_unmapped_partition_cmds(
+            mapped_regions=["test:1-6", "test:3-77"],
+            samtools_exe=self.samtools_exe, seedGenome=gen)
+        mapped_txt = os.path.join(
+            self.test_dir,
+            "NC_011751.1_mapping_for_iter_0/" +
+            "NC_011751.1_mapping_for_iter_0_iteration_0_mapped.txt")
 
         ref_unmapped_cmds = [
             "{0} view -o {1} -h {2}".format(
