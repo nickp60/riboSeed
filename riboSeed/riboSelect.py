@@ -313,7 +313,7 @@ if __name__ == "__main__":
         get_filtered_locus_tag_dict(genome_seq_records=genome_records,
                                     feature=args.feature,
                                     specific_features=args.specific_features,
-                                    verbose=False,
+                                    verbose=args.debug,
                                     logger=logger)
 
     # default case, clusters are inferred
