@@ -176,7 +176,8 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
                     pass
                 loc_number = loc_number + 1  # increment index after feature
             else:
-                logger.debug("skipping: %s", feat.type)
+                if verbose:
+                    logger.debug("skipping: %s", feat.type)
                 loc_number = loc_number + 1  # increment index after feature
         # this is a soft warning, as we want to be able to loop
         # through all records before worrying

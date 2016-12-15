@@ -1467,6 +1467,8 @@ def add_coords_to_clusters(seedGenome, logger=None):
                 logger=logger)
         except Exception as e:
             raise e
+        logger.debug("Here are the detected region,coords, strand, product, " +
+                     "locus tag, subfeatures and sequence id of the results:")
         logger.debug(str(cluster.__dict__))
 
 
