@@ -28,10 +28,11 @@ from riboSeed.riboSeed2 import SeedGenome, NgsLib, LociMapping, Exes, \
     add_coords_to_clusters, partition_mapping, \
     convert_bam_to_fastqs_cmd, get_smalt_full_install_cmds,\
     generate_spades_cmd, estimate_distances_smalt, run_final_assemblies,\
-    check_libs_before_mapping, make_faux_genome, \
+    nonify_empty_lib_files, make_faux_genome, \
     evaluate_spades_success, prepare_next_mapping, make_mapped_partition_cmds,\
     make_unmapped_partition_cmds, make_quick_quast_table, \
-    check_fastqs_len_equal, parse_subassembly_return_code
+    check_fastqs_len_equal, parse_subassembly_return_code, \
+    make_spades_empty_check
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
@@ -121,9 +122,25 @@ class riboSeed2TestCase(unittest.TestCase):
         \t WARNING:root:The first iteration's assembly's best contig is not greater than length set by --min_assembly_len. Assembly will likely fail if the contig does not meet the length of the seed
         \t WARNING:root:Continuing, but if this occurs for more than one seed, we reccommend  you abort and retry with longer seeds, a different ref, or re-examine the riboSnag clustering
         \t WARNING:root:The first iteration's assembly's best contig is not greater than length set by --min_assembly_len. Assembly will likely fail if the contig does not meet the length of the seed
-        \tWARNING:root:SEED_cluster-7-iter1: No output from SPAdes this time around...
-        \tWARNING:root:read file readR is empty and will not be used for mapping!
+        \t WARNING:root:SEED_cluster-7-iter1: No output from SPAdes this time around...
+        \t WARNING:root:read file readR is empty and will not be used for mapping!
         """)
+
+    def test_make_spades_empty_check(self):
+        lib1 = "/path/to/lib1.fastq"
+        lib2 = "/path/to/lib2.fastq"
+        lib3 = "/path/to/lib3.fastq"
+        cmd = "spades command"
+        fullcmd = make_spades_empty_check(
+            liblist=[lib1, lib2, lib3],
+            cmd=cmd,
+            logger=logger)
+        self.assertEqual(
+            str("if [ -s {0} ] && [ -s {1} ] && [ -s {2} ] ; " +
+                "then {3} ; else echo 'input lib not found, " +
+                "skipping this SPAdes call' ; fi").format(
+                    lib1, lib2, lib3, cmd),
+            fullcmd)
 
     def test_Exes_bad_method(self):
         """check badd method arg"""
@@ -278,7 +295,7 @@ class riboSeed2TestCase(unittest.TestCase):
         """ test estimate insert disances
         """
         if os.path.exists(self.test_estimation_file):
-            print("warning! existing distance esimation file!")
+            print("warning! existing distance estimation file!")
         est_file = estimate_distances_smalt(outfile=self.test_estimation_file,
                                             smalt_exe=self.smalt_exe,
                                             ref_genome=self.ref_fasta,
@@ -433,7 +450,7 @@ class riboSeed2TestCase(unittest.TestCase):
             readR=empty_file,
             ref_fasta=self.ref_fasta,
             mapper_exe=self.smalt_exe)
-        check_libs_before_mapping(ngsLib=ngs_ob, logger=logger)
+        nonify_empty_lib_files(ngsLib=ngs_ob, logger=logger)
         self.assertTrue(ngs_ob.readR is None)
         self.to_be_removed.append(empty_file)
 
@@ -1045,15 +1062,21 @@ class riboSeed2TestCase(unittest.TestCase):
             skip_control=False, kmers="33,77,99", logger=logger)
         final_spades_cmds_ref = [
             str(
+                "if [ -s {1} ] && [ -s {2} ] ; then " +
                 "{0} --careful -k 33,77,99 --pe1-1 {1} " +
-                "--pe1-2 {2} --trusted-contigs {3}  -o {4}"
+                "--pe1-2 {2} --trusted-contigs {3}  -o {4} " +
+                "; else echo 'input lib not found, " +
+                "skipping this SPAdes call' ; fi"
             ).format(
                 self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
                 gen.assembled_seeds,
                 os.path.join(self.test_dir, "final_de_fere_novo_assembly")),
             str(
+                "if [ -s {1} ] && [ -s {2} ] ; then " +
                 "{0} --careful -k 33,77,99 --pe1-1 {1} " +
-                "--pe1-2 {2}   -o {3}"
+                "--pe1-2 {2}  -o {3} " +
+                "; else echo 'input lib not found, " +
+                "skipping this SPAdes call' ; fi"
             ).format(
                 self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
                 os.path.join(self.test_dir, "final_de_novo_assembly"))]

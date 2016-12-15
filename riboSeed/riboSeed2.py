@@ -121,7 +121,7 @@ class SeedGenome(object):
         # a logger
         self.logger = logger
         self.check_mands()
-        self.attach_genome_seqRecords()  # this method comes first,
+        self.attach_genome_seqrecords()  # this method comes first,
         self.write_fasta_genome()  # because this method relies on it
         self.make_map_paths_and_dir()
 
@@ -167,7 +167,7 @@ class SeedGenome(object):
         assert count == len(self.seq_records), "Error parsing genbank file!"
                 # print("re-wrote %i sequences as fasta" % count)
 
-    def attach_genome_seqRecords(self):
+    def attach_genome_seqrecords(self):
         """attach a list of seqrecords
         """
         with open(self.genbank_path, 'r') as fh:
@@ -296,14 +296,13 @@ class LociMapping(object):
     assemble, save results here
     """
     def __init__(self, name, iteration, mapping_subdir, mapping_prefix=None,
-                 mapping_success=False, assembly_success=False,
+                 assembly_success=False,
                  ref_fasta=None, pe_map_bam=None, s_map_bam=None,
-                 sorted_mapped_bam=None, merge_map_sam=None, mapped_bam=None,
-                 mapped_sam=None, spades_subdir=None,
-                 unmapped_sam=None, mappedF=None, mappedR=None,
+                 sorted_mapped_bam=None,
+                 mapped_bam=None, mapped_sam=None,
+                 unmapped_sam=None,
                  mapped_ids_txt=None, unmapped_bam=None,
                  mappedS=None, assembled_contig=None, assembly_subdir=None,
-                 unmappedF=None, unmappedR=None, unmappedS=None,
                  mapped_ngsLib=None, unmapped_ngsLib=None,
                  assembly_subdir_needed=True):
         # int: current iteration (0 is initial)
@@ -331,7 +330,7 @@ class LociMapping(object):
         self.assembled_contig = assembled_contig
         ###
         self.check_mands()
-        self.make_mapping_subdir_and_prefix()
+        self.make_mapping_subdir()
         self.make_assembly_subdir()
         self.name_bams_and_sams()
 
@@ -343,26 +342,29 @@ class LociMapping(object):
             raise ValueError("mapping ob must be instantiated with name, "
                              "iteration, mapping_subdir name")
 
-    def make_mapping_subdir_and_prefix(self):
+    def make_mapping_subdir(self):
+        """make a subdirectory for mapping results """
         if not os.path.isdir(self.mapping_subdir):
             os.makedirs(self.mapping_subdir)
         else:
             pass
-        self.mapping_prefix = os.path.join(
-            self.mapping_subdir,
-            "{0}_iteration_{1}".format(self.name, self.iteration))
 
     def name_bams_and_sams(self):
-        self.pe_map_bam = str(self.mapping_prefix + "_pe.bam")
-        self.s_map_bam = str(self.mapping_prefix + "_s.bam")
-        self.mapped_bam = str(self.mapping_prefix + ".bam")
-        self.unampped_bam = str(self.mapping_prefix + "unmapped.bam")
-        self.sorted_mapped_bam = str(self.mapping_prefix + "_sorted.bam")
-        self.mapped_sam = str(self.mapping_prefix + ".sam")
-        self.unmapped_sam = str(self.mapping_prefix + "_unmapped.sam")
-        self.mapped_ids_txt = str(self.mapping_prefix + "_mapped.txt")
+        """ make a prefix and use it to name the future output files """
+        mapping_prefix = os.path.join(
+            self.mapping_subdir,
+            "{0}_iteration_{1}".format(self.name, self.iteration))
+        self.pe_map_bam = str(mapping_prefix + "_pe.bam")
+        self.s_map_bam = str(mapping_prefix + "_s.bam")
+        self.mapped_bam = str(mapping_prefix + ".bam")
+        self.unampped_bam = str(mapping_prefix + "unmapped.bam")
+        self.sorted_mapped_bam = str(mapping_prefix + "_sorted.bam")
+        self.mapped_sam = str(mapping_prefix + ".sam")
+        self.unmapped_sam = str(mapping_prefix + "_unmapped.sam")
+        self.mapped_ids_txt = str(mapping_prefix + "_mapped.txt")
 
     def make_assembly_subdir(self):
+        """ make a subdirectory for assembly if it is needed """
         if self.assembly_subdir_needed:
             if self.assembly_subdir is not None:
                 if not os.path.isdir(self.assembly_subdir):
@@ -398,7 +400,8 @@ class Exes(object):
     def check_mands(self):
         """ checks that all mandatory arguments are not none
         """
-        mandatory = [self.spades, self.quast, self.method, self.samtools, self.python2_7]
+        mandatory = [self.spades, self.quast, self.method,
+                     self.samtools, self.python2_7]
         assert None not in mandatory, \
             "must instantiate with samtools, spades, method, python2_7, quast!"
 
@@ -593,10 +596,10 @@ def get_args():  # pragma: no cover
                           "If unsure, see 'cat /proc/cpuinfo' under 'cpu " +
                           "cores', or 'lscpu' under 'Thread(s) per core'." +
                           ": %(default)s")
-    optional.add_argument("--DEBUG_multi", dest='DEBUG_multiprocessing',
+    optional.add_argument("-z", "--serialize", dest='serialize',
                           action="store_true",
                           default=False,
-                          help="if --DEBUG_multiprocessing, runs seeding in " +
+                          help="if --serialize, runs seeding in " +
                           "single loop instead of a multiprocessing pool" +
                           ": %(default)s")
     optional.add_argument("--smalt_scoring", dest='smalt_scoring',
@@ -754,9 +757,10 @@ def check_fastqs_len_equal(file1, file2):
             "github.com/enormandeau/Scripts/fastqCombinePairedEnd.py")
 
 
-def check_libs_before_mapping(ngsLib, logger=None):
+def nonify_empty_lib_files(ngsLib, logger=None):
     # sometimes, if no singletons are found, we get an empt file.
     #  this shoudl weed out any empy files
+    #  NOTE
     logger.info("checking for empty read files")
     for f in ["readF", "readR", "readS0"]:
         # ignore if lib is None, as those wont be used anyway
@@ -794,7 +798,7 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
-    check_libs_before_mapping(ngsLib, logger=logger)
+    nonify_empty_lib_files(ngsLib, logger=logger)
     logger.info("Mapping reads to reference genome with SMALT")
     # check min score
     assert score_minimum is not None, "must assign score outside map function!"
@@ -875,7 +879,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
-    check_libs_before_mapping(ngsLib, logger=logger)
+    nonify_empty_lib_files(ngsLib, logger=logger)
     logger.info("Mapping reads to reference genome with BWA")
     # check min score
     assert score_minimum is not None, "must assign score outside map function!"
@@ -1008,10 +1012,28 @@ def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
                             ref_fasta=ref_fasta))
 
 
+# def run_cmd_list(cmd_list, logger, hard=False):
+#     for cmd in cmd_list:
+#         logger.debug(cmd)
+#         try:
+#             subprocess.run([cmd],
+#                            shell=sys.platform != "win32",
+#                            stdout=subprocess.PIPE,
+#                            stderr=subprocess.PIPE,
+#                            check=True)
+#         except Exception as e:
+#             logger.error(e)
+#             logger.error(last_exception())
+#             if hard:
+#                 sys.exit(1)
+#             else:
+#                 pass
+
+
 def generate_spades_cmd(
         mapping_ob, ngs_ob, ref_as_contig, as_paired=True, addLibs="",
         prelim=False, k="21,33,55,77,99", spades_exe="spades.py",
-        single_lib=False, logger=None):
+        single_lib=False, logger=None, check_libs=False):
     """return spades command so we can multiprocess the assemblies
     wrapper for common spades setting for long illumina reads
     ref_as_contig should be either blank, 'trusted', or 'untrusted'
@@ -1030,44 +1052,75 @@ def generate_spades_cmd(
             ref_as_contig, mapping_ob.ref_fasta)
     else:
         alt_contig = ''
-    # prepare read types, etc
+    libs = []
     if single_lib:
         singles = "--pe1-s {0}".format(ngs_ob.readS0)
         pairs = ""
+        libs.append(ngs_ob.readS0)
     elif as_paired and ngs_ob.readS0 is not None:  # for lib with both
         singles = "--pe1-s {0}".format(ngs_ob.readS0)
         pairs = "--pe1-1 {0} --pe1-2 {1} ".format(
             ngs_ob.readF, ngs_ob.readR)
+        libs.append(ngs_ob.readS0)
+        libs.append(ngs_ob.readF)
+        libs.append(ngs_ob.readR)
     elif as_paired and ngs_ob.readS0 is None:  # for lib with just PE
         singles = ""
         pairs = "--pe1-1 {0} --pe1-2 {1}".format(
             ngs_ob.readF, ngs_ob.readR)
+        libs.append(ngs_ob.readF)
+        libs.append(ngs_ob.readR)
     # for libraries treating paired ends as two single-end libs
     elif not as_paired and ngs_ob.readS0 is None:
         singles = ''
         pairs = "--pe1-s {0} --pe2-s {1}".format(
             ngs_ob.readF, ngs_ob.readR)
+        libs.append(ngs_ob.readF)
+        libs.append(ngs_ob.readR)
     else:  # for 3 single end libraries
         singles = "--pe3-s {0} ".format(ngs_ob.readS0)
         pairs = str("--pe1-s {0} --pe2-s {1} ".format(
             ngs_ob.readF, ngs_ob.readR))
+        libs.append(ngs_ob.readS0)
+        libs.append(ngs_ob.readF)
+        libs.append(ngs_ob.readR)
     reads = str(pairs + singles)
+
     if prelim:
-        prelim_cmd = str(
+        cmd = str(
             "{0} --only-assembler --cov-cutoff off --sc --careful -k {1} " +
             "{2} {3} {4} -o {5}").format(spades_exe, kmers, reads, alt_contig, addLibs,
                                          mapping_ob.assembly_subdir)
-        return prelim_cmd
     else:
-        spades_cmd = "{0} --careful -k {1} {2} {3} {4} -o {5}".format(
+        cmd = "{0} --careful -k {1} {2} {3} {4} -o {5}".format(
             spades_exe, kmers, reads, alt_contig, addLibs, mapping_ob.assembly_subdir)
-        logger.debug("Running the following command:\n{0}".format(spades_cmd))
-        return spades_cmd
+    if check_libs:
+        spades_cmd = make_spades_empty_check(liblist=libs, cmd=cmd, logger=logger)
+    else:
+        spades_cmd = cmd
+    return spades_cmd
+
+
+def make_spades_empty_check(liblist, cmd, logger):
+    """ returns a string
+    """
+    logger.debug("constructing shell file check for subprocess cmd")
+    prefix = "if "
+    for i, lib in enumerate(liblist):
+        if i != 0:
+            prefix = prefix + "&& "
+        check = "[ -s {0} ] ".format(lib)
+        # check = "[[ -s {0} ]] ".format(lib)
+        prefix = prefix + check
+    suffix = str("; then {0} ; else echo 'input lib not found, " +
+                 "skipping this SPAdes call' ; fi").format(cmd)
+    return(str(prefix + suffix))
 
 
 def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
-                            min_assembly_len,
-                            include_short_contigs, keep_best_contig=True,
+                            include_short_contigs, min_assembly_len,
+                            min_delta=10,
+                            keep_best_contig=True,
                             seqname='', logger=None):
     """return sucess codes:
     0 = all good
@@ -1131,7 +1184,6 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     else:
         logger.info("%s The new contig differs from the reference " +
                     "seed by %i bases", prelog, contig_length_diff)
-
     # This cuts failing assemblies short
     if min_assembly_len > contig_len:
         logger.warning("The first iteration's assembly's best contig " +
@@ -1152,6 +1204,16 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         logger.info("target length threshold! has been reached; " +
                     "skipping future iterations")
         return 1
+    # if not first time through, ensure adequate change between iterations to
+    # avoid problems with trying to assemble a very small number of reads
+    elif min_delta > abs(contig_length_diff) and mapping_ob.iteration != 0:
+        logger.warning(
+            "The length of the assembled contig didn't change more " +
+            "more than 10bp between rounds of iteration. Continuing" +
+            " will likely cause error; no skipping future iterations.")
+        return 1
+
+
     else:
         return 0
 
@@ -1263,11 +1325,12 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
             cluster.sequence_id, cluster.index, seedGenome.this_iteration))
 
     mapping0 = LociMapping(
-        name="{0}_cluster_{1}_iter{2}".format(
-            cluster.sequence_id, cluster.index, seedGenome.this_iteration),
+        # name="{0}_cluster_{1}_iter{2}".format(
+        #     cluster.sequence_id, cluster.index, seedGenome.this_iteration),
+        name="{0}_cluster_{1}".format(
+            cluster.sequence_id, cluster.index),
         iteration=seedGenome.this_iteration,
         assembly_subdir_needed=True,
-        mapping_success=False,
         mapping_subdir=mapping_subdir,
         assembly_subdir=assembly_subdir)
     # if first time through, get the global start and end coords.
@@ -1284,7 +1347,7 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
 
         logger.debug("Find coordinates to gather reads from the following loci:")
         for i in cluster.loci_list:
-            logger.debug("%s cluster %i -- loci %i -- %s (%i, %i)(%i) %s",
+            logger.debug("%s cluster %i -- locus %i -- %s (%i, %i)(%i) %s",
                          i.sequence_id, cluster.index,
                          i.index, i.locus_tag,
                          i.start_coord, i.end_coord, i.strand,
@@ -1510,7 +1573,7 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, python2_7_exe,
 
         logger.info("Getting commands for %s SPAdes" % j)
         spades_cmd = generate_spades_cmd(
-            single_lib=False,
+            single_lib=False, check_libs=True,
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
             k=kmers, spades_exe=spades_exe, logger=logger)
@@ -1759,7 +1822,7 @@ if __name__ == "__main__":  # pragma: no cover
     #
     for cluster in seedGenome.loci_clusters:
         cluster.master_ngs_ob = seedGenome.master_ngs_ob
-#################################################################################
+###############################################################################
     # now, we need to assemble each mapping object
     # this should exclude any failures
     while seedGenome.this_iteration <= args.iterations:
@@ -1780,6 +1843,12 @@ if __name__ == "__main__":  # pragma: no cover
                                           y in clusters_to_process]]))
         #### For each (non-inital) iteration
         if seedGenome.this_iteration != 0:
+            if seedGenome.this_iteration != 1:
+                # clear out old .sam files to save space
+                os.unlink(seedGenome.iter_mapping_list[
+                    seedGenome.this_iteration - 2].mapped_sam)
+                os.unlink(seedGenome.iter_mapping_list[
+                    seedGenome.this_iteration - 2].unmapped_sam)
             ##  seqrecords for the clusters to be gen.next_reference_path
             with open(seedGenome.next_reference_path, 'r') as nextref:
                 next_seqrec = list(SeqIO.parse(nextref, 'fasta'))[0]  # next?
@@ -1825,8 +1894,8 @@ if __name__ == "__main__":  # pragma: no cover
                 "Mapping with min_score of %f2 (read length: %f2)",
                 score_minimum, unmapped_ngsLib.readlen)
         ##
-        # the exe argument is Exes.mapper becaus ethat is what is check
-        # durring object instantiation
+        # the exe argument is Exes.mapper because that is what is check
+        # during object instantiation
         if args.method == "smalt":
             map_to_genome_ref_smalt(
                 mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
@@ -1882,7 +1951,7 @@ if __name__ == "__main__":  # pragma: no cover
             spades_cmd = generate_spades_cmd(
                 mapping_ob=cluster.mappings[-1],
                 ngs_ob=new_ngslib, single_lib=True,
-                ref_as_contig='trusted',
+                ref_as_contig='trusted', check_libs=True,
                 as_paired=False, prelim=True,
                 k=args.pre_kmers,
                 spades_exe=sys_exes.spades, logger=logger)
@@ -1897,7 +1966,7 @@ if __name__ == "__main__":  # pragma: no cover
         logger.debug("\n running %i cmds \n %s",
                      len(extract_convert_assemble_cmds),
                      "\n".join([x for x in extract_convert_assemble_cmds]))
-        if args.DEBUG_multiprocessing:
+        if args.serialize:
             logger.warning("running without multiprocessing!")
             for cmd in extract_convert_assemble_cmds:
                 logger.debug(cmd)
@@ -1977,7 +2046,7 @@ if __name__ == "__main__":  # pragma: no cover
         quast_exe=sys_exes.quast, python2_7_exe=sys_exes.python2_7,
         skip_control=args.skip_control, kmers=args.kmers, logger=logger)
 
-    if args.DEBUG_multiprocessing:
+    if args.serialize:
         logger.warning("running without multiprocessing!")
         for cmd in spades_cmds:
             logger.debug(cmd)
