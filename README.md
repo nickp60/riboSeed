@@ -158,6 +158,9 @@ optional arguments:
 The results directory will contain a 'final_long_reads' directory with all the extended fragments, the mapped fastq files, and a `de_novo` and `de_fere_novo` folder, containing the results with the *de novo* mapping and supplemented mapping, respectively.
 
 #### Usage:
+##### NOTE:
+If using a comsumer-grade computer, it may be advantagous to run with -z (--serialize).  SPAdes (or any other assembler) tends to require a lot of RAM. So unless you have about 3gb RAM per core,
+
 minimal usage: riboSeed.py clustered\_accession\_list.txt -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT
 
 ```
