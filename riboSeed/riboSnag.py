@@ -357,7 +357,12 @@ def extract_coords_from_locus(cluster, feature="rRNA",
             this_locus.strand = feat.strand
             this_locus.product = feat.qualifiers.get("product")
             logger.debug("Added attributes for %s", this_locus.locus_tag)
-            logger.debug(str(this_locus.__dict__))
+            # logger.debug(str(this_locus.__dict__))
+            logger.debug(
+                "locus_tag: %s; coords: [%i-%i]; sequence_id: %s; " +
+                "product: %s", this_locus.locus_tag,
+                this_locus.start_coord, this_locus.end_coord,
+                this_locus.sequence_id, this_locus.product[0])
             loc_number = loc_number + 1
         else:
             pass
@@ -366,9 +371,6 @@ def extract_coords_from_locus(cluster, feature="rRNA",
         logger.error("no hits found in any record with feature %s! Double " +
                      "check your genbank file", feature)
         raise ValueError
-    logger.debug("Here are the detected region,coords, strand, product, " +
-                 "locus tag, subfeatures and sequence id of the results:")
-    logger.debug(str(cluster.__dict__))
     # logger.debug("adding extracted sequence")
     # cluster.extractedSeqRecord = cluster.seq_record.seq[cluster.
     # return cluster
@@ -970,7 +972,10 @@ def main(clusters, genome_records, logger, verbose, no_revcomp,
         except Exception as e:
             logger.error(e)
             sys.exit(1)
-        logger.info(str(cluster.__dict__))
+            logger.debug(
+                "Here are the detected region,coords, strand, product, " +
+                "locus tag, subfeatures and sequence id of the results:")
+            logger.debug(str(cluster.__dict__))
         if circular:
             cluster_post_pad = pad_genbank_sequence(cluster=cluster,
                                                     logger=logger)

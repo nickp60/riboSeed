@@ -27,10 +27,11 @@ if [ -d "$3" ]; then
     exit 1
 fi
 NFILES=$(ls $1*$2  -1 | wc -l) # count files that you will process
+
 ## check args
-if "$4"!="euk" && "$4"!="bac"
+if [ "$4" != "euk" ] && [ "$4" != "bac" ]
 then
-    echo "invalid kindom argument! Cannot give threshold without a kingdom"
+    echo "invalid kindom argument! Must be either 'bac' or 'euk'. Cannot give threshold without a kingdom"
     exit 1
 fi
 
@@ -48,8 +49,15 @@ then
     KINGDOM="$4"
     THRESH=.5
 else
-    KINGDOM="$4"
-    THRESH="$5"
+    #  verify threshold is float between 0 and 1
+    if [ $(bc <<< "0.0 < $5" ) -eq 1 ] && [ $(bc <<< "$5 < 1.0" ) -eq 1 ]
+    then
+	KINGDOM="$4"
+	THRESH="$5"
+    else
+        echo "Threshold must be between 0 and 1!"
+        exit 1
+    fi
 fi
 ###
 ###
@@ -67,7 +75,7 @@ outdir="$3"${BASENAME}_barrnap
 sed 's/^[^ ]*[|]\([^|]*\)[|] .*$/>\1/' ${i} > ${outdir}_renamed${2}
 
 #get accession name
-ACCNAME=$(grep "^>" ${outdir}_renamed${2} |sed -e "s/>//")
+ACCNAME=$(grep "^>" ${outdir}_renamed${2} |sed -e 's/>//' -e 's/\s.*$//' )
 
 barrnap -kingdom "$KINGDOM" ${outdir}_renamed${2} --reject "$THRESH" > ${outdir}.gff
 # add dumb locus tags
@@ -89,7 +97,7 @@ seqret -sequence ${outdir}_renamed${2} -feature -fformat gff3 -fopenfile ${outdi
 sed -i "1 aVERSION     $ACCNAME" $OUTGB
 sed -i "1 aACCESSION   $ACCNAME" $OUTGB
 
-if [ $THISFILE == 1 ]; 
+if [ $THISFILE == 1 ];
 then # write
 cat $OUTGB > ${3}scannedScaffolds.gb
 else # append
