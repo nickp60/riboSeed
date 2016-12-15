@@ -31,8 +31,13 @@ NFILES=$(ls $1*$2  -1 | wc -l) # count files that you will process
 ## check args
 if [ "$4" != "euk" ] && [ "$4" != "bac" ]
 then
-    echo "invalid kindom argument! Must be either 'bac' or 'euk'. Cannot give threshold without a kingdom"
-    exit 1
+    if [ -z "$4" ]
+    then
+	echo "no kingdom or threshold arguments; using defaults"
+    else
+	echo "invalid kindom argument! Must be either 'bac' or 'euk'. Cannot give threshold without a kingdom"
+	exit 1
+    fi
 fi
 
 ###

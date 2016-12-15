@@ -1,4 +1,5 @@
 # RiboSeed Pipeline - quickstart
+Too Impatient for the quickstart? See our [Especially Quickstart Guide](./especiallyquickstart.md)
 
 ## Overview
 In this guide, I will walk you through a typical experiment.
