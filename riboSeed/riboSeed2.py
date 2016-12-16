@@ -174,25 +174,30 @@ class SeedGenome(object):
         with open(self.genbank_path, 'r') as fh:
             self.seq_records = list(SeqIO.parse(fh, "genbank"))
 
-    def purge_old_files(self):
-        target_iter = self.this_iteration - 2
-        assert target_iter >= 0, \
-            "previous mapping is required, can only purge 2nd previous"
-        for f in [self.iter_mapping_list[target_iter].pe_map_bam,
-                  self.iter_mapping_list[target_iter].s_map_bam,
-                  self.iter_mapping_list[target_iter].mapped_sam,
-                  self.iter_mapping_list[target_iter].mapped_bam,
-                  self.iter_mapping_list[target_iter].unmapped_sam,
-                  self.iter_mapping_list[target_iter].unmapped_bam,
-                  self.iter_mapping_list[target_iter].sorted_mapped_bam,
-                  self.iter_mapping_list[target_iter].mapped_ngsLib]:
-            if f is not None:
-                os.unlink(f)
+    def purge_old_files(self, all_iters=False):
+        if all_iters:
+            target_iters = range(0, self.max_iterations + 1)
+        else:
+            target_iters = [self.this_iteration - 2]
+            assert target_iters[0] >= 0, \
+                "previous mapping is required, can only purge 2nd previous"
+        for iter in target_iters:
+            for f in [self.iter_mapping_list[iter].pe_map_bam,
+                      self.iter_mapping_list[iter].s_map_bam,
+                      self.iter_mapping_list[iter].mapped_sam,
+                      self.iter_mapping_list[iter].mapped_bam,
+                      self.iter_mapping_list[iter].unmapped_sam,
+                      self.iter_mapping_list[iter].unmapped_bam,
+                      self.iter_mapping_list[iter].sorted_mapped_bam,
+                      self.iter_mapping_list[iter].mapped_ngsLib]:
+                if f is not None:
+                    if os.path.isfile(f):
+                        os.unlink(f)
 
 
 class NgsLib(object):
-    """ NgsLib objects are used to hold the sequencing dataa suplied by the
-    user (master) and the sequencing data extracted from each iteration.  Curretly the
+    """ NgsLib objects are used to hold the sequencing data suplied by the
+    user (master) and the seq data extracted from each iteration. Currently the
     software requires paired-end data, but this should handle more diverse
     library types in the future.
 
@@ -301,6 +306,18 @@ class NgsLib(object):
             print("cannot create distance estimate for lib type %s" %
                   self.libtype)
             return None
+
+    def purge_old_files(self):
+        """ before reasigning unmapped lib, this method allows deletion of
+        useless files that were used in the previous iteration
+        """
+        for f in [self.readF,
+                  self.readR,
+                  self.readS0,
+                  self.readS1]:
+            if f is not None:
+                if os.path.isfile(f):
+                    os.unlink(f)
 
 
 class LociMapping(object):
@@ -567,11 +584,12 @@ def get_args():  # pragma: no cover
                           "SPAdes will treat as --untrusted-contig. if '', " +
                           "seeds will not be used during assembly. " +
                           "See SPAdes docs; default: %(default)s")
-    optional.add_argument("--no_temps", dest='no_temps', action="store_true",
+    optional.add_argument("--keep_temps", dest='keep_temps', action="store_true",
                           default=False,
-                          help="if --no_temps, mapping files will be " +
-                          "removed after all iterations completed; " +
-                          " default: %(default)s")
+                          help="if not --keep_temps, mapping files will be " +
+                          "removed once they are no no longer needed during " +
+                          "the iterations; " +
+                          "default: %(default)s")
     optional.add_argument("--skip_control", dest='skip_control',
                           action="store_true",
                           default=False,
@@ -1259,7 +1277,9 @@ def parse_subassembly_return_code(cluster, logger):
                            "if worried", cluster.sequence_id, cluster.index)
             cluster.continue_iterating = False
             cluster.keep_contigs = True
-
+        # The combine contigs step check for 'keep contigs flag, so
+        # since you have already copied it, set the flag to false
+        cluster.keep_contig = False
     elif cluster.assembly_success == 0:
         cluster.continue_iterating = True
         cluster.keep_contigs = True
@@ -1558,8 +1578,7 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, python2_7_exe,
     """
     logger.info("\n\nStarting Final Assemblies\n\n")
     quast_reports = []
-    spades_cmds = []
-    quast_cmds = []
+    cmd_list = []
     final_list = ["de_fere_novo"]
     if not skip_control:
         final_list.append("de_novo")
@@ -1593,7 +1612,6 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, python2_7_exe,
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
             k=kmers, spades_exe=spades_exe, logger=logger)
-        spades_cmds.append(spades_cmd)
 
         ref = str("-R %s" % seedGenome.ref_fasta)
         quast_cmd = str("{0} {1} {2} {3} -o {4}").format(
@@ -1602,10 +1620,10 @@ def run_final_assemblies(seedGenome, spades_exe, quast_exe, python2_7_exe,
             ref,
             os.path.join(final_mapping.assembly_subdir, "contigs.fasta"),
             os.path.join(seedGenome.output_root, str("quast_" + j)))
-        quast_cmds.append(quast_cmd)
         quast_reports.append(os.path.join(seedGenome.output_root,
                                           str("quast_" + j), "report.tsv"))
-    return(spades_cmds, quast_cmds, quast_reports)
+        cmd_list.append([spades_cmd, quast_cmd])
+    return(cmd_list, quast_reports)
 
 
 def make_faux_genome(cluster_list, seedGenome, iteration,
@@ -1889,10 +1907,14 @@ if __name__ == "__main__":  # pragma: no cover
         if seedGenome.this_iteration != 0:
             if seedGenome.this_iteration != 1:
                 # clear out old .sam files to save space
-                os.unlink(seedGenome.iter_mapping_list[
-                    seedGenome.this_iteration - 2].mapped_sam)
-                os.unlink(seedGenome.iter_mapping_list[
-                    seedGenome.this_iteration - 2].unmapped_sam)
+                if not args.keep_temps:
+                    seedGenome.purge_old_files()
+                    # delete the read files from the last mapping
+                    # dont do this on the first iteration, cause those be the reads!
+                    unmapped_ngsLib.purge_old_files()
+
+                # os.unlink(seedGenome.iter_mapping_list[
+                #     seedGenome.this_iteration - 2].unmapped_sam)
             ##  seqrecords for the clusters to be gen.next_reference_path
             with open(seedGenome.next_reference_path, 'r') as nextref:
                 next_seqrec = list(SeqIO.parse(nextref, 'fasta'))[0]  # next?
@@ -2082,6 +2104,10 @@ if __name__ == "__main__":  # pragma: no cover
                         seedGenome.this_iteration)
 
     ##################################################################
+    # done with the iterations!  Lets free up some space
+    unmapped_ngsLib.purge_old_files()
+    seedGenome.purge_old_files(all_iters=True)
+    # And add the remaining final contigs to the directory for combination
     logger.info("combinging contigs from %s", seedGenome.final_long_reads_dir)
     for clu in [x for x in seedGenome.loci_clusters if x.keep_contig]:
         copy_file(current_file=clu.mappings[-1].assembled_contig,
@@ -2096,66 +2122,73 @@ if __name__ == "__main__":  # pragma: no cover
     logger.info("Combined Seed Contigs: %s", seedGenome.assembled_seeds)
     logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
     # run final contigs
-    spades_cmds, quast_cmds, quast_reports = run_final_assemblies(
+    spades_quast_cmds, quast_reports = run_final_assemblies(
         seedGenome=seedGenome, spades_exe=sys_exes.spades,
         quast_exe=sys_exes.quast, python2_7_exe=sys_exes.python2_7,
         skip_control=args.skip_control, kmers=args.kmers, logger=logger)
 
     if args.serialize:
         logger.warning("running without multiprocessing!")
-        for cmd in spades_cmds:
+        # unpack nested spades quast list
+        for cmd in [j for i in spades_quast_cmds for j in i]:
             logger.debug(cmd)
             subprocess.run([cmd],
                            shell=sys.platform != "win32",
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE,
                            check=True)
-        for cmd in quast_cmds:
-            logger.debug(cmd)
-            subprocess.run([cmd],
-                           shell=sys.platform != "win32",
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE,
-                           check=True)
+        # for cmd in quast_cmds:
+        #     logger.debug(cmd)
+        #     subprocess.run([cmd],
+        #                    shell=sys.platform != "win32",
+        #                    stdout=subprocess.PIPE,
+        #                    stderr=subprocess.PIPE,
+        #                    check=True)
     else:
         # split the processors based on how many spades_cmds are on the list
         # dont correct for threads, as Spades defaults to lots of threads
-        pool = multiprocessing.Pool(processes=int(
-            args.cores / len(spades_cmds)))
+        split_cores = int(args.cores / (len(spades_quast_cmds) / 2))
+        if split_cores < 1:
+            split_cores = 1
+        pool = multiprocessing.Pool(processes=split_cores)
         logger.debug("running the following commands:")
-        logger.debug("\n".join([x for x in spades_cmds]))
+        logger.debug("\n".join([j for i in spades_quast_cmds for j in i]))
         results = [
-            pool.apply_async(subprocess.run,
-                             (cmd,),
-                             {"shell": sys.platform != "win32",
-                              "stdout": subprocess.PIPE,
-                              "stderr": subprocess.PIPE,
-                              "check": True})
-            for cmd in spades_cmds]
+            pool.apply_async(subprocess_run_list,
+                             (cmds,),
+                             {"logger": None,
+                              "hard": False})
+            for cmds in spades_quast_cmds]
+        # subprocess.run,
+        #                      (cmd,),
+        #                      {"shell": sys.platform != "win32",
+        #                       "stdout": subprocess.PIPE,
+        #                       "stderr": subprocess.PIPE,
+        #                       "check": True})
+        #     for cmd in spades_cmds]
         pool.close()
         pool.join()
         logger.info("Sum of return codes (should be 0):")
-        logger.info(sum([r.get().returncode for r in results]))
+        logger.info(sum([r.get() for r in results]))
 
         # split the processors based on how many spades_cmds are on the list
         # qpool = multiprocessing.Pool(processes=int(
         #     (args.cores * args.threads) / len(spades_cmds)))
-        qpool = multiprocessing.Pool(processes=int(
-            args.cores / len(spades_cmds)))
-        logger.debug("running the quast following commands:")
-        logger.debug("\n".join([x for x in spades_cmds]))
-        qresults = [
-            qpool.apply_async(subprocess.run,
-                              (cmd,),
-                              {"shell": sys.platform != "win32",
-                               "stdout": subprocess.PIPE,
-                               "stderr": subprocess.PIPE,
-                               "check": True})
-            for cmd in quast_cmds]
-        qpool.close()
-        qpool.join()
-        logger.info("Sum of return codes (should be 0):")
-        logger.info(sum([r.get().returncode for r in qresults]))
+        # qpool = multiprocessing.Pool(processes=split_cores)
+        # logger.debug("running the quast following commands:")
+        # logger.debug("\n".join([x for x in spades_cmds]))
+        # qresults = [
+        #     qpool.apply_async(subprocess.run,
+        #                       (cmd,),
+        #                       {"shell": sys.platform != "win32",
+        #                        "stdout": subprocess.PIPE,
+        #                        "stderr": subprocess.PIPE,
+        #                        "check": True})
+        #     for cmd in quast_cmds]
+        # qpool.close()
+        # qpool.join()
+        # logger.info("Sum of return codes (should be 0):")
+        # logger.info(sum([r.get().returncode for r in qresults]))
 
     if not args.skip_control:
         logger.debug("writing combined quast reports")
