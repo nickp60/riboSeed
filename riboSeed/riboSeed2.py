@@ -25,6 +25,7 @@ import multiprocessing
 import subprocess
 import traceback
 
+from itertools import chain
 from collections import namedtuple
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -172,6 +173,21 @@ class SeedGenome(object):
         """
         with open(self.genbank_path, 'r') as fh:
             self.seq_records = list(SeqIO.parse(fh, "genbank"))
+
+    def purge_old_files(self):
+        target_iter = self.this_iteration - 2
+        assert target_iter >= 0, \
+            "previous mapping is required, can only purge 2nd previous"
+        for f in [self.iter_mapping_list[target_iter].pe_map_bam,
+                  self.iter_mapping_list[target_iter].s_map_bam,
+                  self.iter_mapping_list[target_iter].mapped_sam,
+                  self.iter_mapping_list[target_iter].mapped_bam,
+                  self.iter_mapping_list[target_iter].unmapped_sam,
+                  self.iter_mapping_list[target_iter].unmapped_bam,
+                  self.iter_mapping_list[target_iter].sorted_mapped_bam,
+                  self.iter_mapping_list[target_iter].mapped_ngsLib]:
+            if f is not None:
+                os.unlink(f)
 
 
 class NgsLib(object):
@@ -1496,7 +1512,7 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
                            stderr=subprocess.PIPE,
                            check=True)
         mapped_regions.append(reg_to_extract)
-    logger.info("mapped regions for iteration %i:\n\t %s",
+    logger.info("mapped regions for iteration %i:\n %s",
                 seedGenome.this_iteration,
                 "\n".join([x for x in mapped_regions]))
 
@@ -1602,7 +1618,10 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     nbuffer = "N" * nbuff
     faux_genome = ""
     counter = 0
-    new_seq_name = "{0}_iter_{1}".format(seedGenome.name, iteration)
+    # new_seq_name = "{0}_iter_{1}".format(seedGenome.name, iteration)
+    new_seq_name = seedGenome.name
+    if len(cluster_list) == 0:
+        return 1
     for clu in cluster_list:
         if not clu.keep_contig or not clu.continue_iterating:
             pass
@@ -1630,6 +1649,31 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     with open(outpath, 'w') as outf:
         SeqIO.write(record, outf, 'fasta')
     return (outpath, len(record))
+
+
+def subprocess_run_list(cmdlist, hard=False, logger=None):
+    """ This just allows for sequential cmds with multiprocessing.
+    It prevents the errors when future commands are looking for and not finding
+    a needed file.
+    Logger cant be used with multiprocessing
+    returns 0 if all is well, otherwise returns 1
+    if hard == True, quits instead of returning 1
+    """
+    for cmd in cmdlist:
+        try:
+            subprocess.run([cmd],
+                           shell=sys.platform != "win32",
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           check=True)
+        except Exception as e:
+            if logger:
+                logger.error(e)
+            if hard:
+                sys.exit(1)
+            else:
+                return 1
+    return 0
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -1959,17 +2003,19 @@ if __name__ == "__main__":  # pragma: no cover
 
             ###
             cluster.mappings[-1].mapped_ngslib = new_ngslib
-            extract_convert_assemble_cmds.extend(cmdlist)
+            extract_convert_assemble_cmds.append(cmdlist)
 
         # run all those commands!
         # logger.info("running %i cmds", len(extract_convert_assemble_cmds))
         logger.debug("\n running %i cmds \n %s",
-                     len(extract_convert_assemble_cmds),
-                     "\n".join([x for x in extract_convert_assemble_cmds]))
+                     # len(extract_convert_assemble_cmds),
+                     len([j for i in extract_convert_assemble_cmds for j in i]),
+                     "\n".join([j for i in extract_convert_assemble_cmds for j in i]))
         if args.serialize:
             logger.warning("running without multiprocessing!")
-            for cmd in extract_convert_assemble_cmds:
+            for cmd in [j for i in extract_convert_assemble_cmds for j in i]:
                 logger.debug(cmd)
+                # subprocess_run_list(cmdlist=cmds, hard=False, logger=logger)
                 subprocess.run([cmd],
                                shell=sys.platform != "win32",
                                stdout=subprocess.PIPE,
@@ -1979,17 +2025,25 @@ if __name__ == "__main__":  # pragma: no cover
             pool = multiprocessing.Pool(processes=args.cores)
             # pool = multiprocessing.Pool(processes=(args.cores * args.threads))
             results = [
-                pool.apply_async(subprocess.run,
-                                 (cmd,),
-                                 {"shell": sys.platform != "win32",
-                                  "stdout": subprocess.PIPE,
-                                  "stderr": subprocess.PIPE,
-                                  "check": True})
-                for cmd in extract_convert_assemble_cmds]
+                pool.apply_async(subprocess_run_list,
+                                 (cmds,),
+                                 {"logger": None,
+                                  "hard": False})
+                for cmds in extract_convert_assemble_cmds]
+            # pool = multiprocessing.Pool(processes=(args.cores * args.threads))
+            # results = [
+            #     pool.apply_async(subprocess.run,
+            #                      (cmd,),
+            #                      {"shell": sys.platform != "win32",
+            #                       "stdout": subprocess.PIPE,
+            #                       "stderr": subprocess.PIPE,
+            #                       "check": True})
+            #     for cmds in extract_convert_assemble_cmds for cmd in cmds]
             pool.close()
             pool.join()
             logger.info("Sum of return codes (should be 0):")
-            logger.info(sum([r.get().returncode for r in results]))
+            logger.info(sum([r.get() for r in results]))
+            # logger.info(sum([r.get().returncode for r in results]))
 
         ### evaluate mapping (cant be multiprocessed)
         for cluster in clusters_to_process:
@@ -2003,16 +2057,17 @@ if __name__ == "__main__":  # pragma: no cover
                 proceed_to_target=proceed_to_target,
                 target_len=args.target_len)
             parse_subassembly_return_code(cluster, logger)
-
-        faux_genome_path, faux_genome_len = make_faux_genome(
-            seedGenome=seedGenome,
-            iteration=seedGenome.this_iteration,
-            output_root=seedGenome.output_root,
-            nbuff=5000,
-            cluster_list=[x for x in clusters_to_process if
-                          x.continue_iterating],
-            logger=logger)
-
+        if len(clusters_to_process) != 0:
+            faux_genome_path, faux_genome_len = make_faux_genome(
+                seedGenome=seedGenome,
+                iteration=seedGenome.this_iteration,
+                output_root=seedGenome.output_root,
+                nbuff=5000,
+                cluster_list=[x for x in clusters_to_process if
+                              x.continue_iterating],
+                logger=logger)
+        else:
+            faux_genome_path = 1
         if faux_genome_path == 1:
             seedGenome.this_iteration = args.iterations + 1
         else:
