@@ -44,14 +44,6 @@ from pyutilsnrw.utils3_5 import set_up_logging, \
 
 from riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, get_genbank_rec_from_multigb
-    # stitch_together_target_regions,
-    # pad_genbank_sequence
-    # prepare_prank_cmd, prepare_mafft_cmd, \
-    # calc_Shannon_entropy, calc_entropy_msa, \
-    # plot_scatter_with_anno,  \
-    # profile_kmer_occurances, plot_pairwise_least_squares, make_msa
-    # LociCluster,  Locus,
-
 
 ## GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
@@ -1046,24 +1038,6 @@ def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
                             ref_fasta=ref_fasta))
 
 
-# def run_cmd_list(cmd_list, logger, hard=False):
-#     for cmd in cmd_list:
-#         logger.debug(cmd)
-#         try:
-#             subprocess.run([cmd],
-#                            shell=sys.platform != "win32",
-#                            stdout=subprocess.PIPE,
-#                            stderr=subprocess.PIPE,
-#                            check=True)
-#         except Exception as e:
-#             logger.error(e)
-#             logger.error(last_exception())
-#             if hard:
-#                 sys.exit(1)
-#             else:
-#                 pass
-
-
 def generate_spades_cmd(
         mapping_ob, ngs_ob, ref_as_contig, as_paired=True, addLibs="",
         prelim=False, k="21,33,55,77,99", spades_exe="spades.py",
@@ -1144,7 +1118,6 @@ def make_spades_empty_check(liblist, cmd, logger):
         if i != 0:
             prefix = prefix + "&& "
         check = "[ -s {0} ] ".format(lib)
-        # check = "[[ -s {0} ]] ".format(lib)
         prefix = prefix + check
     suffix = str("; then {0} ; else echo 'input lib not found, " +
                  "skipping this SPAdes call' ; fi").format(cmd)
@@ -1232,8 +1205,6 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
             return 1
         else:
             return 2
-        #     clu.keep_contig = False  # flags contig for exclusion
-        # clu.continue_iterating = False  # skip remaining iterations
     elif proceed_to_target and contig_len >= target_seed_len:
         logger.info("target length threshold! has been reached; " +
                     "skipping future iterations")
@@ -1246,8 +1217,6 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
             "more than 10bp between rounds of iteration. Continuing" +
             " will likely cause error; no skipping future iterations.")
         return 1
-
-
     else:
         return 0
 
@@ -1275,11 +1244,10 @@ def parse_subassembly_return_code(cluster, logger):
         except:
             logger.warning("no contigs for %s_%i! Check SPAdes log " +
                            "if worried", cluster.sequence_id, cluster.index)
-            cluster.continue_iterating = False
-            cluster.keep_contigs = True
+        cluster.continue_iterating = False
         # The combine contigs step check for 'keep contigs flag, so
         # since you have already copied it, set the flag to false
-        cluster.keep_contig = False
+        cluster.keep_contigs = False
     elif cluster.assembly_success == 0:
         cluster.continue_iterating = True
         cluster.keep_contigs = True
@@ -1361,8 +1329,6 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
             cluster.sequence_id, cluster.index, seedGenome.this_iteration))
 
     mapping0 = LociMapping(
-        # name="{0}_cluster_{1}_iter{2}".format(
-        #     cluster.sequence_id, cluster.index, seedGenome.this_iteration),
         name="{0}_cluster_{1}".format(
             cluster.sequence_id, cluster.index),
         iteration=seedGenome.this_iteration,
@@ -1381,14 +1347,13 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
         start_list = sorted([x.start_coord for x in cluster.loci_list])
         logger.debug("Start_list: {0}".format(start_list))
 
-        logger.debug("Find coordinates to gather reads from the following loci:")
+        logger.debug("Finding coords to gather reads from the following loci:")
         for i in cluster.loci_list:
             logger.debug("%s cluster %i -- locus %i -- %s (%i, %i)(%i) %s",
                          i.sequence_id, cluster.index,
                          i.index, i.locus_tag,
                          i.start_coord, i.end_coord, i.strand,
                          i.product)
-            # logger.debug(str(i.__dict__))
         #  This works as long as coords are never in reverse order
         cluster.global_start_coord = min([x.start_coord for
                                           x in cluster.loci_list]) - flank[0]
@@ -1418,10 +1383,6 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
         #  Ie, the coords have been reassigned by the make_faux_genome function
     else:
         logger.info("using coords from previous iteration:")
-        # logger.debug("Coordinates for %s cluster %i: [%i - %i]",
-        #              cluster.index,
-        #              cluster.global_start_coord,
-        #              cluster.global_end_coord)
     logger.info("Coordinates for %s cluster %i:  [%i - %i]",
                 cluster.seq_record.id,
                 cluster.index,
@@ -1641,7 +1602,7 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     if len(cluster_list) == 0:
         return 1
     for clu in cluster_list:
-        if not clu.keep_contig or not clu.continue_iterating:
+        if not clu.keep_contigs or not clu.continue_iterating:
             pass
         else:
             clu.global_start_coord = len(faux_genome) + nbuff
@@ -1775,33 +1736,6 @@ if __name__ == "__main__":  # pragma: no cover
         test_smalt_cmds = get_smalt_full_install_cmds(smalt_exe=sys_exes.smalt,
                                                       logger=logger)
         test_smalt_bam_install(cmds=test_smalt_cmds, logger=logger)
-        # logger.info("testing instalation of SMALT and bambamc")
-        # smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-        #                             "sample_data",
-        #                             "smalt_test", "")
-        # test_index = os.path.join(smalttestdir, "test_index")
-        # test_bam = os.path.join(smalttestdir, "test_mapping.bam")
-
-        # for i in test_smalt_cmds:
-        #     try:
-        #         logger.debug(i)
-        #         subprocess.run([i],
-        #                        shell=sys.platform != "win32",
-        #                        stdout=subprocess.PIPE,
-        #                        stderr=subprocess.PIPE,
-        #                        check=True)
-        #     except:
-        #         logger.error(
-        #             "Error running test to check bambamc lib is " +
-        #             "installed! See github.com/gt1/bambamc " +
-        #             "and the smalt install guide for more details." +
-        #             "https://sourceforge.net/projects/smalt/files/")
-        #         sys.exit(1)
-
-        # # remove the temp files
-        # os.remove(test_bam)
-        # os.remove(str(test_index + ".sma"))
-        # os.remove(str(test_index + ".smi"))
     else:
         logger.info("BWA is the selected mapper")
 
@@ -1892,7 +1826,7 @@ if __name__ == "__main__":  # pragma: no cover
         logger.debug("with new seed: %s", seedGenome.next_reference_path)
         clusters_to_process = [x for x in seedGenome.loci_clusters if
                                x.continue_iterating and
-                               x.keep_contig]
+                               x.keep_contigs]
         if len(clusters_to_process) == 0:
             logger.error("No clusters had sufficient mapping! Exiting")
             sys.exit(1)
@@ -1911,10 +1845,9 @@ if __name__ == "__main__":  # pragma: no cover
                     seedGenome.purge_old_files()
                     # delete the read files from the last mapping
                     # dont do this on the first iteration, cause those be the reads!
+                    # and if they aren't backed up you are up a creek and probably
+                    # very upset with me.
                     unmapped_ngsLib.purge_old_files()
-
-                # os.unlink(seedGenome.iter_mapping_list[
-                #     seedGenome.this_iteration - 2].unmapped_sam)
             ##  seqrecords for the clusters to be gen.next_reference_path
             with open(seedGenome.next_reference_path, 'r') as nextref:
                 next_seqrec = list(SeqIO.parse(nextref, 'fasta'))[0]  # next?
@@ -1995,7 +1928,6 @@ if __name__ == "__main__":  # pragma: no cover
                               samtools_exe=sys_exes.samtools,
                               flank=flank,
                               cluster_list=clusters_to_process)
-                              # cluster_list=seedGenome.loci_clusters)
         except Exception as e:
             logger.error("Error while partitioning reads from iteration %i",
                          seedGenome.this_iteration)
@@ -2028,9 +1960,7 @@ if __name__ == "__main__":  # pragma: no cover
             extract_convert_assemble_cmds.append(cmdlist)
 
         # run all those commands!
-        # logger.info("running %i cmds", len(extract_convert_assemble_cmds))
-        logger.debug("\n running %i cmds \n %s",
-                     # len(extract_convert_assemble_cmds),
+        logger.debug("\n running %i cmds: \n %s",
                      len([j for i in extract_convert_assemble_cmds for j in i]),
                      "\n".join([j for i in extract_convert_assemble_cmds for j in i]))
         if args.serialize:
@@ -2045,27 +1975,16 @@ if __name__ == "__main__":  # pragma: no cover
                                check=True)
         else:
             pool = multiprocessing.Pool(processes=args.cores)
-            # pool = multiprocessing.Pool(processes=(args.cores * args.threads))
             results = [
                 pool.apply_async(subprocess_run_list,
                                  (cmds,),
                                  {"logger": None,
                                   "hard": False})
                 for cmds in extract_convert_assemble_cmds]
-            # pool = multiprocessing.Pool(processes=(args.cores * args.threads))
-            # results = [
-            #     pool.apply_async(subprocess.run,
-            #                      (cmd,),
-            #                      {"shell": sys.platform != "win32",
-            #                       "stdout": subprocess.PIPE,
-            #                       "stderr": subprocess.PIPE,
-            #                       "check": True})
-            #     for cmds in extract_convert_assemble_cmds for cmd in cmds]
             pool.close()
             pool.join()
             logger.info("Sum of return codes (should be 0):")
             logger.info(sum([r.get() for r in results]))
-            # logger.info(sum([r.get().returncode for r in results]))
 
         ### evaluate mapping (cant be multiprocessed)
         for cluster in clusters_to_process:
@@ -2109,7 +2028,7 @@ if __name__ == "__main__":  # pragma: no cover
     seedGenome.purge_old_files(all_iters=True)
     # And add the remaining final contigs to the directory for combination
     logger.info("combinging contigs from %s", seedGenome.final_long_reads_dir)
-    for clu in [x for x in seedGenome.loci_clusters if x.keep_contig]:
+    for clu in [x for x in seedGenome.loci_clusters if x.keep_contigs]:
         copy_file(current_file=clu.mappings[-1].assembled_contig,
                   dest_dir=seedGenome.final_long_reads_dir,
                   name=str(clu.sequence_id + "_cluster_" +
@@ -2137,13 +2056,6 @@ if __name__ == "__main__":  # pragma: no cover
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE,
                            check=True)
-        # for cmd in quast_cmds:
-        #     logger.debug(cmd)
-        #     subprocess.run([cmd],
-        #                    shell=sys.platform != "win32",
-        #                    stdout=subprocess.PIPE,
-        #                    stderr=subprocess.PIPE,
-        #                    check=True)
     else:
         # split the processors based on how many spades_cmds are on the list
         # dont correct for threads, as Spades defaults to lots of threads
@@ -2159,36 +2071,10 @@ if __name__ == "__main__":  # pragma: no cover
                              {"logger": None,
                               "hard": False})
             for cmds in spades_quast_cmds]
-        # subprocess.run,
-        #                      (cmd,),
-        #                      {"shell": sys.platform != "win32",
-        #                       "stdout": subprocess.PIPE,
-        #                       "stderr": subprocess.PIPE,
-        #                       "check": True})
-        #     for cmd in spades_cmds]
         pool.close()
         pool.join()
         logger.info("Sum of return codes (should be 0):")
         logger.info(sum([r.get() for r in results]))
-
-        # split the processors based on how many spades_cmds are on the list
-        # qpool = multiprocessing.Pool(processes=int(
-        #     (args.cores * args.threads) / len(spades_cmds)))
-        # qpool = multiprocessing.Pool(processes=split_cores)
-        # logger.debug("running the quast following commands:")
-        # logger.debug("\n".join([x for x in spades_cmds]))
-        # qresults = [
-        #     qpool.apply_async(subprocess.run,
-        #                       (cmd,),
-        #                       {"shell": sys.platform != "win32",
-        #                        "stdout": subprocess.PIPE,
-        #                        "stderr": subprocess.PIPE,
-        #                        "check": True})
-        #     for cmd in quast_cmds]
-        # qpool.close()
-        # qpool.join()
-        # logger.info("Sum of return codes (should be 0):")
-        # logger.info(sum([r.get().returncode for r in qresults]))
 
     if not args.skip_control:
         logger.debug("writing combined quast reports")
