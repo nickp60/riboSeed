@@ -27,7 +27,7 @@ from riboSeed.riboSeed2 import SeedGenome, NgsLib, LociMapping, Exes, \
     map_to_genome_ref_smalt, map_to_genome_ref_bwa, \
     add_coords_to_clusters, partition_mapping, \
     convert_bam_to_fastqs_cmd, get_smalt_full_install_cmds,\
-    generate_spades_cmd, estimate_distances_smalt, run_final_assemblies,\
+    generate_spades_cmd, estimate_distances_smalt, get_final_assemblies_cmds,\
     nonify_empty_lib_files, make_faux_genome, \
     evaluate_spades_success, prepare_next_mapping, make_mapped_partition_cmds,\
     make_unmapped_partition_cmds, make_quick_quast_table, \
@@ -174,6 +174,17 @@ class riboSeed2TestCase(unittest.TestCase):
                  spades=self.spades_exe,
                  bwa=self.bwa_exe,
                  method="bwa")
+
+    def test_Exes_(self):
+        """check with nonexistant executable"""
+        test_exes = Exes(samtools=self.samtools_exe,
+                         quast=self.quast_exe,
+                         python2_7=self.python2_7_exe,
+                         smalt=self.smalt_exe,
+                         spades=self.spades_exe,
+                         bwa=self.bwa_exe,
+                         method="bwa")
+        self.assertEqual(test_exes.mapper, shutil.which(test_exes.bwa))
 
     def test_NgsLib(self):
         # make a non-master object
@@ -556,7 +567,7 @@ class riboSeed2TestCase(unittest.TestCase):
         parse_subassembly_return_code(cluster=gen.loci_clusters[0],
                                       logger=logger)
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
-        self.assertTrue(gen.loci_clusters[0].keep_contigs)
+        self.assertFalse(gen.loci_clusters[0].keep_contigs)
 
     def test_parse_subassembly_return_code_2(self):
         gen = SeedGenome(
@@ -878,7 +889,7 @@ class riboSeed2TestCase(unittest.TestCase):
             cluster=clu, seedGenome=gen, samtools_exe=self.samtools_exe,
             flank=[0, 0],
             logger=logger)
-        new_name = "NC_011751.1_cluster_{0}_iter0".format(clu.index)
+        new_name = "NC_011751.1_cluster_{0}".format(clu.index)
         self.assertEqual(clu.mappings[-1].name, new_name)
 
     def test_mapped_partition_cmds(self):
@@ -1040,7 +1051,7 @@ class riboSeed2TestCase(unittest.TestCase):
                          iteration=1, output_root=self.test_dir, nbuff=10000,
                          logger=logger)
 
-    def test_run_final_assembliies(self):
+    def test_get_final_assemblies_cmds(self):
         gen = SeedGenome(
             max_iterations=1,
             genbank_path=self.ref_gb,
@@ -1055,11 +1066,22 @@ class riboSeed2TestCase(unittest.TestCase):
                 readR=self.ref_Rfastq,
                 ref_fasta=self.ref_fasta,
                 mapper_exe=self.smalt_exe))
+        test_exes = Exes(samtools=self.samtools_exe,
+                         quast=self.quast_exe,
+                         python2_7=self.python2_7_exe,
+                         smalt=self.smalt_exe,
+                         spades=self.spades_exe,
+                         bwa=self.bwa_exe,
+                         method="bwa")
+        # I want this  generalized, so replace the acual path with spades.py
+        test_exes.spades = "spades.py"
+        test_exes.quast = "quast.py"
+        test_exes.python2_7 = "python2"
         gen.ref_fasta = self.ref_fasta
-        final_spades_cmds, final_quast_cmds, quast_reports = run_final_assemblies(
-            seedGenome=gen, spades_exe=self.spades_exe,
-            quast_exe=self.quast_exe, python2_7_exe=self.python2_7_exe,
-            skip_control=False, kmers="33,77,99", logger=logger)
+        final_cmds, quast_reports = \
+            get_final_assemblies_cmds(
+                seedGenome=gen, exes=test_exes,
+                skip_control=False, kmers="33,77,99", logger=logger)
         final_spades_cmds_ref = [
             str(
                 "if [ -s {1} ] && [ -s {2} ] ; then " +
@@ -1074,7 +1096,7 @@ class riboSeed2TestCase(unittest.TestCase):
             str(
                 "if [ -s {1} ] && [ -s {2} ] ; then " +
                 "{0} --careful -k 33,77,99 --pe1-1 {1} " +
-                "--pe1-2 {2}  -o {3} " +
+                "--pe1-2 {2}   -o {3} " +
                 "; else echo 'input lib not found, " +
                 "skipping this SPAdes call' ; fi"
             ).format(
@@ -1097,10 +1119,10 @@ class riboSeed2TestCase(unittest.TestCase):
                 os.path.join(self.test_dir, "final_de_novo_assembly",
                              "contigs.fasta"),
                 os.path.join(self.test_dir, "quast_de_novo"))]
-        for i, ref in enumerate(final_spades_cmds_ref):
-            self.assertEqual(final_spades_cmds[i], ref)
-        for i, ref in enumerate(final_quast_cmds_ref):
-            self.assertEqual(final_quast_cmds[i], ref)
+        for i, cmd in enumerate([x[0] for x in final_cmds]):
+            self.assertEqual(final_spades_cmds_ref[i], cmd)
+        for i, cmd in enumerate([x[1] for x in final_cmds]):
+            self.assertEqual(final_quast_cmds_ref[i], cmd)
 
     def tearDown(self):
         """ delete temp files if no errors
