@@ -1845,7 +1845,7 @@ if __name__ == "__main__":  # pragma: no cover
     # this should exclude any failures
     while seedGenome.this_iteration <= args.iterations:
         logger.info("processing iteration %i", seedGenome.this_iteration)
-        logger.debug("with new seed: %s", seedGenome.next_reference_path)
+        logger.debug("with new reference: %s", seedGenome.next_reference_path)
         clusters_to_process = [x for x in seedGenome.loci_clusters if
                                x.continue_iterating and
                                x.keep_contigs]
@@ -2047,8 +2047,9 @@ if __name__ == "__main__":  # pragma: no cover
 # --------------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #
     # done with the iterations!  Lets free up some space
-    unmapped_ngsLib.purge_old_files()
-    seedGenome.purge_old_files(all_iters=True)
+    if not args.keep_temps:
+        unmapped_ngsLib.purge_old_files()
+        seedGenome.purge_old_files(all_iters=True)
     # And add the remaining final contigs to the directory for combination
     logger.info("combinging contigs from %s", seedGenome.final_long_reads_dir)
     for clu in [x for x in seedGenome.loci_clusters if x.keep_contigs]:
