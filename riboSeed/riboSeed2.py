@@ -525,7 +525,7 @@ def get_args():  # pragma: no cover
                           action="store_true",
                           default=False,
                           help="If true, singletons from previous mappings" +
-                          "will be ignored.  try this if you see" +
+                          "will be ignored.  try this if you see " +
                           "samtools merge errors in tracebacks" +
                           "; default: %(default)s")
     optional.add_argument("-s", "--score_min", dest='score_min',
@@ -565,7 +565,7 @@ def get_args():  # pragma: no cover
                           help="if treating as circular, this controls the " +
                           "length of sequence added to the 5' and 3' ends " +
                           "to allow for selecting regions that cross the " +
-                          "chromosom's origin; default: %(default)s")
+                          "chromosome's origin; default: %(default)s")
     optional.add_argument("--keep_unmapped", dest='keep_unmapped',
                           action="store_true", default=False,
                           help="if --keep_unmapped, fastqs are generated " +
@@ -663,7 +663,7 @@ def get_args():  # pragma: no cover
                           "default: %(default)s")
     optional.add_argument("--python2_7_exe", dest="python2_7_exe",
                           action="store", default="python2.7",
-                          help="Path to pyython2.7 executable, cause; " +
+                          help="Path to python2.7 executable, cause " +
                           "QUAST won't run on python3. default: %(default)s")
     args = parser.parse_args()
     return args
