@@ -531,7 +531,7 @@ def get_args():  # pragma: no cover
     optional.add_argument("-s", "--score_min", dest='score_min',
                           action="store",
                           default=None, type=int,
-                          help="min score forsmalt mapping; inferred from " +
+                          help="min score for smalt mapping; inferred from " +
                           "read length" +
                           "; default: inferred")
     optional.add_argument("--include_shorts", dest='include_short_contigs',
@@ -913,17 +913,19 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     nonify_empty_lib_files(ngsLib, logger=logger)
     logger.info("Mapping reads to reference genome with BWA")
     # check min score
-    assert score_minimum is not None, "must assign score outside map function!"
-    score_min = score_minimum
-    logger.debug(str("using a score min of " +
-                     "{0}").format(score_min))
+    if score_minimum is not None:  # , "must assign score outside map function!"
+        score_min = "-T {0}".format(score_minimum)
+        logger.debug(str("using a score min of " +
+                         "{0}").format(score_min))
+    else:
+        score_min = ""
     # index the reference
     cmdindex = str("{0} index {1}").format(
         bwa_exe, ngsLib.ref_fasta)
     # map paired end reads to reference index
     bwacommands = [cmdindex]
     if not single_lib:
-        cmdmap = str('{0} mem -t {1} {2} -T {3} -k 15 ' +
+        cmdmap = str('{0} mem -t {1} {2} {3} -k 15 ' +
                      '{4} {5} {6} | {7} view -bh - | ' +
                      '{7} sort -o ' +
                      '{8} - ').format(bwa_exe,  # 0
@@ -944,7 +946,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     # if singletons are present, map those too.  Index is already made
     if ngsLib.readS0 is not None and not ignore_singletons:
         cmdmapS = str(
-            '{0} mem -t {1} {2} -T {3} -k 15 ' +
+            '{0} mem -t {1} {2} {3} -k 15 ' +
             '{4} {5} | {6} view -bh - | ' +
             '{6} sort -o {7} - ').format(bwa_exe,  # 0
                                          cores,  # 1
@@ -958,7 +960,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
         with open(mapping_ob.s_map_bam, 'w') as tempfile:
             tempfile.write("@HD riboseed_dummy_file")
         # merge together the singleton and pe reads
-        cmdmergeS = '{0} merge -f {3}  {1} {2}'.format(
+        cmdmergeS = '{0} merge -f {3} {1} {2}'.format(
             samtools_exe, mapping_ob.pe_map_bam,
             mapping_ob.s_map_bam, mapping_ob.mapped_bam)
         bwacommands.extend([cmdmapS, cmdmergeS])
@@ -1614,7 +1616,7 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     this also re-write thes coords relative to the new "genome"
     returns path to new faux_genome
     """
-    logger.info("prepparing extracted region genome for next round of mapping")
+    logger.info("preparing extracted region genome for next round of mapping")
     logger.debug("using %i sequences", len(cluster_list))
     nbuffer = "N" * nbuff
     faux_genome = ""
@@ -1866,9 +1868,9 @@ if __name__ == "__main__":  # pragma: no cover
                 if not args.keep_temps:
                     seedGenome.purge_old_files()
                     # delete the read files from the last mapping
-                    # dont do this on the first iteration, cause those be the reads!
-                    # and if they aren't backed up you are up a creek and probably
-                    # very upset with me.
+                    # dont do this on first iteration cause those be the reads!
+                    # and if they aren't backed up you are up a creek and
+                    # probably very upset with me.
                     unmapped_ngsLib.purge_old_files()
             # seqrecords for the clusters to be gen.next_reference_path
             with open(seedGenome.next_reference_path, 'r') as nextref:
@@ -1877,13 +1879,16 @@ if __name__ == "__main__":  # pragma: no cover
                 clu.seq_record = next_seqrec
             # make new ngslib from unampped reads
             convert_cmd, unmapped_ngsLib = convert_bam_to_fastqs_cmd(
-                mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration - 1],
+                mapping_ob=seedGenome.iter_mapping_list[
+                    seedGenome.this_iteration - 1],
                 samtools_exe=sys_exes.samtools, single=True,
-                ref_fasta=seedGenome.next_reference_path,  # used to make index cmd
+                # ref fasta is used to make index cmd
+                ref_fasta=seedGenome.next_reference_path,
                 which='unmapped', logger=logger)
             unmapped_ngsLib.readlen = seedGenome.master_ngs_ob.readlen
             # unmapped_ngsLib.ref_fasta = seedGenome.next_reference_path
-            unmapped_ngsLib.smalt_dist_path = seedGenome.master_ngs_ob.smalt_dist_path
+            unmapped_ngsLib.smalt_dist_path = \
+                seedGenome.master_ngs_ob.smalt_dist_path
             logger.debug("converting unmapped bam into reads:")
             seedGenome.master_ngs_ob.ref_fasta = seedGenome.next_reference_path
             for cmd in [convert_cmd]:  # may have more cmds here in future
@@ -1897,10 +1902,12 @@ if __name__ == "__main__":  # pragma: no cover
             # start with whole lib if first time through
             unmapped_ngsLib = seedGenome.master_ngs_ob
         # Run commands to map to the genome
-        #  This makes it such that score minimum is now more stringent with each mapping.
+        # This makes it such that score minimum is now more stringent
+        # with each mapping.
         if not args.score_min:
             if args.method == 'smalt':
-                scaling_factor = 1.0 - (1.0 / (2.0 + float(seedGenome.this_iteration)))
+                scaling_factor = 1.0 - (
+                    1.0 / (2.0 + float(seedGenome.this_iteration)))
                 score_minimum = int(unmapped_ngsLib.readlen * scaling_factor)
                 logger.info(
                     "Mapping with min_score of %f2 (%f2 of read length, %f2)",
@@ -1908,7 +1915,8 @@ if __name__ == "__main__":  # pragma: no cover
             else:
                 assert args.method == 'bwa', "must be wither smalt or bwa"
                 # score_minimum = int(.15 * unmapped_ngsLib.readlen)
-                score_minimum = 25
+                logger.info("using the default minimum score for BWA")
+                score_minimum = None
         else:
             score_minimum = args.score_min
             logger.info(
@@ -1919,7 +1927,8 @@ if __name__ == "__main__":  # pragma: no cover
 
         if args.method == "smalt":
             map_to_genome_ref_smalt(
-                mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
+                mapping_ob=seedGenome.iter_mapping_list[
+                    seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
                 cores=(args.cores * args.threads),
                 ignore_singletons=args.ignoreS,
@@ -1933,7 +1942,8 @@ if __name__ == "__main__":  # pragma: no cover
         else:
             assert args.method == "bwa", "must be either bwa or smalt"
             map_to_genome_ref_bwa(
-                mapping_ob=seedGenome.iter_mapping_list[seedGenome.this_iteration],
+                mapping_ob=seedGenome.iter_mapping_list[
+                    seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
                 ignore_singletons=args.ignoreS,
                 cores=(args.cores * args.threads),
@@ -2020,6 +2030,9 @@ if __name__ == "__main__":  # pragma: no cover
                 proceed_to_target=proceed_to_target,
                 target_len=args.target_len)
             parse_subassembly_return_code(cluster, logger)
+        clusters_to_process = [x for x in seedGenome.loci_clusters if
+                               x.continue_iterating and
+                               x.keep_contigs]
         if len(clusters_to_process) != 0:
             faux_genome_path, faux_genome_len = make_faux_genome(
                 seedGenome=seedGenome,
@@ -2029,13 +2042,11 @@ if __name__ == "__main__":  # pragma: no cover
                 cluster_list=[x for x in clusters_to_process if
                               x.continue_iterating],
                 logger=logger)
-        else:
-            faux_genome_path = 1
-        if faux_genome_path == 1:
-            seedGenome.this_iteration = args.iterations + 1
-        else:
             logger.info("Length of buffered 'genome' for mapping: %i",
                         faux_genome_len)
+        else:
+            faux_genome_path = 1
+            seedGenome.this_iteration = args.iterations + 1
         seedGenome.this_iteration = seedGenome.this_iteration + 1
         seedGenome.next_reference_path = faux_genome_path
         if seedGenome.this_iteration >= args.iterations:
