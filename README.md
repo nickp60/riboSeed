@@ -165,18 +165,18 @@ minimal usage: riboSeed.py clustered\_accession\_list.txt -F FASTQ1 -R FASTQ2 -r
 
 ```
 usage: riboSeed2.py -F FASTQ1 -R FASTQ2 -r REFERENCE_GENBANK -o OUTPUT
-                    [-S FASTQS] [-n EXP_NAME] [-l FLANKING] [-m METHOD]
-                    [-c CORES] [-k KMERS] [-p PRE_KMERS] [-s MIN_SCORE_SMALT]
+                    [-S FASTQS] [-n EXP_NAME] [-l FLANKING] [-m {smalt,bwa}]
+                    [-c CORES] [-k KMERS] [-p PRE_KMERS] [-I] [-s SCORE_MIN]
                     [--include_shorts] [-a MIN_ASSEMBLY_LEN]
-                    [--paired_inference] [--subtract] [--circular]
-                    [--padding PADDING] [--keep_unmapped]
-                    [--ref_as_contig {None,trusted,untrusted}] [--no_temps]
+                    [--paired_inference] [--linear] [--padding PADDING]
+                    [--keep_unmapped]
+                    [--ref_as_contig {None,trusted,untrusted}] [--keep_temps]
                     [--skip_control] [-i ITERATIONS] [-v {1,2,3,4,5}]
-                    [--target_len TARGET_LEN] [--DEBUG] [--DEBUG_multi]
+                    [--target_len TARGET_LEN] [-t {1,2,4}] [-z]
                     [--smalt_scoring SMALT_SCORING] [-h]
                     [--spades_exe SPADES_EXE] [--samtools_exe SAMTOOLS_EXE]
-                    [--smalt_exe SMALT_EXE] [--quast_exe QUAST_EXE]
-                    [--python2_7_exe PYTHON2_7_EXE]
+                    [--smalt_exe SMALT_EXE] [--bwa_exe BWA_EXE]
+                    [--quast_exe QUAST_EXE] [--python2_7_exe PYTHON2_7_EXE]
                     clustered_loci_txt
 
 Given regions from riboSnag, assembles the mapped reads
@@ -205,8 +205,8 @@ optional arguments:
                         length of flanking regions, can be colon-separated to
                         give separate upstream and downstream flanking
                         regions; default: 1000
-  -m METHOD, --method_for_map METHOD
-                        available mappers: smalt; default: smalt
+  -m {smalt,bwa}, --method_for_map {smalt,bwa}
+                        available mappers: smalt and bwa; default: bwa
   -c CORES, --cores CORES
                         cores for multiprocessing workers; default: None
   -k KMERS, --kmers KMERS
@@ -214,10 +214,13 @@ optional arguments:
                         default: 21,33,55,77,99,127
   -p PRE_KMERS, --pre_kmers PRE_KMERS
                         kmers used during seeding assemblies, separated bt
-                        commas; default: 21,33,55
-  -s MIN_SCORE_SMALT, --min_score_SMALT MIN_SCORE_SMALT
-                        min score forsmalt mapping; inferred from read length;
-                        default: inferred
+                        commas; default: 21,33,55,77,99
+  -I, --ignoreS         If true, singletons from previous mappingswill be
+                        ignored. try this if you seesamtools merge errors in
+                        tracebacks; default: False
+  -s SCORE_MIN, --score_min SCORE_MIN
+                        min score for smalt mapping; inferred from read
+                        length; default: inferred
   --include_shorts      if assembled contig is smaller than
                         --min_assembly_len, contig will still be included in
                         assembly; default: inferred
@@ -229,16 +232,13 @@ optional arguments:
                         default: 6000
   --paired_inference    if --paired_inference, mapped read's pairs are
                         included; default: False
-  --subtract            if --subtract, reads aligned to each reference will
-                        not be aligned to future iterations. Probably you
-                        shouldnt do thisunless you really happen to want to
-  --circular            if the genome is known to be circular, and an region
-                        of interest (including flanking bits) extends past
+  --linear              if genome is known to not be circular and a region of
+                        interest (including flanking bits) extends past
                         chromosome end, this extends the seqence past
-                        chromosome origin forward by 5kb; default: False
+                        chromosome origin forward by --padding; default: False
   --padding PADDING     if treating as circular, this controls the length of
                         sequence added to the 5' and 3' ends to allow for
-                        selecting regions that cross the chromosom's origin;
+                        selecting regions that cross the chromosome's origin;
                         default: 5000
   --keep_unmapped       if --keep_unmapped, fastqs are generated containing
                         unmapped reads; default: False
@@ -247,8 +247,9 @@ optional arguments:
                         --trusted-contig; if 'untrusted', SPAdes will treat as
                         --untrusted-contig. if '', seeds will not be used
                         during assembly. See SPAdes docs; default: untrusted
-  --no_temps            if --no_temps, mapping files will be removed after all
-                        iterations completed; default: False
+  --keep_temps          if not --keep_temps, mapping files will be removed
+                        once they are no no longer needed during the
+                        iterations; default: False
   --skip_control        if --skip_control, no SPAdes-only de novo assembly
                         will be done; default: False
   -i ITERATIONS, --iterations ITERATIONS
@@ -269,9 +270,13 @@ optional arguments:
                         length by giving a decimal between 0 and 5, or set as
                         an absolute number of base pairs by giving an integer
                         greater than 50. Not used by default
-  --DEBUG               if --DEBUG, test data will be used; default: False
-  --DEBUG_multi         if --DEBUG_multiprocessing, runs seeding in single
-                        loop instead of a multiprocessing pool: False
+  -t {1,2,4}, --threads {1,2,4}
+                        if your cores are hyperthreaded, set number threads to
+                        the number of threads per processer.If unsure, see
+                        'cat /proc/cpuinfo' under 'cpu cores', or 'lscpu'
+                        under 'Thread(s) per core'.: 1
+  -z, --serialize       if --serialize, runs seeding in single loop instead of
+                        a multiprocessing pool: False
   --smalt_scoring SMALT_SCORING
                         submit custom smalt scoring via smalt -S scorespec
                         option; default: match=1,subst=-4,gapopen=-4,gapext=-3
@@ -282,131 +287,35 @@ optional arguments:
                         Path to samtools executable; default: samtools
   --smalt_exe SMALT_EXE
                         Path to smalt executable; default: smalt
+  --bwa_exe BWA_EXE     Path to BWA executable; default: bwa
   --quast_exe QUAST_EXE
                         Path to quast executable; default: quast.py
   --python2_7_exe PYTHON2_7_EXE
-                        Path to pyython2.7 executable, cause; QUAST won't run
+                        Path to python2.7 executable, cause; QUAST won't run
                         on python3. default: python2.7
-
-
-<!-- * `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions. -->
-
-<!-- #### Output -->
-
-<!-- This outputs two main directories: `map` and `results`.  If `--temps` is true, temporary files from the mapping scheme will be retained, and is useful for assessing problems. -->
-
-<!-- The results directory will contain a 'mauve' directory with all the extended fragments, the mapped fastq files, and a `de_novo` and `de_fere_novo` folder, containing the results with the *de novo* mapping and supplemented mapping, respectively. -->
-
-<!-- #### Usage: -->
-
-<!-- ``` -->
-<!-- usage: riboSeed.py -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT -->
-<!--                    [-S FASTQS] [-n EXP_NAME] [-m METHOD] [-c CORES] [-k KMERS] -->
-<!--                    [-p PRE_KMERS] [-g MIN_GROWTH] [-s MIN_SCORE_SMALT] -->
-<!--                    [-a MIN_ASSEMBLY_LEN] [--paired_inference] [--subtract] -->
-<!--                    [--keep_unmapped] -->
-<!--                    [--ref_as_contig {None,trusted,untrusted}] [--no_temps] -->
-<!--                    [--skip_control] [-i ITERATIONS] [-v {1,2,3,4,5}] -->
-<!--                    [--target_len TARGET_LEN] [--DEBUG] [--DEBUG_multi] -->
-<!--                    [--smalt_scoring SMALT_SCORING] [-h] -->
-<!--                    [--spades_exe SPADES_EXE] [--samtools_exe SAMTOOLS_EXE] -->
-<!--                    [--smalt_exe SMALT_EXE] [--quast_exe QUAST_EXE] -->
-<!--                    seed_dir -->
-
-<!-- Given regions from riboSnag, assembles the mapped reads -->
-
-<!-- positional arguments: -->
-<!--   seed_dir              path to roboSnag results directory -->
-
-<!-- required named arguments: -->
-<!--   -F FASTQ1, --fastq1 FASTQ1 -->
-<!--                         forward fastq reads, can be compressed -->
-<!--   -R FASTQ2, --fastq2 FASTQ2 -->
-<!--                         reverse fastq reads, can be compressed -->
-<!--   -r REFERENCE_GENOME, --reference_genome REFERENCE_GENOME -->
-<!--                         fasta reference, used to estimate insert sizes, and -->
-<!--                         compare with QUAST -->
-<!--   -o OUTPUT, --output OUTPUT -->
-<!--                         output directory; default: cwd -->
-
-<!-- optional arguments: -->
-<!--   -S FASTQS, --fastq_single FASTQS -->
-<!--                         single fastq reads -->
-<!--   -n EXP_NAME, --experiment_name EXP_NAME -->
-<!--                         prefix for results files; default: riboSeed -->
-<!--   -m METHOD, --method_for_map METHOD -->
-<!--                         available mappers: smalt; default: smalt -->
-<!--   -c CORES, --cores CORES -->
-<!--                         cores for multiprocessing workers; default: 1 -->
-<!--   -k KMERS, --kmers KMERS -->
-<!--                         kmers used for final assembly, separated by commas; -->
-<!--                         default: 21,33,55,77,99,127 -->
-<!--   -p PRE_KMERS, --pre_kmers PRE_KMERS -->
-<!--                         kmers used during seeding assemblies, separated bt -->
-<!--                         commas; default: 21,33,55 -->
-<!--   -g MIN_GROWTH, --min_growth MIN_GROWTH -->
-<!--                         skip remaining iterations if contig doesnt extend by -->
-<!--                         --min_growth. if 0, ignore; default: 0 -->
-<!--   -s MIN_SCORE_SMALT, --min_score_SMALT MIN_SCORE_SMALT -->
-<!--                         min score forsmalt mapping; inferred from read length; -->
-<!--                         default: inferred -->
-<!--   -a MIN_ASSEMBLY_LEN, --min_assembly_len MIN_ASSEMBLY_LEN -->
-<!--                         if initial SPAdes assembly largest contig is not at -->
-<!--                         least as long as --min_assembly_len, exit. Set this to -->
-<!--                         the length of the seed sequence; if it is not -->
-<!--                         achieved, seeding across regions will likely fail; -->
-<!--                         default: 4000 -->
-<!--   --paired_inference    if --paired_inference, mapped read's pairs are -->
-<!--                         included; default: False -->
-<!--   --subtract            if --subtract, reads aligned to each reference will -->
-<!--                         not be aligned to future iterations. Probably you -->
-<!--                         shouldnt do thisunless you really happen to want to -->
-<!--   --keep_unmapped       if --keep_unmapped, fastqs are generated containing -->
-<!--                         unmapped reads; default: False -->
-<!--   --ref_as_contig {None,trusted,untrusted} -->
-<!--                         if 'trusted', SPAdes will use the seed sequences as a -->
-<!--                         --trusted-contig; if 'untrusted', SPAdes will treat as -->
-<!--                         --untrusted-contig. if '', seeds will not be used -->
-<!--                         during assembly. See SPAdes docs; default: untrusted -->
-<!--   --no_temps            if --no_temps, mapping files will be removed after all -->
-<!--                         iterations completed; default: False -->
-<!--   --skip_control        if --skip_control, no SPAdes-only de novo assembly -->
-<!--                         will be done; default: False -->
-<!--   -i ITERATIONS, --iterations ITERATIONS -->
-<!--                         if iterations>1, multiple seedings will occur after -->
-<!--                         assembly of seed regions; if setting --target_len, -->
-<!--                         seedings will continue until --iterations are -->
-<!--                         completed or target_len is matched or exceeded; -->
-<!--                         default: 3 -->
-<!--   -v {1,2,3,4,5}, --verbosity {1,2,3,4,5} -->
-<!--                         Logger writes debug to file in output dir; this sets -->
-<!--                         verbosity level sent to stderr. 1 = debug(), 2 = -->
-<!--                         info(), 3 = warning(), 4 = error() and 5 = critical(); -->
-<!--                         default: 2 -->
-<!--   --target_len TARGET_LEN -->
-<!--                         if set, iterations will continue until contigs reach -->
-<!--                         this length, or max iterations (set by --iterations) -->
-<!--                         have been completed. Set as fraction of original seed -->
-<!--                         length by giving a decimal between 0 and 5, or set as -->
-<!--                         an absolute number of base pairs by giving an integer -->
-<!--                         greater than 50. Not used by default -->
-<!--   --DEBUG               if --DEBUG, test data will be used; default: False -->
-<!--   --DEBUG_multi         if --DEBUG_multiprocessing, runs seeding in single -->
-<!--                         loop instead of a multiprocessing pool: False -->
-<!--   --smalt_scoring SMALT_SCORING -->
-<!--                         submit custom smalt scoring via smalt -S scorespec -->
-<!--                         option; default: match=1,subst=-4,gapopen=-4,gapext=-3 -->
-<!--   -h, --help            Displays this help message -->
-<!--   --spades_exe SPADES_EXE -->
-<!--                         Path to SPAdes executable; default: spades.py -->
-<!--   --samtools_exe SAMTOOLS_EXE -->
-<!--                         Path to samtools executable; default: samtools -->
-<!--   --smalt_exe SMALT_EXE -->
-<!--                         Path to smalt executable; default: smalt -->
-<!--   --quast_exe QUAST_EXE -->
-<!--                         Path to quast executable; default: quast.py -->
-
 ```
+
+## Key Parameters
+
+Results can be tuned by changing several of the default parameters.
+
+* `--score_min`: With either SMALT or BWA, this can be used to set the minimum mapping score. If using BWA, the default is not to supply a minimum and to rely on the BWA default.  If submitting a `--score_min` to BWA, double check that it is appropriate.  It appears to be extremely sensitive to read length, and having a too-low threshold for minimum mapping can seriously ruin ones day.  Check out IGB or similar to view your mappings if greater than, say, 5% or the reads are mapping in subsequent iterations.  If using SMALT, the default minimum is chosen using this formula:
+1.0 - (1.0 / (2.0 + *i*)), where *i* is the 0-based iteration.  This makes it progressivly more stringent with each iteration, starting with a minimum score of half the read length. Again, visualize your mappings if anything looks amiss.
+
+* `--flanking_length`: default is 1000.  That seems to be a good compramise between gaining unique sequence and not relying too much on the reference.
+
+* `--kmers` and `--pre_kmers`: adjust these as you otherwise would for a *de novo* assembly.
+
+* `--min_assembly_len`:  for many bacteria, this is about 7000bp, as the rDNA regions for a typical operon of 16S 23S and 5S coding sequences combined usually are about that long.  If you are using non-standard rDNA regions, this should be adjusted to prevent spurious assemblies.
+
+* `--ref_as_contig`:  This can be used to guide how SPAdes treats the long read sequences during the assembly.
+
+* `--iterations`:  Each iteration typically increases the length of the long read by approximatly 5%.
+
+* `--smalt_scoring`: You can adjust the SMALT scoring matrix to fine-tune the mapping stringency
+
+
+
 
 ## Known Bugs
 
@@ -414,10 +323,15 @@ optional arguments:
 
 * Submitting `--smalt_scoring` with vastly different scoring schemes usually causes an error.
 
+## Running Tests
+
+The tests for the module can be found under the `tests` directory. I run them with the unittests module.  The tests assume the installation of all the reccommended tools.
+
 
 ## Installation
 
-The trickiest part of this whole business is propperly installing SMALT.
+The trickiest part of this whole business is properly installing SMALT. BWA is definitly the easiest option.
+
 Installing with pip3.5 will be the easiest way, but prior to release, clone this repository, and run setup.py.
 
 ### Python Requirements:
@@ -429,7 +343,8 @@ Installing with pip3.5 will be the easiest way, but prior to release, clone this
 ### External Requirements
 
 * SPAdes v3.8 or higher
-* SMALT (tested with 0.7.6)
+* SMALT (tested with 0.7.6), or
+* BWA (tested with 0.7.12-r1039)
 ** see notes below
 * SAMTools (must be 1.3.1 or above)
 * QUAST (tested with 4.1)
