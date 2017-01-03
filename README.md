@@ -1,5 +1,6 @@
-# RiboSeed Pipeline
+![RiboSeed: its whats for dinner](./icon/logo_1.pdf)
 
+# RiboSeed Pipeline
 Impatient? See our [Quickstart Guide](./quickstart.md)
 ## Description
 
