@@ -24,6 +24,7 @@ import math
 import re
 import shutil
 import itertools
+import multiprocessing
 
 import numpy as np
 import matplotlib as mpl
@@ -36,6 +37,8 @@ import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
+from Bio.Blast.Applications import NcbiblastnCommandline
+from Bio.Blast.Applications import NcbitblastxCommandline
 from Bio.Seq import Seq
 from collections import defaultdict  # for calculating kmer frequency
 from itertools import product  # for getting all possible kmers
@@ -151,10 +154,9 @@ def get_args():  # pragma: no cover
                           default=None, dest="name",
                           action="store", type=str)
     optional.add_argument("-l", "--flanking_length",
-                          help="length of flanking regions, can be colon-" +
-                          "separated to give separate upstream and " +
-                          "downstream flanking regions; default: %(default)s",
-                          default='1000', type=str, dest="flanking")
+                          help="length of flanking regions, in bp; " +
+                          "default: %(default)s",
+                          default=1000, type=int, dest="flanking")
     optional.add_argument("--msa_kmers",
                           help="calculate kmer similarity based on aligned " +
                           "sequences instead of raw sequences;" +
@@ -211,6 +213,10 @@ def get_args():  # pragma: no cover
     optional.add_argument("--barrnap_exe", dest="barrnap_exe",
                           action="store", default="barrnap",
                           help="Path to barrnap executable; " +
+                          "default: %(default)s")
+    optional.add_argument("--makeblastdb_exe", dest="makeblastdb_exe",
+                          action="store", default="makeblastdb",
+                          help="Path to makeblastdb executable; " +
                           "default: %(default)s")
     optional.add_argument("--kingdom", dest="kingdom",
                           action="store", default="bac",
@@ -404,7 +410,8 @@ def pad_genbank_sequence(cluster, logger=None):
 
 
 def stitch_together_target_regions(cluster,
-                                   flanking="500:500",
+                                   # flanking="500:500",
+                                   flanking=500,
                                    logger=None, circular=False,
                                    revcomp=False):
     """
@@ -415,14 +422,14 @@ def stitch_together_target_regions(cluster,
     """
     if logger is None:
         raise ValueError("Must have logger for this function")
-    try:
-        flank = [int(x) for x in flanking.split(":")]
-        if len(flank) == 1:  # if only one value use for both up and downstream
-            flank.append(flank[0])
-        assert len(flank) == 2
-    except:
-        raise ValueError("Error parsing flanking value; must either be " +
-                         "integer or two colon-seapred integers")
+    # try:
+    #     flank = [int(x) for x in flanking.split(":")]
+    #     if len(flank) == 1:  # if only one value use for both up and downstream
+    #         flank.append(flank[0])
+    #     assert len(flank) == 2
+    # except:
+    #     raise ValueError("Error parsing flanking value; must either be " +
+    #                      "integer or two colon-seapred integers")
 
     #TODO : make this safer. coord list is constructed sequentially but this
     # is a backup. Throws sort of a cryptic error. but as I said, its a backup
@@ -438,7 +445,7 @@ def stitch_together_target_regions(cluster,
         logger.debug(str(i.__dict__))
     #  This works as long as coords are never in reverse order
     cluster.global_start_coord = min([x.start_coord for
-                                      x in cluster.loci_list]) - flank[0]
+                                      x in cluster.loci_list]) - flanking
     #
     # if start is negative, just use 1, the beginning of the sequence
     if cluster.global_start_coord < 1:
@@ -449,7 +456,7 @@ def stitch_together_target_regions(cluster,
                        "--circular.")
         cluster.global_start_coord = 1
     cluster.global_end_coord = max([x.end_coord for
-                                    x in cluster.loci_list]) + flank[1]
+                                    x in cluster.loci_list]) + flanking
     if cluster.global_end_coord > len(cluster.seq_record):
         logger.warning("Caution! Cannot retrieve full flanking region, as " +
                        "the 5' flanking region extends past start of " +
@@ -477,7 +484,7 @@ def stitch_together_target_regions(cluster,
                      ".." + str(cluster.global_end_coord))
     else:  # correct for padding
         seq_id = str(cluster.sequence_id + "_" + str(cluster.global_start_coord -
-                                                  cluster.padding) +
+                                                     cluster.padding) +
                      ".." + str(cluster.global_end_coord - cluster.padding))
 
     # if most are on - strand, return sequence reverse complement
@@ -911,6 +918,8 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
 
 
 def plot_alignment_3d(consensus, tseq, output_prefix):
+    """ under development.  no progress for a while
+    """
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib
     import numpy as np
@@ -1072,21 +1081,170 @@ def main(clusters, genome_records, logger, verbose, no_revcomp,
         extracted_regions.append(cluster_post_stitch.extractedSeqRecord)
     # after each cluster has been extracted, write out results
     logger.debug(extracted_regions)
+    file_list = []
     for index, region in enumerate(extracted_regions):
         logger.debug(index)
         logger.debug(region)
         if prefix_name is None:
             prefix_name = date
-        filename = str("{0}_region_{1}_{2}.fasta".format(
-            prefix_name, index + 1, "riboSnag"))
+        # make dir for blastable partial seeds
+        graded_output = os.path.join(
+            output,
+            "{0}_region_{1}_{2}.fasta".format(
+                prefix_name, index + 1, "graded_flanking_regions"))
+        ####  make this a cmdline option, maybe
+        do_blast = True
+        if do_blast:
+            os.makedirs(graded_output)
+            for i in range(0, flanking + 100, 100):
+                short_rec = SeqRecord(
+                    #  needs the -1 to avoid the  index-by-negative-zero-error
+                    Seq(str(region.seq[i: -i - 1]), IUPAC.IUPACAmbiguousDNA()),
+                    id="{0}_{1}-bp_flanks".format(region.id, flanking - i))
+                blast_fasta_filename = \
+                    "{0}_region_{1}_{2}_{3}-bp_flanks.fasta".format(
+                        prefix_name, index + 1, "riboSnag", flanking - i)
+                with open(os.path.join(graded_output, blast_fasta_filename),
+                          "w") as outfile_blast:
+                    SeqIO.write(short_rec, outfile_blast, "fasta")
+                file_list.append(os.path.join(graded_output, blast_fasta_filename))
+        ####
+        filename = "{0}_region_{1}_{2}.fasta".format(
+            prefix_name, index + 1, "riboSnag")
         with open(os.path.join(output, filename), "w") as outfile:
-            #TODO make discription work when writing seqrecord
-            #TODO move date tag to fasta description?
+            # TODO make discription work when writing seqrecord
+            # TODO move date tag to fasta description?
             # i.description = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
             #                           output_index, args.flanking, args.within))
             SeqIO.write(region, outfile, "fasta")
             outfile.write('\n')
-    return extracted_regions
+    # write out the whole file as a fasta as well...
+    # append in case of multiple records
+    ref_fasta = os.path.join(output, str(prefix_name + "_genome.fasta"))
+    with open(ref_fasta, "a") as outfa:
+        for record in genome_records:
+            SeqIO.write(record, outfa, "fasta")
+            outfa.write('\n')
+    return extracted_regions, ref_fasta, file_list
+
+
+def get_makeblastdb_cmd(input_file, input_type="fasta", dbtype="prot",
+                        title="blastdb", out="blastdb",
+                        makeblastdb_exe='', logger=None):
+    """
+    This runs make blast db with the given parameters
+    requires logging, os, subprocess, shutil
+    """
+    if makeblastdb_exe == '':
+        makeblastdb_exe = shutil.which("makeblastdb")
+        if makeblastdb_exe is None:
+            logger.error("error finding makeblastdb executable")
+            raise ValueError("no executable for makeblastdb found!")
+    makedbcmd = str("{0} -in {1} -input_type {2} -dbtype {3} " +
+                    "-title {4} -out {5}").format(makeblastdb_exe,
+                                                  input_file,
+                                                  input_type,
+                                                  dbtype, title, out)
+    return makedbcmd
+
+
+def make_blast_cmds(filename_list, blast_type, output, blastdb, date, logger=None):
+    """given a file, make a blast cmd, and return path to output csv
+    """
+    blast_cmds = []
+    blast_outputs = []
+    for f in filename_list:
+        if logger:
+            logger.debug("creating blast cmds for %s", f)
+        output_path_tab = "{0}_{1}_results_{2}.tab".format(
+            os.path.join(output, date),
+            blast_type,
+            os.path.basename(f))
+        blast_cline = NcbiblastnCommandline(query=f,
+                                            db=blastdb, evalue=10,
+                                            outfmt=6, out=output_path_tab)
+        if blast_type == 'blastn':
+            add_params = str(
+                " -num_threads 1 -max_target_seqs " +
+                "2000 -task blastn -perc_identity 97")
+        elif blast_type == 'dc_megablast':
+            add_params = str(
+                " -num_threads 1 -max_target_seqs " +
+                "2000 -task dc_megablast -perc_identity 97")
+        elif blast_type == 'tblastx':
+            add_params = str(
+                " -num_threads 1 -max_target_seqs 2000 " +
+                "-query_gencode 11 -db_gencode 11 -perc_identity 97")
+        else:
+            raise ValueError("must use either blastn or tblastx")
+        blast_command = str(str(blast_cline) + add_params)
+        blast_cmds.append(blast_command)
+        blast_outputs.append(output_path_tab)
+    return(blast_cmds, blast_outputs)
+
+
+def merge_outfiles(filelist, outfile_name):
+    """
+    """
+    # only grab .tab files, ie, the blast output
+    filelist = [i for i in filelist if i.split(".")[-1:] == ['tab']]
+    if len(filelist) == 1:
+        print("only one file found! no merging needed")
+        return(filelist)
+    else:
+        print("merging all the blast results to %s" % outfile_name)
+        nfiles = len(filelist)
+        fout = open(outfile_name, "a")
+        # first file:
+        for line in open(filelist[0]):
+            fout.write(line)
+        #  now the rest:
+        for num in range(1, nfiles):
+            f = open(filelist[num])
+            for line in f:
+                fout.write(line)
+            f.close()  # not really needed
+        fout.close()
+    return(outfile_name)
+
+
+def run_blast(query_list, ref, name, output, mbdb_exe='', logger=None):
+    date = str(datetime.datetime.now().strftime('%Y%m%d'))
+    logger.info("constructing makeblastdb command")
+    mbdb_cmd = get_makeblastdb_cmd(
+        input_file=ref, input_type="fasta", dbtype="nucl",
+        title=name, out=name,
+        makeblastdb_exe=mbdb_exe, logger=logger)
+    logger.debug(mbdb_cmd)
+    logger.info("creating blast cmds")
+    blast_outdir = os.path.join(output, "BLAST_results")
+    os.makedirs(blast_outdir)
+    blast_cmds, paths_to_outputs = make_blast_cmds(
+        filename_list=query_list, blast_type="blastn",
+        output=blast_outdir, blastdb=name, date=date, logger=logger)
+
+    # pool = multiprocessing.Pool(processes=args.cores)
+    pool = multiprocessing.Pool()
+    logger.debug("Running the following commands in parallel " +
+                 "(this could take a while):")
+    logger.debug("\n" + "\n".join([x for x in blast_cmds]))
+    results = [
+        pool.apply_async(subprocess.run,
+                         (cmd,),
+                         {"shell": sys.platform != "win32",
+                          "stdout": subprocess.PIPE,
+                          "stderr": subprocess.PIPE,
+                          "check": True})
+        for cmd in blast_cmds]
+    pool.close()
+    pool.join()
+    reslist = []
+    reslist.append([r.get() for r in results])
+    logger.debug("merging resulting blast files")
+    merged_tsv = merge_outfiles(
+        paths_to_outputs,
+        os.path.join(blast_outdir,
+                     str(date + "_results_merged.csv")))
 
 
 if __name__ == "__main__":
@@ -1147,16 +1305,19 @@ if __name__ == "__main__":
     regions = []
     logger.info("clusters:")
     logger.info(clusters)
-    regions = main(clusters=clusters,
-                   genome_records=genome_records,
-                   logger=logger,
-                   verbose=False,
-                   flanking=args.flanking,
-                   output=output_root,
-                   circular=args.circular,
-                   prefix_name=args.name,
-                   no_revcomp=args.no_revcomp,
-                   )
+    if args.name is None:  # if none given, use date for name (for out files)
+        args.name = date
+    regions, ref_fasta, region_files = main(
+        clusters=clusters,
+        genome_records=genome_records,
+        logger=logger,
+        verbose=False,
+        flanking=args.flanking,
+        output=output_root,
+        circular=args.circular,
+        prefix_name=args.name,
+        no_revcomp=args.no_revcomp,
+    )
 
     # make MSA and calculate entropy
     if not args.skip_check:
@@ -1165,7 +1326,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
         unaligned_seqs = combine_contigs(contigs_dir=output_root,
-                                         pattern="*",
+                                         pattern="*riboSnag*",
                                          contigs_name="riboSnag_unaligned",
                                          ext=".fasta", verbose=False,
                                          logger=logger)
@@ -1230,3 +1391,6 @@ if __name__ == "__main__":
         #     output_prefix=os.path.join(output_root, "entropy_plot"),
         #     consensus=consensus_cov,
         #     tseq=tseq)
+    run_blast(query_list=region_files, ref=ref_fasta,
+              mbdb_exe=args.makeblastdb_exe, name=args.name,
+              output=args.output, logger=logger)
