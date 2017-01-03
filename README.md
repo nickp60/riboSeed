@@ -302,17 +302,17 @@ Results can be tuned by changing several of the default parameters.
 * `--score_min`: With either SMALT or BWA, this can be used to set the minimum mapping score. If using BWA, the default is not to supply a minimum and to rely on the BWA default.  If submitting a `--score_min` to BWA, double check that it is appropriate.  It appears to be extremely sensitive to read length, and having a too-low threshold for minimum mapping can seriously ruin ones day.  Check out IGB or similar to view your mappings if greater than, say, 5% or the reads are mapping in subsequent iterations.  If using SMALT, the default minimum is chosen using this formula:
 1.0 - (1.0 / (2.0 + *i*)), where *i* is the 0-based iteration.  This makes it progressivly more stringent with each iteration, starting with a minimum score of half the read length. Again, visualize your mappings if anything looks amiss.
 
-* `--flanking_length`: default is 1000.  That seems to be a good compramise between gaining unique sequence and not relying too much on the reference.
+* `--flanking_length`: Default is 1000.  That seems to be a good compramise between gaining unique sequence and not relying too much on the reference.
 
-* `--kmers` and `--pre_kmers`: adjust these as you otherwise would for a *de novo* assembly.
+* `--kmers` and `--pre_kmers`: Adjust these as you otherwise would for a *de novo* assembly.
 
-* `--min_assembly_len`:  for many bacteria, this is about 7000bp, as the rDNA regions for a typical operon of 16S 23S and 5S coding sequences combined usually are about that long.  If you are using non-standard rDNA regions, this should be adjusted to prevent spurious assemblies.
+* `--min_assembly_len`:  For many bacteria, this is about 7000bp, as the rDNA regions for a typical operon of 16S 23S and 5S coding sequences combined usually are about that long.  If you are using non-standard rDNA regions, this should be adjusted to prevent spurious assemblies.
 
 * `--ref_as_contig`:  This can be used to guide how SPAdes treats the long read sequences during the assembly.
 
 * `--iterations`:  Each iteration typically increases the length of the long read by approximatly 5%.
 
-* `--smalt_scoring`: You can adjust the SMALT scoring matrix to fine-tune the mapping stringency
+* `--smalt_scoring`: You can adjust the SMALT scoring matrix to fine-tune the mapping stringency.
 
 
 
@@ -394,7 +394,8 @@ https://sourceforge.net/projects/smalt/files/
 
 
 ## Suggested Running
-There are a lot of commandline options for these, so it can help to run concurrently as  script. The included `example_batch.sh` script is run as follows:
+### `example_batch.sh`
+There are a lot of commandline options for riboSeed, so it can help to run the pipeline as script. The included `example_batch.sh` script is run as follows:
 
 
 ```
@@ -403,7 +404,11 @@ All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iter
 
 example:
 
-./example_batch.sh ./sample_data/NC_011751.1.gb ./sample_data/NC_011751.1.fasta ./sample_data/toy_set/toy_reads1.fq  ./sample_data/toy_set/toy_reads2.fq ./results_dir/ 3 1000 4
+./example_batch.sh ./sample_data/NC_011751.1.gb ./sample_data/toy_set/toy_reads1.fq  ./sample_data/toy_set/toy_reads2.fq ./results_dir/ 3 1000 4
 
 ```
 We recommend copying this file to your project directory, and customizing it as needed.
+
+
+### `sge_batch.sh`
+If you have access to a hpc, this script makes it easier to submit riboSeed jobs.  Just set up a python virtualenv, edit the 7 fields in this script, make any other modifications needed to fit your job, and submit with qsub.

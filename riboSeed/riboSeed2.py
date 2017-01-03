@@ -1145,6 +1145,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     2 = exclude contigs, and keep from iterating
     3 = exclude contigs, error ocurred
     """
+    DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR = 3
     prelog = "{0}-{1}-iter-{2}:".format("SEED_cluster", clu.index,
                                         mapping_ob.iteration)
     assert logger is not None, "Must Use Logging"
@@ -1201,6 +1202,15 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     else:
         logger.info("%s The new contig differs from the reference " +
                     "seed by %i bases", prelog, contig_length_diff)
+    # if contig is really long, get rid of it
+    if contig_len > (ref_len * DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR):
+        logger.warning(
+            "Contig length is exceedingly long!  We set the threshold of 3x " +
+            "the seed length as the maximum allowed long-read length.  This " +
+            "is often indicative of bad mapping parameters, so the " +
+            "long-read will be discarded")
+        return 2
+
     # This cuts failing assemblies short
     if min_assembly_len > contig_len:
         logger.warning("The first iteration's assembly's best contig " +
@@ -1328,6 +1338,67 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     return mainDict
 
 
+def get_samtools_depths(samtools_exe, bam, chrom, start, end, prep=False, region=None, logger=None):
+    """ Use samtools depth and awk to get the average coverage depth of a
+    particular region
+    """
+    prep_cmds = []
+    # cmd = "samtools depth ./iter_1_s_mapping.bam -r scannedScaffolds:5000-6000"
+    sorted_bam = os.path.join(
+        os.path.dirname(bam),
+        str(os.path.splitext(os.path.basename(bam))[0] + "_sorted.bam"))
+    # sort that bam, just in case
+    prep_cmds.append(str("{0} sort {1} > {2}").format(
+        samtools_exe, bam, sorted_bam))
+    # index that bam!
+    prep_cmds.append(str("{0} index {1}").format(
+        samtools_exe, sorted_bam))
+    if prep:
+        bamfile = sorted_bam
+    else:
+        bamfile = bam
+    # extract the depth stats for a region
+    if region is None:
+        depth_cmd = str("{0} depth -r {2}:{3}-{4} {1}").format(
+            samtools_exe, bamfile, chrom, start, end)
+    else:
+        depth_cmd = str("{0} depth -r {2} {1}").format(
+            samtools_exe, bamfile, region)
+    # if not already sorted and indexed
+    if prep:
+        for i in prep_cmds:  # index and sort
+            subprocess.run(i,
+                           shell=sys.platform != "win32",
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           check=True)
+    else:
+        pass
+    # get the results from the depth call
+    result = subprocess.run(depth_cmd,
+                            shell=sys.platform != "win32",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            check=False)
+    try:
+        splits = result.stdout.decode("utf-8").split("\n")[0].split("\t")
+        if len(splits) != 3:
+            logger.error("error splitting the results from samtools depth!")
+        else:
+            pass
+    except Exception as e:
+        raise e
+    covs = [int(x.split("\t")[2]) for
+            x in result.stdout.decode("utf-8").split("\n")[0: -1]]
+    if len(covs) == 0:
+        logger.error("error parsing samtools depth results! Here are the results:")
+        logger.error(result)
+        raise ValueError
+
+    average = float(sum(covs)) / float(len(covs))
+    return [covs, average]
+
+
 def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
                          logger=None):
     """use withing PArtition mapping funtion;
@@ -1395,6 +1466,10 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
                      cluster.global_end_coord)
     #  if not the first time though, fuhgetaboudit.
     #  Ie, the coords have been reassigned by the make_faux_genome function
+    #  WE WONT USE A FLANKING REGION BECAUSE NO FLANKING READS ARE AVAILIBLE!
+    #  meaning, the overhang is gained from the bits that overhand the end of
+    #  the mapping. Because both SMALT and BWA use soft-clipping by defualt, we
+    #  recover and use the clipped regions
     else:
         logger.info("using coords from previous iterations 'genome':")
     logger.info("Coordinates for %s cluster %i:  [%i - %i]",
@@ -1416,7 +1491,8 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
 
 
 def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe,
-                               flank, logger=None):
+                               # flank,
+                               logger=None):
     """ returns cmds and region
     """
     # Prepare for partitioning
@@ -1502,7 +1578,7 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
     for cluster in cluster_list:
         mapped_partition_cmds, reg_to_extract = make_mapped_partition_cmds(
             cluster=cluster, mapping_ob=cluster.mappings[-1],
-            seedGenome=seedGenome, samtools_exe=samtools_exe, flank=flank,
+            seedGenome=seedGenome, samtools_exe=samtools_exe,  # flank=flank,
             logger=logger)
         for cmd in mapped_partition_cmds:
             logger.debug(cmd)
@@ -1512,6 +1588,38 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
                            stderr=subprocess.PIPE,
                            check=True)
         mapped_regions.append(reg_to_extract)
+        start_depths, start_ave_depth = get_samtools_depths(
+            bam=seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
+            chrom=cluster.sequence_id,
+            start=cluster.global_start_coord,
+            end=cluster.global_start_coord + flank[0],
+            region=None,
+            prep=False,
+            samtools_exe=samtools_exe,
+            logger=logger)
+        end_depths, end_ave_depth = get_samtools_depths(
+            bam=seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
+            chrom=cluster.sequence_id,
+            start=cluster.global_end_coord - flank[1],
+            end=cluster.global_end_coord,
+            region=None,
+            prep=False,
+            samtools_exe=samtools_exe,
+            logger=logger)
+        logger.info("Coverage for cluster %i:\n\t5' %ibp-region: %f4 \n\t3' %ibp-region: %f4",
+                    cluster.index,
+                    flank[0],
+                    start_ave_depth,
+                    flank[1],
+                    end_ave_depth)
+    # for region in mapped_regions:
+    #     depths, ave_depth = get_samtools_depths(
+    #         bam=seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
+    #         region=region,
+    #         prep=False,
+    #         samtools_exe=samtools_exe,
+    #         logger=logger)
+
     logger.info("mapped regions for iteration %i:\n %s",
                 seedGenome.this_iteration,
                 "\n".join([x for x in mapped_regions]))

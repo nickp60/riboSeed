@@ -1,9 +1,8 @@
-# RiboSeed Pipeline - quickstart
-Too Impatient for the quickstart? See our [Especially Quickstart Guide](./especiallyquickstart.md)
+# RiboSeed Pipeline - especially quickstart
+Sheesh, too impatient for the quickstart?
 
 ## Overview
-In this guide, I will walk you through the toy data included with this repo.
-
+No time, on to the examples!  *Schnell!*
 ## Minimal example
 The pseudogenome was constructed from the 7 rDNAs separated by several kb of flanking DNA.  If can be found under ```./sample_data/pseudo/combined_colapsed.fa```
 Annotate rDNA regions with scanScaffolds.sh
