@@ -1,4 +1,4 @@
-![riboSeed: its whats for dinner](https://raw.githubusercontent.com/nickp60/riboSeed/master/icon/logo_1.png)
+![riboSeed: its whats for dinner](https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.png)
 
 # RiboSeed Pipeline
 Impatient? See our [Quickstart Guide](./quickstart.md)
