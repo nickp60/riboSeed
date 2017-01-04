@@ -342,6 +342,18 @@ Installing with pip3.5 will be the easiest way, but prior to release, clone this
 * pyutilsrnw
 
 ### External Requirements
+riboSelect
+
+* R (don't ask...)
+
+riboSnag
+
+* PRANK or Mafft
+* BLAST+ suite
+* Barrnap (must be 0.7 or above)
+** note that barrnap has certain Perl requirements that may not be included on your machine.  Ensure barrnap runs fine before trying riboSnag.py
+
+riboSeed2
 
 * SPAdes v3.8 or higher
 * SMALT (tested with 0.7.6), or
@@ -349,9 +361,7 @@ Installing with pip3.5 will be the easiest way, but prior to release, clone this
 ** see notes below
 * SAMTools (must be 1.3.1 or above)
 * QUAST (tested with 4.1)
-* R (don't ask...)
-* Barrnap (must be 0.7 or above)
-** note that barrnap has certain Perl requirements that may not be included on your machine.  Ensure barrnap runs fine before trying riboSnag.py
+
 ## Note on installation of SMALT
 
 Must have bambamc installed! If you get an error as follows,
