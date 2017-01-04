@@ -1,0 +1,24 @@
+language: python
+python:
+- '3.5'
+before install:
+- sudo apt-get -qq update
+- sudo apt-get install -y samtools
+- echo "$PATH"
+- echo "which samtools"
+install:
+- pip3.5 install coveralls
+- pip3.5 install -r requirements.txt
+script:
+- "./install_samtools.sh"
+- "./debug_travis.sh"
+- python3.5 setup.py install
+- coverage run tests/test_riboSelect.py
+after_success: coveralls
+deploy:
+  provider: pypi
+ #server: https://mypackageindex.com/index
+  user: NickWaters
+  password: itsablunderfullife
+  on:
+    tags: true
