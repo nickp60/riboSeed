@@ -1187,7 +1187,7 @@ def merge_outfiles(filelist, outfile_name):
     """
     """
     # only grab .tab files, ie, the blast output
-    filelist = [i for i in filelist if i.split(".")[-1:] == ['tab']]
+    filelist = [i for i in filelist if os.path.splitext(i) == ['tab']]
     if len(filelist) == 1:
         print("only one file found! no merging needed")
         return(filelist)
@@ -1245,6 +1245,8 @@ def run_blast(query_list, ref, name, output, mbdb_exe='', logger=None):
         paths_to_outputs,
         os.path.join(blast_outdir,
                      str(date + "_results_merged.csv")))
+    logger.info("Merged BLAST results can be found here for perusal or plotting:")
+    logger.info(merged_tsv)
 
 
 if __name__ == "__main__":
