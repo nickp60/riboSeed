@@ -5,7 +5,6 @@ before install:
 - echo "$PATH"
 install:
 - pip3.5 install coveralls
-- pip install nosetests
 - pip3.5 install -r requirements.txt
 script:
 - python3.5 setup.py install
