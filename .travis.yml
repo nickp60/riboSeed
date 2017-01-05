@@ -6,7 +6,7 @@ before install:
 install:
 - pip3.5 install coveralls
 - pip3.5 install -r requirements.txt
-- "./install_samtools.sh"
+- "./install_tools.sh"
 - "./debug_travis.sh"
 script:
 - python3.5 setup.py install
