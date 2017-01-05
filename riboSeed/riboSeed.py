@@ -415,6 +415,7 @@ class Exes(object):
         self.smalt = smalt
         self.bwa = bwa
         self.python2_7 = python2_7
+        self.check = check
         self.check_mands()
         self.set_mapper()
         self.check_expand_exes()

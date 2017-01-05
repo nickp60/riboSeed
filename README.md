@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/nickp60/riboSeed.svg?branch=master)](https://travis-ci.org/nickp60/riboSeed)
 ![riboSeed: its whats for dinner](https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.png)
 
 # RiboSeed Pipeline
