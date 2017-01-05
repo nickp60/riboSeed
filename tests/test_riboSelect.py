@@ -4,7 +4,6 @@ Created on Tue Aug 30 08:57:31 2016
 @author: nicholas
 
 """
-__version__ = "0.0.2"
 import sys
 import logging
 import os
@@ -37,6 +36,8 @@ class riboSelect_TestCase(unittest.TestCase):
         self.test_loci_file = os.path.join(os.path.dirname(__file__),
                                            str("references" + os.path.sep +
                                                'grouped_loci_reference.txt'))
+        if not os.path.exists(self.testdirname):
+            os.makedirs(self.testdirname, exist_ok=True)
 
     def test_locus_tag_dict(self):
         """test different scenarios of trying to get features
@@ -66,8 +67,8 @@ class riboSelect_TestCase(unittest.TestCase):
                                         specific_features="16S",
                                         verbose=False,
                                         logger=logger)
-        for k, v in filtered.items():
-            print(k, v)
+        # for k, v in filtered.items():
+        #     print(k, v)
         self.assertEqual(len(filtered), 7)
         # check length of 1st item (ie, occurances) is same
         self.assertEqual(len(nfeat['NC_011751.1']),
