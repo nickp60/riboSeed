@@ -10,7 +10,7 @@ install:
 script:
 - python3.5 setup.py install
 - coverage run tests/test_riboSelect.py
-- nosetests --with-coverage tests/*
+- nosetests --with-coverage tests/
 after_success: coveralls
 deploy:
   provider: pypi

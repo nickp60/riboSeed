@@ -293,8 +293,7 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
                                    locus_tag=loc,
                                    sequence_id=seqname))
         # make and append LociCluster objects
-        clusters.append(LociCluster(  #index=cluster_index,
-                                    mappings=[],
+        clusters.append(LociCluster(mappings=[],
                                     output_root=output_root,
                                     sequence_id=seqname,
                                     loci_list=loci_list,
