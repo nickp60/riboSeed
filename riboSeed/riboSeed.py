@@ -423,10 +423,10 @@ class Exes(object):
     def check_mands(self):
         """ checks that all mandatory arguments are not none
         """
-            mandatory = [self.spades, self.quast, self.method,
-                         self.samtools, self.python2_7]
-            assert None not in mandatory, \
-                "must instantiate with samtools, spades, method, python2_7, quast!"
+        mandatory = [self.spades, self.quast, self.method,
+                     self.samtools, self.python2_7]
+        assert None not in mandatory, \
+            "must instantiate with samtools, spades, method, python2_7, quast!"
 
     def set_mapper(self):
         """Exes.mapper attribute is set here to avoid further
