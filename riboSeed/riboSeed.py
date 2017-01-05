@@ -37,7 +37,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, \
     keep_only_first_contig, get_fasta_lengths, \
     file_len, check_version_from_cmd
 
-from riboSnag import parse_clustered_loci_file, \
+from riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
     extract_coords_from_locus, get_genbank_rec_from_multigb
 
 # GLOBALS
@@ -153,6 +153,37 @@ class SeedGenome(object):
                 sequences = SeqIO.parse(fh, "genbank")
                 count = SeqIO.write(sequences, outfh, "fasta")
         assert count == len(self.seq_records), "Error parsing genbank file!"
+
+    def pad_genbank(self, pad=5000, circular=False, logger=None):
+        """ if the genome is circular (which it is, by default) adjust the
+        cluster coordinates and rewrite the reference fasta as padded.
+        """
+        if circular:
+            for clu in self.loci_clusters:
+                clu.padding = pad
+                clu = pad_genbank_sequence(cluster=clu, logger=logger)
+            logger.info("rewriting fasta-formated genome to reflect")
+            new_fasta_ref = os.path.join(
+                os.path.basename(self.ref_fasta),
+                str(os.path.splitext(self.ref_fasta)[0] +
+                    "_padded.fasta"))
+            with open(self.genbank_path, 'r') as fh:
+                with open(new_fasta_ref, 'w') as outfh:
+                    recs = SeqIO.parse(fh, "genbank")
+                    count = 0
+                    for rec in recs:
+                        new_rec = SeqRecord(
+                            id=rec.id,
+                            seq=Seq(str(rec.seq[-pad: ] + rec.seq +
+                                    rec.seq[0: pad]),
+                                    IUPAC.IUPACAmbiguousDNA()))
+                        SeqIO.write(new_rec, outfh, "fasta")
+                        count = count + 1
+                    assert count == len(self.seq_records), \
+                        "Error parsing genbank file!"
+            self.ref_fasta = new_fasta_ref
+        else:
+            pass
 
     def attach_genome_seqrecords(self):
         """attach a list of seqrecords.  In the future, this should be
@@ -501,10 +532,9 @@ def get_args():  # pragma: no cover
                           "default: %(default)s",
                           default="riboSeed", type=str)
     optional.add_argument("-l", "--flanking_length",
-                          help="length of flanking regions, can be colon-" +
-                          "separated to give separate upstream and " +
-                          "downstream flanking regions; default: %(default)s",
-                          default='1000', type=str, dest="flanking")
+                          help="length of flanking regions, in bp; " +
+                          "default: %(default)s",
+                          default=1000, type=int, dest="flanking")
     optional.add_argument("-m", "--method_for_map", dest='method',
                           action="store", choices=["smalt", "bwa"],
                           help="available mappers: smalt and bwa; " +
@@ -1341,7 +1371,8 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
     return mainDict
 
 
-def get_samtools_depths(samtools_exe, bam, chrom, start, end, prep=False, region=None, logger=None):
+def get_samtools_depths(samtools_exe, bam, chrom, start, end,
+                        prep=False, region=None, logger=None):
     """ Use samtools depth and awk to get the average coverage depth of a
     particular region
     """
@@ -1402,7 +1433,7 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end, prep=False, region
     return [covs, average]
 
 
-def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
+def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank,
                          logger=None):
     """use withing PArtition mapping funtion;
     makes LociMapping, get region coords, write extracted region,
@@ -1444,7 +1475,7 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
                          i.product)
         #  This works as long as coords are never in reverse order
         cluster.global_start_coord = min([x.start_coord for
-                                          x in cluster.loci_list]) - flank[0]
+                                          x in cluster.loci_list]) - flank
         # if start is negative, just use 1, the beginning of the sequence
         if cluster.global_start_coord < 1:
             logger.warning(
@@ -1455,7 +1486,8 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
                 "--linear.")
             cluster.global_start_coord = 1
         cluster.global_end_coord = max([x.end_coord for
-                                        x in cluster.loci_list]) + flank[1]
+                                        x in cluster.loci_list]) + flank
+        logger.warning("rec len: %i", len(cluster.seq_record.seq))
         if cluster.global_end_coord > len(cluster.seq_record):
             logger.warning(
                 "Caution! Cannot retrieve full flanking region, as " +
@@ -1494,7 +1526,6 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank=[0, 0],
 
 
 def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe,
-                               # flank,
                                logger=None):
     """ returns cmds and region
     """
@@ -1504,10 +1535,12 @@ def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe,
     sort_cmd = str("{0} sort {1} > {2}").format(
         samtools_exe,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_bam,
-        seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam)
+        seedGenome.iter_mapping_list[
+            seedGenome.this_iteration].sorted_mapped_bam)
     # index it
     index_cmd = str("{0} index {1}").format(
-        samtools_exe, seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam)
+        samtools_exe, seedGenome.iter_mapping_list[
+            seedGenome.this_iteration].sorted_mapped_bam)
     partition_cmds.extend([sort_cmd, index_cmd])
     # define the region to extract
     region_to_extract = "{0}:{1}-{2}".format(
@@ -1516,7 +1549,8 @@ def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe,
     # make a subser from of reads in that region
     view_cmd = str("{0} view -o {1} {2} {3}").format(
         samtools_exe, mapping_ob.mapped_bam,
-        seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
+        seedGenome.iter_mapping_list[
+            seedGenome.this_iteration].sorted_mapped_bam,
         region_to_extract)
     partition_cmds.append(view_cmd)
     return (partition_cmds, region_to_extract)
@@ -1549,9 +1583,11 @@ def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
         unmapped_cmds.append(
             "{0} view {1} {2} | cut -f1 >> {3}".format(
                 samtools_exe,
-                seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
+                seedGenome.iter_mapping_list[
+                    seedGenome.this_iteration].sorted_mapped_bam,
                 region,
-                seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt))
+                seedGenome.iter_mapping_list[
+                    seedGenome.this_iteration].mapped_ids_txt))
     uniquify_list = "sort -u {0}".format(
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt)
     unmapped_cmds.append(uniquify_list)
@@ -1564,7 +1600,7 @@ def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
     return unmapped_cmds
 
 
-def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
+def partition_mapping(seedGenome, samtools_exe, flank,
                       cluster_list=None, logger=None):
     """ Extract interesting stuff based on coords, not a binary
     mapped/not_mapped condition
@@ -1592,18 +1628,20 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
                            check=True)
         mapped_regions.append(reg_to_extract)
         start_depths, start_ave_depth = get_samtools_depths(
-            bam=seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
+            bam=seedGenome.iter_mapping_list[
+                seedGenome.this_iteration].sorted_mapped_bam,
             chrom=cluster.sequence_id,
             start=cluster.global_start_coord,
-            end=cluster.global_start_coord + flank[0],
+            end=cluster.global_start_coord + flank,
             region=None,
             prep=False,
             samtools_exe=samtools_exe,
             logger=logger)
         end_depths, end_ave_depth = get_samtools_depths(
-            bam=seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
+            bam=seedGenome.iter_mapping_list[
+                seedGenome.this_iteration].sorted_mapped_bam,
             chrom=cluster.sequence_id,
-            start=cluster.global_end_coord - flank[1],
+            start=cluster.global_end_coord - flank,
             end=cluster.global_end_coord,
             region=None,
             prep=False,
@@ -1611,9 +1649,9 @@ def partition_mapping(seedGenome, samtools_exe, flank=[0, 0],
             logger=logger)
         logger.info("Coverage for cluster %i:\n\t5' %ibp-region: %f4 \n\t3' %ibp-region: %f4",
                     cluster.index,
-                    flank[0],
+                    flank,
                     start_ave_depth,
-                    flank[1],
+                    flank,
                     end_ave_depth)
     # for region in mapped_regions:
     #     depths, ave_depth = get_samtools_depths(
@@ -1663,7 +1701,7 @@ def add_coords_to_clusters(seedGenome, logger=None):
         logger.debug(str(cluster.__dict__))
 
 
-def get_final_assemblies_cmds(seedGenome, exes,  # spades_exe, quast_exe, python2_7_exe,
+def get_final_assemblies_cmds(seedGenome, exes,
                               skip_control=True,
                               kmers="21,33,55,77,99", logger=None):
     """make cmds for runnning of SPAdes and QUAST final assembly and analysis.
@@ -1828,14 +1866,14 @@ if __name__ == "__main__":  # pragma: no cover
     # I have no moral compass
     if args.ref_as_contig == 'None':
         args.ref_as_contig = None
-    try:
-        flank = [int(x) for x in args.flanking.split(":")]
-        if len(flank) == 1:  # if only one value use for both up and downstream
-            flank.append(flank[0])
-        assert len(flank) == 2
-    except:
-        raise ValueError("Error parsing flanking value; must either be " +
-                         "integer or two colon-seapred integers")
+    # try:
+    #     flank = [int(x) for x in args.flanking.split(":")]
+    #     if len(flank) == 1:  # if only one value use for both up and downstream
+    #         flank.append(flank[0])
+    #     assert len(flank) == 2
+    # except:
+    #     raise ValueError("Error parsing flanking value; must either be " +
+    #                      "integer or two colon-seapred integers")
 
     if args.method not in ["smalt", 'bwa']:
         logger.error("'smalt' and 'bwa' only methods currently supported")
@@ -1948,7 +1986,20 @@ if __name__ == "__main__":  # pragma: no cover
         logger.error(e)
         logger.error(last_exception())
         sys.exit(1)
+    try:
+        logger.info("padding genbank")
+        seedGenome.pad_genbank(pad=args.flanking,
+                               circular=args.linear is False, logger=logger)
+    except Exception as e:
+        logger.error(e)
+        logger.error(last_exception())
+        sys.exit(1)
+
     # make first iteration look like future iterations
+    # if not args.linear:
+    #     with open(seedGenome.ref_fasta,'r'):
+    #         with open(output_root, "padded_genome.fasta", "w"):
+    #             SeqIO
     seedGenome.next_reference_path = seedGenome.ref_fasta
     #
     for cluster in seedGenome.loci_clusters:
@@ -2068,7 +2119,7 @@ if __name__ == "__main__":  # pragma: no cover
             partition_mapping(seedGenome=seedGenome,
                               logger=logger,
                               samtools_exe=sys_exes.samtools,
-                              flank=flank,
+                              flank=args.flanking,
                               cluster_list=clusters_to_process)
         except Exception as e:
             logger.error("Error while partitioning reads from iteration %i",
