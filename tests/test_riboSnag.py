@@ -73,6 +73,8 @@ class riboSnag_TestCase(unittest.TestCase):
         self.mafft_exe = "mafft"
         self.maxDiff = 1000
         self.to_be_removed = []
+        if not os.path.exists(self.testdirname):
+            os.makedirs(self.testdirname, exist_ok=True)
 
     def test_parse_loci(self):
         """this checks the parsing of riboSelect ouput
@@ -275,9 +277,9 @@ class riboSnag_TestCase(unittest.TestCase):
     def test_prepare_msa_cmds(self):
         """ test cases of prank and mafft command creation
         """
-        for dir in [self.testdirname, self.test_snag_dir]:
+        for dr in [self.test_snag_dir]:
             try:
-                os.makedirs(self.testdirname)
+                os.makedirs(dr, exist_ok=True)
             except:
                 print("\nusing existing {0} directory".format(dir))
                 pass
@@ -310,6 +312,11 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(idealmafft, mafft_cmd_1)
         self.to_be_removed.append(unaligned_seqs)
 
+    @unittest.skipIf(shutil.which("mafft") is None or
+                     shutil.which("prank") is None or
+                     , "maft or prank  executables not found, skipping."+
+                     "If this isnt an error from travis deployment, you probably "+
+                     "should install it")
     def test_make_msa(self):
         """
         """
@@ -345,6 +352,10 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(idealmafft, msa_cmd1)
         self.to_be_removed.append(unaligned_seqs)
 
+    @unittest.skipIf(shutil.which("barrnap") is None,
+                     "barnnap executable not found, skipping."+
+                     "If this isnt an error from travis deployment, you probably "+
+                     "should install it")
     def test_msa_consensus(self):
         """ calculate entropy, annotate consenesus,
         and ensure barrnap is wired up properly
@@ -373,6 +384,10 @@ class riboSnag_TestCase(unittest.TestCase):
         # check name
         self.assertEqual(named_coords[0][0], '5S ribosomal RNA')
 
+    @unittest.skipIf(shutil.which("barrnap") is None,
+                     "barnnap executable not found, skipping."+
+                     "If this isnt an error from travis deployment, you probably "+
+                     "should install it")
     def test_scatter_plotting(self):
         """
         """

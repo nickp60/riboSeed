@@ -4,7 +4,6 @@
 """
 Minor Version Revisions:
  - spelling, pep8 compiance, renamed run_final_assemblies to get_final_assemblies_cmds
-starting at version 0.0.940
 Created on Sun Jul 24 19:33:37 2016
 
 See README.md for more info and usage
@@ -406,7 +405,7 @@ class Exes(object):
 
     """
     def __init__(self, samtools, method, spades, quast, python2_7,
-                 smalt, bwa, mapper=None):
+                 smalt, bwa, check=True, mapper=None):
         # int: current iteration (0 is initial)
         self.samtools = samtools
         self.method = method
@@ -423,10 +422,13 @@ class Exes(object):
     def check_mands(self):
         """ checks that all mandatory arguments are not none
         """
-        mandatory = [self.spades, self.quast, self.method,
-                     self.samtools, self.python2_7]
-        assert None not in mandatory, \
-            "must instantiate with samtools, spades, method, python2_7, quast!"
+        if check:
+            mandatory = [self.spades, self.quast, self.method,
+                         self.samtools, self.python2_7]
+            assert None not in mandatory, \
+                "must instantiate with samtools, spades, method, python2_7, quast!"
+        else:
+            pass
 
     def set_mapper(self):
         """Exes.mapper attribute is set here to avoid further

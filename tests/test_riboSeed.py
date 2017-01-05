@@ -51,7 +51,7 @@ logger = logging
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among other things wont run if tried " +
                  " with less than python 3.5")
-class riboSeed2TestCase(unittest.TestCase):
+class riboSeedTestCase(unittest.TestCase):
     """ tests for riboSeed.py
     """
     def setUp(self):
@@ -97,14 +97,9 @@ class riboSeed2TestCase(unittest.TestCase):
         self.cores = 2
         self.maxDiff = 2000
         self.to_be_removed = []
-        self.make_test_dir()
-        self.copy_fasta()
-
-    def make_test_dir(self):
-        """ creates temp dir for all the files created in these tests
-        """
         if not os.path.exists(self.test_dir):
             os.makedirs(self.test_dir, exist_ok=True)
+        self.copy_fasta()
 
     def copy_fasta(self):
         """ make a disposable copy
@@ -175,7 +170,13 @@ class riboSeed2TestCase(unittest.TestCase):
                  bwa=self.bwa_exe,
                  method="bwa")
 
-    @unittest.skipIf(shutil.which("samtools") is None)
+    @unittest.skipIf(shutil.which("bwa") is None or
+                     shutil.which("quast") is None or
+                     shutil.which("smalt") is None or
+                     shutil.which("python2.7") is None or
+                     shutil.which("spades.py") is None, "samtools executable not found, skipping."+
+                     "If this isnt an error from travis deployment, you probably "+
+                     "should install it")
     def test_Exes_(self):
         """check with  executable"""
         test_exes = Exes(samtools=self.samtools_exe,
@@ -303,7 +304,9 @@ class riboSeed2TestCase(unittest.TestCase):
         for index, cmd in enumerate(check_cmds):
             self.assertEqual(cmd, check_cmds_ref[index])
 
-    @unittest.skipIf(shutil.which("smalt") is None)
+    @unittest.skipIf(shutil.which("smalt") is None, "smat executable not found, skipping."+
+                     "If this isnt an error from travis deployment, you probably "+
+                     "should install it")
     def test_estimate_distances_smalt(self):
         """ test estimate insert disances
         """
@@ -467,7 +470,9 @@ class riboSeed2TestCase(unittest.TestCase):
         self.assertTrue(ngs_ob.readR is None)
         self.to_be_removed.append(empty_file)
 
-    @unittest.skipIf(shutil.which("smalt") is None)
+    @unittest.skipIf(shutil.which("smalt") is None, "smat executable not found, skipping."+
+                     "If this isnt an error from travis deployment, you probably "+
+                     "should install it")
     def test_map_with_smalt(self):
         # becasue multiple mapping are assingmed randomly (pseudorandomly?),
         # this accepts a range of expected results
@@ -612,7 +617,9 @@ class riboSeed2TestCase(unittest.TestCase):
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
         self.assertFalse(gen.loci_clusters[0].keep_contigs)
 
-    @unittest.skipIf(shutil.which("bwa") is None)
+    @unittest.skipIf(shutil.which("bwa") is None, "bwa executable not found, skipping."+
+                     "If this isnt an error from travis deployment, you probably "+
+                     "should install it")
     def test_map_with_bwa(self):
         # becasue multiple mapping are assingmed randomly (pseudorandomly?),
         # this accepts a range of expected results
@@ -814,7 +821,9 @@ class riboSeed2TestCase(unittest.TestCase):
         # this mostly does system calls; cant really test smoothlu
         pass
 
-    @unittest.skipIf(shutil.which("smalt") is None)
+    @unittest.skipIf(shutil.which("smalt") is None, "smalt executable not found, skipping."+
+                     "If this isnt an error from travis deployment, you probably "+
+                     "should install it")
     def test_prepare_next_mapping(self):
         gen = SeedGenome(
             max_iterations=1,
@@ -1045,6 +1054,7 @@ class riboSeed2TestCase(unittest.TestCase):
                          smalt=self.smalt_exe,
                          spades=self.spades_exe,
                          bwa=self.bwa_exe,
+                         check=False,
                          method="bwa")
         # I want this  generalized, so replace the acual path with spades.py
         test_exes.spades = "spades.py"
