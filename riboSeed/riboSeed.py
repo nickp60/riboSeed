@@ -423,13 +423,10 @@ class Exes(object):
     def check_mands(self):
         """ checks that all mandatory arguments are not none
         """
-        if self.check:
             mandatory = [self.spades, self.quast, self.method,
                          self.samtools, self.python2_7]
             assert None not in mandatory, \
                 "must instantiate with samtools, spades, method, python2_7, quast!"
-        else:
-            pass
 
     def set_mapper(self):
         """Exes.mapper attribute is set here to avoid further
@@ -446,13 +443,16 @@ class Exes(object):
         """ for each executable, expand wildcards and use shutil.which
         to get full path to executable.  If not found, throw an error
         """
-        for exe in ["mapper", "samtools", "spades",
-                    "quast", "python2_7", "mapper"]:
-            exe_groomed = os.path.expanduser(getattr(self, exe))
-            exe_groomed = shutil.which(exe_groomed)
-            if exe_groomed is None:
-                raise ValueError("%s not found in PATH!" % exe)
-            setattr(self, exe, exe_groomed)
+        if self.check:
+            for exe in ["mapper", "samtools", "spades",
+                        "quast", "python2_7", "mapper"]:
+                exe_groomed = os.path.expanduser(getattr(self, exe))
+                exe_groomed = shutil.which(exe_groomed)
+                if exe_groomed is None:
+                    raise ValueError("%s not found in PATH!" % exe)
+                setattr(self, exe, exe_groomed)
+        else:
+            pass
 
 
 # --------------------------- methods --------------------------- #
