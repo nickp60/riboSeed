@@ -136,5 +136,5 @@ setup(
     # Using the scripts keyword here for speed, as the entry points are not
     # yet defined
     scripts=['riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
-             'riboSeed/riboSnag.py', 'riboSeed/riboSeed2.py'],
+             'riboSeed/riboSnag.py'],
 )

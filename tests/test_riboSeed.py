@@ -51,7 +51,7 @@ logger = logging
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among other things wont run if tried " +
                  " with less than python 3.5")
-class riboSeed2TestCase(unittest.TestCase):
+class riboSeedTestCase(unittest.TestCase):
     """ tests for riboSeed.py
     """
     def setUp(self):

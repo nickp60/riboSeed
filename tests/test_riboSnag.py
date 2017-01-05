@@ -2,25 +2,7 @@
 """
 Created on Tue Aug 30 08:57:31 2016
 @author: nicholas
-The Goal of this is to have a unified place to put the useful
-python 3.5 functions or templates
-
-how I got the fastq file
-# seqtk sample -s 27 ~/GitHub/FA/pseudochromosome/data/20150803_Abram1/ \
-    reads/3123-1_1_trimmed.fastq .0005
-
-bam file was from a riboseed mapping; md5: 939fbf2c282091aec0dfa278b05e94ec
-
-mapped bam was made from bam file with the following command
- samtools view -Bh -F 4 /home/nicholas/GitHub/FB/Ecoli_comparative_genomics/
-    scripts/riboSeed_pipeline/batch_coli_unpaired/map/
-    mapping_20160906_region_7_riboSnag/
-    test_smalt4_20160906_region_7_riboSnagS.bam >
-     ~/GitHub/pyutilsnrw/tests/test_mapped.sam
-md5: 27944249bf064ba54576be83053e82b0
-
 """
-__version__ = "0.0.3"
 import copy
 import sys
 import logging
@@ -100,6 +82,7 @@ class riboSnag_TestCase(unittest.TestCase):
             parse_clustered_loci_file(
                 filepath=str(self.test_loci_file + "png"),
                 gb_filepath=self.test_gb_file,
+                output_root=self.testdirname,
                 padding=100,
                 circular=True,
                 logger=logger)
@@ -109,11 +92,13 @@ class riboSnag_TestCase(unittest.TestCase):
                 gb_filepath=self.test_loci_file,
                 filepath=self.test_gb_file,
                 padding=100,
+                output_root=self.testdirname,
                 circular=True,
                 logger=logger)
         clusters = parse_clustered_loci_file(
             filepath=self.test_loci_file,
             gb_filepath=self.test_gb_file,
+                output_root=self.testdirname,
             padding=100,
             circular=True,
             logger=logger)
@@ -138,7 +123,7 @@ class riboSnag_TestCase(unittest.TestCase):
         """todo: replace essentially unused get_genbank_record function
         """
         test_cluster = LociCluster(
-            index=0, sequence_id='NC_011751.1',
+            sequence_id='NC_011751.1',
             loci_list=[Locus(index=0,
                              sequence_id='NC_011751.1',
                              locus_tag="ECUMN_0004",
@@ -173,7 +158,7 @@ class riboSnag_TestCase(unittest.TestCase):
         """
         padding_val = 50
         test_cluster = LociCluster(
-            index=0, sequence_id='NC_011751.1',
+            sequence_id='NC_011751.1',
             loci_list=[Locus(index=0,
                              sequence_id='NC_011751.1',
                              locus_tag="ECUMN_0004",
@@ -209,6 +194,7 @@ class riboSnag_TestCase(unittest.TestCase):
         clusters = parse_clustered_loci_file(
             filepath=self.test_loci_file,
             gb_filepath=self.test_gb_file,
+            output_root=self.testdirname,
             padding=padding_val,
             circular=True,
             logger=logger)
@@ -219,24 +205,24 @@ class riboSnag_TestCase(unittest.TestCase):
             logger=logger)
         stitched_cluster = stitch_together_target_regions(
             cluster=cluster,
-            flanking="1000:1000",
+            flanking=1000,
             logger=logger,
             circular=False,
             revcomp=True)
         stitched_cluster_circular = stitch_together_target_regions(
             cluster=cluster,
-            flanking="1000:1000",
+            flanking=1000,
             logger=logger,
             circular=True,
             revcomp=True)
-        # fail with invalid flanking arg
-        with self.assertRaises(ValueError):
-            stitch_together_target_regions(
-                cluster=cluster,
-                flanking="1000:1000:1000",
-                logger=logger,
-                circular=False,
-                revcomp=False)
+        # # fail with invalid flanking arg
+        # with self.assertRaises(ValueError):
+        #     stitch_together_target_regions(
+        #         cluster=cluster,
+        #         flanking="1000:1000",
+        #         logger=logger,
+        #         circular=False,
+        #         revcomp=False)
         # # fail with exceeded minimum
         # with self.assertRaises(ValueError):
         #     stitch_together_target_regions(
