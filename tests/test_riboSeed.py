@@ -171,11 +171,12 @@ class riboSeedTestCase(unittest.TestCase):
                  method="bwa")
 
     @unittest.skipIf(shutil.which("bwa") is None or
-                     shutil.which("quast") is None or
+                     shutil.which("quast.py") is None or
                      shutil.which("smalt") is None or
                      shutil.which("python2.7") is None or
-                     shutil.which("spades.py") is None, "bwa executable not found, skipping."+
-                     "If this isnt an error from travis deployment, you probably "+
+                     shutil.which("spades.py") is None,
+                     "bwa executable not found, skipping.If this isnt an " +
+                     "error from travis deployment, you probably "+
                      "should install it")
     def test_Exes_(self):
         """check with  executable"""
@@ -870,7 +871,7 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertEqual(len(clu.mappings), 0)
         prepare_next_mapping(
             cluster=clu, seedGenome=gen, samtools_exe=self.samtools_exe,
-            flank=[0, 0],
+            flank=0,
             logger=logger)
         new_name = "NC_011751.1_cluster_{0}".format(clu.index)
         self.assertEqual(clu.mappings[-1].name, new_name)

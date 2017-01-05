@@ -387,13 +387,15 @@ def pad_genbank_sequence(cluster, logger=None):
         logger.info(str("adjusting coordinates by {0} to account for " +
                         "padding").format(cluster.padding))
     for loc in cluster.loci_list:
-        logger.debug("pre-padded")
-        logger.debug(str(loc.__dict__))
+        if logger:
+            logger.debug("pre-padded")
+            logger.debug(str(loc.__dict__))
         start, end = loc.start_coord, loc.end_coord
         loc.start_coord, loc.end_coord = [start + cluster.padding,
                                           end + cluster.padding]
-        logger.debug("post-padded")
-        logger.debug(str(loc.__dict__))
+        if logger:
+            logger.debug("post-padded")
+            logger.debug(str(loc.__dict__))
     ### take care of the sequence
     old_seq = cluster.seq_record.seq
     if cluster.padding > len(old_seq):
@@ -421,14 +423,6 @@ def stitch_together_target_regions(cluster,
     """
     if logger is None:
         raise ValueError("Must have logger for this function")
-    # try:
-    #     flank = [int(x) for x in flanking.split(":")]
-    #     if len(flank) == 1:  # if only one value use for both up and downstream
-    #         flank.append(flank[0])
-    #     assert len(flank) == 2
-    # except:
-    #     raise ValueError("Error parsing flanking value; must either be " +
-    #                      "integer or two colon-seapred integers")
 
     #TODO : make this safer. coord list is constructed sequentially but this
     # is a backup. Throws sort of a cryptic error. but as I said, its a backup
@@ -1210,9 +1204,10 @@ def merge_outfiles(filelist, outfile_name):
 def run_blast(query_list, ref, name, output, mbdb_exe='', logger=None):
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
     logger.info("constructing makeblastdb command")
+    db_name = os.path.join(output, str(name + "_db"), name)
     mbdb_cmd = get_makeblastdb_cmd(
         input_file=ref, input_type="fasta", dbtype="nucl",
-        title=name, out=name,
+        title=name, out=db_name,
         makeblastdb_exe=mbdb_exe, logger=logger)
     logger.debug(mbdb_cmd)
     logger.info("creating blast cmds")
@@ -1220,10 +1215,16 @@ def run_blast(query_list, ref, name, output, mbdb_exe='', logger=None):
     os.makedirs(blast_outdir)
     blast_cmds, paths_to_outputs = make_blast_cmds(
         filename_list=query_list, blast_type="blastn",
-        output=blast_outdir, blastdb=name, date=date, logger=logger)
-
+        output=blast_outdir, blastdb=db_name, date=date, logger=logger)
+    logger.info("Making BLAST Database")
+    subprocess.run(mbdb_cmd,
+                   shell=sys.platform != "win32",
+                   stdout=subprocess.PIPE,
+                   stderr=subprocess.PIPE,
+                   check=True)
     # pool = multiprocessing.Pool(processes=args.cores)
     pool = multiprocessing.Pool()
+    logger.info("Running BLAST commands")
     logger.debug("Running the following commands in parallel " +
                  "(this could take a while):")
     logger.debug("\n" + "\n".join([x for x in blast_cmds]))
