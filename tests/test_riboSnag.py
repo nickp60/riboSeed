@@ -73,6 +73,8 @@ class riboSnag_TestCase(unittest.TestCase):
         self.mafft_exe = "mafft"
         self.maxDiff = 1000
         self.to_be_removed = []
+        if not os.path.exists(self.testdirname):
+            os.makedirs(self.testdirname, exist_ok=True)
 
     def test_parse_loci(self):
         """this checks the parsing of riboSelect ouput
@@ -275,9 +277,9 @@ class riboSnag_TestCase(unittest.TestCase):
     def test_prepare_msa_cmds(self):
         """ test cases of prank and mafft command creation
         """
-        for dir in [self.testdirname, self.test_snag_dir]:
+        for dr in [self.test_snag_dir]:
             try:
-                os.makedirs(self.testdirname)
+                os.makedirs(dr, exist_ok=True)
             except:
                 print("\nusing existing {0} directory".format(dir))
                 pass
