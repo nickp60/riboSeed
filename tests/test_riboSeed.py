@@ -51,7 +51,7 @@ logger = logging
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among other things wont run if tried " +
                  " with less than python 3.5")
-class riboSeedTestCase(unittest.TestCase):
+class riboSeed2TestCase(unittest.TestCase):
     """ tests for riboSeed.py
     """
     def setUp(self):
@@ -175,8 +175,9 @@ class riboSeedTestCase(unittest.TestCase):
                  bwa=self.bwa_exe,
                  method="bwa")
 
+    @unittest.skipIf(shutil.which("samtools") is None)
     def test_Exes_(self):
-        """check with nonexistant executable"""
+        """check with  executable"""
         test_exes = Exes(samtools=self.samtools_exe,
                          quast=self.quast_exe,
                          python2_7=self.python2_7_exe,
@@ -233,21 +234,21 @@ class riboSeedTestCase(unittest.TestCase):
                 ref_fasta=self.ref_fasta,
                 mapper_exe=self.smalt_exe)
 
-        # check master (ie, generate a distance file with smalt
-        testlib_pe = NgsLib(
-            name="test",
-            master=True,
-            make_dist=True,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe,
-            logger=logger)
-        self.assertTrue(os.path.exists(os.path.join(
-            self.test_dir, "smalt_distance_est.sam")))
-        self.assertEqual(testlib_pe.libtype, "pe")
-        self.assertEqual(testlib_pe.readlen, 145.0)
-        self.to_be_removed.append(testlib_pe.smalt_dist_path)
+        # # check master (ie, generate a distance file with smalt
+        # testlib_pe = NgsLib(
+        #     name="test",
+        #     master=True,
+        #     make_dist=True,
+        #     readF=self.ref_Ffastq,
+        #     readR=self.ref_Rfastq,
+        #     ref_fasta=self.ref_fasta,
+        #     mapper_exe=self.smalt_exe,
+        #     logger=logger)
+        # self.assertTrue(os.path.exists(os.path.join(
+        #     self.test_dir, "smalt_distance_est.sam")))
+        # self.assertEqual(testlib_pe.libtype, "pe")
+        # self.assertEqual(testlib_pe.readlen, 145.0)
+        # self.to_be_removed.append(testlib_pe.smalt_dist_path)
 
     def test_SeedGenome(self):
         gen = SeedGenome(
@@ -283,7 +284,7 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(os.path.isdir(testmapping.mapping_subdir))
 
     def test_get_smalt_full_install_cmds(self):
-        """ TODO: how would I test this?
+        """
         """
         smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                     "sample_data",
@@ -302,6 +303,7 @@ class riboSeedTestCase(unittest.TestCase):
         for index, cmd in enumerate(check_cmds):
             self.assertEqual(cmd, check_cmds_ref[index])
 
+    @unittest.skipIf(shutil.which("smalt") is None)
     def test_estimate_distances_smalt(self):
         """ test estimate insert disances
         """
@@ -465,6 +467,7 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(ngs_ob.readR is None)
         self.to_be_removed.append(empty_file)
 
+    @unittest.skipIf(shutil.which("smalt") is None)
     def test_map_with_smalt(self):
         # becasue multiple mapping are assingmed randomly (pseudorandomly?),
         # this accepts a range of expected results
@@ -609,6 +612,7 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
         self.assertFalse(gen.loci_clusters[0].keep_contigs)
 
+    @unittest.skipIf(shutil.which("bwa") is None)
     def test_map_with_bwa(self):
         # becasue multiple mapping are assingmed randomly (pseudorandomly?),
         # this accepts a range of expected results
@@ -624,7 +628,7 @@ class riboSeedTestCase(unittest.TestCase):
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
             ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe,
+            mapper_exe=self.bwa_exe,
             logger=logger)
 
         map_to_genome_ref_bwa(mapping_ob=testmapping, ngsLib=testngs,
@@ -645,7 +649,7 @@ class riboSeedTestCase(unittest.TestCase):
             readR=self.ref_Rfastq,
             readS0=self.ref_Rfastq,
             ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe,
+            mapper_exe=self.bwa_exe,
             logger=logger)
 
         map_to_genome_ref_bwa(mapping_ob=testmapping, ngsLib=testngs2,
@@ -810,6 +814,7 @@ class riboSeedTestCase(unittest.TestCase):
         # this mostly does system calls; cant really test smoothlu
         pass
 
+    @unittest.skipIf(shutil.which("smalt") is None)
     def test_prepare_next_mapping(self):
         gen = SeedGenome(
             max_iterations=1,
