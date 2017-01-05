@@ -174,7 +174,7 @@ class riboSeedTestCase(unittest.TestCase):
                      shutil.which("quast") is None or
                      shutil.which("smalt") is None or
                      shutil.which("python2.7") is None or
-                     shutil.which("spades.py") is None, "samtools executable not found, skipping."+
+                     shutil.which("spades.py") is None, "bwa executable not found, skipping."+
                      "If this isnt an error from travis deployment, you probably "+
                      "should install it")
     def test_Exes_(self):
