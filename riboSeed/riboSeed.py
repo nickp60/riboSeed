@@ -422,7 +422,7 @@ class Exes(object):
     def check_mands(self):
         """ checks that all mandatory arguments are not none
         """
-        if check:
+        if self.check:
             mandatory = [self.spades, self.quast, self.method,
                          self.samtools, self.python2_7]
             assert None not in mandatory, \

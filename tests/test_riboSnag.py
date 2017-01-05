@@ -313,8 +313,8 @@ class riboSnag_TestCase(unittest.TestCase):
         self.to_be_removed.append(unaligned_seqs)
 
     @unittest.skipIf(shutil.which("mafft") is None or
-                     shutil.which("prank") is None or
-                     , "maft or prank  executables not found, skipping."+
+                     shutil.which("prank") is None,
+                     "maft or prank  executables not found, skipping."+
                      "If this isnt an error from travis deployment, you probably "+
                      "should install it")
     def test_make_msa(self):
