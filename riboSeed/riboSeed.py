@@ -4,7 +4,6 @@
 """
 Minor Version Revisions:
  - spelling, pep8 compiance, renamed run_final_assemblies to get_final_assemblies_cmds
-starting at version 0.0.940
 Created on Sun Jul 24 19:33:37 2016
 
 See README.md for more info and usage
