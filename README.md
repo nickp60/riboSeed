@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/nickp60/riboSeed.svg?branch=master)](https://travis-ci.org/nickp60/riboSeed)
 [![Coverage Status](https://coveralls.io/repos/github/nickp60/riboSeed/badge.svg?branch=master)](https://coveralls.io/github/nickp60/riboSeed?branch=master)
+
 ![riboSeed: its whats for dinner](https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.png)
 
 # RiboSeed Pipeline
