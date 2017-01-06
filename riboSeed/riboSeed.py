@@ -1975,8 +1975,8 @@ if __name__ == "__main__":  # pragma: no cover
         logger.error(last_exception())
         sys.exit(1)
     try:
-        logger.info("padding genbank")
-        seedGenome.pad_genbank(pad=args.flanking,
+        logger.info("padding genbank by %i", args.flanking * 2)
+        seedGenome.pad_genbank(pad=args.flanking * 2,
                                circular=args.linear is False, logger=logger)
     except Exception as e:
         logger.error(e)

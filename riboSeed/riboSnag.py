@@ -374,14 +374,14 @@ def extract_coords_from_locus(cluster, feature="rRNA",
     # return cluster
 
 
-def pad_genbank_sequence(cluster, logger=None):
+def pad_genbank_sequence(cluster, logger=None, verbose=False):
     """coords in coords list should be the 1st list item, with the index
     being 0th. Given a genbank record and a coord_list. this returns a seq
     padded on both ends by --padding bp, and returns a coord_list with coords
     adjusted accordingly.  Used to capture regions across origin.
     # as of 20161028, cluster object, not coord_list, is used
     """
-    ### take care of the coordinates
+    # take care of the coordinates
     if logger:
         logger.info(str("adjusting coordinates by {0} to account for " +
                         "padding").format(cluster.padding))
@@ -395,7 +395,9 @@ def pad_genbank_sequence(cluster, logger=None):
         if logger:
             logger.debug("post-padded")
             logger.debug(str(loc.__dict__))
-    ### take care of the sequence
+    #TODO: check for interference with other clusters
+
+    # take care of the sequence
     old_seq = cluster.seq_record.seq
     if cluster.padding > len(old_seq):
         raise ValueError("padding cannot be greater than length of sequence")
@@ -410,7 +412,6 @@ def pad_genbank_sequence(cluster, logger=None):
 
 
 def stitch_together_target_regions(cluster,
-                                   # flanking="500:500",
                                    flanking=500,
                                    logger=None, circular=False,
                                    revcomp=False):
@@ -423,7 +424,7 @@ def stitch_together_target_regions(cluster,
     if logger is None:
         raise ValueError("Must have logger for this function")
 
-    #TODO : make this safer. coord list is constructed sequentially but this
+    # TODO : make this safer. coord list is constructed sequentially but this
     # is a backup. Throws sort of a cryptic error. but as I said, its a backup
     if sorted([x.start_coord for x in cluster.loci_list]) != \
        [x.start_coord for x in cluster.loci_list]:
@@ -438,7 +439,6 @@ def stitch_together_target_regions(cluster,
     #  This works as long as coords are never in reverse order
     cluster.global_start_coord = min([x.start_coord for
                                       x in cluster.loci_list]) - flanking
-    #
     # if start is negative, just use 1, the beginning of the sequence
     if cluster.global_start_coord < 1:
         logger.warning("Caution! Cannot retrieve full flanking region, as " +
@@ -592,8 +592,8 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
                           collapseNs=False,  # include -'s in consensus
                           excludedash=False,
                           logger=None):
-    """ returns annotations (as a gfflist),the consensus sequence as a list[base, cov],
-    and named coords  as a list
+    """ returns annotations (as gfflist),the consensus sequence as a
+    list[base, cov], and named coords  as a list
     TODO: The 'next_best' thing fails is an N is most frequent. Defaults to a T
     """
     if logger is None:
@@ -951,7 +951,6 @@ def plot_alignment_3d(consensus, tseq, output_prefix):
     fig.savefig(str(output_prefix + '3d..pdf'), dpi=(200))
 
 
-
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     r"""
     http://scipy.github.io/old-wiki/pages/Cookbook/SavitzkyGolay
@@ -1099,15 +1098,16 @@ def main(clusters, genome_records, logger, verbose, no_revcomp,
                 with open(os.path.join(graded_output, blast_fasta_filename),
                           "w") as outfile_blast:
                     SeqIO.write(short_rec, outfile_blast, "fasta")
-                file_list.append(os.path.join(graded_output, blast_fasta_filename))
+                file_list.append(
+                    os.path.join(graded_output, blast_fasta_filename))
         ####
         filename = "{0}_region_{1}_{2}.fasta".format(
             prefix_name, index + 1, "riboSnag")
+        # TODO make discription work when writing seqrecord
+        # TODO move date tag to fasta description?
+        # i.description = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
+        #                           output_index, args.flanking, args.within))
         with open(os.path.join(output, filename), "w") as outfile:
-            # TODO make discription work when writing seqrecord
-            # TODO move date tag to fasta description?
-            # i.description = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
-            #                           output_index, args.flanking, args.within))
             SeqIO.write(region, outfile, "fasta")
             outfile.write('\n')
     # write out the whole file as a fasta as well...
@@ -1140,7 +1140,8 @@ def get_makeblastdb_cmd(input_file, input_type="fasta", dbtype="prot",
     return makedbcmd
 
 
-def make_blast_cmds(filename_list, blast_type, output, blastdb, date, logger=None):
+def make_blast_cmds(filename_list, blast_type, output, blastdb, date,
+                    logger=None):
     """given a file, make a blast cmd, and return path to output csv
     """
     blast_cmds = []
@@ -1175,22 +1176,31 @@ def make_blast_cmds(filename_list, blast_type, output, blastdb, date, logger=Non
     return(blast_cmds, blast_outputs)
 
 
-def merge_outfiles(filelist, outfile_name):
+def merge_outfiles(files, outfile_name, logger=None):
     """
     """
     # only grab .tab files, ie, the blast output
-    filelist = [i for i in filelist if os.path.splitext(i) == ['tab']]
-    if len(filelist) == 1:
-        print("only one file found! no merging needed")
+    logger.debug("files to merge:")
+    logger.debug("\n".join(files))
+    filelist = [i for i in files if "tab" in os.path.splitext(i)[-1]]
+    if len(filelist) == 0:
+        if logger:
+            logger.error("No BLAST output files found!")
+        raise FileNotFoundError
+
+    elif len(filelist) == 1:
+        if logger:
+            logger.warning("only one file found! no merging needed")
         return(filelist)
     else:
-        print("merging all the blast results to %s" % outfile_name)
         nfiles = len(filelist)
+        if logger:
+            logger.info("merging %i blast results to %s", nfiles, outfile_name)
         fout = open(outfile_name, "a")
         # first file:
         for line in open(filelist[0]):
             fout.write(line)
-        #  now the rest:
+        #  now the rest, ignoring the header:
         for num in range(1, nfiles):
             f = open(filelist[num])
             for line in f:
@@ -1243,7 +1253,8 @@ def run_blast(query_list, ref, name, output, mbdb_exe='', logger=None):
     merged_tsv = merge_outfiles(
         paths_to_outputs,
         os.path.join(blast_outdir,
-                     str(date + "_results_merged.csv")))
+                     str(date + "_results_merged.csv")),
+        logger=logger)
     logger.info("Merged BLAST results can be found here for perusal or plotting:")
     logger.info(merged_tsv)
 
