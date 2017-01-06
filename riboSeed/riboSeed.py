@@ -61,15 +61,15 @@ class SeedGenome(object):
                  this_iteration=0, ref_fasta=None, next_reference_path=None,
                  loci_clusters=None, output_root=None, initial_map_bam=None,
                  unmapped_ngsLib=None, name=None, iter_mapping_list=None,
-                 reads_mapped_txt=None, unmapped_mapping_list=None, max_iterations=None,
-                 initial_map_sam=None, unmapped_sam=None,
-                 clustered_loci_txt=None, seq_records=None, initial_map_prefix=None,
-                 initial_map_sorted_bam=None, master_ngs_ob=None,
+                 reads_mapped_txt=None, unmapped_mapping_list=None,
+                 max_iterations=None, initial_map_sam=None, unmapped_sam=None,
+                 clustered_loci_txt=None, seq_records=None, master_ngs_ob=None,
+                 initial_map_sorted_bam=None, initial_map_prefix=None,
                  assembled_seeds=None, logger=None):
         self.name = name  # get from commsanline in case running multiple
         self.this_iteration = this_iteration  # this should always start at 0
-        self.max_iterations = max_iterations  # this should always start at 0
-        self.iter_mapping_list = iter_mapping_list  # this should always start at 0
+        self.max_iterations = max_iterations
+        self.iter_mapping_list = iter_mapping_list  # holds each mapping object
         # The main output for resulting files, all other are relative
         self.output_root = output_root
         # from command line
@@ -846,9 +846,10 @@ def nonify_empty_lib_files(ngsLib, logger=None):
             # set to None so mapper will ignore
             setattr(ngsLib, f, None)
 
-# MapperParams = namedtuple("MapperParams",
-#                          "cores samtools_exe mapper_exe ignore_singletons " +
-#                          "score_minimum single_lib scoring step k smalt_scoring")
+# MapperParams = namedtuple(
+#     "MapperParams",
+#     "cores samtools_exe mapper_exe ignore_singletons " +
+#     "score_minimum single_lib scoring step k smalt_scoring")
 
 
 def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
@@ -946,7 +947,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     nonify_empty_lib_files(ngsLib, logger=logger)
     logger.info("Mapping reads to reference genome with BWA")
     # check min score
-    if score_minimum is not None:  # , "must assign score outside map function!"
+    if score_minimum is not None:
         score_min = "-T {0}".format(score_minimum)
         logger.debug(str("using a score min of " +
                          "{0}").format(score_min))
@@ -1425,7 +1426,8 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
     covs = [int(x.split("\t")[2]) for
             x in result.stdout.decode("utf-8").split("\n")[0: -1]]
     if len(covs) == 0:
-        logger.error("error parsing samtools depth results! Here are the results:")
+        logger.error("error parsing samtools depth results! " +
+                     "Here are the results:")
         logger.error(result)
         raise ValueError
 
@@ -1647,19 +1649,13 @@ def partition_mapping(seedGenome, samtools_exe, flank,
             prep=False,
             samtools_exe=samtools_exe,
             logger=logger)
-        logger.info("Coverage for cluster %i:\n\t5' %ibp-region: %f4 \n\t3' %ibp-region: %f4",
+        logger.info("Coverage for cluster " +
+                    "%i:\n\t5' %ibp-region: %f4 \n\t3' %ibp-region: %f4",
                     cluster.index,
                     flank,
                     start_ave_depth,
                     flank,
                     end_ave_depth)
-    # for region in mapped_regions:
-    #     depths, ave_depth = get_samtools_depths(
-    #         bam=seedGenome.iter_mapping_list[seedGenome.this_iteration].sorted_mapped_bam,
-    #         region=region,
-    #         prep=False,
-    #         samtools_exe=samtools_exe,
-    #         logger=logger)
 
     logger.info("mapped regions for iteration %i:\n %s",
                 seedGenome.this_iteration,
@@ -1866,14 +1862,6 @@ if __name__ == "__main__":  # pragma: no cover
     # I have no moral compass
     if args.ref_as_contig == 'None':
         args.ref_as_contig = None
-    # try:
-    #     flank = [int(x) for x in args.flanking.split(":")]
-    #     if len(flank) == 1:  # if only one value use for both up and downstream
-    #         flank.append(flank[0])
-    #     assert len(flank) == 2
-    # except:
-    #     raise ValueError("Error parsing flanking value; must either be " +
-    #                      "integer or two colon-seapred integers")
 
     if args.method not in ["smalt", 'bwa']:
         logger.error("'smalt' and 'bwa' only methods currently supported")
@@ -1996,10 +1984,6 @@ if __name__ == "__main__":  # pragma: no cover
         sys.exit(1)
 
     # make first iteration look like future iterations
-    # if not args.linear:
-    #     with open(seedGenome.ref_fasta,'r'):
-    #         with open(output_root, "padded_genome.fasta", "w"):
-    #             SeqIO
     seedGenome.next_reference_path = seedGenome.ref_fasta
     #
     for cluster in seedGenome.loci_clusters:

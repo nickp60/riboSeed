@@ -35,11 +35,9 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     make_spades_empty_check, get_samtools_depths
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
-    extract_coords_from_locus, \
-    stitch_together_target_regions, get_genbank_rec_from_multigb, \
+    extract_coords_from_locus, stitch_together_target_regions, \
     pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd, \
-    calc_Shannon_entropy, calc_entropy_msa, \
-    annotate_msa_conensus, plot_scatter_with_anno, \
+    calc_Shannon_entropy, plot_scatter_with_anno, \
     profile_kmer_occurances, plot_pairwise_least_squares, make_msa
 
 

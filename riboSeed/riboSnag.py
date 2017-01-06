@@ -38,7 +38,6 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 from Bio.Blast.Applications import NcbiblastnCommandline
-from Bio.Blast.Applications import NcbitblastxCommandline
 from Bio.Seq import Seq
 from collections import defaultdict  # for calculating kmer frequency
 from itertools import product  # for getting all possible kmers

@@ -1,9 +1,5 @@
 #!/usr/bin/env python3.5
 """
-version 0.8.9
-Minor version changes:
- - smoothed out the kinks, shooting for pylint score of 7
-
 Input:
 - genbank file
 - location:  rRNA (or RRNA, or something similar)
