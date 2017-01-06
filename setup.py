@@ -106,7 +106,13 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=requirements,
+    # install_requires=requirements,
+    install_requires=[
+        'Biopython==1.68',
+        'pyutilsnrw==0.0.765',
+        'matplotlib==1.5.3',
+        'pandas==0.18.1'
+    ],
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
