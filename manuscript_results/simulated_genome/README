@@ -1,0 +1,43 @@
+#  Peepare the E. coli sakai genome with scanscaffols
+~/GitHub/riboSeed/scripts/scanScaffolds.sh ~/GitHub/riboSeed/sample_data/toy_set/ 00007.2.fasta ./scanned/ bac
+# get the rDNA regions text file
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ./scanned/scannedScaffolds.gb -o ./select/
+@ extract 5kb regions with riboSnag
+
+# combine the regiosn into a single fasta
+python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ./snag/ \*_riboSnag.fasta -o ./
+
+# generate reads based on that "genome"
+~/bin/art_bin_MountRainier/art_illumina -ss MSv3 -i ./concatenated_seq.fasta -p -l 250 -f 20 -m 300 -s 10 -o concatenated_seq
+
+# make a genbank file from the concatedated seqence
+~/GitHub/riboSeed/scripts/scanScaffolds.sh ./ ted_seq.fasta ./scanned_concatenated/ bac
+
+# find the regions with their new coordinates
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ./scanned_concatenated/scannedScaffolds.gb -o ./select_concatenated/
+
+# Run riboSnag with 1kb flanking regions
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ./scanned_concatenated/scannedScaffolds.gb ./select_concatenated/riboSelect_grouped_loci.txt -F ./concatenated_seq1.fq -R ./concatenated_seq2.fq -o ./seed_concatenated/ -v 1 -c 4
+
+
+####  validation
+# build the test kleb genome, start with fingding the regions
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ./CP003200.1.gb -o ./select_kleb/
+
+# extract regions with 5kb flanking
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSnag.py ./CP003200.1.gb ./select_kleb/riboSelect_grouped_loci.txt -o ./snag_kleb/ -5kb
+
+#combine into kleb concatenated mini genome
+python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ./snag_kleb/ \*_riboSnag.fasta -n klebsiella_concatenated_genome -o ./
+
+# generate reads from it
+~/bin/art_bin_MountRainier/art_illumina -ss MSv3 -i ./klebsiella_concatenated_genome.fasta -p -l 250 -f 20 -m 300 -s 10 -o kleb_concatenated_seq
+
+# add annotations, generate a gb file
+~/GitHub/riboSeed/scripts/scanScaffolds.sh ./ ted_genome.fasta ./scanned_concatenated_kleb/ bac
+
+# find rDNAs in new location
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ./scanned_concatenated_kleb/scannedScaffolds.gb -o ./select_concat_kleb/
+
+# run riboSeed with coli reads and Klebsiella seeds
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ./scanned_concatenated_kleb/scannedScaffolds.gb ./select_concat_kleb/riboSelect_grouped_loci.txt -F ./concatenated_seq1.fq -R ./concatenated_seq2.fq -o ./seed_kleb_concatenated_coli_reads/ -v 1 -c 4
