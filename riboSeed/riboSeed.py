@@ -1426,10 +1426,13 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
     covs = [int(x.split("\t")[2]) for
             x in result.stdout.decode("utf-8").split("\n")[0: -1]]
     if len(covs) == 0:
-        logger.error("error parsing samtools depth results! " +
+        logger.error("Error parsing samtools depth results! " +
                      "Here are the results:")
         logger.error(result)
-        raise ValueError
+        logger.error("This isn't always fatal, so we will continue.  " +
+                     "but take a look with IGB or similar so there aren't " +
+                     "any suprises down the road.")
+        return [[""], 0]
 
     average = float(sum(covs)) / float(len(covs))
     return [covs, average]
@@ -1829,9 +1832,9 @@ if __name__ == "__main__":  # pragma: no cover
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
-        os.makedirs(output_root)
+        os.makedirs(output_root, exist_ok=False)
     except OSError:
-        raise OSError(str("Output directory already exists"))
+        print("Output directory already exists; exiting...")
     t0 = time.time()
     log_path = os.path.join(output_root,
                             str("{0}_riboSeed_log.txt".format(
