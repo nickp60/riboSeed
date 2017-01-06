@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/nickp60/riboSeed.svg?branch=master)](https://travis-ci.org/nickp60/riboSeed)
+[![Coverage Status](https://coveralls.io/repos/github/nickp60/riboSeed/badge.svg?branch=master)](https://coveralls.io/github/nickp60/riboSeed?branch=master)
 ![riboSeed: its whats for dinner](https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.png)
 
 # RiboSeed Pipeline
@@ -331,10 +332,17 @@ The tests for the module can be found under the `tests` directory. I run them wi
 
 
 ## Installation
+riboSeed is on Pypi, so you can install with pip or within a virtualenv (probably recommended):
+
+`pip3.5 install riboSeed`
+
+or
+
+`mkvirtualenv riboSeedVE -p python3.5 -i riboSeed `
 
 The trickiest part of this whole business is properly installing SMALT. BWA is definitly the easiest option.
 
-Installing with pip3.5 will be the easiest way, but prior to release, clone this repository, and run setup.py.
+You can also clone this repository, and run setup.py.
 
 ### Python Requirements:
 

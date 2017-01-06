@@ -19,8 +19,8 @@ from pip.req import parse_requirements
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
+# with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+#     long_description = f.read()
 
 # from pyani
 with open(path.join(here, 'riboSeed', '__init__.py'), 'r') as fh:
@@ -48,7 +48,11 @@ setup(
     version=init_version,
 
     description='riboSeed: assemble across rDNA regions',
-    long_description=long_description,
+    # long_description=long_description,
+    long_description="""
+    its a blast, you gotta try it!  check out the GitHub
+    repo for the read README.md file
+    """,
 
     # The project's main homepage.
     url='https://github.com/nickp60/riboSeed',
