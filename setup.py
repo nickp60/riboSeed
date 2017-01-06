@@ -41,7 +41,7 @@ install_reqs = parse_requirements(path.join(here, "requirements.txt"),
 requirements = [str(ir.req) for ir in install_reqs]
 setup(
     name='riboSeed',
-
+    dependency_links=['https://github.com/WarrenWeckesser/heatmapcluster.git#egg=heatmapcluster'],
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
