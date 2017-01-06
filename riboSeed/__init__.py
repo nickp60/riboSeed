@@ -1,2 +1,2 @@
-# MAJOR CHANGES: changed to riboSeed2, imrpoved executablehandling,
-__version__ = '0.0.55'
+# MAJOR CHANGES: added a manifest
+__version__ = '0.0.56'
