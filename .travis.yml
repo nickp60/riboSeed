@@ -10,7 +10,6 @@ install:
 - "./debug_travis.sh"
 script:
 - python3.5 setup.py install
-- coverage run tests/test_riboSelect.py
 - nosetests --with-coverage --cover-package=riboSeed tests/
 after_success: coveralls
 deploy:
