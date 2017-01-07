@@ -41,7 +41,7 @@ from Bio.Blast.Applications import NcbiblastnCommandline
 from Bio.Seq import Seq
 from collections import defaultdict  # for calculating kmer frequency
 from itertools import product  # for getting all possible kmers
-from heatmapcluster import heatmapcluster
+# from heatmapcluster import heatmapcluster
 
 #from pyutilsnrw import utils3_5
 from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
@@ -857,18 +857,18 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     ####  plot clustered heatmap
     plt.close('all')
     plt.figure(1, figsize=(6, 6))
-    h = heatmapcluster(wlsdf.as_matrix(), row_labels=wlsdf.index,
-                       col_labels=wlsdf.columns.values,
-                       num_row_clusters=2, num_col_clusters=2,
-                       label_fontsize=6,
-                       xlabel_rotation=-75,
-                       cmap=plt.cm.coolwarm,
-                       show_colorbar=True,
-                       top_dendrogram=True)
-    # plt.tight_layout()  # pad=0, w_pad=5, h_pad=.0)
-    # fig2.set_size_inches(16, 16)
-    plt.savefig(str(output_prefix + "clustered_heatmap.png"), dpi=(200))
-    plt.savefig(str(output_prefix + "clustered_heatmap.pdf"), dpi=(200))
+    # h = heatmapcluster(wlsdf.as_matrix(), row_labels=wlsdf.index,
+    #                    col_labels=wlsdf.columns.values,
+    #                    num_row_clusters=2, num_col_clusters=2,
+    #                    label_fontsize=6,
+    #                    xlabel_rotation=-75,
+    #                    cmap=plt.cm.coolwarm,
+    #                    show_colorbar=True,
+    #                    top_dendrogram=True)
+    # # plt.tight_layout()  # pad=0, w_pad=5, h_pad=.0)
+    # # fig2.set_size_inches(16, 16)
+    # plt.savefig(str(output_prefix + "clustered_heatmap.png"), dpi=(200))
+    # plt.savefig(str(output_prefix + "clustered_heatmap.pdf"), dpi=(200))
     return lsdf_wNA
 
 
