@@ -102,8 +102,7 @@ class riboSeedTestCase(unittest.TestCase):
     def copy_fasta(self):
         """ make a disposable copy
         """
-        copy_file(os.path.join(self.ref_dir, 'cluster1.fasta'), os.path.dirname(self.ref_fasta),
-                  name="cluster1.fasta")
+        shutil.copy(os.path.join(self.ref_dir, 'cluster1.fasta'), self.ref_fasta)
         self.to_be_removed.append(self.ref_fasta)
 
     def test_print_headsup(self):

@@ -668,6 +668,16 @@ def get_args():  # pragma: no cover
                           default="match=1,subst=-4,gapopen=-4,gapext=-3",
                           help="submit custom smalt scoring via smalt -S " +
                           "scorespec option; default: %(default)s")
+    optional.add_argument("--mapper_args", dest='mapper_args',
+                          action="store",
+                          default="-L 0,0 -U 0",
+                          help="submit custom parameters to mapper. " +
+                          "And by mapper, I mean bwa, cause we dont support " +
+                          "this option for SMALT, sorry. " +
+                          "This requires knowledge of your chosen mapper's " +
+                          "optional arguments. Proceed with caution!  " +
+                          "default: %(default)s")
+
     # had to make this explicitly to call it a faux optional arg
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
@@ -2075,6 +2085,9 @@ if __name__ == "__main__":  # pragma: no cover
         # during object instantiation
 
         if args.method == "smalt":
+            # # get rid of bwa mapper default args
+            # if args.mapper_args == '-L 0,0 -U 0':
+            #     args.mapper_args =
             map_to_genome_ref_smalt(
                 mapping_ob=seedGenome.iter_mapping_list[
                     seedGenome.this_iteration],
@@ -2100,7 +2113,8 @@ if __name__ == "__main__":  # pragma: no cover
                 samtools_exe=sys_exes.samtools,
                 bwa_exe=sys_exes.mapper,
                 score_minimum=score_minimum,
-                add_args='-L 0,0 -U 0',
+                # add_args='-L 0,0 -U 0',
+                add_args=args.mapper_args,
                 logger=logger)
         try:
             partition_mapping(seedGenome=seedGenome,
