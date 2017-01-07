@@ -100,9 +100,6 @@ optional arguments:
 
 * `riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
 
-BIG THANKS to Warren Wecklesser for providing heatmapcluster.py; it has been copied to this repo, but can be found here:
-https://github.com/WarrenWeckesser/heatmapcluster
-
 THIS SCRIPT IS NOT LONGER A REQUIRED PART OF THE PIPELINE! It is still included as the plots it generates can be useful for troubleshooting.
 
 #### Usage:
