@@ -100,6 +100,9 @@ optional arguments:
 
 * `riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
 
+BIG THANKS to Warren Wecklesser for providing heatmapcluster.py; it has been copied to this repo, but can be found here:
+https://github.com/WarrenWeckesser/heatmapcluster
+
 THIS SCRIPT IS NOT LONGER A REQUIRED PART OF THE PIPELINE! It is still included as the plots it generates can be useful for troubleshooting.
 
 #### Usage:
@@ -155,7 +158,7 @@ optional arguments:
 ```
 
 ## 2: Seeded Assebly
-* `riboSeed2.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads into long reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.  RiboSeed2 differs from the legacy version of riboSeed as riboSeed2 maps to all the regions at once, which minimizes the complications asscociated with multiple mappings. Instead of mapping to all the regions individually, it concatenates them into a faux genome with 10kb spacers of N's in between.  Because of this, it has the added benefit of running much faster.
+* `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads into long reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.  RiboSeed2 differs from the legacy version of riboSeed as riboSeed maps to all the regions at once, which minimizes the complications asscociated with multiple mappings. Instead of mapping to all the regions individually, it concatenates them into a faux genome with 10kb spacers of N's in between.  Because of this, it has the added benefit of running much faster.
 
 #### Output
 
@@ -168,7 +171,7 @@ If using a comsumer-grade computer, it may be advantagous to run with -z (--seri
 minimal usage: riboSeed.py clustered\_accession\_list.txt -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT
 
 ```
-usage: riboSeed2.py -F FASTQ1 -R FASTQ2 -r REFERENCE_GENBANK -o OUTPUT
+usage: riboSeed.py -F FASTQ1 -R FASTQ2 -r REFERENCE_GENBANK -o OUTPUT
                     [-S FASTQS] [-n EXP_NAME] [-l FLANKING] [-m {smalt,bwa}]
                     [-c CORES] [-k KMERS] [-p PRE_KMERS] [-I] [-s SCORE_MIN]
                     [--include_shorts] [-a MIN_ASSEMBLY_LEN]
@@ -363,12 +366,11 @@ riboSnag
 * Barrnap (must be 0.7 or above)
 ** note that barrnap has certain Perl requirements that may not be included on your machine.  Ensure barrnap runs fine before trying riboSnag.py
 
-riboSeed2
+riboSeed
 
 * SPAdes v3.8 or higher
-* SMALT (tested with 0.7.6), or
 * BWA (tested with 0.7.12-r1039)
-** see notes below
+* (or SMALT (tested with 0.7.6), see note below)
 * SAMTools (must be 1.3.1 or above)
 * QUAST (tested with 4.1)
 
