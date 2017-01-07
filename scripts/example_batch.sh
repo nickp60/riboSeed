@@ -1,5 +1,5 @@
 #!/bin/bash
-# version 0.0.5
+# version 0.0.6
 #$ -cwd
 #$ -j yes
 #$ -V
@@ -38,4 +38,4 @@ source ${VENVEXE}
 ## RiboSelect
 python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${GB} -o ${OUTDIR}select/ -v 1
 ## RiboSeed
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -r ${GB} -v 1 -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1 -c 4 -t 2
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -l ${FLANK} -r ${GB} -v 1 -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1 -c 4 -t 2
