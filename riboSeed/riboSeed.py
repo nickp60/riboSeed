@@ -1845,6 +1845,7 @@ if __name__ == "__main__":  # pragma: no cover
         os.makedirs(output_root, exist_ok=False)
     except OSError:
         print("Output directory already exists; exiting...")
+        sys.exit(1)
     t0 = time.time()
     log_path = os.path.join(output_root,
                             str("{0}_riboSeed_log.txt".format(
