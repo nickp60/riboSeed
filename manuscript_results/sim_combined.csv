@@ -1,0 +1,753 @@
+bug,cov,type,metric,val
+coli,10,de_fere_novo,# N's per 100 kbp,0
+coli,10,de_fere_novo,# contigs,1183
+coli,10,de_fere_novo,# contigs (>= 0 bp),1385
+coli,10,de_fere_novo,# contigs (>= 1000 bp),987
+coli,10,de_fere_novo,# contigs (>= 10000 bp),113
+coli,10,de_fere_novo,# contigs (>= 25000 bp),6
+coli,10,de_fere_novo,# contigs (>= 5000 bp),387
+coli,10,de_fere_novo,# contigs (>= 50000 bp),0
+coli,10,de_fere_novo,# indels per 100 kbp,1.19
+coli,10,de_fere_novo,# local misassemblies,8
+coli,10,de_fere_novo,# misassembled contigs,11
+coli,10,de_fere_novo,# misassemblies,11
+coli,10,de_fere_novo,# mismatches per 100 kbp,128.29
+coli,10,de_fere_novo,# unaligned contigs,0 + 19 part
+coli,10,de_fere_novo,Duplication ratio,1.008
+coli,10,de_fere_novo,GC (%),50.36
+coli,10,de_fere_novo,Genome fraction (%),95.114
+coli,10,de_fere_novo,L50,232
+coli,10,de_fere_novo,L75,471
+coli,10,de_fere_novo,LA50,232
+coli,10,de_fere_novo,LA75,475
+coli,10,de_fere_novo,LG50,247
+coli,10,de_fere_novo,LG75,515
+coli,10,de_fere_novo,LGA50,248
+coli,10,de_fere_novo,LGA75,519
+coli,10,de_fere_novo,Largest alignment,35476
+coli,10,de_fere_novo,Largest contig,35478
+coli,10,de_fere_novo,Misassembled contigs length,62344
+coli,10,de_fere_novo,N50,7225
+coli,10,de_fere_novo,N75,4089
+coli,10,de_fere_novo,NA50,7201
+coli,10,de_fere_novo,NA75,4030
+coli,10,de_fere_novo,NG50,6958
+coli,10,de_fere_novo,NG75,3716
+coli,10,de_fere_novo,NGA50,6917
+coli,10,de_fere_novo,NGA75,3646
+coli,10,de_fere_novo,Reference GC (%),50.54
+coli,10,de_fere_novo,Reference length,5500450
+coli,10,de_fere_novo,Total aligned length,5271938
+coli,10,de_fere_novo,Total length,5274888
+coli,10,de_fere_novo,Total length (>= 0 bp),5329226
+coli,10,de_fere_novo,Total length (>= 1000 bp),5131404
+coli,10,de_fere_novo,Total length (>= 10000 bp),1640774
+coli,10,de_fere_novo,Total length (>= 25000 bp),174304
+coli,10,de_fere_novo,Total length (>= 5000 bp),3579942
+coli,10,de_fere_novo,Total length (>= 50000 bp),0
+coli,10,de_fere_novo,Unaligned length,356
+coli,10,de_novo,# N's per 100 kbp,0
+coli,10,de_novo,# contigs,1194
+coli,10,de_novo,# contigs (>= 0 bp),1405
+coli,10,de_novo,# contigs (>= 1000 bp),995
+coli,10,de_novo,# contigs (>= 10000 bp),110
+coli,10,de_novo,# contigs (>= 25000 bp),5
+coli,10,de_novo,# contigs (>= 5000 bp),383
+coli,10,de_novo,# contigs (>= 50000 bp),0
+coli,10,de_novo,# indels per 100 kbp,1.02
+coli,10,de_novo,# local misassemblies,8
+coli,10,de_novo,# misassembled contigs,11
+coli,10,de_novo,# misassemblies,11
+coli,10,de_novo,# mismatches per 100 kbp,127.58
+coli,10,de_novo,# unaligned contigs,0 + 19 part
+coli,10,de_novo,Duplication ratio,1.008
+coli,10,de_novo,GC (%),50.34
+coli,10,de_novo,Genome fraction (%),94.538
+coli,10,de_novo,L50,234
+coli,10,de_novo,L75,477
+coli,10,de_novo,LA50,235
+coli,10,de_novo,LA75,481
+coli,10,de_novo,LG50,252
+coli,10,de_novo,LG75,528
+coli,10,de_novo,LGA50,253
+coli,10,de_novo,LGA75,532
+coli,10,de_novo,Largest alignment,35476
+coli,10,de_novo,Largest contig,35478
+coli,10,de_novo,Misassembled contigs length,66765
+coli,10,de_novo,N50,7040
+coli,10,de_novo,N75,3993
+coli,10,de_novo,NA50,7014
+coli,10,de_novo,NA75,3952
+coli,10,de_novo,NG50,6805
+coli,10,de_novo,NG75,3590
+coli,10,de_novo,NGA50,6726
+coli,10,de_novo,NGA75,3551
+coli,10,de_novo,Reference GC (%),50.54
+coli,10,de_novo,Reference length,5500450
+coli,10,de_novo,Total aligned length,5241133
+coli,10,de_novo,Total length,5244082
+coli,10,de_novo,Total length (>= 0 bp),5300967
+coli,10,de_novo,Total length (>= 1000 bp),5098855
+coli,10,de_novo,Total length (>= 10000 bp),1593534
+coli,10,de_novo,Total length (>= 25000 bp),147400
+coli,10,de_novo,Total length (>= 5000 bp),3517291
+coli,10,de_novo,Total length (>= 50000 bp),0
+coli,10,de_novo,Unaligned length,356
+coli,20,de_fere_novo,# N's per 100 kbp,0
+coli,20,de_fere_novo,# contigs,228
+coli,20,de_fere_novo,# contigs (>= 0 bp),347
+coli,20,de_fere_novo,# contigs (>= 1000 bp),155
+coli,20,de_fere_novo,# contigs (>= 10000 bp),59
+coli,20,de_fere_novo,# contigs (>= 25000 bp),46
+coli,20,de_fere_novo,# contigs (>= 5000 bp),79
+coli,20,de_fere_novo,# contigs (>= 50000 bp),36
+coli,20,de_fere_novo,# indels per 100 kbp,0.36
+coli,20,de_fere_novo,# local misassemblies,1
+coli,20,de_fere_novo,# misassembled contigs,2
+coli,20,de_fere_novo,# misassemblies,2
+coli,20,de_fere_novo,# mismatches per 100 kbp,24.64
+coli,20,de_fere_novo,# unaligned contigs,0 + 0 part
+coli,20,de_fere_novo,Duplication ratio,1.002
+coli,20,de_fere_novo,GC (%),50.37
+coli,20,de_fere_novo,Genome fraction (%),96.21
+coli,20,de_fere_novo,L50,15
+coli,20,de_fere_novo,L75,30
+coli,20,de_fere_novo,LA50,15
+coli,20,de_fere_novo,LA75,30
+coli,20,de_fere_novo,LG50,16
+coli,20,de_fere_novo,LG75,32
+coli,20,de_fere_novo,LGA50,16
+coli,20,de_fere_novo,LGA75,32
+coli,20,de_fere_novo,Largest alignment,340700
+coli,20,de_fere_novo,Largest contig,340700
+coli,20,de_fere_novo,Misassembled contigs length,88873
+coli,20,de_fere_novo,N50,116616
+coli,20,de_fere_novo,N75,73323
+coli,20,de_fere_novo,NA50,116612
+coli,20,de_fere_novo,NA75,73323
+coli,20,de_fere_novo,NG50,116098
+coli,20,de_fere_novo,NG75,68116
+coli,20,de_fere_novo,NGA50,116098
+coli,20,de_fere_novo,NGA75,68114
+coli,20,de_fere_novo,Reference GC (%),50.54
+coli,20,de_fere_novo,Reference length,5500450
+coli,20,de_fere_novo,Total aligned length,5304348
+coli,20,de_fere_novo,Total length,5304574
+coli,20,de_fere_novo,Total length (>= 0 bp),5339563
+coli,20,de_fere_novo,Total length (>= 1000 bp),5253097
+coli,20,de_fere_novo,Total length (>= 10000 bp),4946267
+coli,20,de_fere_novo,Total length (>= 25000 bp),4726201
+coli,20,de_fere_novo,Total length (>= 5000 bp),5082546
+coli,20,de_fere_novo,Total length (>= 50000 bp),4393065
+coli,20,de_fere_novo,Unaligned length,0
+coli,20,de_novo,# N's per 100 kbp,0
+coli,20,de_novo,# contigs,237
+coli,20,de_novo,# contigs (>= 0 bp),364
+coli,20,de_novo,# contigs (>= 1000 bp),163
+coli,20,de_novo,# contigs (>= 10000 bp),64
+coli,20,de_novo,# contigs (>= 25000 bp),51
+coli,20,de_novo,# contigs (>= 5000 bp),84
+coli,20,de_novo,# contigs (>= 50000 bp),37
+coli,20,de_novo,# indels per 100 kbp,0.34
+coli,20,de_novo,# local misassemblies,1
+coli,20,de_novo,# misassembled contigs,2
+coli,20,de_novo,# misassemblies,2
+coli,20,de_novo,# mismatches per 100 kbp,22.78
+coli,20,de_novo,# unaligned contigs,0 + 0 part
+coli,20,de_novo,Duplication ratio,1.002
+coli,20,de_novo,GC (%),50.36
+coli,20,de_novo,Genome fraction (%),95.766
+coli,20,de_novo,L50,17
+coli,20,de_novo,L75,33
+coli,20,de_novo,LA50,17
+coli,20,de_novo,LA75,33
+coli,20,de_novo,LG50,18
+coli,20,de_novo,LG75,36
+coli,20,de_novo,LGA50,18
+coli,20,de_novo,LGA75,36
+coli,20,de_novo,Largest alignment,267676
+coli,20,de_novo,Largest contig,267676
+coli,20,de_novo,Misassembled contigs length,88873
+coli,20,de_novo,N50,106194
+coli,20,de_novo,N75,71703
+coli,20,de_novo,NA50,106194
+coli,20,de_novo,NA75,71700
+coli,20,de_novo,NG50,100159
+coli,20,de_novo,NG75,65027
+coli,20,de_novo,NGA50,100159
+coli,20,de_novo,NGA75,65018
+coli,20,de_novo,Reference GC (%),50.54
+coli,20,de_novo,Reference length,5500450
+coli,20,de_novo,Total aligned length,5280030
+coli,20,de_novo,Total length,5280256
+coli,20,de_novo,Total length (>= 0 bp),5317089
+coli,20,de_novo,Total length (>= 1000 bp),5228250
+coli,20,de_novo,Total length (>= 10000 bp),4912126
+coli,20,de_novo,Total length (>= 25000 bp),4692060
+coli,20,de_novo,Total length (>= 5000 bp),5048405
+coli,20,de_novo,Total length (>= 50000 bp),4223695
+coli,20,de_novo,Unaligned length,0
+coli,50,de_fere_novo,# N's per 100 kbp,0
+coli,50,de_fere_novo,# contigs,219
+coli,50,de_fere_novo,# contigs (>= 0 bp),335
+coli,50,de_fere_novo,# contigs (>= 1000 bp),134
+coli,50,de_fere_novo,# contigs (>= 10000 bp),45
+coli,50,de_fere_novo,# contigs (>= 25000 bp),40
+coli,50,de_fere_novo,# contigs (>= 5000 bp),60
+coli,50,de_fere_novo,# contigs (>= 50000 bp),29
+coli,50,de_fere_novo,# indels per 100 kbp,0.3
+coli,50,de_fere_novo,# local misassemblies,0
+coli,50,de_fere_novo,# misassembled contigs,0
+coli,50,de_fere_novo,# misassemblies,0
+coli,50,de_fere_novo,# mismatches per 100 kbp,6.87
+coli,50,de_fere_novo,# unaligned contigs,0 + 1 part
+coli,50,de_fere_novo,Duplication ratio,1.002
+coli,50,de_fere_novo,GC (%),50.37
+coli,50,de_fere_novo,Genome fraction (%),96.327
+coli,50,de_fere_novo,L50,11
+coli,50,de_fere_novo,L75,22
+coli,50,de_fere_novo,LA50,11
+coli,50,de_fere_novo,LA75,22
+coli,50,de_fere_novo,LG50,12
+coli,50,de_fere_novo,LG75,24
+coli,50,de_fere_novo,LGA50,12
+coli,50,de_fere_novo,LGA75,24
+coli,50,de_fere_novo,Largest alignment,352820
+coli,50,de_fere_novo,Largest contig,352820
+coli,50,de_fere_novo,Misassembled contigs length,0
+coli,50,de_fere_novo,N50,156392
+coli,50,de_fere_novo,N75,76524
+coli,50,de_fere_novo,NA50,156392
+coli,50,de_fere_novo,NA75,76524
+coli,50,de_fere_novo,NG50,155821
+coli,50,de_fere_novo,NG75,72870
+coli,50,de_fere_novo,NGA50,155821
+coli,50,de_fere_novo,NGA75,72870
+coli,50,de_fere_novo,Reference GC (%),50.54
+coli,50,de_fere_novo,Reference length,5500450
+coli,50,de_fere_novo,Total aligned length,5306607
+coli,50,de_fere_novo,Total length,5306666
+coli,50,de_fere_novo,Total length (>= 0 bp),5342585
+coli,50,de_fere_novo,Total length (>= 1000 bp),5246380
+coli,50,de_fere_novo,Total length (>= 10000 bp),4970632
+coli,50,de_fere_novo,Total length (>= 25000 bp),4892061
+coli,50,de_fere_novo,Total length (>= 5000 bp),5073701
+coli,50,de_fere_novo,Total length (>= 50000 bp),4489626
+coli,50,de_fere_novo,Unaligned length,44
+coli,50,de_novo,# N's per 100 kbp,0
+coli,50,de_novo,# contigs,228
+coli,50,de_novo,# contigs (>= 0 bp),352
+coli,50,de_novo,# contigs (>= 1000 bp),142
+coli,50,de_novo,# contigs (>= 10000 bp),50
+coli,50,de_novo,# contigs (>= 25000 bp),45
+coli,50,de_novo,# contigs (>= 5000 bp),65
+coli,50,de_novo,# contigs (>= 50000 bp),30
+coli,50,de_novo,# indels per 100 kbp,0.27
+coli,50,de_novo,# local misassemblies,0
+coli,50,de_novo,# misassembled contigs,0
+coli,50,de_novo,# misassemblies,0
+coli,50,de_novo,# mismatches per 100 kbp,6.12
+coli,50,de_novo,# unaligned contigs,0 + 1 part
+coli,50,de_novo,Duplication ratio,1.002
+coli,50,de_novo,GC (%),50.36
+coli,50,de_novo,Genome fraction (%),95.881
+coli,50,de_novo,L50,13
+coli,50,de_novo,L75,25
+coli,50,de_novo,LA50,13
+coli,50,de_novo,LA75,25
+coli,50,de_novo,LG50,14
+coli,50,de_novo,LG75,27
+coli,50,de_novo,LGA50,14
+coli,50,de_novo,LGA75,27
+coli,50,de_novo,Largest alignment,352820
+coli,50,de_novo,Largest contig,352820
+coli,50,de_novo,Misassembled contigs length,0
+coli,50,de_novo,N50,148011
+coli,50,de_novo,N75,74032
+coli,50,de_novo,NA50,148011
+coli,50,de_novo,NA75,74030
+coli,50,de_novo,NG50,146930
+coli,50,de_novo,NG75,72592
+coli,50,de_novo,NGA50,146930
+coli,50,de_novo,NGA75,72592
+coli,50,de_novo,Reference GC (%),50.54
+coli,50,de_novo,Reference length,5500450
+coli,50,de_novo,Total aligned length,5282286
+coli,50,de_novo,Total length,5282348
+coli,50,de_novo,Total length (>= 0 bp),5320111
+coli,50,de_novo,Total length (>= 1000 bp),5221533
+coli,50,de_novo,Total length (>= 10000 bp),4936416
+coli,50,de_novo,Total length (>= 25000 bp),4857845
+coli,50,de_novo,Total length (>= 5000 bp),5039485
+coli,50,de_novo,Total length (>= 50000 bp),4320602
+coli,50,de_novo,Unaligned length,44
+coli,100,de_fere_novo,# N's per 100 kbp,0
+coli,100,de_fere_novo,# contigs,217
+coli,100,de_fere_novo,# contigs (>= 0 bp),335
+coli,100,de_fere_novo,# contigs (>= 1000 bp),138
+coli,100,de_fere_novo,# contigs (>= 10000 bp),44
+coli,100,de_fere_novo,# contigs (>= 25000 bp),39
+coli,100,de_fere_novo,# contigs (>= 5000 bp),60
+coli,100,de_fere_novo,# contigs (>= 50000 bp),30
+coli,100,de_fere_novo,# indels per 100 kbp,0.34
+coli,100,de_fere_novo,# local misassemblies,0
+coli,100,de_fere_novo,# misassembled contigs,0
+coli,100,de_fere_novo,# misassemblies,0
+coli,100,de_fere_novo,# mismatches per 100 kbp,4.28
+coli,100,de_fere_novo,# unaligned contigs,0 + 0 part
+coli,100,de_fere_novo,Duplication ratio,1.002
+coli,100,de_fere_novo,GC (%),50.38
+coli,100,de_fere_novo,Genome fraction (%),96.398
+coli,100,de_fere_novo,L50,11
+coli,100,de_fere_novo,L75,22
+coli,100,de_fere_novo,LA50,11
+coli,100,de_fere_novo,LA75,22
+coli,100,de_fere_novo,LG50,12
+coli,100,de_fere_novo,LG75,24
+coli,100,de_fere_novo,LGA50,12
+coli,100,de_fere_novo,LGA75,24
+coli,100,de_fere_novo,Largest alignment,352820
+coli,100,de_fere_novo,Largest contig,352820
+coli,100,de_fere_novo,Misassembled contigs length,0
+coli,100,de_fere_novo,N50,156945
+coli,100,de_fere_novo,N75,76621
+coli,100,de_fere_novo,NA50,156945
+coli,100,de_fere_novo,NA75,76621
+coli,100,de_fere_novo,NG50,155821
+coli,100,de_fere_novo,NG75,74171
+coli,100,de_fere_novo,NGA50,155821
+coli,100,de_fere_novo,NGA75,74171
+coli,100,de_fere_novo,Reference GC (%),50.54
+coli,100,de_fere_novo,Reference length,5500450
+coli,100,de_fere_novo,Total aligned length,5311779
+coli,100,de_fere_novo,Total length,5311783
+coli,100,de_fere_novo,Total length (>= 0 bp),5345013
+coli,100,de_fere_novo,Total length (>= 1000 bp),5255190
+coli,100,de_fere_novo,Total length (>= 10000 bp),4982255
+coli,100,de_fere_novo,Total length (>= 25000 bp),4903727
+coli,100,de_fere_novo,Total length (>= 5000 bp),5091417
+coli,100,de_fere_novo,Total length (>= 50000 bp),4572250
+coli,100,de_fere_novo,Unaligned length,0
+coli,100,de_novo,# N's per 100 kbp,0
+coli,100,de_novo,# contigs,226
+coli,100,de_novo,# contigs (>= 0 bp),351
+coli,100,de_novo,# contigs (>= 1000 bp),146
+coli,100,de_novo,# contigs (>= 10000 bp),49
+coli,100,de_novo,# contigs (>= 25000 bp),44
+coli,100,de_novo,# contigs (>= 5000 bp),65
+coli,100,de_novo,# contigs (>= 50000 bp),31
+coli,100,de_novo,# indels per 100 kbp,0.25
+coli,100,de_novo,# local misassemblies,0
+coli,100,de_novo,# misassembled contigs,0
+coli,100,de_novo,# misassemblies,0
+coli,100,de_novo,# mismatches per 100 kbp,3.45
+coli,100,de_novo,# unaligned contigs,0 + 0 part
+coli,100,de_novo,Duplication ratio,1.002
+coli,100,de_novo,GC (%),50.37
+coli,100,de_novo,Genome fraction (%),95.952
+coli,100,de_novo,L50,13
+coli,100,de_novo,L75,25
+coli,100,de_novo,LA50,13
+coli,100,de_novo,LA75,25
+coli,100,de_novo,LG50,14
+coli,100,de_novo,LG75,27
+coli,100,de_novo,LGA50,14
+coli,100,de_novo,LGA75,27
+coli,100,de_novo,Largest alignment,352820
+coli,100,de_novo,Largest contig,352820
+coli,100,de_novo,Misassembled contigs length,0
+coli,100,de_novo,N50,147997
+coli,100,de_novo,N75,74206
+coli,100,de_novo,NA50,147997
+coli,100,de_novo,NA75,74206
+coli,100,de_novo,NG50,146930
+coli,100,de_novo,NG75,73598
+coli,100,de_novo,NGA50,146930
+coli,100,de_novo,NGA75,73598
+coli,100,de_novo,Reference GC (%),50.54
+coli,100,de_novo,Reference length,5500450
+coli,100,de_novo,Total aligned length,5287461
+coli,100,de_novo,Total length,5287465
+coli,100,de_novo,Total length (>= 0 bp),5322359
+coli,100,de_novo,Total length (>= 1000 bp),5230343
+coli,100,de_novo,Total length (>= 10000 bp),4948039
+coli,100,de_novo,Total length (>= 25000 bp),4869511
+coli,100,de_novo,Total length (>= 5000 bp),5057201
+coli,100,de_novo,Total length (>= 50000 bp),4396056
+coli,100,de_novo,Unaligned length,0
+kleb,10,de_fere_novo,# N's per 100 kbp,0
+kleb,10,de_fere_novo,# contigs,1065
+kleb,10,de_fere_novo,# contigs (>= 0 bp),1098
+kleb,10,de_fere_novo,# contigs (>= 1000 bp),961
+kleb,10,de_fere_novo,# contigs (>= 10000 bp),130
+kleb,10,de_fere_novo,# contigs (>= 25000 bp),5
+kleb,10,de_fere_novo,# contigs (>= 5000 bp),387
+kleb,10,de_fere_novo,# contigs (>= 50000 bp),0
+kleb,10,de_fere_novo,# indels per 100 kbp,1.01
+kleb,10,de_fere_novo,# local misassemblies,3
+kleb,10,de_fere_novo,# misassembled contigs,8
+kleb,10,de_fere_novo,# misassemblies,8
+kleb,10,de_fere_novo,# mismatches per 100 kbp,114.21
+kleb,10,de_fere_novo,# unaligned contigs,0 + 22 part
+kleb,10,de_fere_novo,Duplication ratio,1.008
+kleb,10,de_fere_novo,GC (%),57.52
+kleb,10,de_fere_novo,Genome fraction (%),98.634
+kleb,10,de_fere_novo,L50,225
+kleb,10,de_fere_novo,L75,459
+kleb,10,de_fere_novo,LA50,228
+kleb,10,de_fere_novo,LA75,463
+kleb,10,de_fere_novo,LG50,227
+kleb,10,de_fere_novo,LG75,464
+kleb,10,de_fere_novo,LGA50,230
+kleb,10,de_fere_novo,LGA75,469
+kleb,10,de_fere_novo,Largest alignment,26948
+kleb,10,de_fere_novo,Largest contig,29250
+kleb,10,de_fere_novo,Misassembled contigs length,98111
+kleb,10,de_fere_novo,N50,7524
+kleb,10,de_fere_novo,N75,4180
+kleb,10,de_fere_novo,NA50,7484
+kleb,10,de_fere_novo,NA75,4167
+kleb,10,de_fere_novo,NG50,7487
+kleb,10,de_fere_novo,NG75,4143
+kleb,10,de_fere_novo,NGA50,7463
+kleb,10,de_fere_novo,NGA75,4111
+kleb,10,de_fere_novo,Reference GC (%),57.48
+kleb,10,de_fere_novo,Reference length,5335942
+kleb,10,de_fere_novo,Total aligned length,5301008
+kleb,10,de_fere_novo,Total length,5304103
+kleb,10,de_fere_novo,Total length (>= 0 bp),5317129
+kleb,10,de_fere_novo,Total length (>= 1000 bp),5226159
+kleb,10,de_fere_novo,Total length (>= 10000 bp),1829397
+kleb,10,de_fere_novo,Total length (>= 25000 bp),133849
+kleb,10,de_fere_novo,Total length (>= 5000 bp),3655676
+kleb,10,de_fere_novo,Total length (>= 50000 bp),0
+kleb,10,de_fere_novo,Unaligned length,372
+kleb,10,de_novo,# N's per 100 kbp,0
+kleb,10,de_novo,# contigs,1077
+kleb,10,de_novo,# contigs (>= 0 bp),1112
+kleb,10,de_novo,# contigs (>= 1000 bp),968
+kleb,10,de_novo,# contigs (>= 10000 bp),129
+kleb,10,de_novo,# contigs (>= 25000 bp),4
+kleb,10,de_novo,# contigs (>= 5000 bp),384
+kleb,10,de_novo,# contigs (>= 50000 bp),0
+kleb,10,de_novo,# indels per 100 kbp,1.11
+kleb,10,de_novo,# local misassemblies,3
+kleb,10,de_novo,# misassembled contigs,7
+kleb,10,de_novo,# misassemblies,7
+kleb,10,de_novo,# mismatches per 100 kbp,114.29
+kleb,10,de_novo,# unaligned contigs,0 + 22 part
+kleb,10,de_novo,Duplication ratio,1.008
+kleb,10,de_novo,GC (%),57.55
+kleb,10,de_novo,Genome fraction (%),98.078
+kleb,10,de_novo,L50,227
+kleb,10,de_novo,L75,464
+kleb,10,de_novo,LA50,231
+kleb,10,de_novo,LA75,469
+kleb,10,de_novo,LG50,231
+kleb,10,de_novo,LG75,476
+kleb,10,de_novo,LGA50,235
+kleb,10,de_novo,LGA75,480
+kleb,10,de_novo,Largest alignment,26948
+kleb,10,de_novo,Largest contig,29250
+kleb,10,de_novo,Misassembled contigs length,88727
+kleb,10,de_novo,N50,7424
+kleb,10,de_novo,N75,4118
+kleb,10,de_novo,NA50,7394
+kleb,10,de_novo,NA75,4094
+kleb,10,de_novo,NG50,7339
+kleb,10,de_novo,NG75,4030
+kleb,10,de_novo,NGA50,7330
+kleb,10,de_novo,NGA75,4013
+kleb,10,de_novo,Reference GC (%),57.48
+kleb,10,de_novo,Reference length,5335942
+kleb,10,de_novo,Total aligned length,5271146
+kleb,10,de_novo,Total length,5274246
+kleb,10,de_novo,Total length (>= 0 bp),5288022
+kleb,10,de_novo,Total length (>= 1000 bp),5192422
+kleb,10,de_novo,Total length (>= 10000 bp),1794552
+kleb,10,de_novo,Total length (>= 25000 bp),108445
+kleb,10,de_novo,Total length (>= 5000 bp),3596282
+kleb,10,de_novo,Total length (>= 50000 bp),0
+kleb,10,de_novo,Unaligned length,372
+kleb,20,de_fere_novo,# N's per 100 kbp,0
+kleb,20,de_fere_novo,# contigs,70
+kleb,20,de_fere_novo,# contigs (>= 0 bp),73
+kleb,20,de_fere_novo,# contigs (>= 1000 bp),67
+kleb,20,de_fere_novo,# contigs (>= 10000 bp),52
+kleb,20,de_fere_novo,# contigs (>= 25000 bp),45
+kleb,20,de_fere_novo,# contigs (>= 5000 bp),53
+kleb,20,de_fere_novo,# contigs (>= 50000 bp),38
+kleb,20,de_fere_novo,# indels per 100 kbp,0.21
+kleb,20,de_fere_novo,# local misassemblies,2
+kleb,20,de_fere_novo,# misassembled contigs,0
+kleb,20,de_fere_novo,# misassemblies,0
+kleb,20,de_fere_novo,# mismatches per 100 kbp,10.44
+kleb,20,de_fere_novo,# unaligned contigs,0 + 0 part
+kleb,20,de_fere_novo,Duplication ratio,1.001
+kleb,20,de_fere_novo,GC (%),57.52
+kleb,20,de_fere_novo,Genome fraction (%),99.425
+kleb,20,de_fere_novo,L50,14
+kleb,20,de_fere_novo,L75,25
+kleb,20,de_fere_novo,LA50,14
+kleb,20,de_fere_novo,LA75,25
+kleb,20,de_fere_novo,LG50,14
+kleb,20,de_fere_novo,LG75,25
+kleb,20,de_fere_novo,LGA50,14
+kleb,20,de_fere_novo,LGA75,25
+kleb,20,de_fere_novo,Largest alignment,287743
+kleb,20,de_fere_novo,Largest contig,287746
+kleb,20,de_fere_novo,Misassembled contigs length,0
+kleb,20,de_fere_novo,N50,160862
+kleb,20,de_fere_novo,N75,82563
+kleb,20,de_fere_novo,NA50,160862
+kleb,20,de_fere_novo,NA75,82563
+kleb,20,de_fere_novo,NG50,160862
+kleb,20,de_fere_novo,NG75,82563
+kleb,20,de_fere_novo,NGA50,160862
+kleb,20,de_fere_novo,NGA75,82563
+kleb,20,de_fere_novo,Reference GC (%),57.48
+kleb,20,de_fere_novo,Reference length,5335942
+kleb,20,de_fere_novo,Total aligned length,5309588
+kleb,20,de_fere_novo,Total length,5309642
+kleb,20,de_fere_novo,Total length (>= 0 bp),5310360
+kleb,20,de_fere_novo,Total length (>= 1000 bp),5307579
+kleb,20,de_fere_novo,Total length (>= 10000 bp),5278138
+kleb,20,de_fere_novo,Total length (>= 25000 bp),5155811
+kleb,20,de_fere_novo,Total length (>= 5000 bp),5287780
+kleb,20,de_fere_novo,Total length (>= 50000 bp),4909668
+kleb,20,de_fere_novo,Unaligned length,0
+kleb,20,de_novo,# N's per 100 kbp,0
+kleb,20,de_novo,# contigs,81
+kleb,20,de_novo,# contigs (>= 0 bp),90
+kleb,20,de_novo,# contigs (>= 1000 bp),77
+kleb,20,de_novo,# contigs (>= 10000 bp),58
+kleb,20,de_novo,# contigs (>= 25000 bp),49
+kleb,20,de_novo,# contigs (>= 5000 bp),60
+kleb,20,de_novo,# contigs (>= 50000 bp),40
+kleb,20,de_novo,# indels per 100 kbp,0.06
+kleb,20,de_novo,# local misassemblies,2
+kleb,20,de_novo,# misassembled contigs,0
+kleb,20,de_novo,# misassemblies,0
+kleb,20,de_novo,# mismatches per 100 kbp,17.74
+kleb,20,de_novo,# unaligned contigs,0 + 0 part
+kleb,20,de_novo,Duplication ratio,1.001
+kleb,20,de_novo,GC (%),57.55
+kleb,20,de_novo,Genome fraction (%),98.792
+kleb,20,de_novo,L50,14
+kleb,20,de_novo,L75,28
+kleb,20,de_novo,LA50,14
+kleb,20,de_novo,LA75,28
+kleb,20,de_novo,LG50,15
+kleb,20,de_novo,LG75,29
+kleb,20,de_novo,LGA50,15
+kleb,20,de_novo,LGA75,29
+kleb,20,de_novo,Largest alignment,272198
+kleb,20,de_novo,Largest contig,272198
+kleb,20,de_novo,Misassembled contigs length,0
+kleb,20,de_novo,N50,131905
+kleb,20,de_novo,N75,73121
+kleb,20,de_novo,NA50,131905
+kleb,20,de_novo,NA75,73121
+kleb,20,de_novo,NG50,130987
+kleb,20,de_novo,NG75,72891
+kleb,20,de_novo,NGA50,130987
+kleb,20,de_novo,NGA75,72891
+kleb,20,de_novo,Reference GC (%),57.48
+kleb,20,de_novo,Reference length,5335942
+kleb,20,de_novo,Total aligned length,5276051
+kleb,20,de_novo,Total length,5276105
+kleb,20,de_novo,Total length (>= 0 bp),5278465
+kleb,20,de_novo,Total length (>= 1000 bp),5273256
+kleb,20,de_novo,Total length (>= 10000 bp),5227090
+kleb,20,de_novo,Total length (>= 25000 bp),5072143
+kleb,20,de_novo,Total length (>= 5000 bp),5244202
+kleb,20,de_novo,Total length (>= 50000 bp),4764906
+kleb,20,de_novo,Unaligned length,0
+kleb,50,de_fere_novo,# N's per 100 kbp,0
+kleb,50,de_fere_novo,# contigs,43
+kleb,50,de_fere_novo,# contigs (>= 0 bp),45
+kleb,50,de_fere_novo,# contigs (>= 1000 bp),42
+kleb,50,de_fere_novo,# contigs (>= 10000 bp),32
+kleb,50,de_fere_novo,# contigs (>= 25000 bp),31
+kleb,50,de_fere_novo,# contigs (>= 5000 bp),32
+kleb,50,de_fere_novo,# contigs (>= 50000 bp),26
+kleb,50,de_fere_novo,# indels per 100 kbp,0.13
+kleb,50,de_fere_novo,# local misassemblies,1
+kleb,50,de_fere_novo,# misassembled contigs,0
+kleb,50,de_fere_novo,# misassemblies,0
+kleb,50,de_fere_novo,# mismatches per 100 kbp,1.32
+kleb,50,de_fere_novo,# unaligned contigs,0 + 0 part
+kleb,50,de_fere_novo,Duplication ratio,1
+kleb,50,de_fere_novo,GC (%),57.52
+kleb,50,de_fere_novo,Genome fraction (%),99.44
+kleb,50,de_fere_novo,L50,9
+kleb,50,de_fere_novo,L75,15
+kleb,50,de_fere_novo,LA50,9
+kleb,50,de_fere_novo,LA75,15
+kleb,50,de_fere_novo,LG50,9
+kleb,50,de_fere_novo,LG75,16
+kleb,50,de_fere_novo,LGA50,9
+kleb,50,de_fere_novo,LGA75,16
+kleb,50,de_fere_novo,Largest alignment,530419
+kleb,50,de_fere_novo,Largest contig,530419
+kleb,50,de_fere_novo,Misassembled contigs length,0
+kleb,50,de_fere_novo,N50,214478
+kleb,50,de_fere_novo,N75,171488
+kleb,50,de_fere_novo,NA50,214478
+kleb,50,de_fere_novo,NA75,171488
+kleb,50,de_fere_novo,NG50,214478
+kleb,50,de_fere_novo,NG75,169112
+kleb,50,de_fere_novo,NGA50,214478
+kleb,50,de_fere_novo,NGA75,169112
+kleb,50,de_fere_novo,Reference GC (%),57.48
+kleb,50,de_fere_novo,Reference length,5335942
+kleb,50,de_fere_novo,Total aligned length,5307959
+kleb,50,de_fere_novo,Total length,5307973
+kleb,50,de_fere_novo,Total length (>= 0 bp),5308706
+kleb,50,de_fere_novo,Total length (>= 1000 bp),5307447
+kleb,50,de_fere_novo,Total length (>= 10000 bp),5291846
+kleb,50,de_fere_novo,Total length (>= 25000 bp),5277682
+kleb,50,de_fere_novo,Total length (>= 5000 bp),5291846
+kleb,50,de_fere_novo,Total length (>= 50000 bp),5098031
+kleb,50,de_fere_novo,Unaligned length,0
+kleb,50,de_novo,# N's per 100 kbp,0
+kleb,50,de_novo,# contigs,54
+kleb,50,de_novo,# contigs (>= 0 bp),62
+kleb,50,de_novo,# contigs (>= 1000 bp),52
+kleb,50,de_novo,# contigs (>= 10000 bp),39
+kleb,50,de_novo,# contigs (>= 25000 bp),35
+kleb,50,de_novo,# contigs (>= 5000 bp),39
+kleb,50,de_novo,# contigs (>= 50000 bp),28
+kleb,50,de_novo,# indels per 100 kbp,0.02
+kleb,50,de_novo,# local misassemblies,1
+kleb,50,de_novo,# misassembled contigs,0
+kleb,50,de_novo,# misassemblies,0
+kleb,50,de_novo,# mismatches per 100 kbp,2.75
+kleb,50,de_novo,# unaligned contigs,0 + 0 part
+kleb,50,de_novo,Duplication ratio,1
+kleb,50,de_novo,GC (%),57.55
+kleb,50,de_novo,Genome fraction (%),98.808
+kleb,50,de_novo,L50,9
+kleb,50,de_novo,L75,17
+kleb,50,de_novo,LA50,9
+kleb,50,de_novo,LA75,17
+kleb,50,de_novo,LG50,9
+kleb,50,de_novo,LG75,17
+kleb,50,de_novo,LGA50,9
+kleb,50,de_novo,LGA75,17
+kleb,50,de_novo,Largest alignment,502703
+kleb,50,de_novo,Largest contig,502703
+kleb,50,de_novo,Misassembled contigs length,0
+kleb,50,de_novo,N50,206453
+kleb,50,de_novo,N75,129571
+kleb,50,de_novo,NA50,206453
+kleb,50,de_novo,NA75,129571
+kleb,50,de_novo,NG50,206453
+kleb,50,de_novo,NG75,129571
+kleb,50,de_novo,NGA50,206453
+kleb,50,de_novo,NGA75,129571
+kleb,50,de_novo,Reference GC (%),57.48
+kleb,50,de_novo,Reference length,5335942
+kleb,50,de_novo,Total aligned length,5274365
+kleb,50,de_novo,Total length,5274379
+kleb,50,de_novo,Total length (>= 0 bp),5276754
+kleb,50,de_novo,Total length (>= 1000 bp),5273067
+kleb,50,de_novo,Total length (>= 10000 bp),5248212
+kleb,50,de_novo,Total length (>= 25000 bp),5174673
+kleb,50,de_novo,Total length (>= 5000 bp),5248212
+kleb,50,de_novo,Total length (>= 50000 bp),4933928
+kleb,50,de_novo,Unaligned length,0
+kleb,100,de_fere_novo,# N's per 100 kbp,0
+kleb,100,de_fere_novo,# contigs,43
+kleb,100,de_fere_novo,# contigs (>= 0 bp),45
+kleb,100,de_fere_novo,# contigs (>= 1000 bp),42
+kleb,100,de_fere_novo,# contigs (>= 10000 bp),32
+kleb,100,de_fere_novo,# contigs (>= 25000 bp),31
+kleb,100,de_fere_novo,# contigs (>= 5000 bp),32
+kleb,100,de_fere_novo,# contigs (>= 50000 bp),26
+kleb,100,de_fere_novo,# indels per 100 kbp,0.23
+kleb,100,de_fere_novo,# local misassemblies,1
+kleb,100,de_fere_novo,# misassembled contigs,0
+kleb,100,de_fere_novo,# misassemblies,0
+kleb,100,de_fere_novo,# mismatches per 100 kbp,2.22
+kleb,100,de_fere_novo,# unaligned contigs,0 + 0 part
+kleb,100,de_fere_novo,Duplication ratio,1
+kleb,100,de_fere_novo,GC (%),57.52
+kleb,100,de_fere_novo,Genome fraction (%),99.438
+kleb,100,de_fere_novo,L50,9
+kleb,100,de_fere_novo,L75,15
+kleb,100,de_fere_novo,LA50,9
+kleb,100,de_fere_novo,LA75,15
+kleb,100,de_fere_novo,LG50,9
+kleb,100,de_fere_novo,LG75,16
+kleb,100,de_fere_novo,LGA50,9
+kleb,100,de_fere_novo,LGA75,16
+kleb,100,de_fere_novo,Largest alignment,530419
+kleb,100,de_fere_novo,Largest contig,530419
+kleb,100,de_fere_novo,Misassembled contigs length,0
+kleb,100,de_fere_novo,N50,214478
+kleb,100,de_fere_novo,N75,171488
+kleb,100,de_fere_novo,NA50,214478
+kleb,100,de_fere_novo,NA75,171488
+kleb,100,de_fere_novo,NG50,214478
+kleb,100,de_fere_novo,NG75,169112
+kleb,100,de_fere_novo,NGA50,214478
+kleb,100,de_fere_novo,NGA75,169112
+kleb,100,de_fere_novo,Reference GC (%),57.48
+kleb,100,de_fere_novo,Reference length,5335942
+kleb,100,de_fere_novo,Total aligned length,5307876
+kleb,100,de_fere_novo,Total length,5307876
+kleb,100,de_fere_novo,Total length (>= 0 bp),5308587
+kleb,100,de_fere_novo,Total length (>= 1000 bp),5307220
+kleb,100,de_fere_novo,Total length (>= 10000 bp),5291796
+kleb,100,de_fere_novo,Total length (>= 25000 bp),5277632
+kleb,100,de_fere_novo,Total length (>= 5000 bp),5291796
+kleb,100,de_fere_novo,Total length (>= 50000 bp),5097920
+kleb,100,de_fere_novo,Unaligned length,0
+kleb,100,de_novo,# N's per 100 kbp,0
+kleb,100,de_novo,# contigs,54
+kleb,100,de_novo,# contigs (>= 0 bp),59
+kleb,100,de_novo,# contigs (>= 1000 bp),52
+kleb,100,de_novo,# contigs (>= 10000 bp),39
+kleb,100,de_novo,# contigs (>= 25000 bp),35
+kleb,100,de_novo,# contigs (>= 5000 bp),39
+kleb,100,de_novo,# contigs (>= 50000 bp),28
+kleb,100,de_novo,# indels per 100 kbp,0.11
+kleb,100,de_novo,# local misassemblies,1
+kleb,100,de_novo,# misassembled contigs,0
+kleb,100,de_novo,# misassemblies,0
+kleb,100,de_novo,# mismatches per 100 kbp,1.42
+kleb,100,de_novo,# unaligned contigs,0 + 0 part
+kleb,100,de_novo,Duplication ratio,1
+kleb,100,de_novo,GC (%),57.55
+kleb,100,de_novo,Genome fraction (%),98.81
+kleb,100,de_novo,L50,9
+kleb,100,de_novo,L75,17
+kleb,100,de_novo,LA50,9
+kleb,100,de_novo,LA75,17
+kleb,100,de_novo,LG50,9
+kleb,100,de_novo,LG75,17
+kleb,100,de_novo,LGA50,9
+kleb,100,de_novo,LGA75,17
+kleb,100,de_novo,Largest alignment,502703
+kleb,100,de_novo,Largest contig,502703
+kleb,100,de_novo,Misassembled contigs length,0
+kleb,100,de_novo,N50,206453
+kleb,100,de_novo,N75,129758
+kleb,100,de_novo,NA50,206453
+kleb,100,de_novo,NA75,129758
+kleb,100,de_novo,NG50,206453
+kleb,100,de_novo,NG75,129758
+kleb,100,de_novo,NGA50,206453
+kleb,100,de_novo,NGA75,129758
+kleb,100,de_novo,Reference GC (%),57.48
+kleb,100,de_novo,Reference length,5335942
+kleb,100,de_novo,Total aligned length,5274474
+kleb,100,de_novo,Total length,5274474
+kleb,100,de_novo,Total length (>= 0 bp),5276189
+kleb,100,de_novo,Total length (>= 1000 bp),5273287
+kleb,100,de_novo,Total length (>= 10000 bp),5248353
+kleb,100,de_novo,Total length (>= 25000 bp),5174829
+kleb,100,de_novo,Total length (>= 5000 bp),5248353
+kleb,100,de_novo,Total length (>= 50000 bp),4934023
+kleb,100,de_novo,Unaligned length,0

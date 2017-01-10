@@ -1,0 +1,907 @@
+2017-01-07 01:12:54,353 - INFO - Initializing logger
+2017-01-07 01:12:54,354 - DEBUG - logging at level 1
+2017-01-07 01:12:54,355 - INFO - riboSeed pipeline package version 0.5.0
+2017-01-07 01:12:54,357 - INFO - Usage:
+/mnt/shared/users/nw42839/.virtualenvs/riboSeedVE/bin/riboSeed.py ./20170107_1k/select/riboSelect_grouped_loci.txt -F ./UAMS_reads/UAMS1_S17_L001_R1_001.fastq.gz -R ./UAMS_reads/UAMS1_S17_L001_R2_001.fastq.gz -r ./MRSA252_scan/scannedScaffolds.gb -v 1 -i 3 -o ./20170107_1k/seed/ -v 1 -c 8 -t 2
+
+2017-01-07 01:12:54,358 - DEBUG - All settings used:
+2017-01-07 01:12:54,360 - DEBUG - bwa_exe: bwa
+2017-01-07 01:12:54,361 - DEBUG - clustered_loci_txt: ./20170107_1k/select/riboSelect_grouped_loci.txt
+2017-01-07 01:12:54,362 - DEBUG - cores: 8
+2017-01-07 01:12:54,363 - DEBUG - exp_name: riboSeed
+2017-01-07 01:12:54,364 - DEBUG - fastq1: ./UAMS_reads/UAMS1_S17_L001_R1_001.fastq.gz
+2017-01-07 01:12:54,365 - DEBUG - fastq2: ./UAMS_reads/UAMS1_S17_L001_R2_001.fastq.gz
+2017-01-07 01:12:54,365 - DEBUG - fastqS: None
+2017-01-07 01:12:54,366 - DEBUG - flanking: 1000
+2017-01-07 01:12:54,367 - DEBUG - ignoreS: False
+2017-01-07 01:12:54,368 - DEBUG - include_short_contigs: False
+2017-01-07 01:12:54,369 - DEBUG - iterations: 3
+2017-01-07 01:12:54,370 - DEBUG - keep_temps: False
+2017-01-07 01:12:54,371 - DEBUG - keep_unmapped: False
+2017-01-07 01:12:54,372 - DEBUG - kmers: 21,33,55,77,99,127
+2017-01-07 01:12:54,373 - DEBUG - linear: False
+2017-01-07 01:12:54,374 - DEBUG - method: bwa
+2017-01-07 01:12:54,375 - DEBUG - min_assembly_len: 6000
+2017-01-07 01:12:54,375 - DEBUG - output: ./20170107_1k/seed/
+2017-01-07 01:12:54,376 - DEBUG - padding: 5000
+2017-01-07 01:12:54,377 - DEBUG - paired_inference: False
+2017-01-07 01:12:54,378 - DEBUG - pre_kmers: 21,33,55,77,99
+2017-01-07 01:12:54,379 - DEBUG - python2_7_exe: python2.7
+2017-01-07 01:12:54,380 - DEBUG - quast_exe: quast.py
+2017-01-07 01:12:54,381 - DEBUG - ref_as_contig: untrusted
+2017-01-07 01:12:54,382 - DEBUG - reference_genbank: ./MRSA252_scan/scannedScaffolds.gb
+2017-01-07 01:12:54,383 - DEBUG - samtools_exe: samtools
+2017-01-07 01:12:54,384 - DEBUG - score_min: None
+2017-01-07 01:12:54,385 - DEBUG - serialize: False
+2017-01-07 01:12:54,385 - DEBUG - skip_control: False
+2017-01-07 01:12:54,386 - DEBUG - smalt_exe: smalt
+2017-01-07 01:12:54,387 - DEBUG - smalt_scoring: match=1,subst=-4,gapopen=-4,gapext=-3
+2017-01-07 01:12:54,388 - DEBUG - spades_exe: spades.py
+2017-01-07 01:12:54,389 - DEBUG - target_len: None
+2017-01-07 01:12:54,390 - DEBUG - threads: 2
+2017-01-07 01:12:54,391 - DEBUG - verbosity: 1
+2017-01-07 01:12:54,392 - DEBUG - current PATH:
+2017-01-07 01:12:54,393 - DEBUG - /mnt/shared/users/nw42839/.virtualenvs/riboSeedVE/bin:/home/nw42839/bin/bwa-0.7.15:/home/nw42839/bin/kSNP3:/home/nw42839/bin:/home/nw42839/barrnap-0.7/bin:/home/nw42839/python/bin:/home/nw42839/perl5/bin:/mnt/sge/bin:/mnt/sge/bin/lx-amd64:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/454/bin:/opt/bowtie:/opt/dell/srvadmin/bin:/home/nw42839/bin
+2017-01-07 01:12:54,394 - INFO - checking for installations of all required external tools
+2017-01-07 01:12:54,395 - DEBUG - creating an Exes object
+2017-01-07 01:12:54,408 - DEBUG - All needed system executables found!
+2017-01-07 01:12:54,409 - DEBUG - {'mapper': '/home/nw42839/bin/bwa', 'bwa': 'bwa', 'quast': '/home/nw42839/bin/quast.py', 'spades': '/home/nw42839/bin/spades.py', 'python2_7': '/home/nw42839/python/bin/python2.7', 'samtools': '/home/nw42839/bin/samtools', 'check': True, 'smalt': 'smalt', 'method': 'bwa'}
+2017-01-07 01:12:54,873 - DEBUG - ['', 'Program: samtools (Tools for alignments in the SAM format)', 'Version: 1.3.1 (using htslib 1.3.1)', '', 'Usage:   samtools <command> [options]', '', 'Commands:', '  -- Indexing', '     dict           create a sequence dictionary file', '     faidx          index/extract FASTA', '     index          index alignment', '', '  -- Editing', "     calmd          recalculate MD/NM tags and '=' bases", '     fixmate        fix mate information', '     reheader       replace BAM header', '     rmdup          remove PCR duplicates', '     targetcut      cut fosmid regions (for fosmid pool only)', '     addreplacerg   adds or replaces RG tags', '', '  -- File operations', '     collate        shuffle and group alignments by name', '     cat            concatenate BAMs', '     merge          merge sorted alignments', '     mpileup        multi-way pileup', '     sort           sort alignment file', '     split          splits a file by read group', '     quickcheck     quickly check if SAM/BAM/CRAM file appears intact', '     fastq          converts a BAM to a FASTQ', '     fasta          converts a BAM to a FASTA', '', '  -- Statistics', '     bedcov         read depth per BED region', '     depth          compute the depth', '     flagstat       simple stats', '     idxstats       BAM index stats', '     phase          phase heterozygotes', '     stats          generate stats (former bamcheck)', '', '  -- Viewing', '     flags          explain BAM flags', '     tview          text alignment viewer', '     view           SAM<->BAM<->CRAM conversion', '     depad          convert padded BAM to unpadded BAM', '', '']
+2017-01-07 01:12:54,875 - DEBUG - this_version: 1.3.1
+2017-01-07 01:12:54,877 - DEBUG - samtools version: 1.3.1
+2017-01-07 01:12:54,878 - INFO - BWA is the selected mapper
+2017-01-07 01:12:54,879 - DEBUG - Checking that the fastq pair have equal number of reads
+2017-01-07 01:13:27,137 - DEBUG - constructing the seedGenome object
+2017-01-07 01:13:27,617 - INFO - From the first 36 reads in UAMS1_S17_L001_R1_001.fastq.gz, mean length is 301.0
+2017-01-07 01:13:28,557 - DEBUG - Added attributes for BX571856.1.fasta1
+2017-01-07 01:13:28,559 - DEBUG - locus_tag: BX571856.1.fasta1; coords: [514254-515803]; sequence_id: BX571856.1; product: 16S ribosomal RNA
+2017-01-07 01:13:28,560 - DEBUG - Added attributes for BX571856.1.fasta2
+2017-01-07 01:13:28,562 - DEBUG - locus_tag: BX571856.1.fasta2; coords: [516231-519149]; sequence_id: BX571856.1; product: 23S ribosomal RNA
+2017-01-07 01:13:28,563 - DEBUG - Added attributes for BX571856.1.fasta3
+2017-01-07 01:13:28,565 - DEBUG - locus_tag: BX571856.1.fasta3; coords: [519226-519303]; sequence_id: BX571856.1; product: 5S ribosomal RNA (partial)
+2017-01-07 01:13:28,567 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2017-01-07 01:13:28,568 - DEBUG - {'output_root': '/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed', 'seq_record': SeqRecord(seq=Seq('CGATTAAAGATAGAAATACACGATGCGAGCAATCAAATTTCATAACATCACCAT...TAT', IUPACAmbiguousDNA()), id='BX571856.1', name='BX571856.1', description='Staphylococcus aureus subsp. aureus strain MRSA252, complete genome.', dbxrefs=[]), 'feat_of_interest': 'rRNA', 'continue_iterating': True, 'keep_contigs': True, 'sequence_id': 'BX571856.1', 'final_contig_path': None, 'circular': True, 'index': 0, 'global_end_coord': None, 'loci_list': [<riboSnag.Locus object at 0x2b53c8860b00>, <riboSnag.Locus object at 0x2b53c8860cc0>, <riboSnag.Locus object at 0x2b53c8860cf8>], 'mappings': [], 'cluster_dir_name': 'BX571856.1_cluster_0', 'extractedSeqRecord': None, 'padding': 5000, 'global_start_coord': None}
+2017-01-07 01:13:28,570 - DEBUG - Added attributes for BX571856.1.fasta11
+2017-01-07 01:13:28,571 - DEBUG - locus_tag: BX571856.1.fasta11; coords: [2213810-2213887]; sequence_id: BX571856.1; product: 5S ribosomal RNA (partial)
+2017-01-07 01:13:28,573 - DEBUG - Added attributes for BX571856.1.fasta12
+2017-01-07 01:13:28,574 - DEBUG - locus_tag: BX571856.1.fasta12; coords: [2213965-2216885]; sequence_id: BX571856.1; product: 23S ribosomal RNA
+2017-01-07 01:13:28,575 - DEBUG - Added attributes for BX571856.1.fasta13
+2017-01-07 01:13:28,576 - DEBUG - locus_tag: BX571856.1.fasta13; coords: [2217254-2218803]; sequence_id: BX571856.1; product: 16S ribosomal RNA
+2017-01-07 01:13:28,578 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2017-01-07 01:13:28,579 - DEBUG - {'output_root': '/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed', 'seq_record': SeqRecord(seq=Seq('CGATTAAAGATAGAAATACACGATGCGAGCAATCAAATTTCATAACATCACCAT...TAT', IUPACAmbiguousDNA()), id='BX571856.1', name='BX571856.1', description='Staphylococcus aureus subsp. aureus strain MRSA252, complete genome.', dbxrefs=[]), 'feat_of_interest': 'rRNA', 'continue_iterating': True, 'keep_contigs': True, 'sequence_id': 'BX571856.1', 'final_contig_path': None, 'circular': True, 'index': 1, 'global_end_coord': None, 'loci_list': [<riboSnag.Locus object at 0x2b53c8860da0>, <riboSnag.Locus object at 0x2b53c8860dd8>, <riboSnag.Locus object at 0x2b53c8860c88>], 'mappings': [], 'cluster_dir_name': 'BX571856.1_cluster_1', 'extractedSeqRecord': None, 'padding': 5000, 'global_start_coord': None}
+2017-01-07 01:13:28,580 - DEBUG - Added attributes for BX571856.1.fasta8
+2017-01-07 01:13:28,582 - DEBUG - locus_tag: BX571856.1.fasta8; coords: [2036258-2036335]; sequence_id: BX571856.1; product: 5S ribosomal RNA (partial)
+2017-01-07 01:13:28,583 - DEBUG - Added attributes for BX571856.1.fasta9
+2017-01-07 01:13:28,584 - DEBUG - locus_tag: BX571856.1.fasta9; coords: [2036412-2039330]; sequence_id: BX571856.1; product: 23S ribosomal RNA
+2017-01-07 01:13:28,586 - DEBUG - Added attributes for BX571856.1.fasta10
+2017-01-07 01:13:28,587 - DEBUG - locus_tag: BX571856.1.fasta10; coords: [2039808-2041358]; sequence_id: BX571856.1; product: 16S ribosomal RNA
+2017-01-07 01:13:28,588 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2017-01-07 01:13:28,589 - DEBUG - {'output_root': '/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed', 'seq_record': SeqRecord(seq=Seq('CGATTAAAGATAGAAATACACGATGCGAGCAATCAAATTTCATAACATCACCAT...TAT', IUPACAmbiguousDNA()), id='BX571856.1', name='BX571856.1', description='Staphylococcus aureus subsp. aureus strain MRSA252, complete genome.', dbxrefs=[]), 'feat_of_interest': 'rRNA', 'continue_iterating': True, 'keep_contigs': True, 'sequence_id': 'BX571856.1', 'final_contig_path': None, 'circular': True, 'index': 2, 'global_end_coord': None, 'loci_list': [<riboSnag.Locus object at 0x2b53c8860e80>, <riboSnag.Locus object at 0x2b53c8860d68>, <riboSnag.Locus object at 0x2b53c8860ef0>], 'mappings': [], 'cluster_dir_name': 'BX571856.1_cluster_2', 'extractedSeqRecord': None, 'padding': 5000, 'global_start_coord': None}
+2017-01-07 01:13:28,590 - DEBUG - Added attributes for BX571856.1.fasta14
+2017-01-07 01:13:28,592 - DEBUG - locus_tag: BX571856.1.fasta14; coords: [2332221-2332298]; sequence_id: BX571856.1; product: 5S ribosomal RNA (partial)
+2017-01-07 01:13:28,593 - DEBUG - Added attributes for BX571856.1.fasta15
+2017-01-07 01:13:28,594 - DEBUG - locus_tag: BX571856.1.fasta15; coords: [2332376-2335294]; sequence_id: BX571856.1; product: 23S ribosomal RNA
+2017-01-07 01:13:28,595 - DEBUG - Added attributes for BX571856.1.fasta16
+2017-01-07 01:13:28,596 - DEBUG - locus_tag: BX571856.1.fasta16; coords: [2335738-2337285]; sequence_id: BX571856.1; product: 16S ribosomal RNA
+2017-01-07 01:13:28,597 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2017-01-07 01:13:28,598 - DEBUG - {'output_root': '/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed', 'seq_record': SeqRecord(seq=Seq('CGATTAAAGATAGAAATACACGATGCGAGCAATCAAATTTCATAACATCACCAT...TAT', IUPACAmbiguousDNA()), id='BX571856.1', name='BX571856.1', description='Staphylococcus aureus subsp. aureus strain MRSA252, complete genome.', dbxrefs=[]), 'feat_of_interest': 'rRNA', 'continue_iterating': True, 'keep_contigs': True, 'sequence_id': 'BX571856.1', 'final_contig_path': None, 'circular': True, 'index': 3, 'global_end_coord': None, 'loci_list': [<riboSnag.Locus object at 0x2b53c8860e10>, <riboSnag.Locus object at 0x2b53c8860fd0>, <riboSnag.Locus object at 0x2b53c8860eb8>], 'mappings': [], 'cluster_dir_name': 'BX571856.1_cluster_3', 'extractedSeqRecord': None, 'padding': 5000, 'global_start_coord': None}
+2017-01-07 01:13:28,602 - DEBUG - Added attributes for BX571856.1.fasta4
+2017-01-07 01:13:28,603 - DEBUG - locus_tag: BX571856.1.fasta4; coords: [559007-559084]; sequence_id: BX571856.1; product: 5S ribosomal RNA (partial)
+2017-01-07 01:13:28,604 - DEBUG - Added attributes for BX571856.1.fasta5
+2017-01-07 01:13:28,605 - DEBUG - locus_tag: BX571856.1.fasta5; coords: [559981-561530]; sequence_id: BX571856.1; product: 16S ribosomal RNA
+2017-01-07 01:13:28,606 - DEBUG - Added attributes for BX571856.1.fasta6
+2017-01-07 01:13:28,607 - DEBUG - locus_tag: BX571856.1.fasta6; coords: [561993-564911]; sequence_id: BX571856.1; product: 23S ribosomal RNA
+2017-01-07 01:13:28,608 - DEBUG - Added attributes for BX571856.1.fasta7
+2017-01-07 01:13:28,610 - DEBUG - locus_tag: BX571856.1.fasta7; coords: [564988-565065]; sequence_id: BX571856.1; product: 5S ribosomal RNA (partial)
+2017-01-07 01:13:28,611 - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+2017-01-07 01:13:28,612 - DEBUG - {'output_root': '/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed', 'seq_record': SeqRecord(seq=Seq('CGATTAAAGATAGAAATACACGATGCGAGCAATCAAATTTCATAACATCACCAT...TAT', IUPACAmbiguousDNA()), id='BX571856.1', name='BX571856.1', description='Staphylococcus aureus subsp. aureus strain MRSA252, complete genome.', dbxrefs=[]), 'feat_of_interest': 'rRNA', 'continue_iterating': True, 'keep_contigs': True, 'sequence_id': 'BX571856.1', 'final_contig_path': None, 'circular': True, 'index': 4, 'global_end_coord': None, 'loci_list': [<riboSnag.Locus object at 0x2b53c8860d30>, <riboSnag.Locus object at 0x2b53c8860240>, <riboSnag.Locus object at 0x2b53c8860c50>, <riboSnag.Locus object at 0x2b53c8860f60>], 'mappings': [], 'cluster_dir_name': 'BX571856.1_cluster_4', 'extractedSeqRecord': None, 'padding': 5000, 'global_start_coord': None}
+2017-01-07 01:13:28,613 - INFO - padding genbank by 1000
+2017-01-07 01:13:28,615 - INFO - adjusting coordinates by 1000 to account for padding
+2017-01-07 01:13:28,616 - DEBUG - pre-padded
+2017-01-07 01:13:28,617 - DEBUG - {'start_coord': 514254, 'locus_tag': 'BX571856.1.fasta1', 'sequence_id': 'BX571856.1', 'product': ['16S ribosomal RNA'], 'end_coord': 515803, 'index': 0, 'strand': 1}
+2017-01-07 01:13:28,619 - DEBUG - post-padded
+2017-01-07 01:13:28,620 - DEBUG - {'start_coord': 515254, 'locus_tag': 'BX571856.1.fasta1', 'sequence_id': 'BX571856.1', 'product': ['16S ribosomal RNA'], 'end_coord': 516803, 'index': 0, 'strand': 1}
+2017-01-07 01:13:28,621 - DEBUG - pre-padded
+2017-01-07 01:13:28,622 - DEBUG - {'start_coord': 516231, 'locus_tag': 'BX571856.1.fasta2', 'sequence_id': 'BX571856.1', 'product': ['23S ribosomal RNA'], 'end_coord': 519149, 'index': 1, 'strand': 1}
+2017-01-07 01:13:28,623 - DEBUG - post-padded
+2017-01-07 01:13:28,624 - DEBUG - {'start_coord': 517231, 'locus_tag': 'BX571856.1.fasta2', 'sequence_id': 'BX571856.1', 'product': ['23S ribosomal RNA'], 'end_coord': 520149, 'index': 1, 'strand': 1}
+2017-01-07 01:13:28,626 - DEBUG - pre-padded
+2017-01-07 01:13:28,627 - DEBUG - {'start_coord': 519226, 'locus_tag': 'BX571856.1.fasta3', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 519303, 'index': 2, 'strand': 1}
+2017-01-07 01:13:28,628 - DEBUG - post-padded
+2017-01-07 01:13:28,629 - DEBUG - {'start_coord': 520226, 'locus_tag': 'BX571856.1.fasta3', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 520303, 'index': 2, 'strand': 1}
+2017-01-07 01:13:28,636 - INFO - adjusting coordinates by 1000 to account for padding
+2017-01-07 01:13:28,637 - DEBUG - pre-padded
+2017-01-07 01:13:28,638 - DEBUG - {'start_coord': 2213810, 'locus_tag': 'BX571856.1.fasta11', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 2213887, 'index': 0, 'strand': -1}
+2017-01-07 01:13:28,639 - DEBUG - post-padded
+2017-01-07 01:13:28,641 - DEBUG - {'start_coord': 2214810, 'locus_tag': 'BX571856.1.fasta11', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 2214887, 'index': 0, 'strand': -1}
+2017-01-07 01:13:28,642 - DEBUG - pre-padded
+2017-01-07 01:13:28,643 - DEBUG - {'start_coord': 2213965, 'locus_tag': 'BX571856.1.fasta12', 'sequence_id': 'BX571856.1', 'product': ['23S ribosomal RNA'], 'end_coord': 2216885, 'index': 1, 'strand': -1}
+2017-01-07 01:13:28,644 - DEBUG - post-padded
+2017-01-07 01:13:28,644 - DEBUG - {'start_coord': 2214965, 'locus_tag': 'BX571856.1.fasta12', 'sequence_id': 'BX571856.1', 'product': ['23S ribosomal RNA'], 'end_coord': 2217885, 'index': 1, 'strand': -1}
+2017-01-07 01:13:28,645 - DEBUG - pre-padded
+2017-01-07 01:13:28,646 - DEBUG - {'start_coord': 2217254, 'locus_tag': 'BX571856.1.fasta13', 'sequence_id': 'BX571856.1', 'product': ['16S ribosomal RNA'], 'end_coord': 2218803, 'index': 2, 'strand': -1}
+2017-01-07 01:13:28,648 - DEBUG - post-padded
+2017-01-07 01:13:28,648 - DEBUG - {'start_coord': 2218254, 'locus_tag': 'BX571856.1.fasta13', 'sequence_id': 'BX571856.1', 'product': ['16S ribosomal RNA'], 'end_coord': 2219803, 'index': 2, 'strand': -1}
+2017-01-07 01:13:28,654 - INFO - adjusting coordinates by 1000 to account for padding
+2017-01-07 01:13:28,655 - DEBUG - pre-padded
+2017-01-07 01:13:28,656 - DEBUG - {'start_coord': 2036258, 'locus_tag': 'BX571856.1.fasta8', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 2036335, 'index': 0, 'strand': -1}
+2017-01-07 01:13:28,657 - DEBUG - post-padded
+2017-01-07 01:13:28,658 - DEBUG - {'start_coord': 2037258, 'locus_tag': 'BX571856.1.fasta8', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 2037335, 'index': 0, 'strand': -1}
+2017-01-07 01:13:28,660 - DEBUG - pre-padded
+2017-01-07 01:13:28,661 - DEBUG - {'start_coord': 2036412, 'locus_tag': 'BX571856.1.fasta9', 'sequence_id': 'BX571856.1', 'product': ['23S ribosomal RNA'], 'end_coord': 2039330, 'index': 1, 'strand': -1}
+2017-01-07 01:13:28,662 - DEBUG - post-padded
+2017-01-07 01:13:28,663 - DEBUG - {'start_coord': 2037412, 'locus_tag': 'BX571856.1.fasta9', 'sequence_id': 'BX571856.1', 'product': ['23S ribosomal RNA'], 'end_coord': 2040330, 'index': 1, 'strand': -1}
+2017-01-07 01:13:28,664 - DEBUG - pre-padded
+2017-01-07 01:13:28,665 - DEBUG - {'start_coord': 2039808, 'locus_tag': 'BX571856.1.fasta10', 'sequence_id': 'BX571856.1', 'product': ['16S ribosomal RNA'], 'end_coord': 2041358, 'index': 2, 'strand': -1}
+2017-01-07 01:13:28,666 - DEBUG - post-padded
+2017-01-07 01:13:28,667 - DEBUG - {'start_coord': 2040808, 'locus_tag': 'BX571856.1.fasta10', 'sequence_id': 'BX571856.1', 'product': ['16S ribosomal RNA'], 'end_coord': 2042358, 'index': 2, 'strand': -1}
+2017-01-07 01:13:28,673 - INFO - adjusting coordinates by 1000 to account for padding
+2017-01-07 01:13:28,674 - DEBUG - pre-padded
+2017-01-07 01:13:28,675 - DEBUG - {'start_coord': 2332221, 'locus_tag': 'BX571856.1.fasta14', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 2332298, 'index': 0, 'strand': -1}
+2017-01-07 01:13:28,676 - DEBUG - post-padded
+2017-01-07 01:13:28,677 - DEBUG - {'start_coord': 2333221, 'locus_tag': 'BX571856.1.fasta14', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 2333298, 'index': 0, 'strand': -1}
+2017-01-07 01:13:28,679 - DEBUG - pre-padded
+2017-01-07 01:13:28,680 - DEBUG - {'start_coord': 2332376, 'locus_tag': 'BX571856.1.fasta15', 'sequence_id': 'BX571856.1', 'product': ['23S ribosomal RNA'], 'end_coord': 2335294, 'index': 1, 'strand': -1}
+2017-01-07 01:13:28,681 - DEBUG - post-padded
+2017-01-07 01:13:28,682 - DEBUG - {'start_coord': 2333376, 'locus_tag': 'BX571856.1.fasta15', 'sequence_id': 'BX571856.1', 'product': ['23S ribosomal RNA'], 'end_coord': 2336294, 'index': 1, 'strand': -1}
+2017-01-07 01:13:28,683 - DEBUG - pre-padded
+2017-01-07 01:13:28,684 - DEBUG - {'start_coord': 2335738, 'locus_tag': 'BX571856.1.fasta16', 'sequence_id': 'BX571856.1', 'product': ['16S ribosomal RNA'], 'end_coord': 2337285, 'index': 2, 'strand': -1}
+2017-01-07 01:13:28,685 - DEBUG - post-padded
+2017-01-07 01:13:28,686 - DEBUG - {'start_coord': 2336738, 'locus_tag': 'BX571856.1.fasta16', 'sequence_id': 'BX571856.1', 'product': ['16S ribosomal RNA'], 'end_coord': 2338285, 'index': 2, 'strand': -1}
+2017-01-07 01:13:28,691 - INFO - adjusting coordinates by 1000 to account for padding
+2017-01-07 01:13:28,692 - DEBUG - pre-padded
+2017-01-07 01:13:28,693 - DEBUG - {'start_coord': 559007, 'locus_tag': 'BX571856.1.fasta4', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 559084, 'index': 0, 'strand': 1}
+2017-01-07 01:13:28,695 - DEBUG - post-padded
+2017-01-07 01:13:28,695 - DEBUG - {'start_coord': 560007, 'locus_tag': 'BX571856.1.fasta4', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 560084, 'index': 0, 'strand': 1}
+2017-01-07 01:13:28,696 - DEBUG - pre-padded
+2017-01-07 01:13:28,697 - DEBUG - {'start_coord': 559981, 'locus_tag': 'BX571856.1.fasta5', 'sequence_id': 'BX571856.1', 'product': ['16S ribosomal RNA'], 'end_coord': 561530, 'index': 1, 'strand': 1}
+2017-01-07 01:13:28,698 - DEBUG - post-padded
+2017-01-07 01:13:28,699 - DEBUG - {'start_coord': 560981, 'locus_tag': 'BX571856.1.fasta5', 'sequence_id': 'BX571856.1', 'product': ['16S ribosomal RNA'], 'end_coord': 562530, 'index': 1, 'strand': 1}
+2017-01-07 01:13:28,700 - DEBUG - pre-padded
+2017-01-07 01:13:28,701 - DEBUG - {'start_coord': 561993, 'locus_tag': 'BX571856.1.fasta6', 'sequence_id': 'BX571856.1', 'product': ['23S ribosomal RNA'], 'end_coord': 564911, 'index': 2, 'strand': 1}
+2017-01-07 01:13:28,702 - DEBUG - post-padded
+2017-01-07 01:13:28,703 - DEBUG - {'start_coord': 562993, 'locus_tag': 'BX571856.1.fasta6', 'sequence_id': 'BX571856.1', 'product': ['23S ribosomal RNA'], 'end_coord': 565911, 'index': 2, 'strand': 1}
+2017-01-07 01:13:28,705 - DEBUG - pre-padded
+2017-01-07 01:13:28,706 - DEBUG - {'start_coord': 564988, 'locus_tag': 'BX571856.1.fasta7', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 565065, 'index': 3, 'strand': 1}
+2017-01-07 01:13:28,707 - DEBUG - post-padded
+2017-01-07 01:13:28,708 - DEBUG - {'start_coord': 565988, 'locus_tag': 'BX571856.1.fasta7', 'sequence_id': 'BX571856.1', 'product': ['5S ribosomal RNA (partial)'], 'end_coord': 566065, 'index': 3, 'strand': 1}
+2017-01-07 01:13:28,714 - INFO - rewriting fasta-formated genome to reflect
+2017-01-07 01:13:28,906 - INFO - processing iteration 0
+2017-01-07 01:13:28,908 - DEBUG - with new reference: /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_padded.fasta
+2017-01-07 01:13:28,909 - INFO - using the default minimum score for BWA
+2017-01-07 01:13:28,910 - INFO - checking for empty read files
+2017-01-07 01:13:28,913 - DEBUG - size of ./UAMS_reads/UAMS1_S17_L001_R1_001.fastq.gz: 309512554.000000
+2017-01-07 01:13:28,915 - DEBUG - size of ./UAMS_reads/UAMS1_S17_L001_R2_001.fastq.gz: 323455576.000000
+2017-01-07 01:13:28,916 - DEBUG - readS0 is set to None, and will be ignored
+2017-01-07 01:13:28,918 - INFO - Mapping reads to reference genome with BWA
+2017-01-07 01:13:28,919 - INFO - running BWA:
+2017-01-07 01:13:28,920 - DEBUG - with the following BWA commands:
+2017-01-07 01:13:28,921 - DEBUG - /home/nw42839/bin/bwa index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds.fasta
+2017-01-07 01:13:30,152 - DEBUG - /home/nw42839/bin/bwa mem -t 16 -L 0,0 -U 0  -k 15 /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds.fasta ./UAMS_reads/UAMS1_S17_L001_R1_001.fastq.gz ./UAMS_reads/UAMS1_S17_L001_R2_001.fastq.gz | /home/nw42839/bin/samtools view -bh - | /home/nw42839/bin/samtools sort -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_pe.bam - 
+2017-01-07 01:16:59,630 - DEBUG - /home/nw42839/bin/samtools view -bh /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_pe.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0.bam
+2017-01-07 01:18:22,216 - INFO - PE mapped reads: 2159906 + 0 mapped (98.90% : N/A)
+2017-01-07 01:18:34,429 - INFO - Combined mapped reads: 2159906 + 0 mapped (98.90% : N/A)
+2017-01-07 01:18:34,430 - INFO - processing mapping for iteration 0
+2017-01-07 01:18:34,440 - DEBUG - Start_list: [515254, 517231, 520226]
+2017-01-07 01:18:34,442 - DEBUG - Finding coords to gather reads from the following loci:
+2017-01-07 01:18:34,443 - DEBUG - BX571856.1 cluster 0 -- locus 0 -- BX571856.1.fasta1 (515254, 516803)(1) ['16S ribosomal RNA']
+2017-01-07 01:18:34,445 - DEBUG - BX571856.1 cluster 0 -- locus 1 -- BX571856.1.fasta2 (517231, 520149)(1) ['23S ribosomal RNA']
+2017-01-07 01:18:34,446 - DEBUG - BX571856.1 cluster 0 -- locus 2 -- BX571856.1.fasta3 (520226, 520303)(1) ['5S ribosomal RNA (partial)']
+2017-01-07 01:18:34,448 - WARNING - rec len: 2904619
+2017-01-07 01:18:34,449 - DEBUG - global start and end: 514254 521303
+2017-01-07 01:18:34,450 - INFO - Coordinates for <unknown id> cluster 0:  [514254 - 521303]
+2017-01-07 01:18:34,461 - DEBUG - Start_list: [2214810, 2214965, 2218254]
+2017-01-07 01:18:34,463 - DEBUG - Finding coords to gather reads from the following loci:
+2017-01-07 01:18:34,464 - DEBUG - BX571856.1 cluster 1 -- locus 0 -- BX571856.1.fasta11 (2214810, 2214887)(-1) ['5S ribosomal RNA (partial)']
+2017-01-07 01:18:34,465 - DEBUG - BX571856.1 cluster 1 -- locus 1 -- BX571856.1.fasta12 (2214965, 2217885)(-1) ['23S ribosomal RNA']
+2017-01-07 01:18:34,467 - DEBUG - BX571856.1 cluster 1 -- locus 2 -- BX571856.1.fasta13 (2218254, 2219803)(-1) ['16S ribosomal RNA']
+2017-01-07 01:18:34,468 - WARNING - rec len: 2904619
+2017-01-07 01:18:34,469 - DEBUG - global start and end: 2213810 2220803
+2017-01-07 01:18:34,471 - INFO - Coordinates for <unknown id> cluster 1:  [2213810 - 2220803]
+2017-01-07 01:18:34,481 - DEBUG - Start_list: [2037258, 2037412, 2040808]
+2017-01-07 01:18:34,482 - DEBUG - Finding coords to gather reads from the following loci:
+2017-01-07 01:18:34,483 - DEBUG - BX571856.1 cluster 2 -- locus 0 -- BX571856.1.fasta8 (2037258, 2037335)(-1) ['5S ribosomal RNA (partial)']
+2017-01-07 01:18:34,485 - DEBUG - BX571856.1 cluster 2 -- locus 1 -- BX571856.1.fasta9 (2037412, 2040330)(-1) ['23S ribosomal RNA']
+2017-01-07 01:18:34,486 - DEBUG - BX571856.1 cluster 2 -- locus 2 -- BX571856.1.fasta10 (2040808, 2042358)(-1) ['16S ribosomal RNA']
+2017-01-07 01:18:34,487 - WARNING - rec len: 2904619
+2017-01-07 01:18:34,488 - DEBUG - global start and end: 2036258 2043358
+2017-01-07 01:18:34,490 - INFO - Coordinates for <unknown id> cluster 2:  [2036258 - 2043358]
+2017-01-07 01:18:34,499 - DEBUG - Start_list: [2333221, 2333376, 2336738]
+2017-01-07 01:18:34,500 - DEBUG - Finding coords to gather reads from the following loci:
+2017-01-07 01:18:34,501 - DEBUG - BX571856.1 cluster 3 -- locus 0 -- BX571856.1.fasta14 (2333221, 2333298)(-1) ['5S ribosomal RNA (partial)']
+2017-01-07 01:18:34,503 - DEBUG - BX571856.1 cluster 3 -- locus 1 -- BX571856.1.fasta15 (2333376, 2336294)(-1) ['23S ribosomal RNA']
+2017-01-07 01:18:34,504 - DEBUG - BX571856.1 cluster 3 -- locus 2 -- BX571856.1.fasta16 (2336738, 2338285)(-1) ['16S ribosomal RNA']
+2017-01-07 01:18:34,505 - WARNING - rec len: 2904619
+2017-01-07 01:18:34,506 - DEBUG - global start and end: 2332221 2339285
+2017-01-07 01:18:34,507 - INFO - Coordinates for <unknown id> cluster 3:  [2332221 - 2339285]
+2017-01-07 01:18:34,545 - DEBUG - Start_list: [560007, 560981, 562993, 565988]
+2017-01-07 01:18:34,547 - DEBUG - Finding coords to gather reads from the following loci:
+2017-01-07 01:18:34,548 - DEBUG - BX571856.1 cluster 4 -- locus 0 -- BX571856.1.fasta4 (560007, 560084)(1) ['5S ribosomal RNA (partial)']
+2017-01-07 01:18:34,550 - DEBUG - BX571856.1 cluster 4 -- locus 1 -- BX571856.1.fasta5 (560981, 562530)(1) ['16S ribosomal RNA']
+2017-01-07 01:18:34,551 - DEBUG - BX571856.1 cluster 4 -- locus 2 -- BX571856.1.fasta6 (562993, 565911)(1) ['23S ribosomal RNA']
+2017-01-07 01:18:34,553 - DEBUG - BX571856.1 cluster 4 -- locus 3 -- BX571856.1.fasta7 (565988, 566065)(1) ['5S ribosomal RNA (partial)']
+2017-01-07 01:18:34,555 - WARNING - rec len: 2904619
+2017-01-07 01:18:34,556 - DEBUG - global start and end: 559007 567065
+2017-01-07 01:18:34,557 - INFO - Coordinates for <unknown id> cluster 4:  [559007 - 567065]
+2017-01-07 01:18:34,562 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam
+2017-01-07 01:20:28,899 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam
+2017-01-07 01:20:41,016 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_mapping_iteration_0/BX571856.1_cluster_0_iteration_0.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam BX571856.1:514254-521303
+2017-01-07 01:20:42,310 - INFO - Coverage for cluster 0:
+	5' 1000bp-region: 828.6183824 
+	3' 1000bp-region: 239.5444564
+2017-01-07 01:20:42,312 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam
+2017-01-07 01:22:37,054 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam
+2017-01-07 01:22:49,277 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_mapping_iteration_0/BX571856.1_cluster_1_iteration_0.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam BX571856.1:2213810-2220803
+2017-01-07 01:22:50,332 - INFO - Coverage for cluster 1:
+	5' 1000bp-region: 535.3996004 
+	3' 1000bp-region: 390.7682324
+2017-01-07 01:22:50,334 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam
+2017-01-07 01:24:46,073 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam
+2017-01-07 01:24:58,596 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_mapping_iteration_0/BX571856.1_cluster_2_iteration_0.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam BX571856.1:2036258-2043358
+2017-01-07 01:24:59,881 - INFO - Coverage for cluster 2:
+	5' 1000bp-region: 780.8801204 
+	3' 1000bp-region: 222.8471534
+2017-01-07 01:24:59,883 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam
+2017-01-07 01:26:49,080 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam
+2017-01-07 01:26:56,884 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_mapping_iteration_0/BX571856.1_cluster_3_iteration_0.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam BX571856.1:2332221-2339285
+2017-01-07 01:26:58,174 - INFO - Coverage for cluster 3:
+	5' 1000bp-region: 887.7872134 
+	3' 1000bp-region: 351.3406594
+2017-01-07 01:26:58,176 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam
+2017-01-07 01:28:53,793 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam
+2017-01-07 01:29:01,761 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_mapping_iteration_0/BX571856.1_cluster_4_iteration_0.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam BX571856.1:559007-567065
+2017-01-07 01:29:02,983 - INFO - Coverage for cluster 4:
+	5' 1000bp-region: 652.1078924 
+	3' 1000bp-region: 183.9170834
+2017-01-07 01:29:02,984 - INFO - mapped regions for iteration 0:
+ BX571856.1:514254-521303
+BX571856.1:2213810-2220803
+BX571856.1:2036258-2043358
+BX571856.1:2332221-2339285
+BX571856.1:559007-567065
+2017-01-07 01:29:02,986 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0.sam -h /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0.bam
+2017-01-07 01:29:18,773 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam BX571856.1:514254-521303 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_mapped.txt
+2017-01-07 01:29:19,390 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam BX571856.1:2213810-2220803 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_mapped.txt
+2017-01-07 01:29:19,896 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam BX571856.1:2036258-2043358 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_mapped.txt
+2017-01-07 01:29:20,473 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam BX571856.1:2332221-2339285 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_mapped.txt
+2017-01-07 01:29:21,114 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_sorted.bam BX571856.1:559007-567065 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_mapped.txt
+2017-01-07 01:29:21,768 - DEBUG - sort -u /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_mapped.txt
+2017-01-07 01:29:22,901 - DEBUG - LC_ALL=C grep -w -v -F -f /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_mapped.txt < /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0.sam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_unmapped.sam
+2017-01-07 01:29:33,285 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:29:33,286 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_mapping_iteration_0/BX571856.1_cluster_0_iteration_0_mappedreadR.fastq
+2017-01-07 01:29:33,287 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_mapping_iteration_0/BX571856.1_cluster_0_iteration_0_mappedreadS.fastq
+2017-01-07 01:29:33,288 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_mapping_iteration_0/BX571856.1_cluster_0_iteration_0_mappedreadF.fastq
+2017-01-07 01:29:33,288 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:29:33,289 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:29:33,290 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_mapping_iteration_0/BX571856.1_cluster_1_iteration_0_mappedreadR.fastq
+2017-01-07 01:29:33,291 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_mapping_iteration_0/BX571856.1_cluster_1_iteration_0_mappedreadS.fastq
+2017-01-07 01:29:33,293 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_mapping_iteration_0/BX571856.1_cluster_1_iteration_0_mappedreadF.fastq
+2017-01-07 01:29:33,294 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:29:33,295 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:29:33,296 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_mapping_iteration_0/BX571856.1_cluster_2_iteration_0_mappedreadR.fastq
+2017-01-07 01:29:33,296 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_mapping_iteration_0/BX571856.1_cluster_2_iteration_0_mappedreadS.fastq
+2017-01-07 01:29:33,297 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_mapping_iteration_0/BX571856.1_cluster_2_iteration_0_mappedreadF.fastq
+2017-01-07 01:29:33,298 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:29:33,299 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:29:33,299 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_mapping_iteration_0/BX571856.1_cluster_3_iteration_0_mappedreadR.fastq
+2017-01-07 01:29:33,300 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_mapping_iteration_0/BX571856.1_cluster_3_iteration_0_mappedreadS.fastq
+2017-01-07 01:29:33,301 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_mapping_iteration_0/BX571856.1_cluster_3_iteration_0_mappedreadF.fastq
+2017-01-07 01:29:33,301 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:29:33,302 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:29:33,303 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_mapping_iteration_0/BX571856.1_cluster_4_iteration_0_mappedreadR.fastq
+2017-01-07 01:29:33,303 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_mapping_iteration_0/BX571856.1_cluster_4_iteration_0_mappedreadS.fastq
+2017-01-07 01:29:33,304 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_mapping_iteration_0/BX571856.1_cluster_4_iteration_0_mappedreadF.fastq
+2017-01-07 01:29:33,305 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:29:33,305 - DEBUG - 
+ running 10 cmds: 
+ /home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_mapping_iteration_0/BX571856.1_cluster_0_iteration_0.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_mapping_iteration_0/BX571856.1_cluster_0_iteration_0_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_mapping_iteration_0/BX571856.1_cluster_0_iteration_0_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_mapping_iteration_0/BX571856.1_cluster_0_iteration_0_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_mapping_iteration_0/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_mapping_iteration_0/BX571856.1_cluster_1_iteration_0.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_mapping_iteration_0/BX571856.1_cluster_1_iteration_0_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_mapping_iteration_0/BX571856.1_cluster_1_iteration_0_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_mapping_iteration_0/BX571856.1_cluster_1_iteration_0_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_mapping_iteration_0/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_mapping_iteration_0/BX571856.1_cluster_2_iteration_0.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_mapping_iteration_0/BX571856.1_cluster_2_iteration_0_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_mapping_iteration_0/BX571856.1_cluster_2_iteration_0_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_mapping_iteration_0/BX571856.1_cluster_2_iteration_0_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_mapping_iteration_0/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_mapping_iteration_0/BX571856.1_cluster_3_iteration_0.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_mapping_iteration_0/BX571856.1_cluster_3_iteration_0_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_mapping_iteration_0/BX571856.1_cluster_3_iteration_0_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_mapping_iteration_0/BX571856.1_cluster_3_iteration_0_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_mapping_iteration_0/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_mapping_iteration_0/BX571856.1_cluster_4_iteration_0.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_mapping_iteration_0/BX571856.1_cluster_4_iteration_0_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_mapping_iteration_0/BX571856.1_cluster_4_iteration_0_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_mapping_iteration_0/BX571856.1_cluster_4_iteration_0_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_mapping_iteration_0/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+2017-01-07 01:31:42,825 - INFO - Sum of return codes (should be 0):
+2017-01-07 01:31:42,827 - INFO - 0
+2017-01-07 01:31:42,828 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/BX571856.1_cluster_0_assembly_iteration_0/contigs.fasta
+2017-01-07 01:31:42,831 - INFO - reserving first contig
+2017-01-07 01:31:42,839 - INFO - SEED_cluster-0-iter-0: analyzing  mapping
+2017-01-07 01:31:42,847 - INFO - SEED_cluster-0-iter-0: Seed length: 7049
+2017-01-07 01:31:42,848 - INFO - SEED_cluster-0-iter-0: Length of this iteration's longest contig: 6686
+2017-01-07 01:31:42,849 - INFO - SEED_cluster-0-iter-0: The new contig differs from the reference seed by -363 bases
+2017-01-07 01:31:42,850 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/BX571856.1_cluster_1_assembly_iteration_0/contigs.fasta
+2017-01-07 01:31:42,852 - INFO - reserving first contig
+2017-01-07 01:31:42,859 - INFO - SEED_cluster-1-iter-0: analyzing  mapping
+2017-01-07 01:31:42,866 - INFO - SEED_cluster-1-iter-0: Seed length: 6993
+2017-01-07 01:31:42,868 - INFO - SEED_cluster-1-iter-0: Length of this iteration's longest contig: 8283
+2017-01-07 01:31:42,868 - INFO - SEED_cluster-1-iter-0: The new contig differs from the reference seed by 1290 bases
+2017-01-07 01:31:42,869 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/BX571856.1_cluster_2_assembly_iteration_0/contigs.fasta
+2017-01-07 01:31:42,871 - INFO - reserving first contig
+2017-01-07 01:31:42,877 - INFO - SEED_cluster-2-iter-0: analyzing  mapping
+2017-01-07 01:31:42,885 - INFO - SEED_cluster-2-iter-0: Seed length: 7100
+2017-01-07 01:31:42,886 - INFO - SEED_cluster-2-iter-0: Length of this iteration's longest contig: 8413
+2017-01-07 01:31:42,886 - INFO - SEED_cluster-2-iter-0: The new contig differs from the reference seed by 1313 bases
+2017-01-07 01:31:42,887 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/BX571856.1_cluster_3_assembly_iteration_0/contigs.fasta
+2017-01-07 01:31:42,889 - INFO - reserving first contig
+2017-01-07 01:31:42,895 - INFO - SEED_cluster-3-iter-0: analyzing  mapping
+2017-01-07 01:31:42,903 - INFO - SEED_cluster-3-iter-0: Seed length: 7064
+2017-01-07 01:31:42,904 - INFO - SEED_cluster-3-iter-0: Length of this iteration's longest contig: 8365
+2017-01-07 01:31:42,904 - INFO - SEED_cluster-3-iter-0: The new contig differs from the reference seed by 1301 bases
+2017-01-07 01:31:42,905 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/BX571856.1_cluster_4_assembly_iteration_0/contigs.fasta
+2017-01-07 01:31:42,906 - INFO - reserving first contig
+2017-01-07 01:31:42,912 - INFO - SEED_cluster-4-iter-0: analyzing  mapping
+2017-01-07 01:31:42,919 - INFO - SEED_cluster-4-iter-0: Seed length: 8058
+2017-01-07 01:31:42,920 - INFO - SEED_cluster-4-iter-0: Length of this iteration's longest contig: 7686
+2017-01-07 01:31:42,921 - INFO - SEED_cluster-4-iter-0: The new contig differs from the reference seed by -372 bases
+2017-01-07 01:31:42,922 - INFO - preparing extracted region genome for next round of mapping
+2017-01-07 01:31:42,922 - DEBUG - using 5 sequences
+2017-01-07 01:31:42,932 - INFO - combined 5 records as genome for next round of mapping
+2017-01-07 01:31:42,936 - INFO - Length of buffered 'genome' for mapping: 69433
+2017-01-07 01:31:42,936 - INFO - Moving on to iteration: 1
+2017-01-07 01:31:42,937 - INFO - processing iteration 1
+2017-01-07 01:31:42,938 - DEBUG - with new reference: /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/iter_0_buffered_genome.fasta
+2017-01-07 01:31:42,941 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_unmappedreadR.fastq
+2017-01-07 01:31:42,942 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_unmappedreadS.fastq
+2017-01-07 01:31:42,943 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_unmappedreadF.fastq
+2017-01-07 01:31:42,943 - DEBUG - converting unmapped bam into reads:
+2017-01-07 01:31:42,944 - DEBUG - /home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_unmapped.sam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_unmappedreadS.fastq 
+2017-01-07 01:32:01,004 - INFO - using the default minimum score for BWA
+2017-01-07 01:32:01,006 - INFO - checking for empty read files
+2017-01-07 01:32:01,008 - WARNING - read file readF not found and can not be used for mapping!
+2017-01-07 01:32:01,010 - WARNING - read file readR not found and can not be used for mapping!
+2017-01-07 01:32:01,011 - DEBUG - size of /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_unmappedreadS.fastq: 1356720040.000000
+2017-01-07 01:32:01,012 - INFO - Mapping reads to reference genome with BWA
+2017-01-07 01:32:01,018 - INFO - running BWA:
+2017-01-07 01:32:01,019 - DEBUG - with the following BWA commands:
+2017-01-07 01:32:01,020 - DEBUG - /home/nw42839/bin/bwa index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/iter_0_buffered_genome.fasta
+2017-01-07 01:32:01,104 - DEBUG - /home/nw42839/bin/bwa mem -t 16 -L 0,0 -U 0  -k 15 /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/iter_0_buffered_genome.fasta /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_unmappedreadS.fastq | /home/nw42839/bin/samtools view -bh - | /home/nw42839/bin/samtools sort -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_s.bam - 
+2017-01-07 01:34:34,845 - DEBUG - /home/nw42839/bin/samtools merge -f /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_pe.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_s.bam
+2017-01-07 01:35:44,170 - INFO - Singleton mapped reads: 12636 + 0 mapped (0.61% : N/A)
+2017-01-07 01:35:51,051 - INFO - Combined mapped reads: 12636 + 0 mapped (0.61% : N/A)
+2017-01-07 01:35:51,053 - INFO - processing mapping for iteration 1
+2017-01-07 01:35:51,059 - INFO - using coords from previous iterations 'genome':
+2017-01-07 01:35:51,060 - INFO - Coordinates for scannedScaffolds cluster 0:  [5000 - 11686]
+2017-01-07 01:35:51,065 - INFO - using coords from previous iterations 'genome':
+2017-01-07 01:35:51,066 - INFO - Coordinates for scannedScaffolds cluster 1:  [16686 - 24969]
+2017-01-07 01:35:51,072 - INFO - using coords from previous iterations 'genome':
+2017-01-07 01:35:51,073 - INFO - Coordinates for scannedScaffolds cluster 2:  [29969 - 38382]
+2017-01-07 01:35:51,079 - INFO - using coords from previous iterations 'genome':
+2017-01-07 01:35:51,080 - INFO - Coordinates for scannedScaffolds cluster 3:  [43382 - 51747]
+2017-01-07 01:35:51,086 - INFO - using coords from previous iterations 'genome':
+2017-01-07 01:35:51,087 - INFO - Coordinates for scannedScaffolds cluster 4:  [56747 - 64433]
+2017-01-07 01:35:51,090 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam
+2017-01-07 01:37:17,809 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam
+2017-01-07 01:37:23,927 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_iteration_1.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam scannedScaffolds:5000-11686
+2017-01-07 01:37:24,111 - INFO - Coverage for cluster 0:
+	5' 1000bp-region: 233.4917184 
+	3' 1000bp-region: 153.7800004
+2017-01-07 01:37:24,113 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam
+2017-01-07 01:38:57,034 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam
+2017-01-07 01:39:03,842 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_iteration_1.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam scannedScaffolds:16686-24969
+2017-01-07 01:39:04,000 - INFO - Coverage for cluster 1:
+	5' 1000bp-region: 242.4650004 
+	3' 1000bp-region: 135.7172414
+2017-01-07 01:39:04,001 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam
+2017-01-07 01:40:51,247 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam
+2017-01-07 01:40:57,771 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_iteration_1.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam scannedScaffolds:29969-38382
+2017-01-07 01:40:57,985 - INFO - Coverage for cluster 2:
+	5' 1000bp-region: 111.6734014 
+	3' 1000bp-region: 403.0020024
+2017-01-07 01:40:57,986 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam
+2017-01-07 01:42:40,943 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam
+2017-01-07 01:42:48,120 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_iteration_1.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam scannedScaffolds:43382-51747
+2017-01-07 01:42:48,523 - INFO - Coverage for cluster 3:
+	5' 1000bp-region: 113.7873754 
+	3' 1000bp-region: 648.9689694
+2017-01-07 01:42:48,524 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam
+2017-01-07 01:44:33,866 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam
+2017-01-07 01:44:43,135 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_iteration_1.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam scannedScaffolds:56747-64433
+2017-01-07 01:44:43,701 - INFO - Coverage for cluster 4:
+	5' 1000bp-region: 101.6253694 
+	3' 1000bp-region: 334.5755764
+2017-01-07 01:44:43,703 - INFO - mapped regions for iteration 1:
+ scannedScaffolds:5000-11686
+scannedScaffolds:16686-24969
+scannedScaffolds:29969-38382
+scannedScaffolds:43382-51747
+scannedScaffolds:56747-64433
+2017-01-07 01:44:43,704 - DEBUG - cat /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_0/scannedScaffolds_mapping_for_iter_0_iteration_0_mapped.txt > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_mapped.txt
+2017-01-07 01:44:44,134 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1.sam -h /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1.bam
+2017-01-07 01:45:02,682 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam scannedScaffolds:5000-11686 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_mapped.txt
+2017-01-07 01:45:02,874 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam scannedScaffolds:16686-24969 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_mapped.txt
+2017-01-07 01:45:02,978 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam scannedScaffolds:29969-38382 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_mapped.txt
+2017-01-07 01:45:03,101 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam scannedScaffolds:43382-51747 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_mapped.txt
+2017-01-07 01:45:03,265 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_sorted.bam scannedScaffolds:56747-64433 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_mapped.txt
+2017-01-07 01:45:03,417 - DEBUG - sort -u /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_mapped.txt
+2017-01-07 01:45:05,412 - DEBUG - LC_ALL=C grep -w -v -F -f /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_mapped.txt < /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1.sam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_unmapped.sam
+2017-01-07 01:45:24,383 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:45:24,447 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_iteration_1_mappedreadR.fastq
+2017-01-07 01:45:24,448 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_iteration_1_mappedreadS.fastq
+2017-01-07 01:45:24,449 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_iteration_1_mappedreadF.fastq
+2017-01-07 01:45:24,450 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:45:24,451 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:45:24,452 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_iteration_1_mappedreadR.fastq
+2017-01-07 01:45:24,453 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_iteration_1_mappedreadS.fastq
+2017-01-07 01:45:24,454 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_iteration_1_mappedreadF.fastq
+2017-01-07 01:45:24,454 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:45:24,455 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:45:24,456 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_iteration_1_mappedreadR.fastq
+2017-01-07 01:45:24,457 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_iteration_1_mappedreadS.fastq
+2017-01-07 01:45:24,458 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_iteration_1_mappedreadF.fastq
+2017-01-07 01:45:24,459 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:45:24,459 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:45:24,460 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_iteration_1_mappedreadR.fastq
+2017-01-07 01:45:24,461 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_iteration_1_mappedreadS.fastq
+2017-01-07 01:45:24,462 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_iteration_1_mappedreadF.fastq
+2017-01-07 01:45:24,462 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:45:24,463 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:45:24,464 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_iteration_1_mappedreadR.fastq
+2017-01-07 01:45:24,464 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_iteration_1_mappedreadS.fastq
+2017-01-07 01:45:24,465 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_iteration_1_mappedreadF.fastq
+2017-01-07 01:45:24,466 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:45:24,467 - DEBUG - 
+ running 10 cmds: 
+ /home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_iteration_1.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_iteration_1_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_iteration_1_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_iteration_1_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_iteration_1.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_iteration_1_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_iteration_1_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_iteration_1_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_iteration_1.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_iteration_1_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_iteration_1_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_iteration_1_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_iteration_1.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_iteration_1_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_iteration_1_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_iteration_1_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_iteration_1.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_iteration_1_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_iteration_1_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_iteration_1_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+2017-01-07 01:46:28,138 - INFO - Sum of return codes (should be 0):
+2017-01-07 01:46:28,139 - INFO - 0
+2017-01-07 01:46:28,140 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_1/contigs.fasta
+2017-01-07 01:46:28,143 - INFO - reserving first contig
+2017-01-07 01:46:28,149 - INFO - SEED_cluster-0-iter-1: analyzing  mapping
+2017-01-07 01:46:28,154 - INFO - SEED_cluster-0-iter-1: Seed length: 6686
+2017-01-07 01:46:28,155 - INFO - SEED_cluster-0-iter-1: Length of this iteration's longest contig: 7211
+2017-01-07 01:46:28,156 - INFO - SEED_cluster-0-iter-1: Length of previous longest contig: 6686
+2017-01-07 01:46:28,157 - INFO - SEED_cluster-0-iter-1: The new contig differs from the previous iteration by 525 bases
+2017-01-07 01:46:28,158 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_1/contigs.fasta
+2017-01-07 01:46:28,161 - INFO - reserving first contig
+2017-01-07 01:46:28,167 - INFO - SEED_cluster-1-iter-1: analyzing  mapping
+2017-01-07 01:46:28,173 - INFO - SEED_cluster-1-iter-1: Seed length: 8283
+2017-01-07 01:46:28,174 - INFO - SEED_cluster-1-iter-1: Length of this iteration's longest contig: 8795
+2017-01-07 01:46:28,175 - INFO - SEED_cluster-1-iter-1: Length of previous longest contig: 8283
+2017-01-07 01:46:28,176 - INFO - SEED_cluster-1-iter-1: The new contig differs from the previous iteration by 512 bases
+2017-01-07 01:46:28,177 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_1/contigs.fasta
+2017-01-07 01:46:28,179 - INFO - reserving first contig
+2017-01-07 01:46:28,185 - INFO - SEED_cluster-2-iter-1: analyzing  mapping
+2017-01-07 01:46:28,191 - INFO - SEED_cluster-2-iter-1: Seed length: 8413
+2017-01-07 01:46:28,192 - INFO - SEED_cluster-2-iter-1: Length of this iteration's longest contig: 8918
+2017-01-07 01:46:28,193 - INFO - SEED_cluster-2-iter-1: Length of previous longest contig: 8413
+2017-01-07 01:46:28,194 - INFO - SEED_cluster-2-iter-1: The new contig differs from the previous iteration by 505 bases
+2017-01-07 01:46:28,195 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_1/contigs.fasta
+2017-01-07 01:46:28,197 - INFO - reserving first contig
+2017-01-07 01:46:28,203 - INFO - SEED_cluster-3-iter-1: analyzing  mapping
+2017-01-07 01:46:28,209 - INFO - SEED_cluster-3-iter-1: Seed length: 8365
+2017-01-07 01:46:28,210 - INFO - SEED_cluster-3-iter-1: Length of this iteration's longest contig: 8889
+2017-01-07 01:46:28,211 - INFO - SEED_cluster-3-iter-1: Length of previous longest contig: 8365
+2017-01-07 01:46:28,212 - INFO - SEED_cluster-3-iter-1: The new contig differs from the previous iteration by 524 bases
+2017-01-07 01:46:28,213 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_1/contigs.fasta
+2017-01-07 01:46:28,214 - INFO - reserving first contig
+2017-01-07 01:46:28,220 - INFO - SEED_cluster-4-iter-1: analyzing  mapping
+2017-01-07 01:46:28,226 - INFO - SEED_cluster-4-iter-1: Seed length: 7686
+2017-01-07 01:46:28,226 - INFO - SEED_cluster-4-iter-1: Length of this iteration's longest contig: 8214
+2017-01-07 01:46:28,227 - INFO - SEED_cluster-4-iter-1: Length of previous longest contig: 7686
+2017-01-07 01:46:28,228 - INFO - SEED_cluster-4-iter-1: The new contig differs from the previous iteration by 528 bases
+2017-01-07 01:46:28,229 - INFO - preparing extracted region genome for next round of mapping
+2017-01-07 01:46:28,229 - DEBUG - using 5 sequences
+2017-01-07 01:46:28,240 - INFO - combined 5 records as genome for next round of mapping
+2017-01-07 01:46:28,260 - INFO - Length of buffered 'genome' for mapping: 72027
+2017-01-07 01:46:28,260 - INFO - Moving on to iteration: 2
+2017-01-07 01:46:28,261 - INFO - processing iteration 2
+2017-01-07 01:46:28,262 - DEBUG - with new reference: /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/iter_1_buffered_genome.fasta
+2017-01-07 01:46:28,268 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_unmappedreadR.fastq
+2017-01-07 01:46:28,269 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_unmappedreadS.fastq
+2017-01-07 01:46:28,270 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_unmappedreadF.fastq
+2017-01-07 01:46:28,271 - DEBUG - converting unmapped bam into reads:
+2017-01-07 01:46:28,272 - DEBUG - /home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_unmapped.sam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_unmappedreadS.fastq 
+2017-01-07 01:46:46,549 - INFO - using the default minimum score for BWA
+2017-01-07 01:46:46,550 - INFO - checking for empty read files
+2017-01-07 01:46:46,553 - WARNING - read file readF not found and can not be used for mapping!
+2017-01-07 01:46:46,554 - WARNING - read file readR not found and can not be used for mapping!
+2017-01-07 01:46:46,556 - DEBUG - size of /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_unmappedreadS.fastq: 1342732520.000000
+2017-01-07 01:46:46,566 - INFO - Mapping reads to reference genome with BWA
+2017-01-07 01:46:46,586 - INFO - running BWA:
+2017-01-07 01:46:46,587 - DEBUG - with the following BWA commands:
+2017-01-07 01:46:46,588 - DEBUG - /home/nw42839/bin/bwa index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/iter_1_buffered_genome.fasta
+2017-01-07 01:46:47,502 - DEBUG - /home/nw42839/bin/bwa mem -t 16 -L 0,0 -U 0  -k 15 /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/iter_1_buffered_genome.fasta /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_unmappedreadS.fastq | /home/nw42839/bin/samtools view -bh - | /home/nw42839/bin/samtools sort -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_s.bam - 
+2017-01-07 01:49:17,703 - DEBUG - /home/nw42839/bin/samtools merge -f /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_pe.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_s.bam
+2017-01-07 01:50:25,387 - INFO - Singleton mapped reads: 4041 + 0 mapped (0.20% : N/A)
+2017-01-07 01:50:32,409 - INFO - Combined mapped reads: 4041 + 0 mapped (0.20% : N/A)
+2017-01-07 01:50:32,410 - INFO - processing mapping for iteration 2
+2017-01-07 01:50:32,416 - INFO - using coords from previous iterations 'genome':
+2017-01-07 01:50:32,417 - INFO - Coordinates for scannedScaffolds cluster 0:  [5000 - 12211]
+2017-01-07 01:50:32,423 - INFO - using coords from previous iterations 'genome':
+2017-01-07 01:50:32,424 - INFO - Coordinates for scannedScaffolds cluster 1:  [17211 - 26006]
+2017-01-07 01:50:32,429 - INFO - using coords from previous iterations 'genome':
+2017-01-07 01:50:32,430 - INFO - Coordinates for scannedScaffolds cluster 2:  [31006 - 39924]
+2017-01-07 01:50:32,436 - INFO - using coords from previous iterations 'genome':
+2017-01-07 01:50:32,437 - INFO - Coordinates for scannedScaffolds cluster 3:  [44924 - 53813]
+2017-01-07 01:50:32,442 - INFO - using coords from previous iterations 'genome':
+2017-01-07 01:50:32,443 - INFO - Coordinates for scannedScaffolds cluster 4:  [58813 - 67027]
+2017-01-07 01:50:32,445 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam
+2017-01-07 01:51:59,608 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam
+2017-01-07 01:52:07,183 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_iteration_2.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam scannedScaffolds:5000-12211
+2017-01-07 01:52:07,331 - INFO - Coverage for cluster 0:
+	5' 1000bp-region: 144.9966334 
+	3' 1000bp-region: 185.4184404
+2017-01-07 01:52:07,332 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam
+2017-01-07 01:53:35,119 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam
+2017-01-07 01:53:41,377 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_iteration_2.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam scannedScaffolds:17211-26006
+2017-01-07 01:53:41,501 - INFO - Coverage for cluster 1:
+	5' 1000bp-region: 130.1469534 
+	3' 1000bp-region: 137.2404184
+2017-01-07 01:53:41,502 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam
+2017-01-07 01:55:06,419 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam
+2017-01-07 01:55:12,902 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_iteration_2.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam scannedScaffolds:31006-39924
+2017-01-07 01:55:13,145 - INFO - Coverage for cluster 2:
+	5' 1000bp-region: 93.3231294 
+	3' 1000bp-region: 505.2754724
+2017-01-07 01:55:13,146 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam
+2017-01-07 01:56:35,839 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam
+2017-01-07 01:56:41,631 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_iteration_2.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam scannedScaffolds:44924-53813
+2017-01-07 01:56:41,998 - INFO - Coverage for cluster 3:
+	5' 1000bp-region: 132.9686414 
+	3' 1000bp-region: 133.2199314
+2017-01-07 01:56:41,999 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam
+2017-01-07 01:58:04,886 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam
+2017-01-07 01:58:10,761 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_iteration_2.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam scannedScaffolds:58813-67027
+2017-01-07 01:58:10,876 - INFO - Coverage for cluster 4:
+	5' 1000bp-region: 117.2042254 
+	3' 1000bp-region: 175.8193984
+2017-01-07 01:58:10,877 - INFO - mapped regions for iteration 2:
+ scannedScaffolds:5000-12211
+scannedScaffolds:17211-26006
+scannedScaffolds:31006-39924
+scannedScaffolds:44924-53813
+scannedScaffolds:58813-67027
+2017-01-07 01:58:10,877 - DEBUG - cat /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_1/scannedScaffolds_mapping_for_iter_1_iteration_1_mapped.txt > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_mapped.txt
+2017-01-07 01:58:11,057 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2.sam -h /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2.bam
+2017-01-07 01:58:25,276 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam scannedScaffolds:5000-12211 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_mapped.txt
+2017-01-07 01:58:25,327 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam scannedScaffolds:17211-26006 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_mapped.txt
+2017-01-07 01:58:25,378 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam scannedScaffolds:31006-39924 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_mapped.txt
+2017-01-07 01:58:25,451 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam scannedScaffolds:44924-53813 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_mapped.txt
+2017-01-07 01:58:25,513 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_sorted.bam scannedScaffolds:58813-67027 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_mapped.txt
+2017-01-07 01:58:25,564 - DEBUG - sort -u /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_mapped.txt
+2017-01-07 01:58:26,846 - DEBUG - LC_ALL=C grep -w -v -F -f /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_mapped.txt < /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2.sam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_unmapped.sam
+2017-01-07 01:58:36,111 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:58:36,113 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_iteration_2_mappedreadR.fastq
+2017-01-07 01:58:36,114 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_iteration_2_mappedreadS.fastq
+2017-01-07 01:58:36,115 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_iteration_2_mappedreadF.fastq
+2017-01-07 01:58:36,116 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:58:36,117 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:58:36,117 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_iteration_2_mappedreadR.fastq
+2017-01-07 01:58:36,118 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_iteration_2_mappedreadS.fastq
+2017-01-07 01:58:36,120 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_iteration_2_mappedreadF.fastq
+2017-01-07 01:58:36,120 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:58:36,121 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:58:36,122 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_iteration_2_mappedreadR.fastq
+2017-01-07 01:58:36,122 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_iteration_2_mappedreadS.fastq
+2017-01-07 01:58:36,123 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_iteration_2_mappedreadF.fastq
+2017-01-07 01:58:36,123 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:58:36,124 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:58:36,124 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_iteration_2_mappedreadR.fastq
+2017-01-07 01:58:36,125 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_iteration_2_mappedreadS.fastq
+2017-01-07 01:58:36,125 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_iteration_2_mappedreadF.fastq
+2017-01-07 01:58:36,126 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:58:36,126 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 01:58:36,127 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_iteration_2_mappedreadR.fastq
+2017-01-07 01:58:36,127 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_iteration_2_mappedreadS.fastq
+2017-01-07 01:58:36,128 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_iteration_2_mappedreadF.fastq
+2017-01-07 01:58:36,128 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 01:58:36,129 - DEBUG - 
+ running 10 cmds: 
+ /home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_iteration_2.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_iteration_2_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_iteration_2_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_iteration_2_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_iteration_2.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_iteration_2_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_iteration_2_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_iteration_2_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_iteration_2.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_iteration_2_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_iteration_2_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_iteration_2_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_iteration_2.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_iteration_2_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_iteration_2_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_iteration_2_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_iteration_2.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_iteration_2_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_iteration_2_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_iteration_2_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+2017-01-07 01:59:29,900 - INFO - Sum of return codes (should be 0):
+2017-01-07 01:59:29,902 - INFO - 0
+2017-01-07 01:59:29,903 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_2/contigs.fasta
+2017-01-07 01:59:29,906 - INFO - reserving first contig
+2017-01-07 01:59:29,912 - INFO - SEED_cluster-0-iter-2: analyzing  mapping
+2017-01-07 01:59:29,920 - INFO - SEED_cluster-0-iter-2: Seed length: 7211
+2017-01-07 01:59:29,921 - INFO - SEED_cluster-0-iter-2: Length of this iteration's longest contig: 7557
+2017-01-07 01:59:29,922 - INFO - SEED_cluster-0-iter-2: Length of previous longest contig: 7211
+2017-01-07 01:59:29,923 - INFO - SEED_cluster-0-iter-2: The new contig differs from the previous iteration by 346 bases
+2017-01-07 01:59:29,924 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_2/contigs.fasta
+2017-01-07 01:59:29,927 - INFO - reserving first contig
+2017-01-07 01:59:29,932 - INFO - SEED_cluster-1-iter-2: analyzing  mapping
+2017-01-07 01:59:29,939 - INFO - SEED_cluster-1-iter-2: Seed length: 8795
+2017-01-07 01:59:29,941 - INFO - SEED_cluster-1-iter-2: Length of this iteration's longest contig: 9289
+2017-01-07 01:59:29,942 - INFO - SEED_cluster-1-iter-2: Length of previous longest contig: 8795
+2017-01-07 01:59:29,943 - INFO - SEED_cluster-1-iter-2: The new contig differs from the previous iteration by 494 bases
+2017-01-07 01:59:29,944 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_2/contigs.fasta
+2017-01-07 01:59:29,945 - INFO - reserving first contig
+2017-01-07 01:59:29,951 - INFO - SEED_cluster-2-iter-2: analyzing  mapping
+2017-01-07 01:59:29,960 - INFO - SEED_cluster-2-iter-2: Seed length: 8918
+2017-01-07 01:59:29,961 - INFO - SEED_cluster-2-iter-2: Length of this iteration's longest contig: 9579
+2017-01-07 01:59:29,962 - INFO - SEED_cluster-2-iter-2: Length of previous longest contig: 8918
+2017-01-07 01:59:29,963 - INFO - SEED_cluster-2-iter-2: The new contig differs from the previous iteration by 661 bases
+2017-01-07 01:59:29,964 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_2/contigs.fasta
+2017-01-07 01:59:29,966 - INFO - reserving first contig
+2017-01-07 01:59:29,971 - INFO - SEED_cluster-3-iter-2: analyzing  mapping
+2017-01-07 01:59:29,978 - INFO - SEED_cluster-3-iter-2: Seed length: 8889
+2017-01-07 01:59:29,979 - INFO - SEED_cluster-3-iter-2: Length of this iteration's longest contig: 9404
+2017-01-07 01:59:29,980 - INFO - SEED_cluster-3-iter-2: Length of previous longest contig: 8889
+2017-01-07 01:59:29,981 - INFO - SEED_cluster-3-iter-2: The new contig differs from the previous iteration by 515 bases
+2017-01-07 01:59:29,982 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_2/contigs.fasta
+2017-01-07 01:59:29,985 - INFO - reserving first contig
+2017-01-07 01:59:29,990 - INFO - SEED_cluster-4-iter-2: analyzing  mapping
+2017-01-07 01:59:29,998 - INFO - SEED_cluster-4-iter-2: Seed length: 8214
+2017-01-07 01:59:29,999 - INFO - SEED_cluster-4-iter-2: Length of this iteration's longest contig: 8709
+2017-01-07 01:59:30,000 - INFO - SEED_cluster-4-iter-2: Length of previous longest contig: 8214
+2017-01-07 01:59:30,000 - INFO - SEED_cluster-4-iter-2: The new contig differs from the previous iteration by 495 bases
+2017-01-07 01:59:30,001 - INFO - preparing extracted region genome for next round of mapping
+2017-01-07 01:59:30,002 - DEBUG - using 5 sequences
+2017-01-07 01:59:30,012 - INFO - combined 5 records as genome for next round of mapping
+2017-01-07 01:59:30,029 - INFO - Length of buffered 'genome' for mapping: 74538
+2017-01-07 01:59:30,030 - INFO - moving on to final assemblies!
+2017-01-07 01:59:30,031 - INFO - processing iteration 3
+2017-01-07 01:59:30,032 - DEBUG - with new reference: /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/iter_2_buffered_genome.fasta
+2017-01-07 01:59:30,042 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_unmappedreadR.fastq
+2017-01-07 01:59:30,043 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_unmappedreadS.fastq
+2017-01-07 01:59:30,044 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_unmappedreadF.fastq
+2017-01-07 01:59:30,045 - DEBUG - converting unmapped bam into reads:
+2017-01-07 01:59:30,046 - DEBUG - /home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_unmapped.sam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_unmappedreadS.fastq 
+2017-01-07 01:59:49,330 - INFO - using the default minimum score for BWA
+2017-01-07 01:59:49,331 - INFO - checking for empty read files
+2017-01-07 01:59:49,335 - WARNING - read file readF not found and can not be used for mapping!
+2017-01-07 01:59:49,336 - WARNING - read file readR not found and can not be used for mapping!
+2017-01-07 01:59:49,338 - DEBUG - size of /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_unmappedreadS.fastq: 1339101068.000000
+2017-01-07 01:59:49,339 - INFO - Mapping reads to reference genome with BWA
+2017-01-07 01:59:49,418 - INFO - running BWA:
+2017-01-07 01:59:49,418 - DEBUG - with the following BWA commands:
+2017-01-07 01:59:49,419 - DEBUG - /home/nw42839/bin/bwa index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/iter_2_buffered_genome.fasta
+2017-01-07 01:59:49,521 - DEBUG - /home/nw42839/bin/bwa mem -t 16 -L 0,0 -U 0  -k 15 /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/iter_2_buffered_genome.fasta /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_unmappedreadS.fastq | /home/nw42839/bin/samtools view -bh - | /home/nw42839/bin/samtools sort -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_s.bam - 
+2017-01-07 02:02:15,558 - DEBUG - /home/nw42839/bin/samtools merge -f /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_pe.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_s.bam
+2017-01-07 02:03:18,425 - INFO - Singleton mapped reads: 2322 + 0 mapped (0.11% : N/A)
+2017-01-07 02:03:24,727 - INFO - Combined mapped reads: 2322 + 0 mapped (0.11% : N/A)
+2017-01-07 02:03:24,729 - INFO - processing mapping for iteration 3
+2017-01-07 02:03:24,737 - INFO - using coords from previous iterations 'genome':
+2017-01-07 02:03:24,738 - INFO - Coordinates for scannedScaffolds cluster 0:  [5000 - 12557]
+2017-01-07 02:03:24,816 - INFO - using coords from previous iterations 'genome':
+2017-01-07 02:03:24,817 - INFO - Coordinates for scannedScaffolds cluster 1:  [17557 - 26846]
+2017-01-07 02:03:24,844 - INFO - using coords from previous iterations 'genome':
+2017-01-07 02:03:24,845 - INFO - Coordinates for scannedScaffolds cluster 2:  [31846 - 41425]
+2017-01-07 02:03:24,873 - INFO - using coords from previous iterations 'genome':
+2017-01-07 02:03:24,874 - INFO - Coordinates for scannedScaffolds cluster 3:  [46425 - 55829]
+2017-01-07 02:03:24,910 - INFO - using coords from previous iterations 'genome':
+2017-01-07 02:03:24,911 - INFO - Coordinates for scannedScaffolds cluster 4:  [60829 - 69538]
+2017-01-07 02:03:24,927 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam
+2017-01-07 02:04:49,170 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam
+2017-01-07 02:04:54,994 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_3/scannedScaffolds_cluster_0_iteration_3.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam scannedScaffolds:5000-12557
+2017-01-07 02:04:55,116 - INFO - Coverage for cluster 0:
+	5' 1000bp-region: 137.4982214 
+	3' 1000bp-region: 183.2976594
+2017-01-07 02:04:55,117 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam
+2017-01-07 02:06:24,027 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam
+2017-01-07 02:06:31,244 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_3/scannedScaffolds_cluster_1_iteration_3.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam scannedScaffolds:17557-26846
+2017-01-07 02:06:31,500 - INFO - Coverage for cluster 1:
+	5' 1000bp-region: 107.7802204 
+	3' 1000bp-region: 147.8664264
+2017-01-07 02:06:31,501 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam
+2017-01-07 02:08:01,329 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam
+2017-01-07 02:08:08,985 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_3/scannedScaffolds_cluster_2_iteration_3.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam scannedScaffolds:31846-41425
+2017-01-07 02:08:09,096 - INFO - Coverage for cluster 2:
+	5' 1000bp-region: 66.3014714 
+	3' 1000bp-region: 32.4377004
+2017-01-07 02:08:09,097 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam
+2017-01-07 02:09:36,788 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam
+2017-01-07 02:09:43,328 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_3/scannedScaffolds_cluster_3_iteration_3.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam scannedScaffolds:46425-55829
+2017-01-07 02:09:43,445 - INFO - Coverage for cluster 3:
+	5' 1000bp-region: 127.2659934 
+	3' 1000bp-region: 132.1418924
+2017-01-07 02:09:43,447 - DEBUG - /home/nw42839/bin/samtools sort /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam
+2017-01-07 02:11:13,043 - DEBUG - /home/nw42839/bin/samtools index /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam
+2017-01-07 02:11:19,016 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_3/scannedScaffolds_cluster_4_iteration_3.bam /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam scannedScaffolds:60829-69538
+2017-01-07 02:11:19,153 - INFO - Coverage for cluster 4:
+	5' 1000bp-region: 98.8923614 
+	3' 1000bp-region: 140.1515154
+2017-01-07 02:11:19,155 - INFO - mapped regions for iteration 3:
+ scannedScaffolds:5000-12557
+scannedScaffolds:17557-26846
+scannedScaffolds:31846-41425
+scannedScaffolds:46425-55829
+scannedScaffolds:60829-69538
+2017-01-07 02:11:19,156 - DEBUG - cat /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_2/scannedScaffolds_mapping_for_iter_2_iteration_2_mapped.txt > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_mapped.txt
+2017-01-07 02:11:19,478 - DEBUG - /home/nw42839/bin/samtools view -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3.sam -h /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3.bam
+2017-01-07 02:11:33,837 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam scannedScaffolds:5000-12557 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_mapped.txt
+2017-01-07 02:11:33,899 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam scannedScaffolds:17557-26846 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_mapped.txt
+2017-01-07 02:11:33,955 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam scannedScaffolds:31846-41425 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_mapped.txt
+2017-01-07 02:11:34,009 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam scannedScaffolds:46425-55829 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_mapped.txt
+2017-01-07 02:11:34,061 - DEBUG - /home/nw42839/bin/samtools view /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_sorted.bam scannedScaffolds:60829-69538 | cut -f1 >> /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_mapped.txt
+2017-01-07 02:11:34,120 - DEBUG - sort -u /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_mapped.txt
+2017-01-07 02:11:35,457 - DEBUG - LC_ALL=C grep -w -v -F -f /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_mapped.txt < /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3.sam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_mapping_for_iter_3/scannedScaffolds_mapping_for_iter_3_iteration_3_unmapped.sam
+2017-01-07 02:11:46,629 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 02:11:46,630 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_3/scannedScaffolds_cluster_0_iteration_3_mappedreadR.fastq
+2017-01-07 02:11:46,632 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_3/scannedScaffolds_cluster_0_iteration_3_mappedreadS.fastq
+2017-01-07 02:11:46,633 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_3/scannedScaffolds_cluster_0_iteration_3_mappedreadF.fastq
+2017-01-07 02:11:46,634 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 02:11:46,635 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 02:11:46,636 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_3/scannedScaffolds_cluster_1_iteration_3_mappedreadR.fastq
+2017-01-07 02:11:46,637 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_3/scannedScaffolds_cluster_1_iteration_3_mappedreadS.fastq
+2017-01-07 02:11:46,638 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_3/scannedScaffolds_cluster_1_iteration_3_mappedreadF.fastq
+2017-01-07 02:11:46,639 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 02:11:46,640 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 02:11:46,641 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_3/scannedScaffolds_cluster_2_iteration_3_mappedreadR.fastq
+2017-01-07 02:11:46,642 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_3/scannedScaffolds_cluster_2_iteration_3_mappedreadS.fastq
+2017-01-07 02:11:46,643 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_3/scannedScaffolds_cluster_2_iteration_3_mappedreadF.fastq
+2017-01-07 02:11:46,644 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 02:11:46,645 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 02:11:46,646 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_3/scannedScaffolds_cluster_3_iteration_3_mappedreadR.fastq
+2017-01-07 02:11:46,647 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_3/scannedScaffolds_cluster_3_iteration_3_mappedreadS.fastq
+2017-01-07 02:11:46,648 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_3/scannedScaffolds_cluster_3_iteration_3_mappedreadF.fastq
+2017-01-07 02:11:46,649 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 02:11:46,650 - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+2017-01-07 02:11:46,650 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_3/scannedScaffolds_cluster_4_iteration_3_mappedreadR.fastq
+2017-01-07 02:11:46,651 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_3/scannedScaffolds_cluster_4_iteration_3_mappedreadS.fastq
+2017-01-07 02:11:46,652 - DEBUG - /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_3/scannedScaffolds_cluster_4_iteration_3_mappedreadF.fastq
+2017-01-07 02:11:46,653 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 02:11:46,654 - DEBUG - 
+ running 10 cmds: 
+ /home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_3/scannedScaffolds_cluster_0_iteration_3.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_3/scannedScaffolds_cluster_0_iteration_3_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_3/scannedScaffolds_cluster_0_iteration_3_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_3/scannedScaffolds_cluster_0_iteration_3_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_3/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_3 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_3/scannedScaffolds_cluster_1_iteration_3.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_3/scannedScaffolds_cluster_1_iteration_3_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_3/scannedScaffolds_cluster_1_iteration_3_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_3/scannedScaffolds_cluster_1_iteration_3_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_3/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_3 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_3/scannedScaffolds_cluster_2_iteration_3.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_3/scannedScaffolds_cluster_2_iteration_3_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_3/scannedScaffolds_cluster_2_iteration_3_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_3/scannedScaffolds_cluster_2_iteration_3_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_3/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_3 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_3/scannedScaffolds_cluster_3_iteration_3.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_3/scannedScaffolds_cluster_3_iteration_3_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_3/scannedScaffolds_cluster_3_iteration_3_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_3/scannedScaffolds_cluster_3_iteration_3_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_3/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_3 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/bin/samtools fastq /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_3/scannedScaffolds_cluster_4_iteration_3.bam > /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_3/scannedScaffolds_cluster_4_iteration_3_mappedreadS.fastq 
+if [ -s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_3/scannedScaffolds_cluster_4_iteration_3_mappedreadS.fastq ] ; then /home/nw42839/bin/spades.py --only-assembler --cov-cutoff off --sc --careful -k 21,33,55,77,99 --pe1-s /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_3/scannedScaffolds_cluster_4_iteration_3_mappedreadS.fastq --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_3/extracted_seed_sequence.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_3 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+2017-01-07 02:12:42,837 - INFO - Sum of return codes (should be 0):
+2017-01-07 02:12:42,839 - INFO - 0
+2017-01-07 02:12:42,840 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_3/contigs.fasta
+2017-01-07 02:12:42,842 - INFO - reserving first contig
+2017-01-07 02:12:42,850 - INFO - SEED_cluster-0-iter-3: analyzing  mapping
+2017-01-07 02:12:42,859 - INFO - SEED_cluster-0-iter-3: Seed length: 7557
+2017-01-07 02:12:42,860 - INFO - SEED_cluster-0-iter-3: Length of this iteration's longest contig: 8042
+2017-01-07 02:12:42,861 - INFO - SEED_cluster-0-iter-3: Length of previous longest contig: 7557
+2017-01-07 02:12:42,862 - INFO - SEED_cluster-0-iter-3: The new contig differs from the previous iteration by 485 bases
+2017-01-07 02:12:42,863 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_3/contigs.fasta
+2017-01-07 02:12:42,865 - INFO - reserving first contig
+2017-01-07 02:12:42,873 - INFO - SEED_cluster-1-iter-3: analyzing  mapping
+2017-01-07 02:12:42,883 - INFO - SEED_cluster-1-iter-3: Seed length: 9289
+2017-01-07 02:12:42,884 - INFO - SEED_cluster-1-iter-3: Length of this iteration's longest contig: 9832
+2017-01-07 02:12:42,885 - INFO - SEED_cluster-1-iter-3: Length of previous longest contig: 9289
+2017-01-07 02:12:42,886 - INFO - SEED_cluster-1-iter-3: The new contig differs from the previous iteration by 543 bases
+2017-01-07 02:12:42,887 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_3/contigs.fasta
+2017-01-07 02:12:42,889 - INFO - reserving first contig
+2017-01-07 02:12:42,896 - INFO - SEED_cluster-2-iter-3: analyzing  mapping
+2017-01-07 02:12:42,905 - INFO - SEED_cluster-2-iter-3: Seed length: 9579
+2017-01-07 02:12:42,906 - INFO - SEED_cluster-2-iter-3: Length of this iteration's longest contig: 10013
+2017-01-07 02:12:42,907 - INFO - SEED_cluster-2-iter-3: Length of previous longest contig: 9579
+2017-01-07 02:12:42,908 - INFO - SEED_cluster-2-iter-3: The new contig differs from the previous iteration by 434 bases
+2017-01-07 02:12:42,909 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_3/contigs.fasta
+2017-01-07 02:12:42,911 - INFO - reserving first contig
+2017-01-07 02:12:42,916 - INFO - SEED_cluster-3-iter-3: analyzing  mapping
+2017-01-07 02:12:42,923 - INFO - SEED_cluster-3-iter-3: Seed length: 9404
+2017-01-07 02:12:42,925 - INFO - SEED_cluster-3-iter-3: Length of this iteration's longest contig: 9932
+2017-01-07 02:12:42,926 - INFO - SEED_cluster-3-iter-3: Length of previous longest contig: 9404
+2017-01-07 02:12:42,927 - INFO - SEED_cluster-3-iter-3: The new contig differs from the previous iteration by 528 bases
+2017-01-07 02:12:42,928 - DEBUG - checking for the following file: 
+/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_3/contigs.fasta
+2017-01-07 02:12:42,929 - INFO - reserving first contig
+2017-01-07 02:12:42,935 - INFO - SEED_cluster-4-iter-3: analyzing  mapping
+2017-01-07 02:12:42,941 - INFO - SEED_cluster-4-iter-3: Seed length: 8709
+2017-01-07 02:12:42,942 - INFO - SEED_cluster-4-iter-3: Length of this iteration's longest contig: 9238
+2017-01-07 02:12:42,943 - INFO - SEED_cluster-4-iter-3: Length of previous longest contig: 8709
+2017-01-07 02:12:42,944 - INFO - SEED_cluster-4-iter-3: The new contig differs from the previous iteration by 529 bases
+2017-01-07 02:12:42,946 - INFO - preparing extracted region genome for next round of mapping
+2017-01-07 02:12:42,947 - DEBUG - using 5 sequences
+2017-01-07 02:12:42,961 - INFO - combined 5 records as genome for next round of mapping
+2017-01-07 02:12:42,988 - INFO - Length of buffered 'genome' for mapping: 77057
+2017-01-07 02:12:42,989 - INFO - moving on to final assemblies!
+2017-01-07 02:12:43,005 - INFO - combinging contigs from /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads
+2017-01-07 02:12:43,183 - DEBUG - copying fasta from /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_3/contigs.fasta to /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/scannedScaffolds_cluster_0.fasta
+2017-01-07 02:12:43,255 - DEBUG - copying fasta from /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_3/contigs.fasta to /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/scannedScaffolds_cluster_1.fasta
+2017-01-07 02:12:43,291 - DEBUG - copying fasta from /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_3/contigs.fasta to /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/scannedScaffolds_cluster_2.fasta
+2017-01-07 02:12:43,326 - DEBUG - copying fasta from /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_3/contigs.fasta to /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/scannedScaffolds_cluster_3.fasta
+2017-01-07 02:12:43,359 - DEBUG - copying fasta from /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/BX571856.1_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_3/contigs.fasta to /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/scannedScaffolds_cluster_4.fasta
+2017-01-07 02:12:43,393 - INFO - combining the following files matching pattern *:/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/scannedScaffolds_cluster_0.fasta /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/scannedScaffolds_cluster_1.fasta /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/scannedScaffolds_cluster_2.fasta /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/scannedScaffolds_cluster_3.fasta /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/scannedScaffolds_cluster_4.fasta
+2017-01-07 02:12:43,409 - INFO - Combined Seed Contigs: /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/riboSeedContigs.fasta
+2017-01-07 02:12:43,411 - INFO - Time taken to run seeding: 59.82m
+2017-01-07 02:12:43,412 - INFO - 
+
+Starting Final Assemblies
+
+
+2017-01-07 02:12:43,418 - INFO - Getting commands for de_fere_novo SPAdes
+2017-01-07 02:12:43,420 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 02:12:43,425 - INFO - Getting commands for de_novo SPAdes
+2017-01-07 02:12:43,427 - DEBUG - constructing shell file check for subprocess cmd
+2017-01-07 02:12:43,448 - DEBUG - running the following commands:
+2017-01-07 02:12:43,449 - DEBUG - if [ -s ./UAMS_reads/UAMS1_S17_L001_R1_001.fastq.gz ] && [ -s ./UAMS_reads/UAMS1_S17_L001_R2_001.fastq.gz ] ; then /home/nw42839/bin/spades.py --careful -k 21,33,55,77,99,127 --pe1-1 ./UAMS_reads/UAMS1_S17_L001_R1_001.fastq.gz --pe1-2 ./UAMS_reads/UAMS1_S17_L001_R2_001.fastq.gz --trusted-contigs /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/riboSeedContigs.fasta  -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_de_fere_novo_assembly ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/python/bin/python2.7 /home/nw42839/bin/quast.py -R /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_padded.fasta /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_de_fere_novo_assembly/contigs.fasta -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/quast_de_fere_novo
+if [ -s ./UAMS_reads/UAMS1_S17_L001_R1_001.fastq.gz ] && [ -s ./UAMS_reads/UAMS1_S17_L001_R2_001.fastq.gz ] ; then /home/nw42839/bin/spades.py --careful -k 21,33,55,77,99,127 --pe1-1 ./UAMS_reads/UAMS1_S17_L001_R1_001.fastq.gz --pe1-2 ./UAMS_reads/UAMS1_S17_L001_R2_001.fastq.gz   -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_de_novo_assembly ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/home/nw42839/python/bin/python2.7 /home/nw42839/bin/quast.py -R /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/scannedScaffolds_padded.fasta /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_de_novo_assembly/contigs.fasta -o /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/quast_de_novo
+2017-01-07 04:34:13,677 - INFO - Sum of return codes (should be 0):
+2017-01-07 04:34:14,068 - INFO - 0
+2017-01-07 04:34:14,069 - DEBUG - writing combined quast reports
+2017-01-07 04:34:14,070 - INFO - Comparing de novo and de fere novo assemblies:
+2017-01-07 04:34:14,071 - DEBUG - Quast reports to combine: ['/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/quast_de_fere_novo/report.tsv', '/mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/quast_de_novo/report.tsv']
+2017-01-07 04:34:14,101 - INFO - # N's per 100 kbp: 0.00  0.00
+2017-01-07 04:34:14,103 - INFO - # contigs: 49  54
+2017-01-07 04:34:14,104 - INFO - # contigs (>= 0 bp): 133  155
+2017-01-07 04:34:14,105 - INFO - # contigs (>= 1000 bp): 37  42
+2017-01-07 04:34:14,105 - INFO - # contigs (>= 10000 bp): 28  33
+2017-01-07 04:34:14,106 - INFO - # contigs (>= 25000 bp): 24  28
+2017-01-07 04:34:14,107 - INFO - # contigs (>= 5000 bp): 30  35
+2017-01-07 04:34:14,108 - INFO - # contigs (>= 50000 bp): 19  22
+2017-01-07 04:34:14,109 - INFO - # indels per 100 kbp: 3.20  3.30
+2017-01-07 04:34:14,109 - INFO - # local misassemblies: 7  7
+2017-01-07 04:34:14,110 - INFO - # misassembled contigs: 10  9
+2017-01-07 04:34:14,111 - INFO - # misassemblies: 14  12
+2017-01-07 04:34:14,112 - INFO - # mismatches per 100 kbp: 48.18  49.49
+2017-01-07 04:34:14,112 - INFO - # unaligned contigs: 4 + 9 part  4 + 9 part
+2017-01-07 04:34:14,113 - INFO - Duplication ratio: 1.006  1.006
+2017-01-07 04:34:14,114 - INFO - GC (%): 32.88  32.76
+2017-01-07 04:34:14,115 - INFO - Genome fraction (%): 94.688  93.988
+2017-01-07 04:34:14,116 - INFO - L50: 7  7
+2017-01-07 04:34:14,116 - INFO - L75: 13  16
+2017-01-07 04:34:14,117 - INFO - LA50: 9  9
+2017-01-07 04:34:14,118 - INFO - LA75: 17  18
+2017-01-07 04:34:14,119 - INFO - LG50: 8  8
+2017-01-07 04:34:14,119 - INFO - LG75: 14  18
+2017-01-07 04:34:14,120 - INFO - LGA50: 9  9
+2017-01-07 04:34:14,120 - INFO - LGA75: 18  21
+2017-01-07 04:34:14,121 - INFO - Largest alignment: 253076  253076
+2017-01-07 04:34:14,122 - INFO - Largest contig: 333595  333595
+2017-01-07 04:34:14,122 - INFO - Misassembled contigs length: 1328350  1039376
+2017-01-07 04:34:14,123 - INFO - N50: 150432  142431
+2017-01-07 04:34:14,124 - INFO - N75: 101586  59438
+2017-01-07 04:34:14,124 - INFO - NA50: 109318  101333
+2017-01-07 04:34:14,125 - INFO - NA75: 58701  52125
+2017-01-07 04:34:14,126 - INFO - NG50: 142432  120092
+2017-01-07 04:34:14,127 - INFO - NG75: 84447  54745
+2017-01-07 04:34:14,127 - INFO - NGA50: 109318  101333
+2017-01-07 04:34:14,128 - INFO - NGA75: 56387  49817
+2017-01-07 04:34:14,129 - INFO - Reference GC (%): 32.81  32.81
+2017-01-07 04:34:14,130 - INFO - Reference length: 2904619  2904619
+2017-01-07 04:34:14,130 - INFO - Total aligned length: 2752203  2731897
+2017-01-07 04:34:14,131 - INFO - Total length: 2776568  2756349
+2017-01-07 04:34:14,132 - INFO - Total length (>= 0 bp): 2813199  2796627
+2017-01-07 04:34:14,132 - INFO - Total length (>= 1000 bp): 2769467  2749248
+2017-01-07 04:34:14,133 - INFO - Total length (>= 10000 bp): 2740994  2720775
+2017-01-07 04:34:14,134 - INFO - Total length (>= 25000 bp): 2681951  2636922
+2017-01-07 04:34:14,135 - INFO - Total length (>= 5000 bp): 2751817  2731598
+2017-01-07 04:34:14,135 - INFO - Total length (>= 50000 bp): 2512000  2427834
+2017-01-07 04:34:14,136 - INFO - Unaligned length: 9809  9809
+2017-01-07 04:34:14,137 - INFO - Done: Sat Jan  7 04:34:14 2017
+2017-01-07 04:34:14,138 - INFO - riboSeed Assembly: /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed
+2017-01-07 04:34:14,138 - INFO - Combined Contig Seeds (for validation or alternate assembly): /mnt/shared/scratch/nw42839/riboSeed/U1/20170107_1k/seed/final_long_reads/riboSeedContigs.fasta
+2017-01-07 04:34:14,139 - INFO - Time taken: 201.33m
