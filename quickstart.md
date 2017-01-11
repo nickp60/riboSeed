@@ -4,76 +4,46 @@ Too Impatient for the quickstart? See our [Especially Quickstart Guide](./especi
 ## Overview
 In this guide, I will walk you through a typical experiment.
 
+## Requirements
+
+The following tools must be installed to complete this QuickStart guide
+
+* [`sra-tools`/`sratoolkit`](https://github.com/ncbi/sra-tools)
+* [`open_utils`](https://github.com/nickp60/open_utils)
+* [`barrnap`]()
+* [`seqret`]()
+* [`riboSeed`](https://github.com/nickp60/riboSeed)
+
 ## Get the Data
-Lets try using riboSeed on S. aureus SS_0588, from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA312437.  We will use the SRA toolkit to get the data:
-```
-~/bin/sratoolkit.2.7.0-ubuntu64/bin/fastq-dump --split-files SRR4360364
-#    2016-12-15T11:03:42 fastq-dump.2.7 err: error unexpected while resolving tree within virtual file system module - failed to resolve accession 'SRR4360364' - Obsolete software. See https://github.com/ncbi/sra-tools/wiki ( 406 )
-#    2016-12-15T11:03:42 fastq-dump.2.7 err: item not found while constructing within virtual database module - the path 'SRR4360364' cannot be opened as database or table
-```
-Whoops!  Its December, so its time to update to the new https scheme in SRA 2.8.0.
+Let's try using riboSeed on S. aureus SS_0588, from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA312437.  We will use the SRA toolkit's `fastq-dunp` tool to get the data:
 
 ```
-~/bin/sratoolkit.2.8.0-ubuntu64/bin/fastq-dump --split-files  SRX2219900
-
-#    2016-12-15T11:03:36 fastq-dump.2.8.0 err: item not found while constructing within virtual database module - the path 'SRX2219900' cannot be opened as database or table
+fastq-dump --split-files SRR4360364
 ```
 
-Rats, classic SRA error.  I used the experiment accession, not the run accession.
-```
-~/bin/sratoolkit.2.8.0-ubuntu64/bin/fastq-dump --split-files SRR4360364
-```
+That takes a while to download.
 
-That takes a bit to download.
 ```
 Read 2231775 spots for SRR4360364
 Written 2231775 spots for SRR4360364
 ```
 
-Nice!  Alright, lets use the MRSA252 reference, NCBI BX571856.1.  Go ahead and download it now.  I will use the get_genomes.py tool:
+Let's use the MRSA252 reference, NCBI BX571856.1.  Downloading this with the `get_genomes.py` tool from my [`open_utils` repository](https://github.com/nickp60/open_utils) (assuming this tool is in your `$PATH`):
 
 ```
-~/GitHub/open_utils/get_genomes/get_genomes.py -q BX571856.1 -o ./ -f gb
+$ ../open_utils/get_genomes/get_genomes.py -q BX571856.1 -o ./ -f gb
 ```
 
 
 ## RiboSelect
 
-Now that we have our genbank file, lets try to run riboSelect to pull out the regions of interest:
-```
-nicholas@nicholinux[quickstart] ~/GitHub/riboSeed/riboSeed/riboSelect.py ./BX571856.1.gb -o ./select/                                   [11:16AM]
-2016-12-15 11:18:52 - INFO - Initializing logger
-2016-12-15 11:18:52 - INFO - Current usage:
-./BX571856.1.gb -o ./select/
+Now that we have our genbank file, lets try to run riboSelect (assuming that `riboSelect.py` is in your `$PATH`) to pull out the regions of interest. 
 
-Loaded 1 records
-2016-12-15 11:18:53 - INFO - no locus tags found in BX571856.1 for rRNA features with annotated products matching ['16S', '23S', '5S']!
-
-2016-12-15 11:18:53 - INFO - Processing BX571856.1
-
-2016-12-15 11:18:53 - INFO - no hits in BX571856.1
-```
-
-Hmm, maybe the annotations use lowercase S's.
+Because this genome is pretty old (2004), we will have to reannotate the rDNA loci.  To do this, we will download the fasta version of the genome, and use the `scanScaffolds.sh` script that wraps `barrnap` and `seqret` (we assume that this script is in your `$PATH`).
 
 ```
-nicholas@nicholinux[quickstart] ~/GitHub/riboSeed/riboSeed/riboSelect.py ./BX571856.1.gb -o ./select2/ -s 16s:23s:5s                    [11:20AM]
-2016-12-15 11:20:23 - INFO - Initializing logger
-2016-12-15 11:20:23 - INFO - Current usage:
-./BX571856.1.gb -o ./select2/ -s 16s:23s:5s
-
-Loaded 1 records
-2016-12-15 11:20:23 - INFO - no locus tags found in BX571856.1 for rRNA features with annotated products matching ['16s', '23s', '5s']!
-
-2016-12-15 11:20:23 - INFO - Processing BX571856.1
-
-2016-12-15 11:20:23 - INFO - no hits in BX571856.1
-```
-
-Rats! Because this genome is pretty old (2004), we will have to reannotate the rDNA's.  Lets download the fasta version of the genome, and then we will use the included ```scanScaffolds.sh``` script for that.  It wraps barrnap and seqret.
-
-```
-nicholas@nicholinux[quickstart] ~/GitHub/riboSeed/scripts/scanScaffolds.sh ./ .fasta ./scanned_output/ bac                              [12:07PM]
+$ get_genomes.py -q BX571856.1 -o ./ -f fasta
+$ scanScaffolds.sh ./ .fasta ./scanned_output/ bac
 USAGE: /path/to/contigs/dir/ *ext /path/to/outdir/ kingdom threshold
 example: $ barrnap
 using default threshold of .5 identity
@@ -111,10 +81,11 @@ Processing BX571856.1.fasta, item 1 out of 1
 Combined 1 gb file(s)
 Results gb file: ./scanned_output/scannedScaffolds.gb
 ```
-Nice!  Now, lets try riboSelect again.
+
+Let's try riboSelect:
 
 ```
-nicholas@nicholinux[quickstart] ~/GitHub/riboSeed/riboSeed/riboSelect.py ./scanned_output/scannedScaffolds.gb -o ./select/              [12:15PM]
+$ riboSelect.py ./scanned_output/scannedScaffolds.gb -o ./select/
 2016-12-15 12:15:52 - INFO - Initializing logger
 2016-12-15 12:15:52 - INFO - Current usage:
 ./scanned_output/scannedScaffolds.gb -o ./select/
@@ -134,9 +105,10 @@ BX571856.1 BX571856.1.fasta4:BX571856.1.fasta5:BX571856.1.fasta6:BX571856.1.fast
 
 ```
 
-Cool, now we have our cluster file, reference gb, and data! Its riboSeed time...
+Now we have our cluster file, reference gb, and data, we can apply `riboSeed2.py`…
+
 ## riboSeed
 
 ```
-~/GitHub/riboSeed/riboSeed/riboSeed2.py ./select/riboSelect_grouped_loci.txt -o ./seed/ -F ./SRR4360364_1.fastq -R ./SRR4360364_2.fastq -r ./scanned_output/scannedScaffolds.gb -c 4 -t 1 -v 1
+$ riboSeed2.py ./select/riboSelect_grouped_loci.txt -o ./seed/ -F ./SRR4360364_1.fastq -R ./SRR4360364_2.fastq -r ./scanned_output/scannedScaffolds.gb -c 4 -t 1 -v 1
 ```
