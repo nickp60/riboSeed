@@ -80,7 +80,7 @@ outdir="$3"${BASENAME}_barrnap
 sed 's/^[^ ]*[|]\([^|]*\)[|] .*$/>\1/' ${i} > ${outdir}_renamed${2}
 
 #get accession name
-ACCNAME=$(grep "^>" ${outdir}_renamed${2} |sed -e 's/>//' -e 's/\s.*$//' )
+ACCNAME=$(grep "^>" ${outdir}_renamed${2} |sed -e 's/>//' -e 's/[[:blank:]].*$//' )
 
 barrnap -kingdom "$KINGDOM" ${outdir}_renamed${2} --reject "$THRESH" > ${outdir}.gff
 echo "making locus tags and adding to .gff"
