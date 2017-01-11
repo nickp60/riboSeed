@@ -147,7 +147,7 @@ setup(
     # yet defined
     scripts=['riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
              'riboSeed/riboSnag.py', 'riboSeed/riboSwap.py',
-             'riboSeed/riboScan',
+             'riboSeed/riboScan.py',
              'scripts/scanScaffolds.sh', 'scripts/example_batch.sh',
              'scripts/multifasta_splitter.sh', 'scripts/concatToyGenome.py'],
 )
