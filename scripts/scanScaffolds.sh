@@ -1,5 +1,5 @@
 #!/bin/bash
-# version 0.0.3
+# version 0.0.4
 # Requires barrnap and seqret in PATH
 
 # Many assemblies, genomes from NCBI will not have rRNA annotated.
@@ -26,7 +26,7 @@ if [ -d "$3" ]; then
     echo "play things safe, make a new directory for results"
     exit 1
 fi
-NFILES=$( ls $1*$2  -1 | wc -l) # count files that you will process
+NFILES=$( ls -1 $1*$2 | wc -l) # count files that you will process
 
 ## check args
 if [ "$4" != "euk" ] && [ "$4" != "bac" ]
@@ -82,8 +82,7 @@ outdir="$3"${BASENAME}_barrnap
 sed 's/^[^ ]*[|]\([^|]*\)[|] .*$/>\1/' ${i} > ${outdir}_renamed${2}
 
 #get accession name
-ACCNAME=$(grep "^>" ${outdir}_renamed${2} |sed -e 's/>//' -e 's/\s.*$//' )
-echo "barrnap -kingdom $KINGDOM ${outdir}_renamed${2} --reject $THRESH > ${outdir}.gff"
+ACCNAME=$(grep "^>" ${outdir}_renamed${2} |sed -e 's/>//' -e 's/[[:blank:]].*$//' )
 
 barrnap -kingdom "$KINGDOM" ${outdir}_renamed${2} --reject "$THRESH" > ${outdir}.gff
 echo "making locus tags and adding to .gff"
@@ -92,7 +91,7 @@ LOCUS=0
 while read j; do
     newline=`echo $j | sed -e "s/Name=/locus\_tag=${BASENAME}${LOCUS}\;Name=/"`
     for k in {1..8}; do # for each of the first 8 spaces, convert to tab
-    	newline=`echo -e "$newline" | sed -e "s/ /\t/"`
+    	newline=`echo -e "$newline" | sed -e "s/ /$(printf '\t')/"`
     done
     echo -e "$newline" >> ${outdir}_renamed.gff # -e allows for escaping tabs
     LOCUS=$((LOCUS+1))
@@ -101,7 +100,11 @@ done < ${outdir}.gff
 OUTGB=$(echo ${outdir}.gb)
 
 echo "merge fasta and gff3 back to a genbank"
-seqret -sequence ${outdir}_renamed${2} -feature -fformat gff3 -fopenfile ${outdir}_renamed.gff -osformat genbank -auto  -outseq ${OUTGB}
+cmd="seqret -sequence ${outdir}_renamed${2} -feature -fformat gff3 \
+            -fopenfile ${outdir}_renamed.gff -osformat genbank -auto \
+            -outseq ${OUTGB}"
+echo ${cmd}
+${cmd}
 
 # add version and accession cause biopython complains otherwise
 # fixed mac bug when overwriting by adding .bu to i
@@ -109,8 +112,10 @@ echo "adding the VERSION and ACCESSION tags to .gb"
 if [ `uname` == Darwin ]
 then
     echo "using OSX sed"
-    sed -i '.bu' -e "1 aVERSION     $ACCNAME" $OUTGB
-    sed -i '.bu' -e "1 aACCESSION   $ACCNAME" $OUTGB
+    sed -i'.bu' -e "1 a\\
+    VERSION     $ACCNAME" $OUTGB
+    sed -i'.bu' -e "1 a\\
+    ACCESSION   $ACCNAME" $OUTGB
 elif [ `uname` == Linux ]
 then
     echo "using Linux sed"
