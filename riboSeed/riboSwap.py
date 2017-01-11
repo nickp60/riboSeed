@@ -131,10 +131,13 @@ def append_replacement_contigs(infile, outfile, name_list, logger=None):
                         else:
                             logger.info("appending %s to output file", i.id)
                             i.id = str("SWAPPED_" + i.id)
+                            i.name, i.description  = '', ''  # just change id
                             SeqIO.write(i, clean_de_fere, "fasta")
                         found_list.append(name)
+            clean_de_fere.write("\n")
     if len(found_list) != len(name_list):
-        logger.warning("Not all replacement contigs found!")
+        logger.error("Not all replacement contigs found!")
+        raise ValueError
     return(outfile)
 
 

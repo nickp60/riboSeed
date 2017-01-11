@@ -174,7 +174,7 @@ class SeedGenome(object):
                     for rec in recs:
                         new_rec = SeqRecord(
                             id=rec.id,
-                            seq=Seq(str(rec.seq[-pad: ] + rec.seq +
+                            seq=Seq(str(rec.seq[-pad:] + rec.seq +
                                     rec.seq[0: pad]),
                                     IUPAC.IUPACAmbiguousDNA()))
                         SeqIO.write(new_rec, outfh, "fasta")

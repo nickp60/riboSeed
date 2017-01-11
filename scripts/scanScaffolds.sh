@@ -83,6 +83,7 @@ sed 's/^[^ ]*[|]\([^|]*\)[|] .*$/>\1/' ${i} > ${outdir}_renamed${2}
 
 #get accession name
 ACCNAME=$(grep "^>" ${outdir}_renamed${2} |sed -e 's/>//' -e 's/\s.*$//' )
+echo "barrnap -kingdom $KINGDOM ${outdir}_renamed${2} --reject $THRESH > ${outdir}.gff"
 
 barrnap -kingdom "$KINGDOM" ${outdir}_renamed${2} --reject "$THRESH" > ${outdir}.gff
 echo "making locus tags and adding to .gff"
