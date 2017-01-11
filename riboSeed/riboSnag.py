@@ -245,7 +245,7 @@ def get_genbank_rec_from_multigb(recordID, genbank_records):
 
 
 def parse_clustered_loci_file(filepath, gb_filepath, output_root,
-                              padding, circular, logger=None):
+                              circular, padding=1000, logger=None):
     """Given a file from riboSelect or manually created (see specs in README)
     this parses the clusters and returns a list where [0] is sequence name
     and [1] is a list of loci in that cluster
