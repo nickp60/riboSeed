@@ -1,5 +1,5 @@
 #!/bin/bash
-# version 0.0.1
+# version 0.0.3
 # Requires barrnap and seqret in PATH
 
 # Many assemblies, genomes from NCBI will not have rRNA annotated.
@@ -14,7 +14,7 @@
 # argument 5 is threshold [float 0-1], where 1 is 100% identity
 # output scanScaffolds_combined.gb in current directory
 echo 'USAGE: /path/to/contigs/dir/ *ext /path/to/outdir/ kingdom threshold'
-echo 'example: $ barrnap'
+
 if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]
 then
     echo "mandatory arguments: dir, extension, and output_dir"
@@ -26,7 +26,7 @@ if [ -d "$3" ]; then
     echo "play things safe, make a new directory for results"
     exit 1
 fi
-NFILES=$(ls $1*$2  -1 | wc -l) # count files that you will process
+NFILES=$( ls $1*$2  -1 | wc -l) # count files that you will process
 
 ## check args
 if [ "$4" != "euk" ] && [ "$4" != "bac" ]
@@ -70,6 +70,8 @@ fi
 THISFILE=1 # counter to increment
 mkdir "$3"  # make destination directory
 
+
+###############################################################################
 for i in "$1"*"$2";  # for each file matching extension
 do
 BASENAME=$(basename "$i")  # get the basename of the file without path
@@ -83,6 +85,7 @@ sed 's/^[^ ]*[|]\([^|]*\)[|] .*$/>\1/' ${i} > ${outdir}_renamed${2}
 ACCNAME=$(grep "^>" ${outdir}_renamed${2} |sed -e 's/>//' -e 's/\s.*$//' )
 
 barrnap -kingdom "$KINGDOM" ${outdir}_renamed${2} --reject "$THRESH" > ${outdir}.gff
+echo "making locus tags and adding to .gff"
 # add dumb locus tags
 LOCUS=0
 while read j; do
@@ -95,12 +98,27 @@ while read j; do
 done < ${outdir}.gff
 
 OUTGB=$(echo ${outdir}.gb)
-# merge fasta and gff3 back to a genbank
+
+echo "merge fasta and gff3 back to a genbank"
 seqret -sequence ${outdir}_renamed${2} -feature -fformat gff3 -fopenfile ${outdir}_renamed.gff -osformat genbank -auto  -outseq ${OUTGB}
 
 # add version and accession cause biopython complains otherwise
-sed -i "1 aVERSION     $ACCNAME" $OUTGB
-sed -i "1 aACCESSION   $ACCNAME" $OUTGB
+# fixed mac bug when overwriting by adding .bu to i
+echo "adding the VERSION and ACCESSION tags to .gb"
+if [ `uname` == Darwin ]
+then
+    echo "using OSX sed"
+    sed -i '.bu' -e "1 aVERSION     $ACCNAME" $OUTGB
+    sed -i '.bu' -e "1 aACCESSION   $ACCNAME" $OUTGB
+elif [ `uname` == Linux ]
+then
+    echo "using Linux sed"
+    sed -i.bu "1 aVERSION     $ACCNAME" $OUTGB
+    sed -i.bu "1 aACCESSION   $ACCNAME" $OUTGB
+else
+    echo "Unsupported OS! Only made for linux and Uni Exiting..."
+    exit 1
+fi
 
 if [ $THISFILE == 1 ];
 then # write
@@ -110,6 +128,7 @@ cat $OUTGB >> ${3}scannedScaffolds.gb
 fi
 
 THISFILE=$((THISFILE+1))
+###############################################################################
 done
 
 echo "Combined $((THISFILE-1)) gb file(s)"

@@ -42,7 +42,7 @@ from riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
 
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
-PACKAGE_VERSION = '0.5.0'
+PACKAGE_VERSION = '0.0.5'
 # --------------------------- classes --------------------------- #
 
 
@@ -554,13 +554,13 @@ def get_args():  # pragma: no cover
                           help="kmers used during seeding assemblies, " +
                           "separated bt commas" +
                           "; default: %(default)s")
-    optional.add_argument("-I", "--ignoreS", dest='ignoreS',
-                          action="store_true",
-                          default=False,
-                          help="If true, singletons from previous mappings" +
-                          "will be ignored.  try this if you see " +
-                          "samtools merge errors in tracebacks" +
-                          "; default: %(default)s")
+    # optional.add_argument("-I", "--ignoreS", dest='ignoreS',
+    #                       action="store_true",
+    #                       default=False,
+    #                       help="If true, singletons from previous mappings" +
+    #                       "will be ignored.  try this if you see " +
+    #                       "samtools merge errors in tracebacks" +
+    #                       "; default: %(default)s")
     optional.add_argument("-s", "--score_min", dest='score_min',
                           action="store",
                           default=None, type=int,
@@ -581,10 +581,10 @@ def get_args():  # pragma: no cover
                           "exit. Set this to the length of the seed " +
                           "sequence; if it is not achieved, seeding across " +
                           "regions will likely fail; default: %(default)s")
-    optional.add_argument("--paired_inference", dest='paired_inference',
-                          action="store_true", default=False,
-                          help="if --paired_inference, mapped read's " +
-                          "pairs are included; default: %(default)s")
+    # optional.add_argument("--paired_inference", dest='paired_inference',
+    #                       action="store_true", default=False,
+    #                       help="if --paired_inference, mapped read's " +
+    #                       "pairs are included; default: %(default)s")
     optional.add_argument("--linear",
                           help="if genome is known to not be circular and " +
                           "a region of interest (including flanking bits) " +
@@ -599,10 +599,10 @@ def get_args():  # pragma: no cover
                           "length of sequence added to the 5' and 3' ends " +
                           "to allow for selecting regions that cross the " +
                           "chromosome's origin; default: %(default)s")
-    optional.add_argument("--keep_unmapped", dest='keep_unmapped',
-                          action="store_true", default=False,
-                          help="if --keep_unmapped, fastqs are generated " +
-                          "containing unmapped reads; default: %(default)s")
+    # optional.add_argument("--keep_unmapped", dest='keep_unmapped',
+    #                       action="store_true", default=False,
+    #                       help="if --keep_unmapped, fastqs are generated " +
+    #                       "containing unmapped reads; default: %(default)s")
     optional.add_argument("--ref_as_contig", dest='ref_as_contig',
                           action="store", default="untrusted", type=str,
                           choices=["None", "trusted", "untrusted"],
@@ -611,8 +611,8 @@ def get_args():  # pragma: no cover
                           "SPAdes will treat as --untrusted-contig. if '', " +
                           "seeds will not be used during assembly. " +
                           "See SPAdes docs; default: %(default)s")
-    optional.add_argument("--keep_temps", dest='keep_temps', action="store_true",
-                          default=False,
+    optional.add_argument("--keep_temps", dest='keep_temps',
+                          default=False,  action="store_true",
                           help="if not --keep_temps, mapping files will be " +
                           "removed once they are no no longer needed during " +
                           "the iterations; " +
@@ -863,7 +863,8 @@ def nonify_empty_lib_files(ngsLib, logger=None):
 
 
 def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
-                            samtools_exe, smalt_exe, ignore_singletons=False,
+                            samtools_exe, smalt_exe,
+                            # ignore_singletons=False,
                             score_minimum=None,
                             single_lib=False,
                             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
@@ -899,7 +900,7 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
             tempfile.write("@HD riboseed_dummy_file")
         pass
     # if singletons are present, map those too.  Index is already made
-    if ngsLib.readS0 is not None and not ignore_singletons:
+    if ngsLib.readS0 is not None:  # and not ignore_singletons:
         # because erros are thrown if there is no file, this
         # makes a dummmy file to prevent the merge errorrs
         cmdmapS = str(
@@ -947,7 +948,8 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
 
 def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                           samtools_exe, bwa_exe, score_minimum=None,
-                          single_lib=False, ignore_singletons=False,
+                          single_lib=False,
+                          # ignore_singletons=False,
                           add_args='-L 0,0 -U 0', logger=None):
     """
     #TODO rework this to read libtype of ngslib object
@@ -988,7 +990,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
         pass
 
     # if singletons are present, map those too.  Index is already made
-    if ngsLib.readS0 is not None and not ignore_singletons:
+    if ngsLib.readS0 is not None:  # and not ignore_singletons:
         cmdmapS = str(
             '{0} mem -t {1} {2} {3} -k 15 ' +
             '{4} {5} | {6} view -bh - | ' +
@@ -1148,13 +1150,16 @@ def generate_spades_cmd(
     if prelim:
         cmd = str(
             "{0} --only-assembler --cov-cutoff off --sc --careful -k {1} " +
-            "{2} {3} {4} -o {5}").format(spades_exe, kmers, reads, alt_contig, addLibs,
-                                         mapping_ob.assembly_subdir)
+            "{2} {3} {4} -o {5}"
+        ).format(spades_exe, kmers, reads, alt_contig, addLibs,
+                 mapping_ob.assembly_subdir)
     else:
         cmd = "{0} --careful -k {1} {2} {3} {4} -o {5}".format(
-            spades_exe, kmers, reads, alt_contig, addLibs, mapping_ob.assembly_subdir)
+            spades_exe, kmers, reads, alt_contig, addLibs,
+            mapping_ob.assembly_subdir)
     if check_libs:
-        spades_cmd = make_spades_empty_check(liblist=libs, cmd=cmd, logger=logger)
+        spades_cmd = make_spades_empty_check(liblist=libs, cmd=cmd,
+                                             logger=logger)
     else:
         spades_cmd = cmd
     return spades_cmd
@@ -1388,7 +1393,7 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
     particular region
     """
     prep_cmds = []
-    # cmd = "samtools depth ./iter_1_s_mapping.bam -r scannedScaffolds:5000-6000"
+    # cmd = "samtools depth ./iter_1_s_mappi.bam -r scannedScaffolds:5000-6000"
     sorted_bam = os.path.join(
         os.path.dirname(bam),
         str(os.path.splitext(os.path.basename(bam))[0] + "_sorted.bam"))
@@ -1976,7 +1981,6 @@ if __name__ == "__main__":  # pragma: no cover
         filepath=seedGenome.clustered_loci_txt,
         gb_filepath=seedGenome.genbank_path,
         output_root=output_root,
-        padding=args.padding,
         circular=args.linear is False,
         logger=logger)
 
@@ -2094,7 +2098,7 @@ if __name__ == "__main__":  # pragma: no cover
                     seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
                 cores=(args.cores * args.threads),
-                ignore_singletons=args.ignoreS,
+                # ignore_singletons=args.ignoreS,
                 samtools_exe=sys_exes.samtools,
                 single_lib=seedGenome.this_iteration != 0,
                 smalt_exe=sys_exes.mapper,
@@ -2108,7 +2112,7 @@ if __name__ == "__main__":  # pragma: no cover
                 mapping_ob=seedGenome.iter_mapping_list[
                     seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
-                ignore_singletons=args.ignoreS,
+                # ignore_singletons=args.ignoreS,
                 cores=(args.cores * args.threads),
                 single_lib=seedGenome.this_iteration != 0,
                 samtools_exe=sys_exes.samtools,
