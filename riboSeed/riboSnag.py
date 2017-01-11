@@ -12,9 +12,7 @@ Output:
 -dir containing DNA fastas in their
 
 """
-# import re
 import os
-# import csv
 import subprocess
 import datetime
 import time
@@ -29,7 +27,6 @@ import multiprocessing
 import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')
-# from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import pandas as pd
