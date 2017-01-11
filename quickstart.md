@@ -10,8 +10,9 @@ The following tools must be installed to complete this QuickStart guide
 
 * [`sra-tools`/`sratoolkit`](https://github.com/ncbi/sra-tools)
 * [`open_utils`](https://github.com/nickp60/open_utils)
-* [`barrnap`]()
-* [`seqret`]()
+* [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml)
+* [`emboss`](http://www.ebi.ac.uk/Tools/emboss/)
+* [`bwa`](http://bio-bwa.sourceforge.net/) 
 * [`riboSeed`](https://github.com/nickp60/riboSeed)
 
 ## Get the Data
@@ -105,10 +106,10 @@ BX571856.1 BX571856.1.fasta4:BX571856.1.fasta5:BX571856.1.fasta6:BX571856.1.fast
 
 ```
 
-Now we have our cluster file, reference gb, and data, we can apply `riboSeed2.py`…
+Now we have our cluster file, reference gb, and data, we can apply `riboSeed.py`…
 
 ## riboSeed
 
 ```
-$ riboSeed2.py ./select/riboSelect_grouped_loci.txt -o ./seed/ -F ./SRR4360364_1.fastq -R ./SRR4360364_2.fastq -r ./scanned_output/scannedScaffolds.gb -c 4 -t 1 -v 1
+$ riboSeed.py ./select/riboSelect_grouped_loci.txt -o ./seed/ -F ./SRR4360364_1.fastq -R ./SRR4360364_2.fastq -r ./scanned_output/scannedScaffolds.gb -c 4 -t 1 -v 1
 ```
