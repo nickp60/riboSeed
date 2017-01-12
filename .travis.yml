@@ -8,12 +8,12 @@ python:
 before install:
 - echo "$PATH"
 install:
-- pip3.5 install coveralls
-- pip3.5 install -r requirements.txt
+- pip install coveralls
+- pip install -r requirements.txt
 - "./install_tools.sh"
 - "./debug_travis.sh"
 script:
-- python3.5 setup.py install
+- python setup.py install
 - nosetests --with-coverage --cover-package=riboSeed tests/
 after_success: coveralls
 deploy:
