@@ -14,6 +14,7 @@ import subprocess
 import logging
 import os
 import traceback
+# import gffutils
 
 from Bio import SeqIO
 # from Bio.Seq import Seq
@@ -153,7 +154,7 @@ def add_locus_tags_to_gff(gff, acc):
 
 
 def combine_gbs(finalgb, gb_list):
-    with open('final_gb', 'w') as outfile:
+    with open(finalgb, 'w') as outfile:
         for fname in gb_list:
             with open(fname) as infile:
                 for line in infile:
@@ -165,7 +166,7 @@ def append_accession_and_version(accession, ingb, finalgb):
         with open(ingb) as infile:
             for idx, line in enumerate(infile):
                 if idx == 1:
-                    repline = "ACCESSION\t{0}\nVERSION\t{0}\n{1}".format(
+                    repline = "ACCESSION   {0}\nVERSION     {0}\n{1}".format(
                         accession, line)
                     outfile.write(repline)
                 else:

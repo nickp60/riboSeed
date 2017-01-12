@@ -12,7 +12,7 @@ The following tools must be installed to complete this QuickStart guide
 * [`open_utils`](https://github.com/nickp60/open_utils)
 * [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml)
 * [`emboss`](http://www.ebi.ac.uk/Tools/emboss/)
-* [`bwa`](http://bio-bwa.sourceforge.net/) 
+* [`bwa`](http://bio-bwa.sourceforge.net/)
 * [`riboSeed`](https://github.com/nickp60/riboSeed)
 
 ## Get the Data
@@ -29,7 +29,7 @@ Read 2231775 spots for SRR4360364
 Written 2231775 spots for SRR4360364
 ```
 
-Let's use the MRSA252 reference, NCBI BX571856.1.  Downloading this with the `get_genomes.py` tool from my [`open_utils` repository](https://github.com/nickp60/open_utils) (assuming this tool is in your `$PATH`):
+Let's use the MRSA252 reference, NCBI BX571856.1.  Downloading this with the `get_genomes.py` tool installed along with [`pyutilsnrw` repository](https://github.com/nickp60/pyutilsnrw) (assuming this tool is in your `$PATH`):
 
 ```
 $ ../open_utils/get_genomes/get_genomes.py -q BX571856.1 -o ./ -f gb
@@ -38,14 +38,13 @@ $ ../open_utils/get_genomes/get_genomes.py -q BX571856.1 -o ./ -f gb
 
 ## RiboSelect
 
-Now that we have our genbank file, lets try to run riboSelect (assuming that `riboSelect.py` is in your `$PATH`) to pull out the regions of interest. 
+Now that we have our genbank file, lets try to run riboSelect (assuming that `riboSelect.py` is in your `$PATH`) to pull out the regions of interest.
 
-Because this genome is pretty old (2004), we will have to reannotate the rDNA loci.  To do this, we will download the fasta version of the genome, and use the `scanScaffolds.sh` script that wraps `barrnap` and `seqret` (we assume that this script is in your `$PATH`).
+Because this genome is pretty old (2004), we will have to reannotate the rDNA loci.  To do this, we will download the fasta version of the genome, and use the `riboScan.py` script that wraps `barrnap` and `seqret` (we assume that this script is in your `$PATH`).
 
 ```
 $ get_genomes.py -q BX571856.1 -o ./ -f fasta
-$ scanScaffolds.sh ./ .fasta ./scanned_output/ bac
-USAGE: /path/to/contigs/dir/ *ext /path/to/outdir/ kingdom threshold
+$ riboScan.py ./ .fasta -o ./scanned_output/ -k bac
 example: $ barrnap
 using default threshold of .5 identity
 Processing BX571856.1.fasta, item 1 out of 1
