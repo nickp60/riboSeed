@@ -110,7 +110,7 @@ setup(
     # install_requires=requirements,
     install_requires=[
         'Biopython==1.68',
-        'pyutilsnrw==0.0.765',
+        'pyutilsnrw==0.0.768',
         'matplotlib==1.5.3',
         'pandas==0.18.1'
     ],

@@ -117,7 +117,7 @@ def count_feature_hits(all_feature, genome_seq_records,
 def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
                                 specific_features="16S:23S",
                                 verbose=True, logger=None):
-    """ Given a LIST (as of 20160927) or genbank records,
+    """ Given a LIST (as of 20160927) of genbank records,
     returns dictionary of index:locus_tag id pairs for all
     "feature"  entries.  This then gets clustered.
     requires having locus tag in your genbank file.  Non-negitable.
@@ -381,7 +381,6 @@ if __name__ == "__main__":
             if current_centers == 0:
                 logger.info("skipping the clustering for {0}\n".format(i))
                 continue
-            # indexClusters = pure_python_kmeans(subset.keys(),
             indexClusters = pure_python_kmeans(indexes,
                                                centers=current_centers,
                                                DEBUG=args.keep_temps)
