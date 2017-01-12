@@ -36,9 +36,9 @@ if sys.version_info <= (3, 0):
     sys.exit(1)
 
 ## parse requirements file
-install_reqs = parse_requirements(path.join(here, "requirements.txt"),
-                                  session=False)
-requirements = [str(ir.req) for ir in install_reqs]
+# install_reqs = parse_requirements(path.join(here, "requirements.txt"),
+#                                  session=False)
+# requirements = [str(ir.req) for ir in install_reqs]
 setup(
     name='riboSeed',
     # dependency_links=['https://github.com/WarrenWeckesser/heatmapcluster.git#egg=heatmapcluster'],
@@ -111,7 +111,7 @@ setup(
     install_requires=[
         'Biopython==1.68',
         # 'gffutils==0.8.7.1',
-        'pyutilsnrw==0.0.768',
+        'pyutilsnrw>=0.0.768',
         'matplotlib==1.5.3',
         'pandas==0.18.1'
     ],
