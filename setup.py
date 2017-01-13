@@ -110,6 +110,7 @@ setup(
     # install_requires=requirements,
     install_requires=[
         'Biopython==1.68',
+        'pysam==0.9.1.4',
         # 'gffutils==0.8.7.1',
         'pyutilsnrw>=0.0.768',
         'matplotlib==1.5.3',

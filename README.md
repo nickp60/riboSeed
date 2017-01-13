@@ -352,18 +352,24 @@ You can also clone this repository, and run setup.py.
 * pyutilsrnw
 
 ### External Requirements
-riboSelect
+
+riboScan.py
+
+* Barrnap
+* Seqret
+
+riboSelect.py
 
 * R (don't ask...)
 
-riboSnag
+riboSnag.py
 
 * PRANK or Mafft
 * BLAST+ suite
 * Barrnap (must be 0.7 or above)
 ** note that barrnap has certain Perl requirements that may not be included on your machine.  Ensure barrnap runs fine before trying riboSnag.py
 
-riboSeed
+riboSeed.py
 
 * SPAdes v3.8 or higher
 * BWA (tested with 0.7.12-r1039)
