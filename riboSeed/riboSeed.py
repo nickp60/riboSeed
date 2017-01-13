@@ -19,6 +19,7 @@ import shutil
 import multiprocessing
 import subprocess
 import traceback
+import pysam
 
 from itertools import chain
 from collections import namedtuple
@@ -836,14 +837,17 @@ def nonify_empty_lib_files(ngsLib, logger=None):
     # sometimes, if no singletons are found, we get an empty file.
     #  this shoudl weed out any empty read files before mapping, etc
     logger.info("checking for empty read files")
+    EMPTIES = 0
     for f in ["readF", "readR", "readS0"]:
         # ignore if lib is None, as those wont be used anyway
         if getattr(ngsLib, f) is None:
             logger.debug("%s is set to None, and will be ignored", f)
+            EMPTIES = EMPTIES + 1
             continue
         if not os.path.exists(getattr(ngsLib, f)):
             logger.warning("read file %s not found and can not be used " +
                            "for mapping!", f)
+            EMPTIES = EMPTIES + 1
             # set to None so mapper will ignore
             setattr(ngsLib, f, None)
             continue
@@ -853,8 +857,11 @@ def nonify_empty_lib_files(ngsLib, logger=None):
         if not os.path.getsize(getattr(ngsLib, f)) > 0:
             logger.warning("read file %s is empty and will not be used " +
                            "for mapping!", f)
+            EMPTIES = EMPTIES + 1
             # set to None so mapper will ignore
             setattr(ngsLib, f, None)
+    if EMPTIES == 3:
+        raise ValueError("None of the read files hold data!")
 
 # MapperParams = namedtuple(
 #     "MapperParams",
@@ -874,7 +881,15 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
-    nonify_empty_lib_files(ngsLib, logger=logger)
+    try:
+        nonify_empty_lib_files(ngsLib, logger=logger)
+    except ValueError:
+        logger.error(last_exception())
+        logger.error(
+            "No reads mapped for this iteration. This could be to an error " +
+            "from samtools or elevated mapping stringency. Exiting!")
+        sys.exit(1)
+
     logger.info("Mapping reads to reference genome with SMALT")
     # check min score
     assert score_minimum is not None, "must assign score outside map function!"
@@ -956,7 +971,15 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
-    nonify_empty_lib_files(ngsLib, logger=logger)
+    try:
+        nonify_empty_lib_files(ngsLib, logger=logger)
+    except ValueError:
+        logger.error(last_exception())
+        logger.error(
+            "No reads mapped for this iteration. This could be to an error " +
+            "from samtools or elevated mapping stringency. Exiting!")
+        sys.exit(1)
+
     logger.info("Mapping reads to reference genome with BWA")
     # check min score
     if score_minimum is not None:
@@ -968,7 +991,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     # index the reference
     cmdindex = str("{0} index {1}").format(
         bwa_exe, ngsLib.ref_fasta)
-    # map paired end reads to reference index
+    # map paired end reads to reference index.
     bwacommands = [cmdindex]
     if not single_lib:
         cmdmap = str('{0} mem -t {1} {2} {3} -k 15 ' +
@@ -985,9 +1008,8 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                       mapping_ob.pe_map_bam)  # 8)
         bwacommands.append(cmdmap)
     else:
-        with open(mapping_ob.pe_map_bam, 'w') as tempfile:
-            tempfile.write("@HD riboseed_dummy_file")
-        pass
+        assert ngsLib.readS0 is not None, \
+            "No readS0 attribute found, cannot run mapping with 'single_lib'"
 
     # if singletons are present, map those too.  Index is already made
     if ngsLib.readS0 is not None:  # and not ignore_singletons:
@@ -1002,18 +1024,19 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                          ngsLib.readS0,  # 5
                                          samtools_exe,  # 6
                                          mapping_ob.s_map_bam)  # 7)
-
-        with open(mapping_ob.s_map_bam, 'w') as tempfile:
-            tempfile.write("@HD riboseed_dummy_file")
-        # merge together the singleton and pe reads
-        cmdmergeS = '{0} merge -f {3} {1} {2}'.format(
-            samtools_exe, mapping_ob.pe_map_bam,
-            mapping_ob.s_map_bam, mapping_ob.mapped_bam)
+        # merge together the singleton and pe reads, if there are any
+        if single_lib:
+            cmdmergeS = str(
+                "{0} view -bh {1} > {2}"
+            ).format(samtools_exe, mapping_ob.s_map_bam, mapping_ob.mapped_bam)
+        else:
+            cmdmergeS = '{0} merge -f {3} {1} {2}'.format(
+                samtools_exe, mapping_ob.pe_map_bam,
+                mapping_ob.s_map_bam, mapping_ob.mapped_bam)
         bwacommands.extend([cmdmapS, cmdmergeS])
     else:
         # if not already none, set to None when ignoring singleton
         ngsLib.readS0 = None
-        # 'merge', but really just converts
         cmdmerge = str("{0} view -bh {1} > " +
                        "{2}").format(samtools_exe, mapping_ob.pe_map_bam,
                                      mapping_ob.mapped_bam)
@@ -1576,7 +1599,51 @@ def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe,
     return (partition_cmds, region_to_extract)
 
 
-def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
+# def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
+#     unmapped_cmds = []
+#     """ given a list of regions (formatted for samtools view, etc) make a
+#     list of mapped reads (file path stored under mapped_ids_txt), and
+#     use the cgrep voodoo to make a sam file from the full library without
+#     the mapped reads. returns a cmd as a string
+#     """
+#     # if not first iteration, copy previous iterms mapped_ids_txt
+#     # as a starting point so we can track the reads better.
+#     if seedGenome.this_iteration != 0:
+#         copy_unmapped_txt_cmd = "cat {0} > {1}".format(
+#             seedGenome.iter_mapping_list[
+#                 seedGenome.this_iteration - 1].mapped_ids_txt,
+#             seedGenome.iter_mapping_list[
+#                 seedGenome.this_iteration].mapped_ids_txt)
+#         unmapped_cmds.append(copy_unmapped_txt_cmd)
+#     make_mapped_sam = "{0} view -o {1} -h {2}".format(
+#         samtools_exe,
+#         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
+#         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_bam)
+#     unmapped_cmds.append(make_mapped_sam)
+#     # for each region, add read names in that region to
+#     # a list (taken from previous iteration if there has been one)
+#     for region in mapped_regions:
+#         unmapped_cmds.append(
+#             "{0} view {1} {2} | cut -f1 >> {3}".format(
+#                 samtools_exe,
+#                 seedGenome.iter_mapping_list[
+#                     seedGenome.this_iteration].sorted_mapped_bam,
+#                 region,
+#                 seedGenome.iter_mapping_list[
+#                     seedGenome.this_iteration].mapped_ids_txt))
+#     uniquify_list = "sort -u {0}".format(
+#         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt)
+#     unmapped_cmds.append(uniquify_list)
+#     # from the global sam mapping filter out those in the reads_mapped_txt list
+#     get_unmapped = "LC_ALL=C grep -w -v -F -f {0} < {1} > {2}".format(
+#         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt,
+#         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
+#         seedGenome.iter_mapping_list[seedGenome.this_iteration].unmapped_sam)
+#     unmapped_cmds.append(get_unmapped)
+#     return unmapped_cmds
+
+def make_unmapped_partition_cmds(
+        mapped_regions, samtools_exe, seedGenome):
     unmapped_cmds = []
     """ given a list of regions (formatted for samtools view, etc) make a
     list of mapped reads (file path stored under mapped_ids_txt), and
@@ -1586,17 +1653,19 @@ def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
     # if not first iteration, copy previous iterms mapped_ids_txt
     # as a starting point so we can track the reads better.
     if seedGenome.this_iteration != 0:
-        copy_unmapped_txt_cmd = "cat {0} > {1}".format(
+        shutil.copyfile(
             seedGenome.iter_mapping_list[
                 seedGenome.this_iteration - 1].mapped_ids_txt,
             seedGenome.iter_mapping_list[
                 seedGenome.this_iteration].mapped_ids_txt)
-        unmapped_cmds.append(copy_unmapped_txt_cmd)
+
     make_mapped_sam = "{0} view -o {1} -h {2}".format(
         samtools_exe,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_bam)
+
     unmapped_cmds.append(make_mapped_sam)
+
     # for each region, add read names in that region to
     # a list (taken from previous iteration if there has been one)
     for region in mapped_regions:
@@ -1608,7 +1677,7 @@ def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
                 region,
                 seedGenome.iter_mapping_list[
                     seedGenome.this_iteration].mapped_ids_txt))
-    uniquify_list = "sort -u {0}".format(
+    uniquify_list = "sort -u {0} -o {0}".format(
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt)
     unmapped_cmds.append(uniquify_list)
     # from the global sam mapping filter out those in the reads_mapped_txt list
@@ -1616,8 +1685,26 @@ def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].unmapped_sam)
-    unmapped_cmds.append(get_unmapped)
-    return unmapped_cmds
+    return unmapped_cmds, get_unmapped
+
+
+def pysam_extract_reads(sam, textfile, unmapped_sam):
+    qfile = textfile
+    sfile = sam
+    ofile = unmapped_sam
+    # Load query fixed strings as a set
+    with open(qfile, 'r') as qfh:
+        queries = {q.strip() for q in qfh.readlines() if len(q.strip())}
+    # Subset reads
+    samfile = pysam.AlignmentFile(sfile, 'r')
+    print(samfile.header)
+    osam = pysam.Samfile(ofile, 'wh', template=samfile)
+    for read in samfile.fetch():
+        if read.qname in queries:
+            continue
+        else:
+            osam.write(read)
+    osam.close()
 
 
 def partition_mapping(seedGenome, samtools_exe, flank,
@@ -1679,9 +1766,10 @@ def partition_mapping(seedGenome, samtools_exe, flank,
                 seedGenome.this_iteration,
                 "\n".join([x for x in mapped_regions]))
 
-    unmapped_partition_cmds = make_unmapped_partition_cmds(
+    unmapped_partition_cmds, extract_cmd = make_unmapped_partition_cmds(
         mapped_regions=mapped_regions, samtools_exe=samtools_exe,
         seedGenome=seedGenome)
+    # unmapped_partition_cmds.append(extract_cmd)
     for cmd in unmapped_partition_cmds:
         logger.debug(cmd)
         subprocess.run([cmd],
@@ -1689,6 +1777,12 @@ def partition_mapping(seedGenome, samtools_exe, flank,
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE,
                        check=True)
+    logger.info("using pysam to extract a subset of reads ")
+    pysam_extract_reads(
+        sam=seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
+        textfile=seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt,
+        unmapped_sam=seedGenome.iter_mapping_list[seedGenome.this_iteration].unmapped_sam)
+    logger.info("done.  how did I do?")
 
 
 def add_coords_to_clusters(seedGenome, logger=None):

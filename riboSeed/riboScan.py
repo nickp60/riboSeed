@@ -61,7 +61,7 @@ def get_args():  # pragma: no cover
     optional.add_argument("-k", "--kingdom", dest='kingdom',
                           action="store",
                           choices=["bac", "euk"],
-                          help="whether to look for eukaryotic or "+
+                          help="whether to look for eukaryotic or " +
                           "bacterial rDNA; " +
                           "default: %(default)s", default="bac",
                           type=str)
@@ -241,18 +241,21 @@ if __name__ == "__main__":  # pragma: no cover
         tagged_gff = add_locus_tags_to_gff(
             gff=os.path.join(output_root, "{0}.gff".format(accession)),
             acc=accession)
-        unfinished_gb = os.path.join(output_root, "{0}_pre.gb".format(accession))
-        seqret_cmd = make_seqret_cmd(exe=args.seqret_exe,
-                                     outgb=os.path.join(output_root, "{0}_pre.gb".format(accession)),
-                                     ingff=tagged_gff, infasta=fasta)
+        unfinished_gb = os.path.join(
+            output_root, "{0}_pre.gb".format(accession))
+        seqret_cmd = make_seqret_cmd(
+            exe=args.seqret_exe,
+            outgb=os.path.join(output_root, "{0}_pre.gb".format(accession)),
+            ingff=tagged_gff, infasta=fasta)
         subprocess.run(seqret_cmd,
                        shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE,
                        check=True)
-        append_accession_and_version(accession=accession,
-                                     ingb=unfinished_gb,
-                                     finalgb=os.path.join(output_root, "{0}.gb".format(accession)))
+        append_accession_and_version(
+            accession=accession,
+            ingb=unfinished_gb,
+            finalgb=os.path.join(output_root, "{0}.gb".format(accession)))
         gb_list.append(os.path.join(output_root, "{0}.gb".format(accession)))
     ### no more fastas
     combine_gbs(finalgb=output_file, gb_list=gb_list)
