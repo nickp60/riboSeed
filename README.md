@@ -11,9 +11,9 @@ RiboSeed is an supplemental assembly method to try to address the issue of multi
 
 The pipeline (currently) consists of optional preprocessing and two main stages:
 
-### 0: Preprocessing with scanScaffolds.sh
+### 0: Preprocessing with riboScan.py
 
-This is an (ever-growing) shell script to preprocess seqeuences straight from DNA fasta.  The issue with many legacy annotations, assemblies, and scaffold collections is they are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires barrnap [cite] and seqret [cite] to be availible in your path.
+This preprocesses seqeuences straight from DNA fasta if a genbank file with annotated rRNA products is not available.  The issue with many legacy annotations, assemblies, and scaffold collections is they are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml) and seqret (from [`emboss`](http://www.ebi.ac.uk/Tools/emboss/))  to be availible in your path.
 
 #### Usage
 

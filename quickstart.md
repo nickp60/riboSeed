@@ -8,6 +8,9 @@ In this guide, I will walk you through a typical experiment.
 
 The following tools must be installed to complete this QuickStart guide
 
+(On a mac? Try the included `install_deps.sh` script to download all the required tools and add them to your PATH)
+
+
 * [`sra-tools`/`sratoolkit`](https://github.com/ncbi/sra-tools)
 * [`open_utils`](https://github.com/nickp60/open_utils)
 * [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml)
@@ -16,7 +19,7 @@ The following tools must be installed to complete this QuickStart guide
 * [`riboSeed`](https://github.com/nickp60/riboSeed)
 
 ## Get the Data
-Let's try using riboSeed on S. aureus SS_0588, from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA312437.  We will use the SRA toolkit's `fastq-dunp` tool to get the data:
+Let's try using riboSeed on S. aureus TCH1516, from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA312437.  We will use the SRA toolkit's `fastq-dunp` tool to get the data:
 
 ```
 fastq-dump --split-files SRR4360364
@@ -32,7 +35,7 @@ Written 2231775 spots for SRR4360364
 Let's use the MRSA252 reference, NCBI BX571856.1.  Downloading this with the `get_genomes.py` tool installed along with [`pyutilsnrw` repository](https://github.com/nickp60/pyutilsnrw) (assuming this tool is in your `$PATH`):
 
 ```
-$ ../open_utils/get_genomes/get_genomes.py -q BX571856.1 -o ./ -f gb
+$ get_genomes.py -q BX571856.1 -o ./
 ```
 
 
@@ -43,7 +46,6 @@ Now that we have our genbank file, lets try to run riboSelect (assuming that `ri
 Because this genome is pretty old (2004), we will have to reannotate the rDNA loci.  To do this, we will download the fasta version of the genome, and use the `riboScan.py` script that wraps `barrnap` and `seqret` (we assume that this script is in your `$PATH`).
 
 ```
-$ get_genomes.py -q BX571856.1 -o ./ -f fasta
 $ riboScan.py ./ .fasta -o ./scanned_output/ -k bac
 example: $ barrnap
 using default threshold of .5 identity
