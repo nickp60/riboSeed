@@ -163,7 +163,8 @@ class SeedGenome(object):
             for clu in self.loci_clusters:
                 clu.padding = pad
                 clu = pad_genbank_sequence(cluster=clu, logger=logger)
-            logger.info("rewriting fasta-formated genome to reflect")
+            logger.info("rewriting fasta-formated genome padded " +
+                        "by %i bases on each end", pad)
             new_fasta_ref = os.path.join(
                 os.path.basename(self.ref_fasta),
                 str(os.path.splitext(self.ref_fasta)[0] +
@@ -594,12 +595,12 @@ def get_args():  # pragma: no cover
                           "--padding; " +
                           "default: %(default)s",
                           default=False, dest="linear", action="store_true")
-    optional.add_argument("--padding", dest='padding', action="store",
-                          default=5000, type=int,
-                          help="if treating as circular, this controls the " +
-                          "length of sequence added to the 5' and 3' ends " +
-                          "to allow for selecting regions that cross the " +
-                          "chromosome's origin; default: %(default)s")
+    # optional.add_argument("--padding", dest='padding', action="store",
+    #                       default=5000, type=int,
+    #                       help="if treating as circular, this controls the " +
+    #                       "length of sequence added to the 5' and 3' ends " +
+    #                       "to allow for selecting regions that cross the " +
+    #                       "chromosome's origin; default: %(default)s")
     # optional.add_argument("--keep_unmapped", dest='keep_unmapped',
     #                       action="store_true", default=False,
     #                       help="if --keep_unmapped, fastqs are generated " +
@@ -613,7 +614,7 @@ def get_args():  # pragma: no cover
                           "seeds will not be used during assembly. " +
                           "See SPAdes docs; default: %(default)s")
     optional.add_argument("--keep_temps", dest='keep_temps',
-                          default=False,  action="store_true",
+                          default=False, action="store_true",
                           help="if not --keep_temps, mapping files will be " +
                           "removed once they are no no longer needed during " +
                           "the iterations; " +
@@ -1207,7 +1208,7 @@ def make_spades_empty_check(liblist, cmd, logger):
 
 
 def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
-                            include_short_contigs, min_assembly_len,
+                            include_short_contigs, min_assembly_len, read_len,
                             min_delta=10,
                             keep_best_contig=True,
                             seqname='', logger=None):
@@ -1217,7 +1218,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     2 = exclude contigs, and keep from iterating
     3 = exclude contigs, error ocurred
     """
-    DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR = 3
+    DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR = 5
     prelog = "{0}-{1}-iter-{2}:".format("SEED_cluster", clu.index,
                                         mapping_ob.iteration)
     assert logger is not None, "Must Use Logging"
@@ -1243,7 +1244,8 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     # -------------------------- --------------------------- #
 
     logger.info("%s analyzing  mapping", prelog)
-    seed_len = get_fasta_lengths(mapping_ob.ref_fasta)[0]
+    seed_len = get_fasta_lengths(clu.mappings[0].ref_fasta)[0]
+    # seed_len = get_fasta_lengths(mapping_ob.ref_fasta)[0]
     # set proceed_to_target params
     if proceed_to_target:
         if target_len > 0 and 5 > target_len:
@@ -1275,10 +1277,11 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         logger.info("%s The new contig differs from the reference " +
                     "seed by %i bases", prelog, contig_length_diff)
     # if contig is really long, get rid of it
-    if contig_len > (ref_len * DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR):
+    if contig_len > (ref_len +
+                     (read_len * DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR)):
         logger.warning(
-            "Contig length is exceedingly long!  We set the threshold of 3x " +
-            "the seed length as the maximum allowed long-read length.  This " +
+            "Contig length is exceedingly long!  We set the threshold of 5x " +
+            "the read length as the maximum allowed long-read length.  This " +
             "is often indicative of bad mapping parameters, so the " +
             "long-read will be discarded")
         return 2
@@ -1464,12 +1467,12 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
     covs = [int(x.split("\t")[2]) for
             x in result.stdout.decode("utf-8").split("\n")[0: -1]]
     if len(covs) == 0:
-        logger.error("Error parsing samtools depth results! " +
-                     "Here are the results:")
-        logger.error(result)
-        logger.error("This isn't always fatal, so we will continue.  " +
-                     "but take a look with IGB or similar so there aren't " +
-                     "any suprises down the road.")
+        logger.warning("Error parsing samtools depth results! " +
+                       "Here are the results:")
+        logger.warning(result)
+        logger.warning("This isn't always fatal, so we will continue.  " +
+                       "but take a look with IGB or similar so there aren't " +
+                       "any suprises down the road.")
         return [[""], 0]
 
     average = float(sum(covs)) / float(len(covs))
@@ -1530,7 +1533,7 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank,
             cluster.global_start_coord = 1
         cluster.global_end_coord = max([x.end_coord for
                                         x in cluster.loci_list]) + flank
-        logger.warning("rec len: %i", len(cluster.seq_record.seq))
+        # logger.debug("rec len: %i", len(cluster.seq_record.seq))
         if cluster.global_end_coord > len(cluster.seq_record):
             logger.warning(
                 "Caution! Cannot retrieve full flanking region, as " +
@@ -1689,20 +1692,23 @@ def make_unmapped_partition_cmds(
 
 
 def pysam_extract_reads(sam, textfile, unmapped_sam):
-    qfile = textfile
-    sfile = sam
-    ofile = unmapped_sam
+    """ This replaces the "LC_ALL " grep call from the above function. On macs,
+    there is no speedup gained.
+    """
+    qfile = textfile  # contains read names of mapped reads
+    sfile = sam  # mapping of all reads to genome
+    ofile = unmapped_sam  # destination sam of all reads not in regions
     # Load query fixed strings as a set
     with open(qfile, 'r') as qfh:
         queries = {q.strip() for q in qfh.readlines() if len(q.strip())}
     # Subset reads
     samfile = pysam.AlignmentFile(sfile, 'r')
-    print(samfile.header)
     osam = pysam.Samfile(ofile, 'wh', template=samfile)
     for read in samfile.fetch():
         if read.qname in queries:
             continue
         else:
+            # write out read names not in textfile
             osam.write(read)
     osam.close()
 
@@ -2284,6 +2290,7 @@ if __name__ == "__main__":  # pragma: no cover
         for cluster in clusters_to_process:
             cluster.assembly_success = evaluate_spades_success(
                 clu=cluster,
+                read_len=seedGenome.master_ngs_ob.readlen,
                 mapping_ob=cluster.mappings[-1],
                 include_short_contigs=args.include_short_contigs,
                 keep_best_contig=True,

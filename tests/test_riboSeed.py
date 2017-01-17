@@ -21,7 +21,7 @@ sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
-from pyutilsnrw.utils3_5 import md5, file_len, copy_file, get_number_mapped
+from pyutilsnrw.utils3_5 import md5, file_len, get_number_mapped
 
 from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     map_to_genome_ref_smalt, map_to_genome_ref_bwa, \
@@ -102,7 +102,8 @@ class riboSeedTestCase(unittest.TestCase):
     def copy_fasta(self):
         """ make a disposable copy
         """
-        shutil.copy(os.path.join(self.ref_dir, 'cluster1.fasta'), self.ref_fasta)
+        shutil.copy(os.path.join(self.ref_dir, 'cluster1.fasta'),
+                    self.ref_fasta)
         self.to_be_removed.append(self.ref_fasta)
 
     def test_print_headsup(self):
@@ -130,8 +131,8 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertEqual(
             str("if [ -s {0} ] && [ -s {1} ] && [ -s {2} ] ; " +
                 "then {3} ; else echo 'input lib not found, " +
-                "skipping this SPAdes call' ; fi").format(
-                    lib1, lib2, lib3, cmd),
+                "skipping this SPAdes call' ; " +
+                "fi").format(lib1, lib2, lib3, cmd),
             fullcmd)
 
     def test_Exes_bad_method(self):
@@ -173,7 +174,7 @@ class riboSeedTestCase(unittest.TestCase):
                      shutil.which("python2.7") is None or
                      shutil.which("spades.py") is None,
                      "bwa executable not found, skipping.If this isnt an " +
-                     "error from travis deployment, you probably "+
+                     "error from travis deployment, you probably " +
                      "should install it")
     def test_Exes_(self):
         """check with  executable"""
@@ -302,9 +303,11 @@ class riboSeedTestCase(unittest.TestCase):
         for index, cmd in enumerate(check_cmds):
             self.assertEqual(cmd, check_cmds_ref[index])
 
-    @unittest.skipIf(shutil.which("smalt") is None, "smat executable not found, skipping."+
-                     "If this isnt an error from travis deployment, you probably "+
-                     "should install it")
+    @unittest.skipIf(
+        shutil.which("smalt") is None,
+        "smat executable not found, skipping."+
+        "If this isnt an error from travis deployment, you probably "+
+        "should install it")
     def test_estimate_distances_smalt(self):
         """ test estimate insert disances
         """
@@ -468,9 +471,11 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(ngs_ob.readR is None)
         self.to_be_removed.append(empty_file)
 
-    @unittest.skipIf(shutil.which("smalt") is None, "smat executable not found, skipping."+
-                     "If this isnt an error from travis deployment, you probably "+
-                     "should install it")
+    @unittest.skipIf(
+        shutil.which("smalt") is None,
+        "smalt executable not found, skipping."+
+        "If this isnt an error from travis deployment, you probably "+
+        "should install it")
     def test_map_with_smalt(self):
         # becasue multiple mapping are assingmed randomly (pseudorandomly?),
         # this accepts a range of expected results
@@ -490,11 +495,12 @@ class riboSeedTestCase(unittest.TestCase):
             mapper_exe=self.smalt_exe,
             logger=logger)
 
-        map_to_genome_ref_smalt(mapping_ob=testmapping, ngsLib=testngs,
-                                cores=4, samtools_exe=self.samtools_exe,
-                                smalt_exe=self.smalt_exe, score_minimum=48,
-                                scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-                                step=3, k=5, logger=logger)
+        map_to_genome_ref_smalt(
+            mapping_ob=testmapping, ngsLib=testngs,
+            cores=4, samtools_exe=self.samtools_exe,
+            smalt_exe=self.smalt_exe, score_minimum=48,
+            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+            step=3, k=5, logger=logger)
         mapped_str = get_number_mapped(testmapping.pe_map_bam,
                                        samtools_exe=self.samtools_exe)
         nmapped = int(mapped_str[0:5])
@@ -615,9 +621,10 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
         self.assertFalse(gen.loci_clusters[0].keep_contigs)
 
-    @unittest.skipIf(shutil.which("bwa") is None, "bwa executable not found, skipping."+
-                     "If this isnt an error from travis deployment, you probably "+
-                     "should install it")
+    @unittest.skipIf(shutil.which("bwa") is None,
+                     "bwa executable not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
     def test_map_with_bwa(self):
         # becasue multiple mapping are assingmed randomly (pseudorandomly?),
         # this accepts a range of expected results
@@ -689,13 +696,14 @@ class riboSeedTestCase(unittest.TestCase):
         region = (1, 10000000)
         results = []
         for i in [region]:
-            results.append(get_samtools_depths(samtools_exe=self.samtools_exe,
-                                               bam=test_bam,
-                                               chrom="gi12345", start=region[0],
-                                               end=region[1],
-                                               region=None,
-                                               prep=True,
-                                               logger=logger))
+            results.append(get_samtools_depths(
+                samtools_exe=self.samtools_exe,
+                bam=test_bam,
+                chrom="gi12345", start=region[0],
+                end=region[1],
+                region=None,
+                prep=True,
+                logger=logger))
         print(results)
         self.assertEqual(round(results[0][1], 4), .9945)
 
@@ -747,12 +755,13 @@ class riboSeedTestCase(unittest.TestCase):
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
         add_coords_to_clusters(seedGenome=gen, logger=logger)
         clu = gen.loci_clusters[0]
-
+        clu.mappings.append(testmapping)
         code_0 = evaluate_spades_success(
             clu,
             mapping_ob=testmapping,
             proceed_to_target=False, target_len=None,
             min_assembly_len=5000,
+            read_len=300,
             include_short_contigs=False, keep_best_contig=True,
             seqname='', logger=logger)
         self.assertEqual(code_0, 0)
@@ -760,6 +769,7 @@ class riboSeedTestCase(unittest.TestCase):
             clu,
             mapping_ob=testmapping,
             proceed_to_target=False, target_len=None,
+            read_len=300,
             min_assembly_len=10000,
             include_short_contigs=True, keep_best_contig=True,
             seqname='', logger=logger)
@@ -768,6 +778,7 @@ class riboSeedTestCase(unittest.TestCase):
             clu,
             mapping_ob=testmapping,
             proceed_to_target=True, target_len=6000,
+            read_len=300,
             min_assembly_len=5000,
             include_short_contigs=True, keep_best_contig=True,
             seqname='', logger=logger)
@@ -776,6 +787,7 @@ class riboSeedTestCase(unittest.TestCase):
             clu,
             mapping_ob=testmapping,
             proceed_to_target=False, target_len=None,
+            read_len=300,
             min_assembly_len=10000,
             include_short_contigs=False, keep_best_contig=True,
             seqname='', logger=logger)
@@ -784,6 +796,7 @@ class riboSeedTestCase(unittest.TestCase):
             clu,
             mapping_ob=testmapping2,
             proceed_to_target=False, target_len=None,
+            read_len=300,
             min_assembly_len=5000,
             include_short_contigs=False, keep_best_contig=True,
             seqname='', logger=logger)
@@ -859,11 +872,12 @@ class riboSeedTestCase(unittest.TestCase):
         for cluster in gen.loci_clusters:
             cluster.master_ngs_ob = gen.master_ngs_ob
 
-        map_to_genome_ref_smalt(mapping_ob=testmapping, ngsLib=testngs,
-                                cores=4, samtools_exe=self.samtools_exe,
-                                smalt_exe=self.smalt_exe, score_minimum=48,
-                                scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-                                step=3, k=5, logger=logger)
+        map_to_genome_ref_smalt(
+            mapping_ob=testmapping, ngsLib=testngs,
+            cores=4, samtools_exe=self.samtools_exe,
+            smalt_exe=self.smalt_exe, score_minimum=48,
+            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+            step=3, k=5, logger=logger)
         clu = gen.loci_clusters[0]
         self.assertEqual(len(clu.mappings), 0)
         prepare_next_mapping(
@@ -941,7 +955,7 @@ class riboSeedTestCase(unittest.TestCase):
             output_root=self.test_dir,
             logger=logger)
 
-        unmapped_cmds = make_unmapped_partition_cmds(
+        unmapped_cmds, grep_part = make_unmapped_partition_cmds(
             mapped_regions=["test:1-6", "test:3-77"],
             samtools_exe=self.samtools_exe, seedGenome=gen)
         mapped_txt = os.path.join(
@@ -955,33 +969,39 @@ class riboSeedTestCase(unittest.TestCase):
                 os.path.join(self.test_dir,
                              "NC_011751.1_mapping_for_iter_0/" +
                              "NC_011751.1_mapping_for_iter_0_iteration_0.sam"),
-                os.path.join(self.test_dir,
-                             "NC_011751.1_mapping_for_iter_0/" +
-                             "NC_011751.1_mapping_for_iter_0_iteration_0.bam")),
+                os.path.join(
+                    self.test_dir,
+                    "NC_011751.1_mapping_for_iter_0/" +
+                    "NC_011751.1_mapping_for_iter_0_iteration_0.bam")),
             "{0} view {1} test:1-6 | cut -f1 >> {2}".format(
                 self.samtools_exe,
-                os.path.join(self.test_dir,
-                             "NC_011751.1_mapping_for_iter_0/" +
-                             "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"),
+                os.path.join(
+                    self.test_dir,
+                    "NC_011751.1_mapping_for_iter_0/" +
+                    "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"),
                 mapped_txt),
             "{0} view {1} test:3-77 | cut -f1 >> {2}".format(
                 self.samtools_exe,
-                os.path.join(self.test_dir,
-                             "NC_011751.1_mapping_for_iter_0/" +
-                             "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"),
+                os.path.join(
+                    self.test_dir,
+                    "NC_011751.1_mapping_for_iter_0/" +
+                    "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"),
                 mapped_txt),
-            "sort -u {0}".format(mapped_txt),
-            "LC_ALL=C grep -w -v -F -f {0} < {1} > {2}".format(
-                mapped_txt,
-                os.path.join(self.test_dir,
-                             "NC_011751.1_mapping_for_iter_0/" +
-                             "NC_011751.1_mapping_for_iter_0_iteration_0.sam"),
-                os.path.join(self.test_dir,
-                             "NC_011751.1_mapping_for_iter_0/" +
-                             "NC_011751.1_mapping_for_iter_0_iteration_0_unmapped.sam"))
-        ]
+            "sort -u {0} -o {0}".format(mapped_txt)]
+        ref_grep_part = "LC_ALL=C grep -w -v -F -f {0} < {1} > {2}".format(
+            mapped_txt,
+            os.path.join(
+                self.test_dir,
+                "NC_011751.1_mapping_for_iter_0/" +
+                "NC_011751.1_mapping_for_iter_0_iteration_0.sam"),
+            os.path.join(
+                self.test_dir,
+                "NC_011751.1_mapping_for_iter_0/" +
+                "NC_011751.1_mapping_for_iter_0_iteration_0_unmapped.sam"))
+
         for i, ref in enumerate(ref_unmapped_cmds):
             self.assertEqual(unmapped_cmds[i], ref)
+        self.assertEqual(grep_part, ref_grep_part)
         # self.to_be_removed.append(mapped_txt)
 
     def test_make_faux_genome(self):
