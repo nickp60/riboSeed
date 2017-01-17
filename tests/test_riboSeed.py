@@ -557,6 +557,7 @@ class riboSeedTestCase(unittest.TestCase):
             logger=logger)
         gen.loci_clusters[0].assembly_success = 0
         parse_subassembly_return_code(cluster=gen.loci_clusters[0],
+                                      final_contigs_dir=self.test_dir,
                                       logger=logger)
         self.assertTrue(gen.loci_clusters[0].continue_iterating)
         self.assertTrue(gen.loci_clusters[0].keep_contigs)
@@ -577,6 +578,7 @@ class riboSeedTestCase(unittest.TestCase):
             logger=logger)
         gen.loci_clusters[0].assembly_success = 1
         parse_subassembly_return_code(cluster=gen.loci_clusters[0],
+                                      final_contigs_dir=self.test_dir,
                                       logger=logger)
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
         self.assertFalse(gen.loci_clusters[0].keep_contigs)
@@ -597,6 +599,7 @@ class riboSeedTestCase(unittest.TestCase):
             logger=logger)
         gen.loci_clusters[0].assembly_success = 2
         parse_subassembly_return_code(cluster=gen.loci_clusters[0],
+                                      final_contigs_dir=self.test_dir,
                                       logger=logger)
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
         self.assertFalse(gen.loci_clusters[0].keep_contigs)
@@ -617,6 +620,7 @@ class riboSeedTestCase(unittest.TestCase):
             logger=logger)
         gen.loci_clusters[0].assembly_success = 3
         parse_subassembly_return_code(cluster=gen.loci_clusters[0],
+                                      final_contigs_dir=self.test_dir,
                                       logger=logger)
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
         self.assertFalse(gen.loci_clusters[0].keep_contigs)

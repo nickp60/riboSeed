@@ -32,8 +32,7 @@ from Bio.Alphabet import IUPAC
 sys.path.append(os.path.join('..', 'riboSeed'))
 
 from pyutilsnrw.utils3_5 import set_up_logging, \
-    combine_contigs, \
-    copy_file, get_ave_read_len_from_fastq, \
+    combine_contigs, get_ave_read_len_from_fastq, \
     get_number_mapped, \
     keep_only_first_contig, get_fasta_lengths, \
     file_len, check_version_from_cmd
@@ -355,6 +354,7 @@ class LociMapping(object):
                  ref_fasta=None, pe_map_bam=None, s_map_bam=None,
                  sorted_mapped_bam=None,
                  mapped_bam=None, mapped_sam=None,
+                 mapped_bam_unfiltered=None,
                  unmapped_sam=None,
                  mapped_ids_txt=None, unmapped_bam=None,
                  mappedS=None, assembled_contig=None, assembly_subdir=None,
@@ -374,6 +374,7 @@ class LociMapping(object):
         # ----  do not ever name these directly ---- #
         self.pe_map_bam = pe_map_bam  # all reads from pe mapping
         self.s_map_bam = s_map_bam  # all reads from singltons mapping
+        self.mapped_bam_unfiltered = mapped_bam_unfiltered  # mapped reads only, sam
         self.mapped_sam = mapped_sam  # mapped reads only, sam
         self.mapped_bam = mapped_bam  # mapped reads only, bam
         self.mapped_ids_txt = mapped_ids_txt
@@ -411,6 +412,7 @@ class LociMapping(object):
             "{0}_iteration_{1}".format(self.name, self.iteration))
         self.pe_map_bam = str(mapping_prefix + "_pe.bam")
         self.s_map_bam = str(mapping_prefix + "_s.bam")
+        self.mapped_bam_unfiltered = str(mapping_prefix + "_unfiltered.bam")
         self.mapped_bam = str(mapping_prefix + ".bam")
         self.unampped_bam = str(mapping_prefix + "unmapped.bam")
         self.sorted_mapped_bam = str(mapping_prefix + "_sorted.bam")
@@ -882,14 +884,14 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
-    try:
-        nonify_empty_lib_files(ngsLib, logger=logger)
-    except ValueError:
-        logger.error(last_exception())
-        logger.error(
-            "No reads mapped for this iteration. This could be to an error " +
-            "from samtools or elevated mapping stringency. Exiting!")
-        sys.exit(1)
+    # try:
+    #     nonify_empty_lib_files(ngsLib, logger=logger)
+    # except ValueError:
+    #     logger.error(last_exception())
+    #     logger.error(
+    #         "No reads mapped for this iteration. This could be to an error " +
+    #         "from samtools or elevated mapping stringency. Exiting!")
+    #     raise ValueError
 
     logger.info("Mapping reads to reference genome with SMALT")
     # check min score
@@ -962,6 +964,46 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     ngsLib.mapping_success = True
 
 
+def filter_bam_as(inbam, outsam,  score, logger=None):
+    """ This is needed because bwa cannot filter based n alignment score
+    for paired reads.  Given a  bam file from bwa (has "AS" tags), write out
+    reads with AS higher than --score to outsam and convert to outbam
+    read count from https://www.biostars.org/p/1890/
+    """
+    notag = 0
+    written = 0
+    pysam.index(inbam)
+    bam = pysam.AlignmentFile(inbam, "rb")
+    osam = pysam.Samfile(outsam, 'wh', template=bam)
+    # with pysam.AlignmentFile(outbam, "wbh", template=bam) as obam:
+    for read in bam.fetch():
+        if read.has_tag('AS'):
+            if read.get_tag('AS') >= score:
+                osam.write(read)
+                written = written + 1
+            else:
+                pass
+        else:
+            notag = notag + 1
+            pass
+    bam.close()
+    logger.debug("Reads after filtering: %i", written)
+    # if notag != 0:
+    logger.debug("Reads lacking alignment score: %i", notag)
+
+
+def sam_to_bam(samtools_exe, bam, sam):
+    logger.debug("Making mapped bam file:")
+    make_mapped_bam = "{0} view -o {1} -h {2}".format(samtools_exe, bam, sam)
+    logger.debug(make_mapped_bam)
+    # sys.exit(1)
+    subprocess.run([make_mapped_bam],
+                   shell=sys.platform != "win32",
+                   stdout=subprocess.PIPE,
+                   stderr=subprocess.PIPE,
+                   check=True)
+
+
 def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                           samtools_exe, bwa_exe, score_minimum=None,
                           single_lib=False,
@@ -972,30 +1014,31 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
-    try:
-        nonify_empty_lib_files(ngsLib, logger=logger)
-    except ValueError:
-        logger.error(last_exception())
-        logger.error(
-            "No reads mapped for this iteration. This could be to an error " +
-            "from samtools or elevated mapping stringency. Exiting!")
-        sys.exit(1)
+    # try:
+    #     nonify_empty_lib_files(ngsLib, logger=logger)
+    # except ValueError:
+    #     logger.error(last_exception())
+    #     logger.error(
+    #         "No reads mapped for this iteration. This could be to an error " +
+    #         "from samtools or elevated mapping stringency. Exiting!")
+    #     raise ValueError
 
     logger.info("Mapping reads to reference genome with BWA")
     # check min score
     if score_minimum is not None:
-        score_min = "-T {0}".format(score_minimum)
-        logger.debug(str("using a score min of " +
-                         "{0}").format(score_min))
+        score_min = score_minimum
     else:
-        score_min = ""
+        logger.debug(
+            "no bwa mapping score minprovided; default is 1/2 read length")
+        score_min = int(round(float(ngsLib.readlen) / 2.0))
+    logger.debug("using a score minimum of %i", score_min)
     # index the reference
     cmdindex = str("{0} index {1}").format(
         bwa_exe, ngsLib.ref_fasta)
     # map paired end reads to reference index.
     bwacommands = [cmdindex]
     if not single_lib:
-        cmdmap = str('{0} mem -t {1} {2} {3} -k 15 ' +
+        cmdmap = str('{0} mem -t {1} {2} -k 15 ' +
                      '{4} {5} {6} | {7} view -bh - | ' +
                      '{7} sort -o ' +
                      '{8} - ').format(bwa_exe,  # 0
@@ -1015,7 +1058,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     # if singletons are present, map those too.  Index is already made
     if ngsLib.readS0 is not None:  # and not ignore_singletons:
         cmdmapS = str(
-            '{0} mem -t {1} {2} {3} -k 15 ' +
+            '{0} mem -t {1} {2} -k 15 ' +
             '{4} {5} | {6} view -bh - | ' +
             '{6} sort -o {7} - ').format(bwa_exe,  # 0
                                          cores,  # 1
@@ -1029,18 +1072,18 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
         if single_lib:
             cmdmergeS = str(
                 "{0} view -bh {1} > {2}"
-            ).format(samtools_exe, mapping_ob.s_map_bam, mapping_ob.mapped_bam)
+            ).format(samtools_exe, mapping_ob.s_map_bam, mapping_ob.mapped_bam_unfiltered)
         else:
             cmdmergeS = '{0} merge -f {3} {1} {2}'.format(
                 samtools_exe, mapping_ob.pe_map_bam,
-                mapping_ob.s_map_bam, mapping_ob.mapped_bam)
+                mapping_ob.s_map_bam, mapping_ob.mapped_bam_unfiltered)
         bwacommands.extend([cmdmapS, cmdmergeS])
     else:
         # if not already none, set to None when ignoring singleton
         ngsLib.readS0 = None
         cmdmerge = str("{0} view -bh {1} > " +
                        "{2}").format(samtools_exe, mapping_ob.pe_map_bam,
-                                     mapping_ob.mapped_bam)
+                                     mapping_ob.mapped_bam_unfiltered)
         bwacommands.extend([cmdmerge])
     logger.info("running BWA:")
     logger.debug("with the following BWA commands:")
@@ -1060,6 +1103,19 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                         get_number_mapped(mapping_ob.pe_map_bam,
                                           samtools_exe=samtools_exe)))
     logger.info(str("Combined mapped reads: " +
+                    get_number_mapped(mapping_ob.mapped_bam_unfiltered,
+                                      samtools_exe=samtools_exe)))
+    logger.debug("filtering mapped reads with an AS score minimum of %i",
+                 score_min)
+    filter_bam_as(inbam=mapping_ob.mapped_bam_unfiltered,
+                  # outbam=mapping_ob.mapped_bam,
+                  outsam=mapping_ob.mapped_sam,
+                  # samtools_exe=samtools_exe,
+                  score=score_min, logger=logger)
+    sam_to_bam(bam=mapping_ob.mapped_bam,
+               sam=mapping_ob.mapped_sam,
+               samtools_exe=samtools_exe)
+    logger.info(str("Mapped reads after filtering: " +
                     get_number_mapped(mapping_ob.mapped_bam,
                                       samtools_exe=samtools_exe)))
     # apparently there have been no errors, so mapping success!
@@ -1230,7 +1286,9 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         mapping_ob.assembled_contig))
     if not (os.path.isfile(mapping_ob.assembled_contig) and
             os.path.getsize(mapping_ob.assembled_contig) > 0):
-        logger.warning("%s No output from SPAdes this time around", prelog)
+        logger.warning(
+            "%s No output from SPAdes this time around! return code 3",
+            prelog)
         return 3
     if keep_best_contig:
         logger.info("reserving first contig")
@@ -1283,7 +1341,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
             "Contig length is exceedingly long!  We set the threshold of 5x " +
             "the read length as the maximum allowed long-read length.  This " +
             "is often indicative of bad mapping parameters, so the " +
-            "long-read will be discarded")
+            "long-read will be discarded.  Return code 2")
         return 2
 
     # This cuts failing assemblies short
@@ -1297,12 +1355,14 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
                            "than one seed, we reccommend  you abort and " +
                            "retry with longer seeds, a different ref, " +
                            "or re-examine the riboSnag clustering")
+            logger.warning("Return code 1")
             return 1
         else:
+            logger.warning("Return code 2")
             return 2
     elif proceed_to_target and contig_len >= target_seed_len:
         logger.info("target length threshold! has been reached; " +
-                    "skipping future iterations")
+                    "skipping future iterations.  return code 1")
         return 1
     # if not first time through, ensure adequate change between iterations to
     # avoid problems with trying to assemble a very small number of reads
@@ -1310,15 +1370,24 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         logger.warning(
             "The length of the assembled contig didn't change more " +
             "more than 10bp between rounds of iteration. Continuing" +
-            " will likely cause error; no skipping future iterations.")
+            " will likely cause error; skipping future iterations." +
+            " return code 1")
         return 1
     else:
+        logger.debug("return code 1")
+
         return 0
 
 
-def parse_subassembly_return_code(cluster, logger):
+def parse_subassembly_return_code(cluster, final_contigs_dir, logger):
     """ given a return code from the above spades success function,
     set object attributes as needed
+    ----------------------
+    return success codes:
+    0 = include contigs, all good
+    1 = include contigs, but dont keep iterating
+    2 = exclude contigs, and keep from iterating
+    3 = exclude contigs, error ocurred
     """
     if cluster.assembly_success == 3:
         # TODO other error handling; make a "failed" counter?
@@ -1329,19 +1398,17 @@ def parse_subassembly_return_code(cluster, logger):
         cluster.keep_contigs = False
     elif cluster.assembly_success == 1:
         try:
-            cluster.contigs_new_path = copy_file(
-                current_file=cluster.mappings[-1].assembled_contig,
-                dest_dir=seedGenome.final_long_reads_dir,
-                name=os.path.join(
-                    os.path.basename(
-                        cluster.mappings[-1].assembled_contig),
-                    "cluster_{0}_final_iter_{1}.fasta".format(
-                        cluster.index,
-                        cluster.mappings[-1].iteration)),
-                logger=logger)
+            shutil.copyfile(
+                cluster.mappings[-1].assembled_contig,
+                os.path.join(final_contigs_dir,
+                             "{0}_cluster_{1}_iter_{2}.fasta".format(
+                                 cluster.sequence_id,
+                                 cluster.index,
+                                 cluster.mappings[-1].iteration)))
         except:
             logger.warning("no contigs for %s_%i! Check SPAdes log " +
                            "if worried", cluster.sequence_id, cluster.index)
+            logger.error(last_exception())
         cluster.continue_iterating = False
         # The combine contigs step check for 'keep contigs flag, so
         # since you have already copied it, set the flag to false
@@ -1662,6 +1729,7 @@ def make_unmapped_partition_cmds(
             seedGenome.iter_mapping_list[
                 seedGenome.this_iteration].mapped_ids_txt)
 
+    # moved to filter_bam_as function
     make_mapped_sam = "{0} view -o {1} -h {2}".format(
         samtools_exe,
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
@@ -1768,7 +1836,7 @@ def partition_mapping(seedGenome, samtools_exe, flank,
                     flank,
                     end_ave_depth)
 
-    logger.info("mapped regions for iteration %i:\n %s",
+    logger.info("mapped regions for iteration %i:\n%s",
                 seedGenome.this_iteration,
                 "\n".join([x for x in mapped_regions]))
 
@@ -1786,9 +1854,10 @@ def partition_mapping(seedGenome, samtools_exe, flank,
     logger.info("using pysam to extract a subset of reads ")
     pysam_extract_reads(
         sam=seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
-        textfile=seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt,
-        unmapped_sam=seedGenome.iter_mapping_list[seedGenome.this_iteration].unmapped_sam)
-    logger.info("done.  how did I do?")
+        textfile=seedGenome.iter_mapping_list[
+            seedGenome.this_iteration].mapped_ids_txt,
+        unmapped_sam=seedGenome.iter_mapping_list[
+            seedGenome.this_iteration].unmapped_sam)
 
 
 def add_coords_to_clusters(seedGenome, logger=None):
@@ -2186,9 +2255,21 @@ if __name__ == "__main__":  # pragma: no cover
             logger.info(
                 "Mapping with min_score of %f2 (read length: %f2)",
                 score_minimum, unmapped_ngsLib.readlen)
-        # the exe argument is Exes.mapper because that is what is check
-        # during object instantiation
 
+        try:
+            nonify_empty_lib_files(unmapped_ngsLib, logger=logger)
+        except ValueError:
+            logger.error(
+                "No reads mapped for this iteration. This could be to an " +
+                "error from samtools or elevated mapping stringency.")
+            if seedGenome.this_iteration != 0:
+                logger.warning(" proceeding to final assemblies")
+                break
+            else:
+                logger.error(" Exiting!")
+                sys.exit(1)
+        # the exe argument is Exes.mapper because that is what is checked
+        # during object instantiation
         if args.method == "smalt":
             # # get rid of bwa mapper default args
             # if args.mapper_args == '-L 0,0 -U 0':
@@ -2298,7 +2379,10 @@ if __name__ == "__main__":  # pragma: no cover
                 min_assembly_len=args.min_assembly_len,
                 proceed_to_target=proceed_to_target,
                 target_len=args.target_len)
-            parse_subassembly_return_code(cluster, logger)
+            parse_subassembly_return_code(
+                cluster,
+                final_contigs_dir=seedGenome.final_long_reads_dir,
+                logger=logger)
         clusters_to_process = [x for x in seedGenome.loci_clusters if
                                x.continue_iterating and
                                x.keep_contigs]
@@ -2331,13 +2415,24 @@ if __name__ == "__main__":  # pragma: no cover
         unmapped_ngsLib.purge_old_files()
         seedGenome.purge_old_files(all_iters=True)
     # And add the remaining final contigs to the directory for combination
-    logger.info("combinging contigs from %s", seedGenome.final_long_reads_dir)
-    for clu in [x for x in seedGenome.loci_clusters if x.keep_contigs]:
-        copy_file(current_file=clu.mappings[-1].assembled_contig,
-                  dest_dir=seedGenome.final_long_reads_dir,
-                  name=str(clu.sequence_id + "_cluster_" +
-                           str(clu.index) + ".fasta"),
-                  overwrite=False, logger=logger)
+    if len([x for x in seedGenome.loci_clusters if x.keep_contigs]) == 0:
+        logger.info("all contigs already copied to long_reads dir")
+    else:
+        for clu in [x for x in seedGenome.loci_clusters if x.keep_contigs]:
+            try:
+                shutil.copyfile(clu.mappings[-1].assembled_contig,
+                                os.path.join(
+                                    seedGenome.final_long_reads_dir,
+                                    "{0}_cluster_{1}_iter_{2}.fasta".format(
+                                        clu.sequence_id,
+                                        clu.index,
+                                        clu.mappings[-1].iteration)))
+
+            except Exception as e:
+                logger.error(last_exception())
+                sys.exit(1)
+
+    logger.info("combining contigs from %s", seedGenome.final_long_reads_dir)
     seedGenome.assembled_seeds = combine_contigs(
         contigs_dir=seedGenome.final_long_reads_dir,
         contigs_name="riboSeedContigs",

@@ -5,9 +5,13 @@
 
 # RiboSeed Pipeline
 Impatient? See our [Quickstart Guide](./quickstart.md)
+
+## Warning
+This pipeline is stil very much in testing. Please back up any and all data used, and work within a virtualenv just in case.
+
 ## Description
 
-RiboSeed is an supplemental assembly method to try to address the issue of multiple ribosomal regions in a genome.  It takes advantage of the fact that while each region is identical, the regions flanking are unique, and therfore should be able to be used to seed an alignment.
+RiboSeed is an supplemental assembly method to try to address the issue of multiple ribosomal regions in a genome.  It takes advantage of the fact that while each region is identical, the regions flanking are unique, and therefore can potentially be used to seed an assembly in such a way that rDNA regions are bridged.
 
 The pipeline (currently) consists of optional preprocessing and two main stages:
 
