@@ -964,9 +964,11 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     ngsLib.mapping_success = True
 
 
-def filter_bam_as(inbam, outsam,  score, logger=None):
+def filter_bam_AS(inbam, outsam, score, logger=None):
     """ This is needed because bwa cannot filter based n alignment score
-    for paired reads.  Given a  bam file from bwa (has "AS" tags), write out
+    for paired reads.
+    https://sourceforge.net/p/bio-bwa/mailman/message/31968535/
+    Given a  bam file from bwa (has "AS" tags), write out
     reads with AS higher than --score to outsam and convert to outbam
     read count from https://www.biostars.org/p/1890/
     """
@@ -1107,7 +1109,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                       samtools_exe=samtools_exe)))
     logger.debug("filtering mapped reads with an AS score minimum of %i",
                  score_min)
-    filter_bam_as(inbam=mapping_ob.mapped_bam_unfiltered,
+    filter_bam_AS(inbam=mapping_ob.mapped_bam_unfiltered,
                   # outbam=mapping_ob.mapped_bam,
                   outsam=mapping_ob.mapped_sam,
                   # samtools_exe=samtools_exe,
@@ -1184,6 +1186,7 @@ def generate_spades_cmd(
     during iterative assembly.  It would be nice to inheirit from "ref",
     but that is changed with each iteration. This should probably be addressed
     before next major version change
+    #TODO dynamicllly choose kmers based on read len and whether prelim
     """
     assert logger is not None, "Must Use Logging"
     kmers = k  # .split[","]
@@ -1265,6 +1268,7 @@ def make_spades_empty_check(liblist, cmd, logger):
 
 def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
                             include_short_contigs, min_assembly_len, read_len,
+                            flank=1000,
                             min_delta=10,
                             keep_best_contig=True,
                             seqname='', logger=None):
@@ -1274,7 +1278,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     2 = exclude contigs, and keep from iterating
     3 = exclude contigs, error ocurred
     """
-    DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR = 5
+    DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR = 6
     prelog = "{0}-{1}-iter-{2}:".format("SEED_cluster", clu.index,
                                         mapping_ob.iteration)
     assert logger is not None, "Must Use Logging"
@@ -1335,12 +1339,19 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         logger.info("%s The new contig differs from the reference " +
                     "seed by %i bases", prelog, contig_length_diff)
     # if contig is really long, get rid of it
-    if contig_len > (ref_len +
-                     (read_len * DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR)):
+    # if contig_len > (ref_len +
+    #                  (read_len * DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR)):
+    #     logger.warning(
+    #         "Contig length is exceedingly long!  We set the threshold of 6x " +
+    #         "the read length as the maximum allowed long-read length.  This " +
+    #         "is often indicative of bad mapping parameters, so the " +
+    #         "long-read will be discarded.  Return code 2")
+    #     return 2
+    if contig_len > (ref_len + (2 * flank)):
         logger.warning(
-            "Contig length is exceedingly long!  We set the threshold of 5x " +
-            "the read length as the maximum allowed long-read length.  This " +
-            "is often indicative of bad mapping parameters, so the " +
+            "Contig length is exceedingly long!  We set the threshold of " +
+            "twice the flanking length as the maximum allowed long-read " +
+            "length. This may indicate  bad mapping parameters, so the " +
             "long-read will be discarded.  Return code 2")
         return 2
 
@@ -2375,6 +2386,7 @@ if __name__ == "__main__":  # pragma: no cover
                 mapping_ob=cluster.mappings[-1],
                 include_short_contigs=args.include_short_contigs,
                 keep_best_contig=True,
+                flank=args.flanking,
                 seqname='', logger=logger,
                 min_assembly_len=args.min_assembly_len,
                 proceed_to_target=proceed_to_target,
