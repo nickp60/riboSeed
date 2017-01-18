@@ -18,5 +18,10 @@ riboSelect.py ./scanned_output/scannedScaffolds.gb -o ./select_output/
 
 No errors? riboSeed time!
 ```
-riboSeed.py ./select_output/riboSelect_grouped_loci.txt -F ./manuscript_results/simulated_genome/concatenated_seq1.fq -R ./manuscript_results/simulated_genome/concatenated_seq2.fq -r ./scanned_output/scannedScaffolds.gb -o ./test_toy_reads/ -v 1  --python2_7_exe /usr/bin/python2.7
+riboSeed.py ./select_output/riboSelect_grouped_loci.txt \
+            -F ./manuscript_results/simulated_genome/concatenated_seq1.fq \
+            -R ./manuscript_results/simulated_genome/concatenated_seq2.fq \
+            -r ./scanned_output/scannedScaffolds.gb \
+            -o ./test_toy_reads/ -v 1  \
+            --python2_7_exe /usr/bin/python2.7
 ```
