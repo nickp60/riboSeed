@@ -19,23 +19,23 @@ The following tools must be installed to complete this QuickStart guide
 * [`riboSeed`](https://github.com/nickp60/riboSeed)
 
 ## Get the Data
-Let's try using riboSeed on S. aureus TCH1516, from https://www.ncbi.nlm.nih.gov/bioproject/PRJNA312437.  We will use the SRA toolkit's `fastq-dunp` tool to get the data:
+Let's try using riboSeed on *Listeria monocytogenes*.  We will use the SRA toolkit's `fastq-dump` tool to get the data:
 
 ```
-fastq-dump --split-files SRR4360364
+fastq-dump --split-files SRR5181495
 ```
 
 That takes a while to download.
 
 ```
-Read 2231775 spots for SRR4360364
-Written 2231775 spots for SRR4360364
+Read 618654 spots for SRR5181495
+Written 618654 spots for SRR5181495
 ```
 
-Let's use the MRSA252 reference, NCBI BX571856.1.  Downloading this with the `get_genomes.py` tool installed along with [`pyutilsnrw` repository](https://github.com/nickp60/pyutilsnrw) (assuming this tool is in your `$PATH`):
+Let's use the *Listeria monocytogenes str. 4b F2365* genome as reference, NCBI accession [AE017262.2](https://www.ncbi.nlm.nih.gov/nuccore/AE017262).  Downloading this with the `get_genomes.py` tool installed along with [`pyutilsnrw` repository](https://github.com/nickp60/pyutilsnrw) (assuming this tool is in your `$PATH`):
 
 ```
-$ get_genomes.py -q BX571856.1 -o ./
+$ get_genomes.py -q AE017262.2 -o ./
 ```
 
 
@@ -43,74 +43,36 @@ $ get_genomes.py -q BX571856.1 -o ./
 
 Now that we have our genbank file, lets try to run riboSelect (assuming that `riboSelect.py` is in your `$PATH`) to pull out the regions of interest.
 
-Because this genome is pretty old (2004), we will have to reannotate the rDNA loci.  To do this, we will download the fasta version of the genome, and use the `riboScan.py` script that wraps `barrnap` and `seqret` (we assume that this script is in your `$PATH`).
-
+Because this genome is pretty new, we won't have to use riboScan.
 ```
-$ riboScan.py ./ .fasta -o ./scanned_output/ -k bac
-example: $ barrnap
-using default threshold of .5 identity
-Processing BX571856.1.fasta, item 1 out of 1
-[12:07:46] This is barrnap 0.7
-[12:07:46] Written by Torsten Seemann <torsten.seemann@gmail.com>
-[12:07:46] Obtained from https://github.com/Victorian-Bioinformatics-Consortium/barrnap
-[12:07:46] Detected operating system: linux
-[12:07:46] Using HMMER binary: /home/nicholas/barrnap/bin/../binaries/linux/nhmmer
-[12:07:46] Will use 8 threads
-[12:07:46] Setting evalue cutoff to 1e-06
-[12:07:46] Will tag genes  < 0.8 of expected length.
-[12:07:46] Will reject genes < .5 of expected length.
-[12:07:46] Using database: /home/nicholas/barrnap/bin/../db/bac.hmm
-[12:07:46] Scanning ./scanned_output/BX571856.1.fasta_barrnap_renamed.fasta for bac rRNA genes... please wait
-[12:07:46] Command: /home/nicholas/barrnap/bin/../binaries/linux/nhmmer --cpu 8 -E 1e-06 --w_length 3878  -o /dev/null --tblout /dev/stdout \/home\/nicholas\/barrnap\/bin\/\.\.\/db\/bac\.hmm \.\/scanned_output\/BX571856\.1\.fasta_barrnap_renamed\.fasta
-[12:07:49] Found: 16S_rRNA BX571856.1 L=1550/1585 514254..515803 + 16S ribosomal RNA
-[12:07:49] Found: 16S_rRNA BX571856.1 L=1550/1585 559981..561530 + 16S ribosomal RNA
-[12:07:49] Found: 16S_rRNA BX571856.1 L=1550/1585 2217254..2218803 - 16S ribosomal RNA
-[12:07:49] Found: 16S_rRNA BX571856.1 L=1551/1585 2039808..2041358 - 16S ribosomal RNA
-[12:07:49] Found: 16S_rRNA BX571856.1 L=1548/1585 2335738..2337285 - 16S ribosomal RNA
-[12:07:49] Found: 23S_rRNA BX571856.1 L=2919/3232 516231..519149 + 23S ribosomal RNA
-[12:07:49] Found: 23S_rRNA BX571856.1 L=2919/3232 561993..564911 + 23S ribosomal RNA
-[12:07:49] Found: 23S_rRNA BX571856.1 L=2919/3232 2036412..2039330 - 23S ribosomal RNA
-[12:07:49] Found: 23S_rRNA BX571856.1 L=2919/3232 2332376..2335294 - 23S ribosomal RNA
-[12:07:49] Found: 23S_rRNA BX571856.1 L=2921/3232 2213965..2216885 - 23S ribosomal RNA
-[12:07:49] Found: 5S_rRNA BX571856.1 L=78/119 559007..559084 + 5S ribosomal RNA (partial)
-[12:07:49] Found: 5S_rRNA BX571856.1 L=78/119 519226..519303 + 5S ribosomal RNA (partial)
-[12:07:49] Found: 5S_rRNA BX571856.1 L=78/119 564988..565065 + 5S ribosomal RNA (partial)
-[12:07:49] Found: 5S_rRNA BX571856.1 L=78/119 2036258..2036335 - 5S ribosomal RNA (partial)
-[12:07:49] Found: 5S_rRNA BX571856.1 L=78/119 2213810..2213887 - 5S ribosomal RNA (partial)
-[12:07:49] Found: 5S_rRNA BX571856.1 L=78/119 2332221..2332298 - 5S ribosomal RNA (partial)
-[12:07:49] Found 16 ribosomal RNA features.
-[12:07:49] Sorting features and outputting GFF3...
-Combined 1 gb file(s)
-Results gb file: ./scanned_output/scannedScaffolds.gb
-```
-
-Let's try riboSelect:
-
-```
-$ riboSelect.py ./scanned_output/scannedScaffolds.gb -o ./select/
-2016-12-15 12:15:52 - INFO - Initializing logger
-2016-12-15 12:15:52 - INFO - Current usage:
-./scanned_output/scannedScaffolds.gb -o ./select/
+$ riboSelect.py ./AE017262.2.gb -o ./select_output/
+2017-01-18 09:31:22 - INFO - Initializing logger
+2017-01-18 09:31:22 - INFO - Current usage:
+./AE017262.2.gb -o ./scanned_output/
 
 Loaded 1 records
-2016-12-15 12:15:52 - INFO - Processing BX571856.1
+2017-01-18 09:31:22 - INFO - Processing AE017262.2
 
-2016-12-15 12:15:52 - INFO - hits in BX571856.1
+2017-01-18 09:31:22 - INFO - hits in AE017262.2
 
 #$ FEATURE rRNA
-# Generated cluters for 0 on 20161215
-BX571856.1 BX571856.1.fasta1:BX571856.1.fasta2:BX571856.1.fasta3
-BX571856.1 BX571856.1.fasta11:BX571856.1.fasta12:BX571856.1.fasta13
-BX571856.1 BX571856.1.fasta8:BX571856.1.fasta9:BX571856.1.fasta10
-BX571856.1 BX571856.1.fasta14:BX571856.1.fasta15:BX571856.1.fasta16
-BX571856.1 BX571856.1.fasta4:BX571856.1.fasta5:BX571856.1.fasta6:BX571856.1.fasta7
+# Generated cluters for 0 on 20170118
+AE017262.2 LMOf2365_2904:LMOf2365_2905:LMOf2365_2906
+AE017262.2 LMOf2365_2927:LMOf2365_2928:LMOf2365_2931
+AE017262.2 LMOf2365_2851:LMOf2365_2861:LMOf2365_2862:LMOf2365_2863
+AE017262.2 LMOf2365_2936:LMOf2365_2937:LMOf2365_2940
+AE017262.2 LMOf2365_2849:LMOf2365_2850
+AE017262.2 LMOf2365_2900:LMOf2365_2901:LMOf2365_2902
 
 ```
 
-Now we have our cluster file, reference gb, and data, we can apply `riboSeed.py`…
+Now we have our cluster file, reference gb, and data, we can apply `riboSeed.py`...
 
 ## riboSeed
 
 ```
-$ riboSeed.py ./select/riboSelect_grouped_loci.txt -o ./seed/ -F ./SRR4360364_1.fastq -R ./SRR4360364_2.fastq -r ./scanned_output/scannedScaffolds.gb -c 4 -t 1 -v 1
+riboSeed.py ./select_output/riboSelect_grouped_loci.txt -o ./seed_output/ -F ./SRR5181495_1.fastq -R ./SRR5181495_2.fastq -r ./AE017262.2.gb -c 4 -t 1 -v 1 --serialize  --keep_temps
 ```
+
+## Evaluate
+Use MAUVE to visualize the assemblies found in `./seed_output/final_de_novo_assembly` and `./seed_output/final_de_fere_novo_assembly`.  You should see that 4 out of the 6 regions were bridged.  The remaining region consists of a tandem rDNA repeat, which is a continuing problem for rDNA assembly.  Looking at the riboSelect output, we can see that it has chosen 6 clusters.  We can try to treat the tandem clusters as one (for a total of 5 clusters) by re-running riboSelect with the `-c 5`.
