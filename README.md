@@ -6,12 +6,14 @@
 # RiboSeed Pipeline
 Impatient? See our [Quickstart Guide](./quickstart.md)
 
-## Warning
-This pipeline is stil very much in testing. Please back up any and all data used, and work within a virtualenv just in case.
+## Before We Start
+This pipeline is stil very much in testing. Please back up any and all data used, and work within a virtualenv.
+
+Genome assembly gobbles RAM. If you, like me, are working on a 4gb RAM lappy, don't run riboSeed in parallel and instead run in series by using the `--serialize` option.  That should prevent you from running out of RAM during the final SPAdes calls.
 
 ## Description
 
-RiboSeed is an supplemental assembly method to try to address the issue of multiple ribosomal regions in a genome.  It takes advantage of the fact that while each region is identical, the regions flanking are unique, and therefore can potentially be used to seed an assembly in such a way that rDNA regions are bridged.
+RiboSeed is an supplemental assembly refinemnet method to try to address the issue of multiple ribosomal regions in a genome.  It takes advantage of the fact that while each region is identical, the regions flanking are unique, and therefore can potentially be used to seed an assembly in such a way that rDNA regions are bridged.
 
 The pipeline (currently) consists of optional preprocessing and two main stages:
 
@@ -44,11 +46,11 @@ For extracting ribosomal regions for use in seeded assembly
 
 You will probably want to preview your file to figure out the syntax used. (ie, 16s vs 16S, rRNA vs RRNA, etc...)
 
-For fungal or other Eukaryotic genomes, reannotation is frequently required.  For `riboSelect.py`, you will need to change `--specific_features` appropriatly to 5_8S:18S:28S.
+For older, fungal or other Eukaryotic genomes, reannotation is frequently required.  For `riboSelect.py`, you will need to change `--specific_features` appropriatly to 5_8S:18S:28S.
 
-NOTE: the format is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropiate. The format is "genome_sequence_id locus_tag1:locus_tag2", where each line represents a cluster. See example below, where 14 rRNA's are clustered into 6 groups:
+NOTE: the format of the output text file is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropiate. The format is "genome_sequence_id locus_tag1:locus_tag2", where each line represents a cluster. See example below, where 14 rRNA's are clustered into 6 groups:
 
-NOTE 2: In order to stremline things, as of version 0.0.3 there will be a commented header line with the feature type in the format "#$ FEATURE <featuretype>", such as "#S FEATURE rRNA".
+NOTE 2: In order to streamline things, as of version 0.0.3 there will be a commented header line with the feature type in the format "#$ FEATURE <featuretype>", such as "#S FEATURE rRNA".
 
 ```
 #$ FEATURE rRNA
@@ -104,6 +106,8 @@ optional arguments:
 
 * `riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
 
+Additionally, it does a lot of plotting to visualize the Shannon entropy, coverage, occurances, and other useful metrics.
+
 THIS SCRIPT IS NOT LONGER A REQUIRED PART OF THE PIPELINE! It is still included as the plots it generates can be useful for troubleshooting.
 
 #### Usage:
@@ -158,8 +162,8 @@ optional arguments:
 
 ```
 
-## 2: Seeded Assebly
-* `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads into long reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.  RiboSeed2 differs from the legacy version of riboSeed as riboSeed maps to all the regions at once, which minimizes the complications asscociated with multiple mappings. Instead of mapping to all the regions individually, it concatenates them into a faux genome with 10kb spacers of N's in between.  Because of this, it has the added benefit of running much faster.
+## 2: Seeded Assembly
+* `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads into long reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.  RiboSeed2 differs from the legacy version of riboSeed as riboSeed maps to all the regions at once, which minimizes the complications asscociated with multiple mappings. Instead of mapping to all the regions individually, it concatenates them into a faux genome with 5kb spacers of N's in between.  Because of this, it has the added benefit of running much faster.
 
 #### Output
 
@@ -238,18 +242,10 @@ optional arguments:
                         the length of the seed sequence; if it is not
                         achieved, seeding across regions will likely fail;
                         default: 6000
-  --paired_inference    if --paired_inference, mapped read's pairs are
-                        included; default: False
   --linear              if genome is known to not be circular and a region of
                         interest (including flanking bits) extends past
                         chromosome end, this extends the seqence past
                         chromosome origin forward by --padding; default: False
-  --padding PADDING     if treating as circular, this controls the length of
-                        sequence added to the 5' and 3' ends to allow for
-                        selecting regions that cross the chromosome's origin;
-                        default: 5000
-  --keep_unmapped       if --keep_unmapped, fastqs are generated containing
-                        unmapped reads; default: False
   --ref_as_contig {None,trusted,untrusted}
                         if 'trusted', SPAdes will use the seed sequences as a
                         --trusted-contig; if 'untrusted', SPAdes will treat as
@@ -322,12 +318,11 @@ Results can be tuned by changing several of the default parameters.
 
 * `--smalt_scoring`: You can adjust the SMALT scoring matrix to fine-tune the mapping stringency.
 
+## 3: Assembly Refinement
 
-
+Infrequently, riboSeed has joined together contigs that appear incorrect according to your reference.  If you are at all unhappy with a bridgeing, `riboSwap.py` allows swapping of a "bad" contig for one or more syntenic contigs from the *de novo* assembly.
 
 ## Known Bugs
-
-* It looks like the `--paired-inference` option will cause an error with `SPAdes` if you are submitting a fastq of singleton/unpaired reads as part of the assembly.
 
 * Submitting `--smalt_scoring` with vastly different scoring schemes usually causes an error.
 
@@ -345,9 +340,14 @@ or
 
 `mkvirtualenv riboSeedVE -p python3.5 -i riboSeed `
 
-The trickiest part of this whole business is properly installing SMALT. BWA is definitly the easiest option.
+You can also clone this repository, and run `python3.5 setup.py install`.
 
-You can also clone this repository, and run setup.py.
+
+In the scripts directory, there is a script called `runme.py` which run the pipeline on a small sample dataset.  it should output a folder to your current working dir called integration_tests.
+
+
+
+The trickiest part of this whole business is properly installing SMALT. BWA is definitly the easiest option, and the current default mapper, so dont bther with SMALT unless you need to.
 
 ### Python Requirements:
 
@@ -429,7 +429,7 @@ There are a lot of commandline options for riboSeed, so it can help to run the p
 
 
 ```
-USAGE: /path/to/genome.gb path/to/genome.fasta path/to/read1 path/to/read2 /path/to/outdir/ n_iterations n_flanking n_cores
+USAGE: /path/to/genome.gb  path/to/read1 path/to/read2 /path/to/outdir/ n_iterations n_flanking n_cores
 All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iterations, flanking_width, and n_cores
 
 example:
@@ -441,4 +441,4 @@ We recommend copying this file to your project directory, and customizing it as 
 
 
 ### `sge_batch.sh`
-If you have access to a hpc, this script makes it easier to submit riboSeed jobs.  Just set up a python virtualenv, edit the 7 fields in this script, make any other modifications needed to fit your job, and submit with qsub.
+If you have access to a hpc, this script makes it easier to submit riboSeed jobs.  Just set up a python virtualenv, edit the 7 fields in this script, make any other modifications needed to fit your job, and submit with `qsub`.
