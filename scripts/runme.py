@@ -1,16 +1,22 @@
+#!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+
 import pkg_resources
 import sys
 import os
 import shutil
 import subprocess
-sys.path.append(os.path.join('..', 'riboSeed'))
-from riboSeed import riboSnag as rs
+# sys.path.append(os.path.join('..', 'riboSeed'))
+# from riboSeed import riboSnag as rs
 
-resource_package = rs.__name__  # Could be any module/package name
+resource_package = pkg_resources.Requirement.parse("riboSeed")  # Could be any module/package name
 print(resource_package)
-resource_path_fasta = '/'.join(('integration_data', 'concatenated_seq.fasta'))
-resource_path_1 = '/'.join(('integration_data', 'concatenated_seq1.fq'))
-resource_path_2 = '/'.join(('integration_data', 'concatenated_seq2.fq'))
+resource_path_fasta = '/'.join(('riboSeed',
+                                'integration_data', 'concatenated_seq.fasta'))
+resource_path_1 = '/'.join(('riboSeed',
+                            'integration_data', 'concatenated_seq1.fq'))
+resource_path_2 = '/'.join(('riboSeed',
+                            'integration_data', 'concatenated_seq2.fq'))
 
 print(resource_path_fasta)
 fasta = pkg_resources.resource_filename(resource_package, resource_path_fasta)
