@@ -9,8 +9,13 @@ Impatient? See our [Quickstart Guide](./quickstart.md)
 ## Table of Contents
 
 * [`Description`](./README.md#description)
-* [`Preprocessing`](./README.md##0preprocessingwithriboscanpy)
-* [`Selection and Extraction`](./README.md##1selectionandextraction)
+* [`riboScan: Preprocessing`](./README.md#0-preprocessing-with-riboscanpy)
+* [`riboSnag: Selection and Extraction`](./README.md#1-selection-and-extraction)
+* [`riboSeed: Seeded Assembly`](./README.md#3-seeded-assembly)
+** [`Key Parameters`](./README.md#key-parameters)
+* [`riboSwap: Assembly Refinement`](./README.md#3-assembly-refinement)
+* [`Installation`](./README.md#installation)
+* [`External Requirements`](./README.md#external-requirements)
 
 ## Before We Start
 This pipeline is stil very much in testing. Please back up any and all data used, and work within a virtualenv.
