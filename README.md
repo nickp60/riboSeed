@@ -6,6 +6,11 @@
 # RiboSeed Pipeline
 Impatient? See our [Quickstart Guide](./quickstart.md)
 
+## Table of Contents
+
+* [`Description`](./README.md#description)
+* [`Preprocessing`](./README.md#0preprocessingwithriboscanpy)
+
 ## Before We Start
 This pipeline is stil very much in testing. Please back up any and all data used, and work within a virtualenv.
 
