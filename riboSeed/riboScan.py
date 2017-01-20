@@ -16,7 +16,7 @@ import os
 import traceback
 # import gffutils
 
-from Bio import SeqIO
+# from Bio import SeqIO
 # from Bio.Seq import Seq
 # from Bio.SeqRecord import SeqRecord
 # from Bio.Alphabet import IUPAC
@@ -136,6 +136,7 @@ def add_locus_tags_to_gff(gff, acc):
     gff_list = []
     with open(gff, 'r') as g:
         for idx, line in enumerate(g):
+            line = line.strip()
             if idx == 0:
                 gff_list.append(line)
             else:
@@ -148,7 +149,7 @@ def add_locus_tags_to_gff(gff, acc):
     new_gff = str(os.path.splitext(gff)[0] + "_tagged.gff")
     with open(new_gff, 'w') as outgff:
         for l in gff_list:
-            print(str(l + "\n"))
+            # print(str(l))
             outgff.write(str(l + "\n"))
     return(new_gff)
 
@@ -177,7 +178,7 @@ def make_seqret_cmd(exe, outgb, ingff, infasta):
     assert shutil.which(exe) is not None, "seqret executable not found!"
     cmd = str(
         "{0} -sequence {1} -feature -fformat gff3 -fopenfile {2} " +
-        "-osformat genbank -auto  -outseq {3}"
+        "-osformat genbank -auto -outseq {3}"
     ).format(
         shutil.which(exe),
         infasta,

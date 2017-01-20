@@ -32,11 +32,12 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     evaluate_spades_success, prepare_next_mapping, make_mapped_partition_cmds,\
     make_unmapped_partition_cmds, make_quick_quast_table, \
     check_fastqs_len_equal, parse_subassembly_return_code, \
-    make_spades_empty_check, get_samtools_depths
+    make_spades_empty_check, get_samtools_depths, \
+    decide_proceed_to_target
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, stitch_together_target_regions, \
-    pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd, \
+    prepare_prank_cmd, prepare_mafft_cmd, \
     calc_Shannon_entropy, plot_scatter_with_anno, \
     profile_kmer_occurances, plot_pairwise_least_squares, make_msa
 
@@ -112,6 +113,9 @@ class riboSeedTestCase(unittest.TestCase):
         messages that you should IGNORE. **sigh of relief** They verify error
         reporting in the actual function, and cannot be removed. You should
         see the following errors if all went properly:
+        \t ERROR:root:--target_len is set to invalid value! Must be a decimal greater than zero, ie where 1.1 would be 110% of the original sequence length.
+        \t ERROR:root:--target_len is set to invalid value! Must be a decimal greater than zero, ie where 1.1 would be 110% of the original sequence length.
+        \t ERROR:root:We dont reccommend seeding to lengths greater than5x original seed length. Try between 0.5 and 1.5.  If you are setting a target number of bases, it  must be greater than 50
         \t WARNING:root:The first iteration's assembly's best contig is not greater than length set by --min_assembly_len. Assembly will likely fail if the contig does not meet the length of the seed
         \t WARNING:root:Continuing, but if this occurs for more than one seed, we reccommend  you abort and retry with longer seeds, a different ref, or re-examine the riboSnag clustering
         \t WARNING:root:The first iteration's assembly's best contig is not greater than length set by --min_assembly_len. Assembly will likely fail if the contig does not meet the length of the seed
@@ -305,7 +309,7 @@ class riboSeedTestCase(unittest.TestCase):
 
     @unittest.skipIf(
         shutil.which("smalt") is None,
-        "smat executable not found, skipping."+
+        "SMALT executable not found, skipping."+
         "If this isnt an error from travis deployment, you probably "+
         "should install it")
     def test_estimate_distances_smalt(self):
@@ -579,6 +583,7 @@ class riboSeedTestCase(unittest.TestCase):
         gen.loci_clusters[0].assembly_success = 1
         parse_subassembly_return_code(cluster=gen.loci_clusters[0],
                                       final_contigs_dir=self.test_dir,
+                                      skip_copy=True,
                                       logger=logger)
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
         self.assertFalse(gen.loci_clusters[0].keep_contigs)
@@ -1035,25 +1040,10 @@ class riboSeedTestCase(unittest.TestCase):
                 mapping_subdir=os.path.join(
                     self.test_dir, "LociMapping_for_text_faux_genome")))
 
-        # map_to_genome_ref_smalt(
-        #     mapping_ob=gen.iter_mapping_list[0],
-        #     ngsLib=gen.master_ngs_ob,
-        #     cores=4,
-        #     samtools_exe=self.samtools_exe,
-        #     smalt_exe=self.smalt_exe,
-        #     score_minimum=None,
-        #     step=3, k=5,
-        #     scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-        #     logger=logger)
-        # partition_mapping(seedGenome=gen,
-        #                   logger=logger,
-        #                   samtools_exe=self.samtools_exe,
-        #                   flank="50:50",
-        #                   cluster_list=gen.loci_clusters)
-
         make_faux_genome(cluster_list=gen.loci_clusters, seedGenome=gen,
                          iteration=1, output_root=self.test_dir, nbuff=10000,
                          logger=logger)
+        # add a test here
 
     def test_get_final_assemblies_cmds(self):
         gen = SeedGenome(
@@ -1128,6 +1118,20 @@ class riboSeedTestCase(unittest.TestCase):
             self.assertEqual(final_spades_cmds_ref[i], cmd)
         for i, cmd in enumerate([x[1] for x in final_cmds]):
             self.assertEqual(final_quast_cmds_ref[i], cmd)
+
+    def test_def_decide_proceed_to_target_fail1(self):
+        with self.assertRaises(ValueError):
+            decide_proceed_to_target(target_len=25, logger=logger)
+        with self.assertRaises(ValueError):
+            decide_proceed_to_target(target_len=-1, logger=logger)
+        with self.assertRaises(ValueError):
+            decide_proceed_to_target(target_len=5.5, logger=logger)
+
+    def test_def_decide_proceed_to_target(self):
+        proceed = decide_proceed_to_target(target_len=4.5, logger=logger)
+        dont_proceed = decide_proceed_to_target(target_len=None, logger=logger)
+        self.assertTrue(proceed)
+        self.assertFalse(dont_proceed)
 
     def tearDown(self):
         """ delete temp files if no errors

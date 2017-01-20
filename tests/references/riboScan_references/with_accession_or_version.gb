@@ -1,0 +1,94 @@
+LOCUS       BA000007.2           5498450 bp    DNA     linear   UNC 19-JAN-2017
+ACCESSION   BA000007.2
+VERSION     BA000007.2
+DEFINITION  Escherichia coli O157:H7 str. Sakai DNA, complete genome.
+FEATURES             Location/Qualifiers
+     rRNA            227105..228642
+                     /note="*Name 16S_rRNA"
+                     /locus_tag="BA000007.2_0"
+                     /product="16S ribosomal RNA"
+     rRNA            229092..231991
+                     /note="*Name 23S_rRNA"
+                     /locus_tag="BA000007.2_1"
+                     /product="23S ribosomal RNA"
+     rRNA            232089..232199
+                     /note="*Name 5S_rRNA"
+                     /locus_tag="BA000007.2_2"
+                     /product="5S ribosomal RNA"
+     rRNA            complement(3446271..3446381)
+                     /note="*Name 5S_rRNA"
+                     /locus_tag="BA000007.2_3"
+                     /product="5S ribosomal RNA"
+     rRNA            complement(3446479..3449378)
+                     /note="*Name 23S_rRNA"
+                     /locus_tag="BA000007.2_4"
+                     /product="23S ribosomal RNA"
+     rRNA            complement(3449736..3451273)
+                     /note="*Name 16S_rRNA"
+                     /locus_tag="BA000007.2_5"
+                     /product="16S ribosomal RNA"
+     rRNA            complement(4158433..4158543)
+                     /note="*Name 5S_rRNA"
+                     /locus_tag="BA000007.2_6"
+                     /product="5S ribosomal RNA"
+     rRNA            complement(4158678..4158788)
+                     /note="*Name 5S_rRNA"
+                     /locus_tag="BA000007.2_7"
+                     /product="5S ribosomal RNA"
+     rRNA            complement(4158886..4161785)
+                     /note="*Name 23S_rRNA"
+                     /locus_tag="BA000007.2_8"
+                     /product="23S ribosomal RNA"
+     rRNA            complement(4162235..4163772)
+                     /note="*Name 16S_rRNA"
+                     /locus_tag="BA000007.2_9"
+                     /product="16S ribosomal RNA"
+     rRNA            4735255..4736792
+                     /note="*Name 16S_rRNA"
+                     /locus_tag="BA000007.2_10"
+                     /product="16S ribosomal RNA"
+     rRNA            4737150..4740051
+                     /note="*Name 23S_rRNA"
+                     /locus_tag="BA000007.2_11"
+                     /product="23S ribosomal RNA"
+     rRNA            4740149..4740259
+                     /note="*Name 5S_rRNA"
+                     /locus_tag="BA000007.2_12"
+                     /product="5S ribosomal RNA"
+     rRNA            4831657..4833194
+                     /note="*Name 16S_rRNA"
+                     /locus_tag="BA000007.2_13"
+                     /product="16S ribosomal RNA"
+     rRNA            4833644..4836545
+                     /note="*Name 23S_rRNA"
+                     /locus_tag="BA000007.2_14"
+                     /product="23S ribosomal RNA"
+     rRNA            4836643..4836753
+                     /note="*Name 5S_rRNA"
+                     /locus_tag="BA000007.2_15"
+                     /product="5S ribosomal RNA"
+     rRNA            4975930..4977467
+                     /note="*Name 16S_rRNA"
+                     /locus_tag="BA000007.2_16"
+                     /product="16S ribosomal RNA"
+     rRNA            4977825..4980726
+                     /note="*Name 23S_rRNA"
+                     /locus_tag="BA000007.2_17"
+                     /product="23S ribosomal RNA"
+     rRNA            4980824..4980934
+                     /note="*Name 5S_rRNA"
+                     /locus_tag="BA000007.2_18"
+                     /product="5S ribosomal RNA"
+     rRNA            5016956..5018493
+                     /note="*Name 16S_rRNA"
+                     /locus_tag="BA000007.2_19"
+                     /product="16S ribosomal RNA"
+     rRNA            5018851..5021752
+                     /note="*Name 23S_rRNA"
+                     /locus_tag="BA000007.2_20"
+                     /product="23S ribosomal RNA"
+     rRNA            5021850..5021960
+                     /note="*Name 5S_rRNA"
+                     /locus_tag="BA000007.2_21"
+                     /product="5S ribosomal RNA"
+

@@ -22,9 +22,10 @@ sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
-# from pyutilsnrw.utils3_5 import md5, file_len, copy_file, get_number_mapped
+from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboScan import parse_fasta_header, make_barrnap_cmd, \
-    add_locus_tags_to_gff
+    add_locus_tags_to_gff, combine_gbs, append_accession_and_version, \
+    make_seqret_cmd
 
 sys.dont_write_bytecode = True
 
@@ -41,10 +42,20 @@ class riboSeedTestCase(unittest.TestCase):
         self.test_dir = os.path.join(os.path.dirname(__file__),
                                      "output_riboScan_tests")
         self.ref_dir = os.path.join(os.path.dirname(__file__), "references")
-        self.ref_gb = os.path.join(self.ref_dir,
-                                   'NC_011751.1.gb')
-        self.ref_fasta = os.path.join(self.test_dir,
-                                      'cluster1.fasta')
+        self.scan_ref_dir = os.path.join(os.path.dirname(__file__),
+                                         "references",
+                                         "riboScan_references")
+        self.no_locus_gff = os.path.join(self.scan_ref_dir,
+                                         "no_locus.gff")
+        self.with_locus_gff = os.path.join(self.scan_ref_dir,
+                                           "with_locus.gff")
+        self.combined_file = os.path.join(self.scan_ref_dir,
+                                          "combined_gbs_just_kidding.txt")
+        self.no_accession_gb = os.path.join(self.scan_ref_dir,
+                                            'no_accession_or_version.gb')
+        self.with_accession_gb = os.path.join(self.scan_ref_dir,
+                                              'with_accession_or_version.gb')
+
         self.good_contig = os.path.join(self.ref_dir,
                                         'contigs.fasta')
         self.short_contig = os.path.join(self.ref_dir,
@@ -126,25 +137,52 @@ class riboSeedTestCase(unittest.TestCase):
                              exe="barrnap", thresh=1.2,
                              kingdom='euk')
 
-    # def test_add_locus_tags_to_gff(self):
-    #     """check with  executable"""
-    #     open_name = '%s.open' % __name__
-    #     with patch(open_name, create=True) as mock_open:
-    #         mock_open.return_value = MagicMock(spec=file)
+    def test_add_locus_tags_to_gff(self):
+        """check with  executable"""
+        add_locus_tags_to_gff(gff=self.no_locus_gff,
+                              acc="BA000007.2")
+        new_gff = str(os.path.splitext(self.no_locus_gff)[0] + "_tagged.gff")
+        self.assertEqual(md5(new_gff), md5(self.with_locus_gff))
+        self.to_be_removed.append(new_gff)
 
-    #     with open('/some/path', 'w') as f:
-    #         f.write('something')
-    #     file_handle = mock_open.return_value.__enter__.return_value
-    #     file_handle.write.assert_called_with('something')
+    def test_combine_gbs(self):
+        temp_gb = os.path.join(self.scan_ref_dir, "temp_combined.gb")
+        combine_gbs(finalgb=temp_gb,
+                    gb_list=[self.no_locus_gff,
+                             self.with_locus_gff])
+        self.assertEqual(md5(temp_gb), md5(self.combined_file))
+        self.to_be_removed.append(temp_gb)
 
-        # add_locus_tags_to_gff(gff, acc)
+    def test_append_accession_and_version(self):
+        temp_gb2 = os.path.join(self.scan_ref_dir, "temp_acessioned.gb")
+        append_accession_and_version(accession="BA000007.2",
+                                     ingb=self.no_accession_gb,
+                                     finalgb=temp_gb2)
+        self.assertEqual(md5(temp_gb2), md5(self.with_accession_gb))
+        self.to_be_removed.append(temp_gb2)
 
-    # def tearDown(self):
-    #     """ delete temp files if no errors
-    #     """
-    #     for filename in self.to_be_removed:
-    #         os.unlink(filename)
-    #     pass
+    @unittest.skipIf(
+        shutil.which("seqret") is None,
+        "seqret executable not found, skipping." +
+        "If this isnt an error from travis deployment, you probably " +
+        "should install it")
+    def test_make_seqret_cmd(self):
+        test_cmd = make_seqret_cmd(exe="seqret",
+                                   outgb="dest_file.gb",
+                                   infasta="input_sequence.fasta",
+                                   ingff="input_annos.gff")
+        ref_cmd = str(
+            "{0} -sequence input_sequence.fasta -feature -fformat gff3 " +
+            "-fopenfile input_annos.gff -osformat genbank -auto " +
+            "-outseq dest_file.gb").format(shutil.which("seqret"))
+        self.assertEqual(ref_cmd, test_cmd)
+
+    def tearDown(self):
+        """ delete temp files if no errors
+        """
+        for filename in self.to_be_removed:
+            os.unlink(filename)
+        pass
 
 if __name__ == '__main__':
     unittest.main()

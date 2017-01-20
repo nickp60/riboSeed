@@ -369,12 +369,13 @@ class LociMapping(object):
         self.mapping_subdir = mapping_subdir
         self.assembly_subdir = assembly_subdir
         self.assembly_subdir_needed = assembly_subdir_needed
-        self.mapping_prefix = mapping_prefix  # set dynamically
         self.ref_fasta = ref_fasta
         # ----  do not ever name these directly ---- #
         self.pe_map_bam = pe_map_bam  # all reads from pe mapping
         self.s_map_bam = s_map_bam  # all reads from singltons mapping
-        self.mapped_bam_unfiltered = mapped_bam_unfiltered  # mapped reads only, sam
+        self.mapping_prefix = mapping_prefix  # set dynamically
+        # added to makes filtering with pysam easier
+        self.mapped_bam_unfiltered = mapped_bam_unfiltered
         self.mapped_sam = mapped_sam  # mapped reads only, sam
         self.mapped_bam = mapped_bam  # mapped reads only, bam
         self.mapped_ids_txt = mapped_ids_txt
@@ -441,7 +442,6 @@ class Exes(object):
     """
     def __init__(self, samtools, method, spades, quast, python2_7,
                  smalt, bwa, check=True, mapper=None):
-        # int: current iteration (0 is initial)
         self.samtools = samtools
         self.method = method
         self.mapper = mapper
@@ -558,13 +558,6 @@ def get_args():  # pragma: no cover
                           help="kmers used during seeding assemblies, " +
                           "separated bt commas" +
                           "; default: %(default)s")
-    # optional.add_argument("-I", "--ignoreS", dest='ignoreS',
-    #                       action="store_true",
-    #                       default=False,
-    #                       help="If true, singletons from previous mappings" +
-    #                       "will be ignored.  try this if you see " +
-    #                       "samtools merge errors in tracebacks" +
-    #                       "; default: %(default)s")
     optional.add_argument("-s", "--score_min", dest='score_min',
                           action="store",
                           default=None, type=int,
@@ -585,10 +578,6 @@ def get_args():  # pragma: no cover
                           "exit. Set this to the length of the seed " +
                           "sequence; if it is not achieved, seeding across " +
                           "regions will likely fail; default: %(default)s")
-    # optional.add_argument("--paired_inference", dest='paired_inference',
-    #                       action="store_true", default=False,
-    #                       help="if --paired_inference, mapped read's " +
-    #                       "pairs are included; default: %(default)s")
     optional.add_argument("--linear",
                           help="if genome is known to not be circular and " +
                           "a region of interest (including flanking bits) " +
@@ -603,10 +592,6 @@ def get_args():  # pragma: no cover
     #                       "length of sequence added to the 5' and 3' ends " +
     #                       "to allow for selecting regions that cross the " +
     #                       "chromosome's origin; default: %(default)s")
-    # optional.add_argument("--keep_unmapped", dest='keep_unmapped',
-    #                       action="store_true", default=False,
-    #                       help="if --keep_unmapped, fastqs are generated " +
-    #                       "containing unmapped reads; default: %(default)s")
     optional.add_argument("--ref_as_contig", dest='ref_as_contig',
                           action="store", default="untrusted", type=str,
                           choices=["None", "trusted", "untrusted"],
@@ -738,8 +723,10 @@ def get_smalt_full_install_cmds(smalt_exe, logger=None):
     logger.debug("looking for smalt test dir: {0}".format(
         smalttestdir))
     if not os.path.exists(smalttestdir):
-        raise FileNotFoundError("cannot find smalt_test dir containing " +
-                                "files to verify bambamc install!")
+        raise FileNotFoundError(
+            "Cannot find smalt_test dir containing " +
+            "files to verify bambamc install! It should here: \n%s",
+            smalttestdir)
     ref = os.path.join(smalttestdir, "ref_to_test_bambamc.fasta")
     index = os.path.join(smalttestdir, "test_index")
     test_bam = os.path.join(smalttestdir, "test_mapping.bam")
@@ -884,14 +871,6 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
-    # try:
-    #     nonify_empty_lib_files(ngsLib, logger=logger)
-    # except ValueError:
-    #     logger.error(last_exception())
-    #     logger.error(
-    #         "No reads mapped for this iteration. This could be to an error " +
-    #         "from samtools or elevated mapping stringency. Exiting!")
-    #     raise ValueError
 
     logger.info("Mapping reads to reference genome with SMALT")
     # check min score
@@ -969,7 +948,7 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
     for paired reads.
     https://sourceforge.net/p/bio-bwa/mailman/message/31968535/
     Given a  bam file from bwa (has "AS" tags), write out
-    reads with AS higher than --score to outsam and convert to outbam
+    reads with AS higher than --score to outsam
     read count from https://www.biostars.org/p/1890/
     """
     notag = 0
@@ -977,7 +956,6 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
     pysam.index(inbam)
     bam = pysam.AlignmentFile(inbam, "rb")
     osam = pysam.Samfile(outsam, 'wh', template=bam)
-    # with pysam.AlignmentFile(outbam, "wbh", template=bam) as obam:
     for read in bam.fetch():
         if read.has_tag('AS'):
             if read.get_tag('AS') >= score:
@@ -990,15 +968,18 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
             pass
     bam.close()
     logger.debug("Reads after filtering: %i", written)
-    # if notag != 0:
-    logger.debug("Reads lacking alignment score: %i", notag)
+    if notag != 0:
+        logger.debug("Reads lacking alignment score: %i", notag)
 
 
-def sam_to_bam(samtools_exe, bam, sam):
+def sam_to_bam(samtools_exe, bam, sam, logger=None):
+    """
+    becasue pysam doesnt like to write bams in an iterator, which makes sense
+    """
+    assert logger is not None, "must use logging"
     logger.debug("Making mapped bam file:")
     make_mapped_bam = "{0} view -o {1} -h {2}".format(samtools_exe, bam, sam)
     logger.debug(make_mapped_bam)
-    # sys.exit(1)
     subprocess.run([make_mapped_bam],
                    shell=sys.platform != "win32",
                    stdout=subprocess.PIPE,
@@ -1016,14 +997,6 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     requires at least paired end input, but can handle an additional library
     of singleton reads. Will not work on just singletons
     """
-    # try:
-    #     nonify_empty_lib_files(ngsLib, logger=logger)
-    # except ValueError:
-    #     logger.error(last_exception())
-    #     logger.error(
-    #         "No reads mapped for this iteration. This could be to an error " +
-    #         "from samtools or elevated mapping stringency. Exiting!")
-    #     raise ValueError
 
     logger.info("Mapping reads to reference genome with BWA")
     # check min score
@@ -1110,13 +1083,12 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     logger.debug("filtering mapped reads with an AS score minimum of %i",
                  score_min)
     filter_bam_AS(inbam=mapping_ob.mapped_bam_unfiltered,
-                  # outbam=mapping_ob.mapped_bam,
                   outsam=mapping_ob.mapped_sam,
-                  # samtools_exe=samtools_exe,
                   score=score_min, logger=logger)
     sam_to_bam(bam=mapping_ob.mapped_bam,
                sam=mapping_ob.mapped_sam,
-               samtools_exe=samtools_exe)
+               samtools_exe=samtools_exe,
+               logger=logger)
     logger.info(str("Mapped reads after filtering: " +
                     get_number_mapped(mapping_ob.mapped_bam,
                                       samtools_exe=samtools_exe)))
@@ -1390,7 +1362,8 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         return 0
 
 
-def parse_subassembly_return_code(cluster, final_contigs_dir, logger):
+def parse_subassembly_return_code(cluster, final_contigs_dir, skip_copy=False,
+                                  logger=None):
     """ given a return code from the above spades success function,
     set object attributes as needed
     ----------------------
@@ -1400,6 +1373,7 @@ def parse_subassembly_return_code(cluster, final_contigs_dir, logger):
     2 = exclude contigs, and keep from iterating
     3 = exclude contigs, error ocurred
     """
+    assert logger is not None, "must use logging"
     if cluster.assembly_success == 3:
         # TODO other error handling; make a "failed" counter?
         cluster.continue_iterating = False
@@ -1408,18 +1382,23 @@ def parse_subassembly_return_code(cluster, final_contigs_dir, logger):
         cluster.continue_iterating = False
         cluster.keep_contigs = False
     elif cluster.assembly_success == 1:
-        try:
-            shutil.copyfile(
-                cluster.mappings[-1].assembled_contig,
-                os.path.join(final_contigs_dir,
-                             "{0}_cluster_{1}_iter_{2}.fasta".format(
-                                 cluster.sequence_id,
-                                 cluster.index,
-                                 cluster.mappings[-1].iteration)))
-        except:
-            logger.warning("no contigs for %s_%i! Check SPAdes log " +
-                           "if worried", cluster.sequence_id, cluster.index)
-            logger.error(last_exception())
+        if skip_copy:  # ONLY FOR TESTING!
+            cluster.continue_iterating = False
+            cluster.keep_contigs = False
+        else:
+            try:
+                shutil.copyfile(
+                    cluster.mappings[-1].assembled_contig,
+                    os.path.join(final_contigs_dir,
+                                 "{0}_cluster_{1}_iter_{2}.fasta".format(
+                                     cluster.sequence_id,
+                                     cluster.index,
+                                     cluster.mappings[-1].iteration)))
+            except:
+                logger.warning("unable to copy %s to final contigs dir. " +
+                               "This is should have returned code 3, not 1.",
+                               cluster.mappings[-1].assembled_contig)
+                logger.error(last_exception())
         cluster.continue_iterating = False
         # The combine contigs step check for 'keep contigs flag, so
         # since you have already copied it, set the flag to false
@@ -1997,6 +1976,27 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     return (outpath, len(record))
 
 
+def decide_proceed_to_target(target_len, logger=None):
+    assert logger is not None, "Must use logging!"
+    if target_len is not None:
+        if not target_len > 0 or not isinstance(target_len, float):
+            logger.error("--target_len is set to invalid value! Must be a " +
+                         "decimal greater than zero, ie where 1.1 would be " +
+                         "110% of the original sequence length.")
+            raise ValueError
+        elif target_len > 5 and 50 > target_len:
+            logger.error("We dont reccommend seeding to lengths greater than" +
+                         "5x original seed length. Try between 0.5 and 1.5." +
+                         "  If you are setting a target number of bases, it " +
+                         " must be greater than 50")
+            raise ValueError
+        else:
+            proceed_to_target = True
+    else:
+        proceed_to_target = False
+    return proceed_to_target
+
+
 def subprocess_run_list(cmdlist, hard=False, logger=None):
     """ This just allows for sequential cmds with multiprocessing.
     It prevents the errors when future commands are looking for and not finding
@@ -2108,22 +2108,12 @@ if __name__ == "__main__":  # pragma: no cover
         sys.exit(1)
 
     # if the target_len is set. set needed params
-    if args.target_len is not None:
-        if not args.target_len > 0 or not isinstance(args.target_len, float):
-            logger.error("--target_len is set to invalid value! Must be a " +
-                         "decimal greater than zero, ie where 1.1 would be " +
-                         "110% of the original sequence length.")
-            sys.exit(1)
-        elif args.target_len > 5 and 50 > args.target_len:
-            logger.error("We dont reccommend seeding to lengths greater than" +
-                         "5x original seed length. Try between 0.5 and 1.5." +
-                         "  If you are setting a target number of bases, it " +
-                         " must be greater than 50")
-            sys.exit(1)
-        else:
-            proceed_to_target = True
-    else:
-        proceed_to_target = False
+    try:
+        proceed_to_target = decide_proceed_to_target(
+            target_len=args.target_len, logger=logger)
+    except ValueError:
+        logger.error("Exiting")
+        sys.exit(1)
 
 # --------------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #
@@ -2392,7 +2382,7 @@ if __name__ == "__main__":  # pragma: no cover
                 proceed_to_target=proceed_to_target,
                 target_len=args.target_len)
             parse_subassembly_return_code(
-                cluster,
+                cluster=cluster,
                 final_contigs_dir=seedGenome.final_long_reads_dir,
                 logger=logger)
         clusters_to_process = [x for x in seedGenome.loci_clusters if

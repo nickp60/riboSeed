@@ -124,13 +124,13 @@ setup(
     #    'dev': ['check-manifest'],
     #    'test': ['coverage'],
     #},
-
+    include_package_data=True,
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
-    #package_data={
-    #    'sample': ['package_data.dat'],
-    #},
+    package_data={
+       '': [path.join(__name__, "riboSeed", "integration_data/*")],
+    },
 
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
@@ -150,7 +150,7 @@ setup(
     # yet defined
     scripts=['riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
              'riboSeed/riboSnag.py', 'riboSeed/riboSwap.py',
-             'riboSeed/riboScan.py',
+             'riboSeed/riboScan.py', "scripts/runme.py",
              'scripts/scanScaffolds.sh', 'scripts/example_batch.sh',
              'scripts/multifasta_splitter.sh', 'scripts/concatToyGenome.py'],
 )

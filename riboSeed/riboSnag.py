@@ -248,8 +248,7 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
     and [1] is a list of loci in that cluster
     As of 20161028, this returns a list of LociCluster objects!
     """
-    if logger is None:
-        raise ValueError("logging must be used!")
+    assert logger is not None, "logging must be used!"
     if not (os.path.isfile(filepath) and os.path.getsize(filepath) > 0):
         raise ValueError("Cluster File not found!")
     clusters = []
@@ -323,8 +322,7 @@ def extract_coords_from_locus(cluster, feature="rRNA",
     """given a LociCluster object, ammend values
     20161028 returns a LociCluster
     """
-    if logger is None:
-        raise ValueError("logging must be used!")
+    assert logger is not None, "logging must be used!"
     loc_number = 0  # index for hits
     locus_tags = [x.locus_tag for x in cluster.loci_list]
     for feat in cluster.seq_record.features:
@@ -418,8 +416,7 @@ def stitch_together_target_regions(cluster,
     return the object with ammended sequence info
     revamped 20161004
     """
-    if logger is None:
-        raise ValueError("Must have logger for this function")
+    assert logger is not None, "Must have logger for this function"
 
     # TODO : make this safer. coord list is constructed sequentially but this
     # is a backup. Throws sort of a cryptic error. but as I said, its a backup
@@ -503,8 +500,7 @@ def prepare_prank_cmd(outdir, combined_fastas, prank_exe,
     """returns command line for constructing MSA with
     PRANK and the path to results file
     """
-    if logger is None:
-        raise ValueError("Must use logger")
+    assert logger is not None, "Must use logger"
     if not os.path.exists(outdir):
         raise FileNotFoundError("output directory not found!")
     prank_cmd = "{0} {1} -d={2} -o={3}".format(
@@ -520,8 +516,7 @@ def prepare_mafft_cmd(outdir, combined_fastas, mafft_exe,
     """returns command line for constructing MSA with
     mafft and the path to results file
     """
-    if logger is None:
-        raise ValueError("Must use logger")
+    assert logger is not None, "Must use logger"
     if not os.path.exists(outdir):
         raise FileNotFoundError("output directory not found!")
     mafft_cmd = "{0} {1} {2} > {3}".format(
@@ -593,8 +588,7 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
     list[base, cov], and named coords  as a list
     TODO: The 'next_best' thing fails is an N is most frequent. Defaults to a T
     """
-    if logger is None:
-        raise ValueError("Must use logging")
+    assert logger is not None, "Must use logger"
     if excludedash:
         logger.warning("CAUTION: excludedash selected. There is a known " +
                        "bug in the 'next_best' thing fails if an " +
@@ -873,8 +867,7 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
              args, outdir, logger=None):
     """returns msa cmd and results path
     """
-    if logger is None:
-        raise ValueError("Must use logger")
+    assert logger is not None, "Must use logger"
     if msa_tool == "prank":
         if check_installed_tools(executable=prank_exe,
                                  hard=False,
@@ -906,7 +899,7 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
     return(msa_cmd, results_path)
 
 
-def plot_alignment_3d(consensus, tseq, output_prefix):
+def plot_alignment_3d(consensus, tseq, output_prefix):  # pragma: no cover
     """ under development.  no progress for a while
     """
     from mpl_toolkits.mplot3d import Axes3D

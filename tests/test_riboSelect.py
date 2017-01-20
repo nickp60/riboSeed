@@ -10,7 +10,7 @@ import os
 import unittest
 
 from riboSeed.riboSelect import get_filtered_locus_tag_dict, \
-    pure_python_kmeans
+    pure_python_kmeans, count_feature_hits, parse_args_clusters
 from pyutilsnrw.utils3_5 import get_genbank_record, check_installed_tools
 
 logger = logging
@@ -38,6 +38,74 @@ class riboSelect_TestCase(unittest.TestCase):
                                                'grouped_loci_reference.txt'))
         if not os.path.exists(self.testdirname):
             os.makedirs(self.testdirname, exist_ok=True)
+
+    def test_count_feature_hits_all_features(self):
+        nfeatoccur, nfeat_simple = count_feature_hits(
+            all_feature=True,
+            genome_seq_records=[],
+            specific_features=[],
+            locus_tag_dict={})
+        self.assertEqual(nfeatoccur, None)
+        self.assertEqual(nfeat_simple, None)
+
+    def test_count_feature_hits(self):
+        record = get_genbank_record(self.test_gb_file)[0]
+        filtered, nfeat, nfeat_simple = \
+            get_filtered_locus_tag_dict([record], feature="rRNA",
+                                        specific_features="16S:23S",
+                                        verbose=False,
+                                        logger=logger)
+        filtered = {
+            ('NC_011751.1', 4430571): [
+                8618, 'NC_011751.1', 'ECUMN_23S_4', 'rRNA',
+                ['ribosomal', 'RNA', '23S']],
+            ('NC_011751.1', 4524177): [
+                8804, 'NC_011751.1', 'ECUMN_23S_5', 'rRNA',
+                ['ribosomal', 'RNA', '23S']],
+            ('NC_011751.1', 3873482): [
+                7560, 'NC_011751.1', 'ECUMN_16S_1', 'rRNA',
+                ['ribosomal', 'RNA', '16S']],
+            ('NC_011751.1', 3022526): [
+                5883, 'NC_011751.1', 'ECUMN_16S_2', 'rRNA',
+                ['ribosomal', 'RNA', '16S']],
+            ('NC_011751.1', 3870131): [
+                7554, 'NC_011751.1', 'ECUMN_23S_1', 'rRNA',
+                ['ribosomal', 'RNA', '23S']],
+            ('NC_011751.1', 4522189): [
+                8798, 'NC_011751.1', 'ECUMN_16S_5', 'rRNA',
+                ['ribosomal', 'RNA', '16S']],
+            ('NC_011751.1', 4699035): [
+                9127, 'NC_011751.1', 'ECUMN_23S_7', 'rRNA',
+                ['ribosomal', 'RNA', '23S']],
+            ('NC_011751.1', 3019276): [
+                5879, 'NC_011751.1', 'ECUMN_23S_2', 'rRNA',
+                ['ribosomal', 'RNA', '23S']],
+            ('NC_011751.1', 228609): [
+                406, 'NC_011751.1', 'ECUMN_23S_3', 'rRNA',
+                ['ribosomal', 'RNA', '23S']],
+            ('NC_011751.1', 4697139): [
+                9123, 'NC_011751.1', 'ECUMN_16S_7', 'rRNA',
+                ['ribosomal', 'RNA', '16S']],
+            ('NC_011751.1', 4656045): [
+                9043, 'NC_011751.1', 'ECUMN_16S_6', 'rRNA',
+                ['ribosomal', 'RNA', '16S']],
+            ('NC_011751.1', 4657941): [
+                9047, 'NC_011751.1', 'ECUMN_23S_6', 'rRNA',
+                ['ribosomal', 'RNA', '23S']],
+            ('NC_011751.1', 4428675): [
+                8614, 'NC_011751.1', 'ECUMN_16S_4', 'rRNA',
+                ['ribosomal', 'RNA', '16S']],
+            ('NC_011751.1', 226621): [
+                400, 'NC_011751.1', 'ECUMN_16S_3', 'rRNA',
+                ['ribosomal', 'RNA', '16S']]
+        }
+        nfeatoccur2, nfeat_simple2 = count_feature_hits(
+            all_feature=False,
+            genome_seq_records=[record],
+            specific_features=["16S", "23S"],
+            locus_tag_dict=filtered)
+        self.assertEqual(nfeat_simple2['NC_011751.1'], [7, 7])
+        self.assertEqual(nfeatoccur2['NC_011751.1'], [['16S', 7], ['23S', 7]])
 
     def test_locus_tag_dict(self):
         """test different scenarios of trying to get features
@@ -96,6 +164,18 @@ class riboSelect_TestCase(unittest.TestCase):
             os.remove(os.path.join(os.getcwd(),
                                    "pure_python_kmeans_list.csv"))
             os.remove(os.path.join(os.getcwd(), "km_script.R"))
+
+    def test_parse_clusters_infer(self):
+        record = get_genbank_record(self.test_gb_file)[0]
+        centers = parse_args_clusters(clusters='', recs=[record],
+                                      logger=logger)
+        self.assertEqual(centers, [0])
+
+    def test_parse_clusters_provide(self):
+        record = get_genbank_record(self.test_gb_file)[0]
+        centers2 = parse_args_clusters(clusters='3', recs=[record],
+                                       logger=logger)
+        self.assertEqual(centers2, [3])
 
     def tearDown(self):
         pass

@@ -197,6 +197,25 @@ def get_filtered_locus_tag_dict(genome_seq_records, feature="rRNA",
     return(locus_tag_dict, nfeatures_occur, nfeat_simple)
 
 
+def parse_args_clusters(clusters, recs, logger=None):
+    """
+    """
+    # default case, clusters are inferred
+    # if not, must be equal to the length of genbank records
+    assert logger is not None, "logging must be used"
+    if clusters != "":
+        try:
+            centers = [int(x) for x in clusters.split(":")]
+            logger.info(str(centers))
+        except:
+            logger.error("cannot coerce --clusters to integer after " +
+                         "splitting on colons!\n")
+            sys.exit(1)
+    else:
+        centers = [0 for x in recs]
+    return centers
+
+
 def pure_python_kmeans(data, centers=3, kind=int, DEBUG=True):
     """giveb 1d list of numberic data and number of centers, returns a
     csv with the data and cluster, and LP's disapointment
@@ -314,21 +333,14 @@ if __name__ == "__main__":
 
     # default case, clusters are inferred
     # if not, must be equal to the length of genbank records
-    if args.clusters != "":
-        try:
-            centers = [int(x) for x in args.clusters.split(":")]
-            logger.info(str(centers))
-        except:
-            logger.error("cannot coerce --clusters to integer after " +
-                         "splitting on colons!\n")
-            sys.exit(1)
-    else:
-        centers = [0 for x in genome_records]
+    centers_per_seq = parse_args_clusters(
+        clusters=args.clusters, recs=genome_records,
+        logger=logger)
 
     # if unequal lengths, throw error
     # logger.info clusters for accession for user to verify
-    if len(genome_records) != len(centers):
-        logger.error("centers must be the same length as number" +
+    if len(genome_records) != len(centers_per_seq):
+        logger.error("clusters must be the same length as number" +
                      " of genbank records!\n")
         sys.exit(1)
 
@@ -344,7 +356,7 @@ if __name__ == "__main__":
         # if user gives clusters, make sure it matches the length:
         if args.clusters:
             logger.info("using %s clusters for %s\n",
-                        centers[i], genome_records[i].id)
+                        centers_per_seq[i], genome_records[i].id)
         # get subset of lociDict for that id
         subset = {key: value for key, value in lociDict.items() if
                   genome_records[i].id in value}
@@ -360,9 +372,9 @@ if __name__ == "__main__":
 
         #  find nfeat for this genbank id by subsetting;
         # is this a bad way of doesnt things?
-        logger.debug("centers: {0}".format(centers))
+        logger.debug("centers: {0}".format(centers_per_seq))
         logger.debug("nfeat_simple: {0}".format(nfeat_simple))
-        if nfeat_simple is None and centers[i] == 0:
+        if nfeat_simple is None and centers_per_seq[i] == 0:
             logger.error("No specific features submitted, cannot calculate " +
                          " number centers needed for clustering.  Please" +
                          "submit the desired number of clusters with the  " +
@@ -373,7 +385,7 @@ if __name__ == "__main__":
         logger.debug("rec_nfeat: {0}".format(rec_nfeat))
         indexes = [x[1] for x in list(subset)]  # get index back from tuple key
         ## if centers[i] is 0, try max and min sequentially; if that fails skip
-        if centers[i] == 0:
+        if centers_per_seq[i] == 0:
             if min(rec_nfeat) == 0:
                 current_centers = max(rec_nfeat)
             else:
@@ -386,7 +398,7 @@ if __name__ == "__main__":
                                                DEBUG=args.keep_temps)
         else:
             ## if centers[i] is not 0, use it
-            current_centers = centers[i]
+            current_centers = centers_per_seq[i]
         # Perform actual clustering
         try:
             # indexClusters should be like { "1": [3,4,6], "2": [66,45,63]}
