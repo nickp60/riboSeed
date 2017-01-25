@@ -1,7 +1,8 @@
 ---
+redirect_from: "../riboSeed.html"
 ---
-![riboSeed](../icon/logo_1.png)
 
+![riboSeed](images/logo_1.png)
 # riboSeed: Leveraging bacterial architecture to assemble across ribosomal regions
 We have developed a genome assembly preprocessing scheme, riboSeed, that uses the unique regions flanking the ribosomal coding operons. Please give it a shot and let me know how it goes for you! If you love it, please tweet about it to [#riboSeed](https://twitter.com/search?f=tweets&q=%23riboSeed&src=typd"); if you don't like it, please send me a email instead :)
 
