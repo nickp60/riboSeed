@@ -27,7 +27,7 @@ print(fasta)
 print(fastq1)
 print(fastq2)
 
-for i in ["blastn", "spades.py", "quast.py", "bwa",
+for i in ["blastn", "spades.py", "quast.py", "bwa", "mafft",
           "samtools", "seqret", "barrnap"]:
     assert shutil.which(i) is not None, "{0} executable not found in PATH!".format(i)
 
