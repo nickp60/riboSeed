@@ -20,30 +20,31 @@ A brief overview of the theory can be found [here](https://nickp60.github.io/rib
 * [`External Requirements`](./README.md#external-requirements)
 
 ## Before We Start
-This pipeline is stil very much in testing. Please back up any and all data used, and work within a virtualenv.
+This pipeline is still very much in testing. Please back up any and all data used, and work within a virtualenv.
 
 Genome assembly gobbles RAM. If you, like me, are working on a 4gb RAM lappy, don't run riboSeed in parallel and instead run in series by using the `--serialize` option.  That should prevent you from running out of RAM during the final SPAdes calls.
 
 ## Description
 
-RiboSeed is an supplemental assembly refinemnet method to try to address the issue of multiple ribosomal regions in a genome.  It takes advantage of the fact that while each region is identical, the regions flanking are unique, and therefore can potentially be used to seed an assembly in such a way that rDNA regions are bridged.
+RiboSeed is an supplemental assembly refinement method to try to address the issue of multiple ribosomal regions in a genome.  It takes advantage of the fact that while each region is identical, the regions flanking are unique, and therefore can potentially be used to seed an assembly in such a way that rDNA regions are bridged.
 
 The pipeline (currently) consists of optional preprocessing and two main stages:
 
 ### 0: Preprocessing with riboScan.py
 
-This preprocesses seqeuences straight from DNA fasta if a genbank file with annotated rRNA products is not available.  The issue with many legacy annotations, assemblies, and scaffold collections is they are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml) and seqret (from [`emboss`](http://www.ebi.ac.uk/Tools/emboss/))  to be availible in your path.
+This preprocesses sequences straight from DNA fasta if a GenBank file with annotated rRNA products is not available.  The issue with many legacy annotations, assemblies, and scaffold collections is they are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml) and seqret (from [`emboss`](http://www.ebi.ac.uk/Tools/emboss/))  to be available in your path.
 
 #### Usage
 
-Move your data to its own directory, whether it is a single fasta genome or multiple fasta scaffolds.  For each file it finds in this dir with a given extension, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a genbank file that contains just annotated rRNA features. the last step is a concatenation which, whether or not there are multiple files, makes a single (possiby multi-entry) genbank file ripe for riboseeding.
-* argument 1 is directory containing contig fastas with the prefix given by arg 2
-*    ( must end with sep "/")
-* argument 2 is suffix, such as .fa or .fna, etc
-* argument 3 is the desired output directory
-* argument 4 is kingdom: bac  euk mito arc
-* argument 5 is threshold [float 0-1], where 1 is 100% identity
-* output scanScaffolds_combined.gb in current directory
+Move your data to its own directory, whether it is a single fasta genome or multiple fasta scaffolds.  For each file it finds in this dir with a given extension, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a GenBank file that contains just annotated rRNA features. the last step is a concatenation which, whether or not there are multiple files, makes a single (possibly multi-entry) genbank file ripe for riboSeeding.
+
+<!-- * argument 1 is directory containing contig fastas with the prefix given by arg 2 -->
+<!-- *    ( must end with sep "/") -->
+<!-- * argument 2 is suffix, such as .fa or .fna, etc -->
+<!-- * argument 3 is the desired output directory -->
+<!-- * argument 4 is kingdom: bac  euk mito arc -->
+<!-- * argument 5 is threshold [float 0-1], where 1 is 100% identity -->
+<!-- * output scanScaffolds_combined.gb in current directory -->
 
 ## 1: Selection and Extraction
 
@@ -59,9 +60,9 @@ For extracting ribosomal regions for use in seeded assembly
 
 You will probably want to preview your file to figure out the syntax used. (ie, 16s vs 16S, rRNA vs RRNA, etc...)
 
-For older, fungal or other Eukaryotic genomes, reannotation is frequently required.  For `riboSelect.py`, you will need to change `--specific_features` appropriatly to 5_8S:18S:28S.
+For older, fungal or other Eukaryotic genomes, re-annotation is frequently required.  For `riboSelect.py`, you will need to change `--specific_features` appropriately to 5_8S:18S:28S.
 
-NOTE: the format of the output text file is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropiate. The format is "genome_sequence_id locus_tag1:locus_tag2", where each line represents a cluster. See example below, where 14 rRNA's are clustered into 6 groups:
+NOTE: the format of the output text file is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropriate. The format is "genome_sequence_id locus_tag1:locus_tag2", where each line represents a cluster. See example below, where 14 rRNAs are clustered into 6 groups:
 
 NOTE 2: In order to streamline things, as of version 0.0.3 there will be a commented header line with the feature type in the format "#$ FEATURE <featuretype>", such as "#S FEATURE rRNA".
 
@@ -83,7 +84,7 @@ usage: riboSelect.py [-h] [-o OUTPUT] [-f FEATURE] [-s SPECIFIC_FEATURES]
                      [--debug]
                      genbank_genome
 
-This is used to extract rRNA regions from a gb file, returnsa text file with
+This is used to extract rRNA regions from a gb file, returns a text file with
 the clusters
 
 positional arguments:
@@ -119,7 +120,7 @@ optional arguments:
 
 * `riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
 
-Additionally, it does a lot of plotting to visualize the Shannon entropy, coverage, occurances, and other useful metrics.
+Additionally, it does a lot of plotting to visualize the Shannon entropy, coverage, occurrences, and other useful metrics.
 
 THIS SCRIPT IS NOT LONGER A REQUIRED PART OF THE PIPELINE! It is still included as the plots it generates can be useful for troubleshooting.
 
@@ -176,7 +177,7 @@ optional arguments:
 ```
 
 ## 2: Seeded Assembly
-* `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads into long reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.  RiboSeed2 differs from the legacy version of riboSeed as riboSeed maps to all the regions at once, which minimizes the complications asscociated with multiple mappings. Instead of mapping to all the regions individually, it concatenates them into a faux genome with 5kb spacers of N's in between.  Because of this, it has the added benefit of running much faster.
+* `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads into long reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.  RiboSeed2 differs from the legacy version of riboSeed as riboSeed maps to all the regions at once, which minimizes the complications associated with multiple mappings. Instead of mapping to all the regions individually, it concatenates them into a faux genome with 5kb spacers of N's in between.  Because of this, it has the added benefit of running much faster.
 
 #### Output
 
@@ -184,7 +185,7 @@ The results directory will contain a 'final_long_reads' directory with all the e
 
 #### Usage:
 ##### NOTE:
-If using a comsumer-grade computer, it may be advantagous to run with -z (--serialize).  SPAdes (or any other assembler) tends to require a lot of RAM. So unless you have about 3gb RAM per core,
+If using a consumer-grade computer, it may be advantagous to run with -z (--serialize).  SPAdes (or any other assembler) tends to require a lot of RAM. So unless you have about 3gb RAM per core,
 
 minimal usage: riboSeed.py clustered\_accession\_list.txt -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT
 
@@ -317,9 +318,9 @@ optional arguments:
 Results can be tuned by changing several of the default parameters.
 
 * `--score_min`: With either SMALT or BWA, this can be used to set the minimum mapping score. If using BWA, the default is not to supply a minimum and to rely on the BWA default.  If submitting a `--score_min` to BWA, double check that it is appropriate.  It appears to be extremely sensitive to read length, and having a too-low threshold for minimum mapping can seriously ruin ones day.  Check out IGB or similar to view your mappings if greater than, say, 5% or the reads are mapping in subsequent iterations.  If using SMALT, the default minimum is chosen using this formula:
-1.0 - (1.0 / (2.0 + *i*)), where *i* is the 0-based iteration.  This makes it progressivly more stringent with each iteration, starting with a minimum score of half the read length. Again, visualize your mappings if anything looks amiss.
+1.0 - (1.0 / (2.0 + *i*)), where *i* is the 0-based iteration.  This makes it progressively more stringent with each iteration, starting with a minimum score of half the read length. Again, visualize your mappings if anything looks amiss.
 
-* `--flanking_length`: Default is 1000.  That seems to be a good compramise between gaining unique sequence and not relying too much on the reference.
+* `--flanking_length`: Default is 1000.  That seems to be a good compromise between gaining unique sequence and not relying too much on the reference.
 
 * `--kmers` and `--pre_kmers`: Adjust these as you otherwise would for a *de novo* assembly.
 
@@ -327,13 +328,13 @@ Results can be tuned by changing several of the default parameters.
 
 * `--ref_as_contig`:  This can be used to guide how SPAdes treats the long read sequences during the assembly.
 
-* `--iterations`:  Each iteration typically increases the length of the long read by approximatly 5%.
+* `--iterations`:  Each iteration typically increases the length of the long read by approximately 5%.
 
 * `--smalt_scoring`: You can adjust the SMALT scoring matrix to fine-tune the mapping stringency.
 
 ## 3: Assembly Refinement
 
-Infrequently, riboSeed has joined together contigs that appear incorrect according to your reference.  If you are at all unhappy with a bridgeing, `riboSwap.py` allows swapping of a "bad" contig for one or more syntenic contigs from the *de novo* assembly.
+Infrequently, riboSeed has joined together contigs that appear incorrect according to your reference.  If you are at all unhappy with a bridging, `riboSwap.py` allows swapping of a "bad" contig for one or more syntenic contigs from the *de novo* assembly.
 
 ## Known Bugs
 
@@ -341,7 +342,7 @@ Infrequently, riboSeed has joined together contigs that appear incorrect accordi
 
 ## Running Tests
 
-The tests for the module can be found under the `tests` directory. I run them with the unittests module.  The tests assume the installation of all the reccommended tools.
+The tests for the module can be found under the `tests` directory. I run them with the unittests module.  The tests assume the installation of all the recommended tools.
 
 
 ## Installation
@@ -360,7 +361,7 @@ In the scripts directory, there is a script called `runme.py` which run the pipe
 
 
 
-The trickiest part of this whole business is properly installing SMALT. BWA is definitly the easiest option, and the current default mapper, so dont bther with SMALT unless you need to.
+The trickiest part of this whole business is properly installing SMALT. BWA is definitely the easiest option, and the current default mapper, so don't bother with SMALT unless you need to.
 
 ### Python Requirements:
 

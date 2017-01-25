@@ -1,23 +1,23 @@
 ---
 ---
-![riboSeed](https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.png)
+![riboSeed](../icon/logo_1.png)
 
 # riboSeed: Leveraging bacterial architecture to assemble across ribosomal regions
 We have developed a genome assembly preprocessing scheme, riboSeed, that uses the unique regions flanking the ribosomal coding operons. Please give it a shot and let me know how it goes for you! If you love it, please tweet about it to [#riboSeed](https://twitter.com/search?f=tweets&q=%23riboSeed&src=typd"); if you don't like it, please send me a email instead :)
 
-##Theory
+## Theory
 
 rDNAs, the genomic regions containing the sequences coding for ribosomal RNAs, are often found multiple times in a single genome. Due to how well rDNA is conserved within a taxa, we hypothesized that if the regions flanking the rDNAs are sufficiently unique within a genome, those regions would be able to locate an rDNA within the genome during assembly.
 
 ![Shannon Entropy](images/entropy_plot.png)
 Here, we have extracted all 7 of the rDNA and 1kb flanking regions from the *E. coli Sakai * genome, aligned the sequences, and calculated the coverage and Shannon entropy for the alignments.  This shows a high degree of conservation for the actual coding sequences, but sharply increasing entropy in the flanking regions immediately preceding and following.  This shows that rDNAs, while having nearly identical coding sequences within a genome, have unique flanking regions.
 
-##*De Fere Novo* Assembly
+## *De Fere Novo* Assembly
 
 We call our method a *de fere novo* assembly, as we use a subassembly technique to minimize the bias caused by reference choice.  We map the short reads to the reference genome, extract the reads mapping to rDNA (with flanking) regions, and perform subassemblies with [SPAdes](http://bioinf.spbau.ru/spades) to reassemble the rDNA and flanking regions from the reads.  These "long reads" are concatenated together separated with 5kb of N's. The reads not mapping to the original rDNA regions are then mapped to the concatenated sequence and and subassembled for several additional iterations.
 
 
-##Sample Dataset
+## Sample Dataset
 
 We generated a simulated genome from the 7 rDNA regions with 5kb flanking regions, and then used [ART (MountRainier-2016-06-05)]("https://www.niehs.nih.gov/research/resources/software/biostatistics/art/") to generated simulated MiSeq reads of various depths.
 
