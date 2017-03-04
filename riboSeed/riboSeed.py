@@ -42,7 +42,7 @@ from riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
 
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
-PACKAGE_VERSION = '0.0.5'
+PACKAGE_VERSION = '0.0.6'
 # --------------------------- classes --------------------------- #
 
 
@@ -270,10 +270,10 @@ class NgsLib(object):
     def check_mands(self):
         """ checks that all mandatory arguments are not none
         """
-        mandatory = [self.name, self.readF, self.readR, self.ref_fasta]
-        if None in mandatory:
+        mandatory_other = [self.name, self.ref_fasta]
+        if None in mandatory_other:
             raise ValueError("SeedGenome must be instantiated with name, "
-                             "forward reads, reverse reads, and ref fasta")
+                             "and ref fasta")
 
     def set_libtype(self):
         """sets to either s_1, pe, pe_s based on Non-none libraries
@@ -281,17 +281,22 @@ class NgsLib(object):
         """
         if self.readF is None:
             if self.readR is None:
-                if self.readS0 is not None:
-                    self.libtype = "s_1"
+                if self.readS0 is None:
+                    raise ValueError(
+                        "Must have at least either a paired library or " +
+                        "single library")
                 else:
-                    raise ValueError("cannot set library type")
+                    # if self.readS1 is None:
+                    self.libtype = "s_1"  # single library
+                    # else:
+                    #     self.libtype = "s_2"  # 2 single libraries
             else:
                 raise ValueError("cannot set library type from one PE read")
         else:
             if self.readS0 is not None:
-                self.libtype = "pe_s"
+                self.libtype = "pe_s"  # paired end and single
             else:
-                self.libtype = "pe"
+                self.libtype = "pe"  # just paired end
 
     def get_readlen(self):
         """ If NgsLib is master, estimate the read lengh using
@@ -299,6 +304,7 @@ class NgsLib(object):
         """
         if self.master is not True:
             return None
+
         if self.libtype in ['pe', 'pe_s']:
             self.readlen = get_ave_read_len_from_fastq(
                 self.readF, N=36, logger=self.logger)
@@ -334,8 +340,7 @@ class NgsLib(object):
         """
         for f in [self.readF,
                   self.readR,
-                  self.readS0,
-                  self.readS1]:
+                  self.readS0]:
             if f is not None:
                 if os.path.isfile(f):
                     os.unlink(f)
@@ -507,12 +512,6 @@ def get_args():  # pragma: no cover
 
     # taking a hint from http://stackoverflow.com/questions/24180527
     requiredNamed = parser.add_argument_group('required named arguments')
-    requiredNamed.add_argument("-F", "--fastq1", dest='fastq1', action="store",
-                               help="forward fastq reads, can be compressed",
-                               type=str, default="", required=True)
-    requiredNamed.add_argument("-R", "--fastq2", dest='fastq2', action="store",
-                               help="reverse fastq reads, can be compressed",
-                               type=str, default="", required=True)
     requiredNamed.add_argument("-r", "--reference_genbank",
                                dest='reference_genbank',
                                action="store", default='', type=str,
@@ -527,7 +526,16 @@ def get_args():  # pragma: no cover
     # had to make this faux "optional" parse so that the named required ones
     # above get listed first
     optional = parser.add_argument_group('optional arguments')
-    optional.add_argument("-S", "--fastq_single", dest='fastqS',
+    optional.add_argument("-F", "--fastq1", dest='fastq1', action="store",
+                          help="forward fastq reads, can be compressed",
+                          type=str, default=None)
+    optional.add_argument("-R", "--fastq2", dest='fastq2', action="store",
+                          help="reverse fastq reads, can be compressed",
+                          type=str, default=None)
+    optional.add_argument("-S1", "--fastq_single1", dest='fastqS1',
+                          action="store",
+                          help="single fastq reads", type=str, default=None)
+    optional.add_argument("-S2", "--fastq_single2", dest='fastqS2',
                           action="store",
                           help="single fastq reads", type=str, default=None)
     optional.add_argument("-n", "--experiment_name", dest='exp_name',
@@ -899,7 +907,6 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     # if singletons are present, map those too.  Index is already made
     if ngsLib.readS0 is not None:  # and not ignore_singletons:
         # because erros are thrown if there is no file, this
-        # makes a dummmy file to prevent the merge errorrs
         cmdmapS = str(
             "{0} map -S {1} -m {2} -n {3} -g {4} -f bam -o {5} " +
             "{6} {7}").format(smalt_exe, scoring, score_min, cores,
@@ -1914,7 +1921,8 @@ def get_final_assemblies_cmds(seedGenome, exes,
 
         logger.info("Getting commands for %s SPAdes" % j)
         spades_cmd = generate_spades_cmd(
-            single_lib=False, check_libs=True,
+            single_lib=seedGenome.master_ngs_ob.libtype == "s_1",
+            check_libs=True,
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
             k=kmers, spades_exe=exes.spades, logger=logger)
@@ -2099,14 +2107,6 @@ if __name__ == "__main__":  # pragma: no cover
     else:
         logger.info("BWA is the selected mapper")
 
-    # check equal length fastq.  This doesnt actually check propper pairs
-    logger.debug("Checking that the fastq pair have equal number of reads")
-    try:
-        check_fastqs_len_equal(file1=args.fastq1, file2=args.fastq2)
-    except Exception as e:  # not just value error, whatever file_len throws
-        logger.error(last_exception())
-        sys.exit(1)
-
     # if the target_len is set. set needed params
     try:
         proceed_to_target = decide_proceed_to_target(
@@ -2134,17 +2134,27 @@ if __name__ == "__main__":  # pragma: no cover
 
     seedGenome.iter_mapping_list[0].ref_fasta = seedGenome.ref_fasta
     # add ngslib object for user supplied NGS data
+    logger.debug("adding the sequencing libraries to the seedGenome")
+    logger.debug(args.fastqS1)
     seedGenome.master_ngs_ob = NgsLib(
         name="master",
         master=True,
         make_dist=args.method == "smalt",
         readF=args.fastq1,
         readR=args.fastq2,
-        readS0=args.fastqS,
+        readS0=args.fastqS1,
+        # readS1=args.fastqS2,
         logger=logger,
         mapper_exe=sys_exes.mapper,
         ref_fasta=seedGenome.ref_fasta)
-
+    if "pe" in seedGenome.master_ngs_ob.libtype:
+        # check equal length fastq.  This doesnt actually check propper pairs
+        logger.debug("Checking that the fastq pair have equal number of reads")
+        try:
+            check_fastqs_len_equal(file1=args.fastq1, file2=args.fastq2)
+        except Exception as e:  # not just value error, whatever file_len throws
+            logger.error(last_exception())
+            sys.exit(1)
     # read in riboSelect clusters, make a lociCluster ob for each,
     # which get placed in seedGenome.loci_clusters
     seedGenome.loci_clusters = parse_clustered_loci_file(
@@ -2282,7 +2292,7 @@ if __name__ == "__main__":  # pragma: no cover
                 cores=(args.cores * args.threads),
                 # ignore_singletons=args.ignoreS,
                 samtools_exe=sys_exes.samtools,
-                single_lib=seedGenome.this_iteration != 0,
+                single_lib=seedGenome.this_iteration != 0 or seedGenome.master_ngs_ob.libtype == "s_1",
                 smalt_exe=sys_exes.mapper,
                 score_minimum=score_minimum,
                 step=3, k=5,
@@ -2296,7 +2306,7 @@ if __name__ == "__main__":  # pragma: no cover
                 ngsLib=unmapped_ngsLib,
                 # ignore_singletons=args.ignoreS,
                 cores=(args.cores * args.threads),
-                single_lib=seedGenome.this_iteration != 0,
+                single_lib=seedGenome.this_iteration != 0 or seedGenome.master_ngs_ob.libtype == "s_1",
                 samtools_exe=sys_exes.samtools,
                 bwa_exe=sys_exes.mapper,
                 score_minimum=score_minimum,

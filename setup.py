@@ -92,7 +92,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='sample bioinformatics setuptools development',
+    keywords='bioinformatics assembly genomics development',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
@@ -151,6 +151,6 @@ setup(
     scripts=['riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
              'riboSeed/riboSnag.py', 'riboSeed/riboSwap.py',
              'riboSeed/riboScan.py', "scripts/runme.py", "scripts/OSX_INSTALL_DEPS.sh",
-             'scripts/scanScaffolds.sh', 'scripts/example_batch.sh',
+             'scripts/example_batch.sh',
              'scripts/multifasta_splitter.sh', 'scripts/concatToyGenome.py'],
 )
