@@ -1,2 +1,2 @@
 # MAJOR CHANGES: added a manifest
-__version__ = '0.0.5995'
+__version__ = '0.1.0'

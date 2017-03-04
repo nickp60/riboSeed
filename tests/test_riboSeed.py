@@ -201,18 +201,16 @@ class riboSeedTestCase(unittest.TestCase):
             readS0="dummy",
             ref_fasta=self.ref_fasta,
             mapper_exe=self.smalt_exe)
-        #  this test should go away when we allow running with single lib
-        with self.assertRaises(ValueError):
-            testlib_s = NgsLib(
-                name="test",
-                master=False,
-                readF=None,
-                readR=None,
-                readS0=self.ref_Ffastq,
-                ref_fasta=self.ref_fasta,
-                mapper_exe=self.smalt_exe)
-            self.assertEqual(testlib_s.libtype, "s_1")
-            self.assertEqual(testlib_s.readlen, 145.0)
+        testlib_s = NgsLib(
+            name="test",
+            master=True,
+            readF=None,
+            readR=None,
+            readS0=self.ref_Ffastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.smalt_exe)
+        self.assertEqual(testlib_s.libtype, "s_1")
+        self.assertEqual(testlib_s.readlen, 145.0)
         # test unnamed fails
         with self.assertRaises(ValueError):
             NgsLib(
