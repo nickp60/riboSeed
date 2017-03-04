@@ -14,12 +14,6 @@ import subprocess
 import logging
 import os
 import traceback
-# import gffutils
-
-# from Bio import SeqIO
-# from Bio.Seq import Seq
-# from Bio.SeqRecord import SeqRecord
-# from Bio.Alphabet import IUPAC
 
 # need this line for unittesting
 sys.path.append(os.path.join('..', 'riboSeed'))
@@ -60,9 +54,9 @@ def get_args():  # pragma: no cover
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("-k", "--kingdom", dest='kingdom',
                           action="store",
-                          choices=["bac", "euk"],
-                          help="whether to look for eukaryotic or " +
-                          "bacterial rDNA; " +
+                          choices=["bac", "euk", "arc", "mito"],
+                          help="whether to look for eukaryotic, archaeal, or" +
+                          " bacterial rDNA; " +
                           "default: %(default)s", default="bac",
                           type=str)
     optional.add_argument("-t", "--id_thresh", dest='id_thresh',
