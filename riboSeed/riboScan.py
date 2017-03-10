@@ -105,7 +105,10 @@ def parse_fasta_header(first_line):
         accession = re.search(r">gi\|.*?\|.*?\|(.*?)\|",
                               first_line).groups()[0]
     else:
-        accession = re.search(r">(.*?) .*", first_line).groups()[0]
+        try:  # this handles normal flavored fastas with '>seqid descr'
+            accession = re.search(r">(.*?) .*", first_line).groups()[0]
+        except AttributeError:  # this handles headers with only '>seqid\n'
+            accession = first_line.strip().replace(">", "")
     if accession is None:
         raise ValueError(
             "unable to extract accession from first line in file: \n%s".format(

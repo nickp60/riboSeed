@@ -1364,8 +1364,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
             " return code 1")
         return 1
     else:
-        logger.debug("return code 1")
-
+        logger.debug("return code 0")
         return 0
 
 
