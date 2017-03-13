@@ -352,7 +352,7 @@ riboSeed is on Pypi, so you can install with pip or within a virtualenv (probabl
 
 or
 
-`mkvirtualenv riboSeedVE -p python3.5 -i riboSeed `
+` virtualenv -p python3.5 venv-riboSeed `
 
 You can also clone this repository, and run `python3.5 setup.py install`.
 
@@ -367,7 +367,7 @@ The trickiest part of this whole business is properly installing SMALT. BWA is d
 
 * Python v3.5 or higher
 * Biopython
-* pyutilsrnw
+* pyutilsnrw
 
 ### External Requirements
 
