@@ -3,6 +3,7 @@
 """
 import argparse
 import os
+import sys
 import glob
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
@@ -74,6 +75,11 @@ def concat_genome(input_dir, ext, outpath, verbose=False):
 if __name__ == "__main__":
     args = get_args()
     print(args)
+    try:
+        os.makedirs(args.output)
+    except OSError:
+        print("Output directory already exists.  Exiting")
+        sys.exit(1)
 
     res = concat_genome(input_dir=args.indir, ext=args.ext,
                         outpath=os.path.join(args.output,
