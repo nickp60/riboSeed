@@ -365,9 +365,12 @@ The trickiest part of this whole business is properly installing SMALT. BWA is d
 
 ### Python Requirements:
 
-* Python v3.5 or higher
-* Biopython
-* pyutilsnrw
+* Python >= v3.5
+* Biopython v1.68
+* pysam v0.9.1.4,
+* pyutilsnrw >= 0.0.768
+* matplotlib v1.5.3
+* pandas v0.18.1
 
 ### External Requirements
 

@@ -32,10 +32,9 @@ def get_args():  # pragma: no cover
     make this able to handle different library types such as two unpaired runs
     """
     parser = argparse.ArgumentParser(
-        description="Given de novo and de fere novo contigs files, a " +
-        "misjoined de fere novo contig name,  and a colon:separated " +
-        "list of de novo contig names, replace the offending contig with " +
-        "the de novo contig(s) ",
+        description="Given a directory of one or more chromosomes as fasta " +
+        "files, this facilitates reannotation of rDNA regions with Barrnap " +
+        " and outputs all sequences as a single, annotated genbank file",
         add_help=False)  # to allow for custom help
     parser.add_argument("contigs_dir", action="store",
                         help="multifasta containing de fere novo contigs")
