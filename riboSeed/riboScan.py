@@ -219,7 +219,12 @@ if __name__ == "__main__":  # pragma: no cover
         output_root,
         "scannedScaffolds.gb")
     ##  get and check list of input files
-    fastas = glob.glob(str(args.contigs_dir + "*" + args.ext))
+    if not os.path.isdir(os.path.expanduser(args.contigs_dir)):
+        logger.error("'%s' is not a valid directory",
+                     os.path.expanduser(args.contigs_dir))
+        sys.exit(1)
+    fastas = glob.glob(os.path.join(os.path.expanduser(args.contigs_dir),
+                                    "*" + args.ext))
     if len(fastas) == 0:
         logger.error("No fasta files in %s with extention %s! Exiting",
                      args.contigs_dir, args.ext)
