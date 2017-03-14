@@ -122,7 +122,8 @@ def get_args():  # pragma: no cover
     """
     parser = argparse.ArgumentParser(description="Use to extract regions " +
                                      "of interest based on supplied Locus " +
-                                     " tags.", add_help=False)
+                                     "tags and evaluate the extracted regions",
+                                     add_help=False)
     parser.add_argument("genbank_genome", help="Genbank file (WITH SEQUENCE)")
     parser.add_argument("clustered_loci", help="output from riboSelect")
 
@@ -135,14 +136,6 @@ def get_args():  # pragma: no cover
     # had to make this faux "optional" parse so that the named required ones
     # above get listed first
     optional = parser.add_argument_group('optional arguments')
-    # parser.add_argument("-f", "--feature", help="Feature, such as CDS,tRNA, " +
-    #                     "rRNA; default: %(default)s",
-    #                     default='rRNA', dest="feature",
-    #                     action="store", type=str)
-    # optional.add_argument("-w", "--within_feature_length",
-    #                       help="bp's to include within the region; " +
-    #                       "default: %(default)s",
-    #                       default=0, dest="within", action="store", type=int)
     optional.add_argument("-n", "--name",
                           help="rename the contigs with this prefix" +
                           # "default: %(default)s",

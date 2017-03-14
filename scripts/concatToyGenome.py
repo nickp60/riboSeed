@@ -15,9 +15,9 @@ def get_args():  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
     """
-    parser = argparse.ArgumentParser(description="This is used to extract" +
-                                     " rRNA regions from a gb file, returns" +
-                                     "a text file with the clusters")
+    parser = argparse.ArgumentParser(
+        description="This is used to combine regions extracted with " +
+        "riboSnag, creating a single sequence")
     parser.add_argument("indir", help="Directory with fasta's to concatenate")
     parser.add_argument("ext", help="Extension of files to concatenate")
     requiredNamed = parser.add_argument_group('required named arguments')

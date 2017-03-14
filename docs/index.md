@@ -29,7 +29,7 @@ We generated a simulated genome from the 7 rDNA regions with 5kb flanking region
 
 ![Simulated Genome Results](images/mauve_simulated.png)
 
-In this [Mauve](http://darlinglab.org/mauve/mauve.html) visualization, we show (from top to bottom) the reference simulated genome, riboSeed's  *de fere novo* assembly,  *de novo* assembly, and a negative control  *de fere novo* assembly using a *Klebsiella* reference genome.  The results show that with riboSeed's *de fere novo* assembly correctly joins the repeated regions to reconstruct the simulated genome with only short reads.  By contrast, the short reads alone failed to bridge any of the gaps caused by the repeated rDNAs, as did the assembly using a poor reference choice. We have run this successfully on many real datasets with positive results
+In this [Mauve](http://darlinglab.org/mauve/mauve.html) visualization, we show (from top to bottom) the reference simulated genome, riboSeed's  *de fere novo* assembly,  *de novo* assembly, and a negative control  *de fere novo* assembly using a *Klebsiella* reference genome.  The results show that with riboSeed's *de fere novo* assembly correctly joins six of the seven rDNA regions to reconstruct the simulated genome with only short reads.  By contrast, the short reads alone failed to bridge any gaps caused by the repeated rDNAs, and the assembly using a poor reference choice only assembled across a single rDNA region. We have run this successfully on many real datasets with positive results
 
 
 ## Conclusions
