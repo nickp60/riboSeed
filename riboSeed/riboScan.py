@@ -122,12 +122,17 @@ def parse_fasta_header(first_line):
 def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom):
     assert shutil.which(exe) is not None, "barrnap executable not found!"
     assert thresh > 0 and thresh < 1, "Thresh must be between 0 and 1!"
-    cmd = "{0} -kingdom {1} {2} --reject {3} > {4}".format(
+    if exe.endswith("py"):
+        pyexe = sys.executable  # ensure running python barrnap uses >3.5
+    else:
+        pyexe = ""
+    cmd = "{5} {0} -k {1} {2} --reject {3} > {4}".format(
         shutil.which(exe),
         kingdom,
         infasta,
         thresh,
-        outgff)
+        outgff,
+        pyexe)
     return cmd
 
 
