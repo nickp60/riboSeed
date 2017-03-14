@@ -12,9 +12,6 @@ import os
 import traceback
 
 from Bio import SeqIO
-# from Bio.Seq import Seq
-# from Bio.SeqRecord import SeqRecord
-# from Bio.Alphabet import IUPAC
 
 # need this line for unittesting
 sys.path.append(os.path.join('..', 'riboSeed'))
@@ -27,11 +24,6 @@ from pyutilsnrw.utils3_5 import set_up_logging
 
 
 def get_args():  # pragma: no cover
-    """#TODO:     for cli mods:
-    http://stackoverflow.com/questions/18025646/
-         python-argparse-conditional-requirements
-    make this able to handle different library types such as two unpaired runs
-    """
     parser = argparse.ArgumentParser(
         description="Given de novo and de fere novo contigs files, a " +
         "misjoined de fere novo contig name,  and a colon:separated " +

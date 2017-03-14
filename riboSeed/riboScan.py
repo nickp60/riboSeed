@@ -37,10 +37,12 @@ def get_args():  # pragma: no cover
         " and outputs all sequences as a single, annotated genbank file",
         add_help=False)  # to allow for custom help
     parser.add_argument("contigs_dir", action="store",
-                        help="multifasta containing de fere novo contigs")
+                        help="directory containing one or more chromosomal "+
+                        "sequences in fasta format")
 
     parser.add_argument("ext", action="store",
-                        help="name of the bad contig")
+                        help="extension of the chromosomal sequences, " +
+                        "usually '.fasta' or similar")
     # taking a hint from http://stackoverflow.com/questions/24180527
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument("-o", "--output", dest='output', action="store",
@@ -60,17 +62,19 @@ def get_args():  # pragma: no cover
                           type=str)
     optional.add_argument("-t", "--id_thresh", dest='id_thresh',
                           action="store", type=float,
-                          help="; " +
+                          help="partial rRNA hits below this threshold will " +
+                          "be ignored. " +
                           "default: %(default)s", default=0.5,
                           )
     optional.add_argument("-b", "--barrnap_exe", dest='barrnap_exe',
                           action="store",
-                          help="; " +
+                          help="path to barrnap executable; " +
                           "default: %(default)s", default="barrnap",
                           type=str)
     optional.add_argument("-s", "--seqret_exe", dest='seqret_exe',
                           action="store",
-                          help="; " +
+                          help="path to seqret executable, usually " +
+                          "installed with emboss; " +
                           "default: %(default)s", default="seqret",
                           type=str)
     optional.add_argument("-v", "--verbosity", dest='verbosity',

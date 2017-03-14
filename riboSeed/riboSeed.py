@@ -217,10 +217,10 @@ class SeedGenome(object):
 
 
 class NgsLib(object):
-    """ NgsLib objects are used to hold the sequencing data suplied by the
+    """ NgsLib objects are used to hold the sequencing data supplied by the
     user (master) and the seq data extracted from each iteration. Currently the
-    software requires paired-end data, but this should handle more diverse
-    library types in the future.
+    software requires either a paired-end or single-end library, but this
+    should handle more diverse library types in the future.
 
     If ngsLib is master, read lengths are determined and if smalt is used for
     mapping, a distance estimation file is generated.
@@ -554,7 +554,7 @@ def get_args():  # pragma: no cover
                           default='bwa', type=str)
     optional.add_argument("-c", "--cores", dest='cores', action="store",
                           default=None, type=int,
-                          help="cores for multiprocessing workers" +
+                          help="cores for multiprocessing" +
                           "; default: %(default)s")
     optional.add_argument("-k", "--kmers", dest='kmers', action="store",
                           default="21,33,55,77,99,127", type=str,
@@ -572,12 +572,6 @@ def get_args():  # pragma: no cover
                           help="min score for smalt mapping; inferred from " +
                           "read length" +
                           "; default: inferred")
-    optional.add_argument("--include_shorts", dest='include_short_contigs',
-                          action="store_true",
-                          default=False,
-                          help="if assembled contig is smaller than  " +
-                          "--min_assembly_len, contig will still be included" +
-                          " in assembly; default: inferred")
     optional.add_argument("-a", "--min_assembly_len", dest='min_assembly_len',
                           action="store",
                           default=6000, type=int,
@@ -586,6 +580,12 @@ def get_args():  # pragma: no cover
                           "exit. Set this to the length of the seed " +
                           "sequence; if it is not achieved, seeding across " +
                           "regions will likely fail; default: %(default)s")
+    optional.add_argument("--include_shorts", dest='include_short_contigs',
+                          action="store_true",
+                          default=False,
+                          help="if assembled contig is smaller than  " +
+                          "--min_assembly_len, contig will still be included" +
+                          " in assembly; default: inferred")
     optional.add_argument("--linear",
                           help="if genome is known to not be circular and " +
                           "a region of interest (including flanking bits) " +
@@ -617,15 +617,15 @@ def get_args():  # pragma: no cover
     optional.add_argument("--skip_control", dest='skip_control',
                           action="store_true",
                           default=False,
-                          help="if --skip_control, no SPAdes-only de novo " +
+                          help="if --skip_control, no de novo " +
                           "assembly will be done; default: %(default)s")
     optional.add_argument("-i", "--iterations", dest='iterations',
                           action="store",
                           default=3, type=int,
                           help="if iterations>1, multiple seedings will " +
-                          "occur after assembly of seed regions; " +
+                          "occur after subassembly of seed regions; " +
                           "if setting --target_len, seedings will continue " +
-                          "until --iterations are completed or target_len"
+                          "until --iterations are completed or --target_len"
                           " is matched or exceeded; " +
                           "default: %(default)s")
     optional.add_argument("-v", "--verbosity", dest='verbosity',
@@ -657,13 +657,14 @@ def get_args():  # pragma: no cover
     optional.add_argument("-z", "--serialize", dest='serialize',
                           action="store_true",
                           default=False,
-                          help="if --serialize, runs seeding in " +
-                          "single loop instead of a multiprocessing pool" +
-                          ": %(default)s")
+                          help="if --serialize, runs seeding and assembly " +
+                          "without multiprocessing. This is recommended for " +
+                          "machines with less than 8GB RAM: %(default)s")
     optional.add_argument("--smalt_scoring", dest='smalt_scoring',
                           action="store",
                           default="match=1,subst=-4,gapopen=-4,gapext=-3",
-                          help="submit custom smalt scoring via smalt -S " +
+                          help="if mapping with SMALT, " +
+                          "submit custom smalt scoring via smalt -S " +
                           "scorespec option; default: %(default)s")
     optional.add_argument("--mapper_args", dest='mapper_args',
                           action="store",

@@ -29,8 +29,9 @@ def get_args():  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
     """
-    parser = argparse.ArgumentParser(description="This is used to extract" +
-                                     " rRNA regions from a gb file, returns" +
+    parser = argparse.ArgumentParser(description="This is used to identify" +
+                                     " and cluster rRNA regions from a gb " +
+                                     "file, returns" +
                                      "a text file with the clusters")
     parser.add_argument("genbank_genome", help="Genbank file (WITH SEQUENCE)")
     requiredNamed = parser.add_argument_group('required named arguments')
@@ -65,7 +66,7 @@ def get_args():  # pragma: no cover
     optional.add_argument("-c", "--clusters",
                           help="number of rDNA clusters;"
                           "if submitting multiple records, must be a "
-                          "colon:separated list that matches number "
+                          "colon:separated list whose length matches number "
                           "of genbank records.  Default is inferred from "
                           "specific feature with fewest hits", default='',
                           type=str, dest="clusters")
@@ -277,7 +278,7 @@ if __name__ == "__main__":
     try:
         os.makedirs(args.output)
     except FileExistsError:
-         # leaving comment char'#' added for stream output usage
+         # leading comment char'#' added for stream output usage
         print("#Selected output directory %s exists" %
               args.output)
         if not args.clobber:
