@@ -165,7 +165,8 @@ if __name__ == "__main__":  # pragma: no cover
     rep_names = args.good_contigs.strip().split(":")
     ###
     try:
-        outf = remove_bad_contig(infile=args.de_fere_novo_file, outfile=output_file,
+        outf = remove_bad_contig(infile=args.de_fere_novo_file,
+                                 outfile=output_file,
                                  bad_name=args.bad_contig,
                                  logger=logger)
     except:

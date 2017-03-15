@@ -11,9 +11,9 @@ A brief overview of the theory can be found [here](https://nickp60.github.io/rib
 ## Table of Contents
 
 * [`Description`](./README.md#description)
-* [`riboScan: Preprocessing`](./README.md#0-preprocessing-with-riboscanpy)
-* [`riboSnag: Selection and Extraction`](./README.md#1-selection-and-extraction)
-* [`riboSeed: Seeded Assembly`](./README.md#3-seeded-assembly)
+* [`riboScan: Preprocessing`](./README.md#0-preprocessing)
+* [`riboSelect: Determine rDNA Operon Structure`](./README.md#1-selection-and-extraction)
+* [`riboSeed: Seeded Assembly`](./README.md#2-seeded-assembly)
 * [`riboSeed Key Parameters`](./README.md#key-parameters)
 * [`riboSwap: Assembly Refinement`](./README.md#3-assembly-refinement)
 * [`Installation`](./README.md#installation)
@@ -26,43 +26,70 @@ Genome assembly gobbles RAM. If you, like me, are working on a 4gb RAM lappy, do
 
 ## Description
 
-RiboSeed is an supplemental assembly refinement method to try to address the issue of multiple ribosomal regions in a genome.  It takes advantage of the fact that while each region is identical, the regions flanking are unique, and therefore can potentially be used to seed an assembly in such a way that rDNA regions are bridged.
+riboSeed is an supplemental assembly refinement method to try to address the issue of multiple ribosomal regions in a genome, as these create repeates unresolvable by short read sequencing.  It takes advantage of the fact that while each region is identical, the regions flanking are unique, and therefore can potentially be used to seed an assembly in such a way that rDNA regions are bridged.
 
 The pipeline (currently) consists of optional preprocessing and two main stages:
 
-### 0: Preprocessing with riboScan.py
-
-This preprocesses sequences straight from DNA fasta if a GenBank file with annotated rRNA products is not available.  The issue with many legacy annotations, assemblies, and scaffold collections is they are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml) and seqret (from [`emboss`](http://www.ebi.ac.uk/Tools/emboss/))  to be available in your path.
+## 0: Preprocessing
+### `riboScan.py`
+`riboScan.py` preprocesses sequences straight from DNA fasta if a GenBank file with annotated rRNA products is not available.  The issue with many legacy annotations, assemblies, and scaffold collections is they are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml) and seqret (from [`emboss`](http://www.ebi.ac.uk/Tools/emboss/))  to be available in your path.
 
 #### Usage
 
-Move your data to its own directory, whether it is a single fasta genome or multiple fasta scaffolds.  For each file it finds in this dir with a given extension, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a GenBank file that contains just annotated rRNA features. the last step is a concatenation which, whether or not there are multiple files, makes a single (possibly multi-entry) genbank file ripe for riboSeeding.
+Move your data to its own directory, whether it is a single fasta genome or multiple fasta scaffolds.  For each file it finds in this dir with a given extension, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a GenBank file that contains just annotated rRNA features. The last step is a concatenation which, whether or not there are multiple files, makes a single (possibly multi-entry) genbank file perfect for riboSeed-ing.
 
-<!-- * argument 1 is directory containing contig fastas with the prefix given by arg 2 -->
-<!-- *    ( must end with sep "/") -->
-<!-- * argument 2 is suffix, such as .fa or .fna, etc -->
-<!-- * argument 3 is the desired output directory -->
-<!-- * argument 4 is kingdom: bac  euk mito arc -->
-<!-- * argument 5 is threshold [float 0-1], where 1 is 100% identity -->
-<!-- * output scanScaffolds_combined.gb in current directory -->
+```
+usage: riboScan.py -o OUTPUT [-k {bac,euk,arc,mito}] [-t ID_THRESH]
+                   [-b BARRNAP_EXE] [-s SEQRET_EXE] [-v {1,2,3,4,5}] [-h]
+                   contigs_dir ext
+
+Given a directory of one or more chromosomes as fasta files, this facilitates
+reannotation of rDNA regions with Barrnap and outputs all sequences as a
+single, annotated genbank file
+
+positional arguments:
+  contigs_dir           directory containing one or more chromosomal sequences
+                        in fasta format
+  ext                   extension of the chromosomal sequences, usually
+                        '.fasta' or similar
+
+required named arguments:
+  -o OUTPUT, --output OUTPUT
+                        output directory; default:
+                        /home/nicholas/GitHub/riboSeed
+
+
+optional arguments:
+  -k {bac,euk,arc,mito}, --kingdom {bac,euk,arc,mito}
+                        whether to look for eukaryotic, archaeal, or bacterial
+                        rDNA; default: bac
+  -t ID_THRESH, --id_thresh ID_THRESH
+                        partial rRNA hits below this threshold will be
+                        ignored. default: 0.5
+  -b BARRNAP_EXE, --barrnap_exe BARRNAP_EXE
+                        path to barrnap executable; default: barrnap
+  -s SEQRET_EXE, --seqret_exe SEQRET_EXE
+                        path to seqret executable, usually installed with
+                        emboss; default: seqret
+  -v {1,2,3,4,5}, --verbosity {1,2,3,4,5}
+                        Logger writes debug to file in output dir; this sets
+                        verbosity level sent to stderr. 1 = debug(), 2 =
+                        info(), 3 = warning(), 4 = error() and 5 = critical();
+                        default: 2
+  -h, --help            Displays this help message
+```
+
 
 ## 1: Selection and Extraction
 
-
-For extracting other conserved regions for use in seeded assembly:
-
-* `otherSelect` [under development]
-
-
-For extracting ribosomal regions for use in seeded assembly
-
-* `riboSelect.py` searches the genome for rRNA annotations, clusters them into likely ribosomal groups, and outputs a colon-separated list of clustered rRNA locus tags by record id.
+### `riboSelect.py`
+`riboSelect.py` searches the genome for rRNA annotations, clusters them into likely ribosomal groups, and outputs a colon-separated list of clustered rRNA locus tags by record id.
 
 You will probably want to preview your file to figure out the syntax used. (ie, 16s vs 16S, rRNA vs RRNA, etc...)
 
-For older, fungal or other Eukaryotic genomes, re-annotation is frequently required.  For `riboSelect.py`, you will need to change `--specific_features` appropriately to 5_8S:18S:28S.
+If not using `riboScan.py` or if not working with a bacterial genome, you will need to change `--specific_features` appropriately to reflect the annotations in your reference (ie, for a fungal genome, use `--specific_features 5_8S:18S:28S`).
 
-NOTE: the format of the output text file is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropriate. The format is "genome_sequence_id locus_tag1:locus_tag2", where each line represents a cluster. See example below, where 14 rRNAs are clustered into 6 groups:
+NOTE: the format of the output text file is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropriate. The format is `genome_sequence_id locus_tag1:locus_tag2`, where each line represents a cluster. See example below, where 14 rRNAs are clustered into 6 groups:
 
 NOTE 2: In order to streamline things, as of version 0.0.3 there will be a commented header line with the feature type in the format "#$ FEATURE <featuretype>", such as "#S FEATURE rRNA".
 
@@ -84,8 +111,8 @@ usage: riboSelect.py [-h] [-o OUTPUT] [-f FEATURE] [-s SPECIFIC_FEATURES]
                      [--debug]
                      genbank_genome
 
-This is used to extract rRNA regions from a gb file, returns a text file with
-the clusters
+This is used to identify and cluster rRNA regions from a gb file, returns a
+text file with the clusters
 
 positional arguments:
   genbank_genome        Genbank file (WITH SEQUENCE)
@@ -95,7 +122,8 @@ optional arguments:
 
 required named arguments:
   -o OUTPUT, --output OUTPUT
-                        output directory; default: cwd
+                        output directory;default:
+                        /home/nicholas/GitHub/riboSeed
 
 optional arguments:
   -f FEATURE, --feature FEATURE
@@ -103,22 +131,25 @@ optional arguments:
   -s SPECIFIC_FEATURES, --specific_features SPECIFIC_FEATURES
                         colon:separated -- specific features; default:
                         16S:23S:5S
-  --keep_temps          view intermediate clustering files; default: False
-  --clobber             overwrite previous output files; default: False
+  --keep_temps          view intermediate clustering filesdefault: False
+  --clobber             overwrite previous output files: default: False
   -c CLUSTERS, --clusters CLUSTERS
                         number of rDNA clusters;if submitting multiple
-                        records, must be a colon:separated list that matches
-                        number of genbank records. Default is inferred from
-                        specific feature with fewest hits
+                        records, must be a colon:separated list whose length
+                        matches number of genbank records. Default is inferred
+                        from specific feature with fewest hits
   -v VERBOSITY, --verbosity VERBOSITY
                         1 = debug(), 2 = info(), 3 = warning(), 4 = error()
                         and 5 = critical(); default: 2
   --debug               Enable debug messages
 
+
+
 ```
 
-
-* `riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
+## Assessing rDNA regions
+### `riboSnag.py`
+`riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
 
 Additionally, it does a lot of plotting to visualize the Shannon entropy, coverage, occurrences, and other useful metrics.
 
@@ -127,38 +158,34 @@ THIS SCRIPT IS NOT LONGER A REQUIRED PART OF THE PIPELINE! It is still included 
 #### Usage:
 
 ```
-usage: riboSnag.py [-o OUTPUT] [-f FEATURE] [-w WITHIN]
-                   [-m MINIMUM] [-l FLANKING] [-r] [-c] [-p PADDING]
-                   [-v VERBOSITY] [--clobber] [-h]
+usage: riboSnag.py [-o OUTPUT] [-n NAME] [-l FLANKING] [--msa_kmers] [-c]
+                   [-p PADDING] [-v VERBOSITY] [--clobber] [--no_revcomp]
+                   [--skip_check] [--msa_tool {mafft,prank}]
+                   [--prank_exe PRANK_EXE] [--mafft_exe MAFFT_EXE]
+                   [--barrnap_exe BARRNAP_EXE]
+                   [--makeblastdb_exe MAKEBLASTDB_EXE]
+                   [--kingdom {mito,euk,arc,bac}] [-h]
                    genbank_genome clustered_loci
 
-Use to extract regions of interest based on supplied locus tags.
+Use to extract regions of interest based on supplied Locus tags and evaluate
+the extracted regions
 
 positional arguments:
   genbank_genome        Genbank file (WITH SEQUENCE)
   clustered_loci        output from riboSelect
 
-optional arguments:
-  -f FEATURE, --feature FEATURE
-                        Feature, such as CDS,tRNA, rRNA; default: rRNA
-
 required named arguments:
   -o OUTPUT, --output OUTPUT
-                        output directory; default: cwd
+                        output directory; default:
+                        /home/nicholas/GitHub/riboSeed
 
 optional arguments:
-  -w WITHIN, --within_feature_length WITHIN
-                        bp's to include within the region; default: 0
-  -m MINIMUM, --minimum_feature_length MINIMUM
-                        if --replace, and sequence is shorter than 2x
-                        --within_feature_length, --within will be modified so
-                        that only -m bp of sequnece areturned to N's default:
-                        100
+  -n NAME, --name NAME  rename the contigs with this prefixdefault: date
+                        (YYYYMMDD)
   -l FLANKING, --flanking_length FLANKING
-                        length of flanking regions, can be colon-separated to
-                        give separate upstream and downstream flanking
-                        regions; default: 1000
-  -r, --replace         replace sequence with N's; default: False
+                        length of flanking regions, in bp; default: 1000
+  --msa_kmers           calculate kmer similarity based on aligned sequences
+                        instead of raw sequences;default: False
   -c, --circular        if the genome is known to be circular, and an region
                         of interest (including flanking bits) extends past
                         chromosome end, this extends the seqence past
@@ -172,49 +199,64 @@ optional arguments:
                         1 = debug(), 2 = info(), 3 = warning(), 4 = error()
                         and 5 = critical(); default: 2
   --clobber             overwrite previous output filesdefault: False
+  --no_revcomp          default returns reverse complimented seq if majority
+                        of regions on reverse strand. if --no_revcomp, this is
+                        overwriddendefault: False
+  --skip_check          Dont bother calculating Shannon Entropy; default:
+                        False
+  --msa_tool {mafft,prank}
+                        Path to PRANK executable; default: mafft
+  --prank_exe PRANK_EXE
+                        Path to PRANK executable; default: prank
+  --mafft_exe MAFFT_EXE
+                        Path to MAFFT executable; default: mafft
+  --barrnap_exe BARRNAP_EXE
+                        Path to barrnap executable; default: barrnap
+  --makeblastdb_exe MAKEBLASTDB_EXE
+                        Path to makeblastdb executable; default: makeblastdb
+  --kingdom {mito,euk,arc,bac}
+                        kingdom for barrnap; default: bac
   -h, --help            Displays this help message
-
 ```
 
 ## 2: Seeded Assembly
-* `riboSeed.py` is used to map reads to the extracted regions in an iterative manner, assembling the extracted reads into long reads, and then running `SPAdes` assembly to hopefully resolve the contig junctions.  RiboSeed2 differs from the legacy version of riboSeed as riboSeed maps to all the regions at once, which minimizes the complications associated with multiple mappings. Instead of mapping to all the regions individually, it concatenates them into a faux genome with 5kb spacers of N's in between.  Because of this, it has the added benefit of running much faster.
+### `riboSeed.py`
+`riboSeed.py` maps reads to a genome and (1) extracts reads mapping to rDNA regions, (2) perfoms subassemblies on each pool of extracted reads to recover the rDNA complete with flanking regions (resulting in a pseudocontig) (3) concatenates a;; pseudocontigs into them into a pseudogenome with 5kb spacers of N's in between, (5) map remaining reads to the pseudogenome, and (6) repeat steps 1-5 for a given number of iterations (default 3 iterations). Finally, riboSeed runs SPAdes assemblied with and without the pseudocontigs and the resulting assemblies are assessed with QUAST.
 
 #### Output
 
-The results directory will contain a 'final_long_reads' directory with all the extended fragments, the mapped fastq files, and a `de_novo` and `de_fere_novo` folder, containing the results with the *de novo* mapping and supplemented mapping, respectively.
+The results directory will contain a 'final_long_reads' directory with all the pseudocontigs, the mapped fastq files, and `final_de_novo_assembly` and `final_de_fere_novo_assembly` folders, containing the SPAdes results.
+
+##### NOTE:
+If using a consumer-grade computer, it will be advantagous to run with `-z/--serialize` enabled to run asseblies in serial rather than parallel.
 
 #### Usage:
-##### NOTE:
-If using a consumer-grade computer, it may be advantagous to run with -z (--serialize).  SPAdes (or any other assembler) tends to require a lot of RAM. So unless you have about 3gb RAM per core,
-
-minimal usage: riboSeed.py clustered\_accession\_list.txt -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT
+minimal usage:
+```riboSeed.py clustered_accession\list.txt -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT```
 
 ```
-usage: riboSeed.py -F FASTQ1 -R FASTQ2 -r REFERENCE_GENBANK -o OUTPUT
-                    [-S FASTQS] [-n EXP_NAME] [-l FLANKING] [-m {smalt,bwa}]
-                    [-c CORES] [-k KMERS] [-p PRE_KMERS] [-I] [-s SCORE_MIN]
-                    [--include_shorts] [-a MIN_ASSEMBLY_LEN]
-                    [--paired_inference] [--linear] [--padding PADDING]
-                    [--keep_unmapped]
-                    [--ref_as_contig {None,trusted,untrusted}] [--keep_temps]
-                    [--skip_control] [-i ITERATIONS] [-v {1,2,3,4,5}]
-                    [--target_len TARGET_LEN] [-t {1,2,4}] [-z]
-                    [--smalt_scoring SMALT_SCORING] [-h]
-                    [--spades_exe SPADES_EXE] [--samtools_exe SAMTOOLS_EXE]
-                    [--smalt_exe SMALT_EXE] [--bwa_exe BWA_EXE]
-                    [--quast_exe QUAST_EXE] [--python2_7_exe PYTHON2_7_EXE]
-                    clustered_loci_txt
+usage: riboSeed.py -r REFERENCE_GENBANK -o OUTPUT [-F FASTQ1] [-R FASTQ2]
+                   [-S1 FASTQS1] [-n EXP_NAME] [-l FLANKING] [-m {smalt,bwa}]
+                   [-c CORES] [-k KMERS] [-p PRE_KMERS] [-s SCORE_MIN]
+                   [-a MIN_ASSEMBLY_LEN] [--include_shorts] [--linear]
+                   [--ref_as_contig {None,trusted,untrusted}] [--keep_temps]
+                   [--skip_control] [-i ITERATIONS] [-v {1,2,3,4,5}]
+                   [--target_len TARGET_LEN] [-t {1,2,4}] [-z]
+                   [--smalt_scoring SMALT_SCORING] [--mapper_args MAPPER_ARGS]
+                   [-h] [--spades_exe SPADES_EXE]
+                   [--samtools_exe SAMTOOLS_EXE] [--smalt_exe SMALT_EXE]
+                   [--bwa_exe BWA_EXE] [--quast_exe QUAST_EXE]
+                   [--python2_7_exe PYTHON2_7_EXE]
+                   clustered_loci_txt
 
-Given regions from riboSnag, assembles the mapped reads
+Given cluster file of rDNA regions from riboSelect and either paired-end or
+single-end reads, assembles the mapped reads into pseduocontig 'seeds', and
+uses those with the reads to runde fere novo and de novo assembly with SPAdes
 
 positional arguments:
   clustered_loci_txt    output from riboSelect
 
 required named arguments:
-  -F FASTQ1, --fastq1 FASTQ1
-                        forward fastq reads, can be compressed
-  -R FASTQ2, --fastq2 FASTQ2
-                        reverse fastq reads, can be compressed
   -r REFERENCE_GENBANK, --reference_genbank REFERENCE_GENBANK
                         fasta reference, used to estimate insert sizes, and
                         compare with QUAST
@@ -223,39 +265,40 @@ required named arguments:
                         /home/nicholas/GitHub/riboSeed
 
 optional arguments:
-  -S FASTQS, --fastq_single FASTQS
+  -F FASTQ1, --fastq1 FASTQ1
+                        forward fastq reads, can be compressed
+  -R FASTQ2, --fastq2 FASTQ2
+                        reverse fastq reads, can be compressed
+  -S1 FASTQS1, --fastq_single1 FASTQS1
                         single fastq reads
   -n EXP_NAME, --experiment_name EXP_NAME
                         prefix for results files; default: riboSeed
   -l FLANKING, --flanking_length FLANKING
-                        length of flanking regions, can be colon-separated to
-                        give separate upstream and downstream flanking
-                        regions; default: 1000
+                        length of flanking regions, in bp; default: 1000
   -m {smalt,bwa}, --method_for_map {smalt,bwa}
                         available mappers: smalt and bwa; default: bwa
   -c CORES, --cores CORES
-                        cores for multiprocessing workers; default: None
+                        cores for multiprocessing; default: None
   -k KMERS, --kmers KMERS
                         kmers used for final assembly, separated by commas;
                         default: 21,33,55,77,99,127
   -p PRE_KMERS, --pre_kmers PRE_KMERS
                         kmers used during seeding assemblies, separated bt
                         commas; default: 21,33,55,77,99
-  -I, --ignoreS         If true, singletons from previous mappingswill be
-                        ignored. try this if you seesamtools merge errors in
-                        tracebacks; default: False
-  -s SCORE_MIN, --score_min SCORE_MIN
-                        min score for smalt mapping; inferred from read
-                        length; default: inferred
-  --include_shorts      if assembled contig is smaller than
-                        --min_assembly_len, contig will still be included in
-                        assembly; default: inferred
-  -a MIN_ASSEMBLY_LEN, --min_assembly_len MIN_ASSEMBLY_LEN
+ -s SCORE_MIN, --score_min SCORE_MIN
+                        If using smalt, this sets the '-m' param; default with
+                        smalt is inferred from read length. If using BWA,
+                        reads mapping with ASscore lower than this will be
+                        rejected; default with SWA is half of read length
+   -a MIN_ASSEMBLY_LEN, --min_assembly_len MIN_ASSEMBLY_LEN
                         if initial SPAdes assembly largest contig is not at
                         least as long as --min_assembly_len, exit. Set this to
                         the length of the seed sequence; if it is not
                         achieved, seeding across regions will likely fail;
                         default: 6000
+  --include_shorts      if assembled contig is smaller than
+                        --min_assembly_len, contig will still be included in
+                        assembly; default: inferred
   --linear              if genome is known to not be circular and a region of
                         interest (including flanking bits) extends past
                         chromosome end, this extends the seqence past
@@ -268,13 +311,13 @@ optional arguments:
   --keep_temps          if not --keep_temps, mapping files will be removed
                         once they are no no longer needed during the
                         iterations; default: False
-  --skip_control        if --skip_control, no SPAdes-only de novo assembly
-                        will be done; default: False
+  --skip_control        if --skip_control, no de novo assembly will be done;
+                        default: False
   -i ITERATIONS, --iterations ITERATIONS
                         if iterations>1, multiple seedings will occur after
-                        assembly of seed regions; if setting --target_len,
+                        subassembly of seed regions; if setting --target_len,
                         seedings will continue until --iterations are
-                        completed or target_len is matched or exceeded;
+                        completed or --target_len is matched or exceeded;
                         default: 3
   -v {1,2,3,4,5}, --verbosity {1,2,3,4,5}
                         Logger writes debug to file in output dir; this sets
@@ -293,11 +336,19 @@ optional arguments:
                         the number of threads per processer.If unsure, see
                         'cat /proc/cpuinfo' under 'cpu cores', or 'lscpu'
                         under 'Thread(s) per core'.: 1
-  -z, --serialize       if --serialize, runs seeding in single loop instead of
-                        a multiprocessing pool: False
+  -z, --serialize       if --serialize, runs seeding and assembly without
+                        multiprocessing. This is recommended for machines with
+                        less than 8GB RAM: False
   --smalt_scoring SMALT_SCORING
-                        submit custom smalt scoring via smalt -S scorespec
-                        option; default: match=1,subst=-4,gapopen=-4,gapext=-3
+                        if mapping with SMALT, submit custom smalt scoring via
+                        smalt -S scorespec option; default:
+                        match=1,subst=-4,gapopen=-4,gapext=-3
+  --mapper_args MAPPER_ARGS
+                        submit custom parameters to mapper. And by mapper, I
+                        mean bwa, cause we dont support this option for SMALT,
+                        sorry. This requires knowledge of your chosen mapper's
+                        optional arguments. Proceed with caution! default: -L
+                        0,0 -U 0
   -h, --help            Displays this help message
   --spades_exe SPADES_EXE
                         Path to SPAdes executable; default: spades.py
@@ -309,8 +360,8 @@ optional arguments:
   --quast_exe QUAST_EXE
                         Path to quast executable; default: quast.py
   --python2_7_exe PYTHON2_7_EXE
-                        Path to python2.7 executable, cause; QUAST won't run
-                        on python3. default: python2.7
+                        Path to python2.7 executable, cause QUAST won't run on
+                        python3. default: python2.7
 ```
 
 ## Key Parameters
@@ -320,21 +371,49 @@ Results can be tuned by changing several of the default parameters.
 * `--score_min`: With either SMALT or BWA, this can be used to set the minimum mapping score. If using BWA, the default is not to supply a minimum and to rely on the BWA default.  If submitting a `--score_min` to BWA, double check that it is appropriate.  It appears to be extremely sensitive to read length, and having a too-low threshold for minimum mapping can seriously ruin ones day.  Check out IGB or similar to view your mappings if greater than, say, 5% or the reads are mapping in subsequent iterations.  If using SMALT, the default minimum is chosen using this formula:
 1.0 - (1.0 / (2.0 + *i*)), where *i* is the 0-based iteration.  This makes it progressively more stringent with each iteration, starting with a minimum score of half the read length. Again, visualize your mappings if anything looks amiss.
 
-* `--flanking_length`: Default is 1000.  That seems to be a good compromise between gaining unique sequence and not relying too much on the reference.
+* `--flanking_length`: Default is 2000.  That seems to be a good compromise between gaining unique sequence and not relying too much on the reference.
 
 * `--kmers` and `--pre_kmers`: Adjust these as you otherwise would for a *de novo* assembly.
 
-* `--min_assembly_len`:  For many bacteria, this is about 7000bp, as the rDNA regions for a typical operon of 16S 23S and 5S coding sequences combined usually are about that long.  If you are using non-standard rDNA regions, this should be adjusted to prevent spurious assemblies.
+* `--min_assembly_len`:  For bacteria, this is about 7000bp, as the rDNA regions for a typical operon of 16S 23S and 5S coding sequences combined usually are about that long.  If you are using non-standard rDNA regions, this should be adjusted to prevent spurious assemblies.
 
-* `--ref_as_contig`:  This can be used to guide how SPAdes treats the long read sequences during the assembly.
+* `--ref_as_contig`:  This can be used to guide how SPAdes treats the long read sequences during the assembly (`trusted` or `untrusted`).
 
 * `--iterations`:  Each iteration typically increases the length of the long read by approximately 5%.
 
 * `--smalt_scoring`: You can adjust the SMALT scoring matrix to fine-tune the mapping stringency.
 
 ## 3: Assembly Refinement
+### `riboSwap.py`
+Infrequently, `riboSeed` has joined together contigs that appear incorrect according to your reference.  If you are at all unhappy with a bridging, `riboSwap.py` allows swapping of a "bad" contig for one or more syntenic contigs from the *de novo* assembly.
+#### USAGE
+```
+usage: riboSwap.py -o OUTPUT [-v {1,2,3,4,5}] [-h]
+                   de_novo_file de_fere_novo_file bad_contig good_contigs
 
-Infrequently, riboSeed has joined together contigs that appear incorrect according to your reference.  If you are at all unhappy with a bridging, `riboSwap.py` allows swapping of a "bad" contig for one or more syntenic contigs from the *de novo* assembly.
+Given de novo and de fere novo contigs files, a misjoined de fere novo contig
+name, and a colon:separated list of de novo contig names, replace the
+offending contig with the de novo contig(s)
+
+positional arguments:
+  de_novo_file          multifasta containing de novo contigs
+  de_fere_novo_file     multifasta containing de fere novo contigs
+  bad_contig            name of the bad contig
+  good_contigs          colon separated good contigs for replacement
+
+required named arguments:
+  -o OUTPUT, --output OUTPUT
+                        output directory; default:
+                        /home/nicholas/GitHub/riboSeed
+
+optional arguments:
+  -v {1,2,3,4,5}, --verbosity {1,2,3,4,5}
+                        Logger writes debug to file in output dir; this sets
+                        verbosity level sent to stderr. 1 = debug(), 2 =
+                        info(), 3 = warning(), 4 = error() and 5 = critical();
+                        default: 2
+  -h, --help            Displays this help message
+```
 
 ## Known Bugs
 
@@ -346,7 +425,7 @@ The tests for the module can be found under the `tests` directory. I run them wi
 
 
 ## Installation
-riboSeed is on Pypi, so you can install with pip or within a virtualenv (probably recommended):
+riboSeed is on Pypi, so you can install with pip or within a virtualenv (recommended):
 
 `pip3.5 install riboSeed`
 
@@ -357,7 +436,7 @@ or
 You can also clone this repository, and run `python3.5 setup.py install`.
 
 
-In the scripts directory, there is a script called `runme.py` which run the pipeline on a small sample dataset.  it should output a folder to your current working dir called integration_tests.
+In the scripts directory, there is a script called `runme.py` which run the pipeline on a small sample dataset.  it should output a folder to your current working dir called `integration_tests`.
 
 
 
