@@ -505,7 +505,10 @@ def get_args():  # pragma: no cover
     make this able to handle different library types such as two unpaired runs
     """
     parser = argparse.ArgumentParser(
-        description="Given regions from riboSnag, assembles the mapped reads",
+        description="Given cluster file of rDNA regions from riboSelect and " +
+        "either paired-end or single-end reads, assembles the mapped reads " +
+        "into pseduocontig 'seeds', and uses those with the reads to run" +
+        "de fere novo and de novo assembly with SPAdes",
         add_help=False)  # to allow for custom help
     parser.add_argument("clustered_loci_txt", action="store",
                         help="output from riboSelect")
@@ -535,9 +538,9 @@ def get_args():  # pragma: no cover
     optional.add_argument("-S1", "--fastq_single1", dest='fastqS1',
                           action="store",
                           help="single fastq reads", type=str, default=None)
-    optional.add_argument("-S2", "--fastq_single2", dest='fastqS2',
-                          action="store",
-                          help="single fastq reads", type=str, default=None)
+    # optional.add_argument("-S2", "--fastq_single2", dest='fastqS2',
+    #                       action="store",
+    #                       help="single fastq reads", type=str, default=None)
     optional.add_argument("-n", "--experiment_name", dest='exp_name',
                           action="store",
                           help="prefix for results files; " +
@@ -569,9 +572,11 @@ def get_args():  # pragma: no cover
     optional.add_argument("-s", "--score_min", dest='score_min',
                           action="store",
                           default=None, type=int,
-                          help="min score for smalt mapping; inferred from " +
-                          "read length" +
-                          "; default: inferred")
+                          help="If using smalt, this sets the '-m' param; " +
+                          "default with smalt is inferred from " +
+                          "read length. If using BWA, reads mapping with AS" +
+                          "score lower than this will be rejected" +
+                          "; default with SWA is half of read length")
     optional.add_argument("-a", "--min_assembly_len", dest='min_assembly_len',
                           action="store",
                           default=6000, type=int,
@@ -1022,17 +1027,17 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     bwacommands = [cmdindex]
     if not single_lib:
         cmdmap = str('{0} mem -t {1} {2} -k 15 ' +
-                     '{4} {5} {6} | {7} view -bh - | ' +
-                     '{7} sort -o ' +
-                     '{8} - ').format(bwa_exe,  # 0
+                     '{3} {4} {5} | {6} view -bh - | ' +
+                     '{6} sort -o ' +
+                     '{7} - ').format(bwa_exe,  # 0
                                       cores,  # 1
                                       add_args,  # 2
-                                      score_min,  # 3
-                                      ngsLib.ref_fasta,  # 4
-                                      ngsLib.readF,  # 5
-                                      ngsLib.readR,  # 6
-                                      samtools_exe,  # 7
-                                      mapping_ob.pe_map_bam)  # 8)
+                                      # score_min,  # 3
+                                      ngsLib.ref_fasta,  # 3
+                                      ngsLib.readF,  # 4
+                                      ngsLib.readR,  # 5
+                                      samtools_exe,  # 6
+                                      mapping_ob.pe_map_bam)  # 7)
         bwacommands.append(cmdmap)
     else:
         assert ngsLib.readS0 is not None, \
@@ -1042,15 +1047,15 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     if ngsLib.readS0 is not None:  # and not ignore_singletons:
         cmdmapS = str(
             '{0} mem -t {1} {2} -k 15 ' +
-            '{4} {5} | {6} view -bh - | ' +
-            '{6} sort -o {7} - ').format(bwa_exe,  # 0
+            '{3} {4} | {5} view -bh - | ' +
+            '{5} sort -o {6} - ').format(bwa_exe,  # 0
                                          cores,  # 1
                                          add_args,  # 2
-                                         score_min,  # 3
-                                         ngsLib.ref_fasta,  # 4
-                                         ngsLib.readS0,  # 5
-                                         samtools_exe,  # 6
-                                         mapping_ob.s_map_bam)  # 7)
+                                         # score_min,  # 3
+                                         ngsLib.ref_fasta,  # 3
+                                         ngsLib.readS0,  # 4
+                                         samtools_exe,  # 5
+                                         mapping_ob.s_map_bam)  # 5)
         # merge together the singleton and pe reads, if there are any
         if single_lib:
             cmdmergeS = str(
