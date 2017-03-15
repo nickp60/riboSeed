@@ -55,7 +55,7 @@ class riboSeedTestCase(unittest.TestCase):
     """
     def setUp(self):
         self.test_dir = os.path.join(os.path.dirname(__file__),
-                                     "output_riboseed2_tests")
+                                     "output_riboseed_tests")
         self.spades_dir = os.path.join(os.path.dirname(__file__),
                                        "output_riboseed_tests",
                                        "SPAdes_results")
@@ -1140,9 +1140,3 @@ class riboSeedTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-    # tools_needed = ["samtools", "smalt", "spades.py"]
-    # for i in tools_needed:
-    #     if not check_installed_tools(i, hard=False):
-    #         print("Error! Can't run without install of {0} in PATH".format(i))
-    #         sys.exit(1)
-    # logger = logging
