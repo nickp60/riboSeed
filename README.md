@@ -258,7 +258,7 @@ positional arguments:
 
 required named arguments:
   -r REFERENCE_GENBANK, --reference_genbank REFERENCE_GENBANK
-                        fasta reference, used to estimate insert sizes, and
+                        genbank reference, used to estimate insert sizes, and
                         compare with QUAST
   -o OUTPUT, --output OUTPUT
                         output directory; default:

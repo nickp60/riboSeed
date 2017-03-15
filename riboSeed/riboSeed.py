@@ -518,7 +518,7 @@ def get_args():  # pragma: no cover
     requiredNamed.add_argument("-r", "--reference_genbank",
                                dest='reference_genbank',
                                action="store", default='', type=str,
-                               help="fasta reference, used to estimate " +
+                               help="genbank reference, used to estimate " +
                                "insert sizes, and compare with QUAST",
                                required=True)
     requiredNamed.add_argument("-o", "--output", dest='output', action="store",
