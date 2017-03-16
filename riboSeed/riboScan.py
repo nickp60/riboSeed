@@ -37,13 +37,11 @@ def get_args():  # pragma: no cover
         "files, this facilitates reannotation of rDNA regions with Barrnap " +
         " and outputs all sequences as a single, annotated genbank file",
         add_help=False)  # to allow for custom help
-    parser.add_argument("contigs_dir", action="store",
-                        help="directory containing one or more chromosomal "+
+    parser.add_argument("contigs", action="store",
+                        help="either a (multi)fasta or a directory " +
+                        "containing one or more chromosomal " +
                         "sequences in fasta format")
 
-    parser.add_argument("ext", action="store",
-                        help="extension of the chromosomal sequences, " +
-                        "usually '.fasta' or similar")
     # taking a hint from http://stackoverflow.com/questions/24180527
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument("-o", "--output", dest='output', action="store",
@@ -54,6 +52,12 @@ def get_args():  # pragma: no cover
     # had to make this faux "optional" parse so that the named required ones
     # above get listed first
     optional = parser.add_argument_group('optional arguments')
+    optional.add_argument("-e", "--extension", dest='ext',
+                          action="store",
+                          help="extension of the chromosomal sequences, " +
+                          "usually '.fasta' or similar",
+                          default=".fa",
+                          type=str)
     optional.add_argument("-k", "--kingdom", dest='kingdom',
                           action="store",
                           choices=["bac", "euk", "arc", "mito"],
@@ -201,7 +205,44 @@ def make_seqret_cmd(exe, outgb, ingff, infasta):
     return cmd
 
 
-if __name__ == "__main__":  # pragma: no cover
+def checkSingleFasta(fasta):
+    with open(fasta, 'r') as f:
+        counter = 0
+        for rec in SeqIO.parse(f, "fasta"):
+            counter = counter + 1
+            if counter > 1:
+                logger.error(
+                    "Fasta has multiple entries! " +
+                    "use splitMultifasta.sh to create single-entry " +
+                    "fastas from it. exiting...")
+                sys.exit(1)
+
+
+def getFastas(inp, output_root):
+    if not os.path.isdir(os.path.expanduser(inp)):
+        if not os.path.isfile(os.path.expanduser(inp)):
+            logger.error("'%s' is not a valid directory or file!",
+                         os.path.expanduser(inp))
+            sys.exit(1)
+        else:
+            logger.info("spliting multifasta into multiple fastas " +
+                        "for easier processing")
+            os.makedirs(os.path.join(output_root, "contigs"))
+            with open(os.path.expanduser(inp), "r") as mf:
+                for rec in SeqIO.parse(mf, "fasta"):
+                    with open(os.path.join(output_root, "contigs",
+                                           rec.id + ".fa"), "w") as outf:
+                        SeqIO.write(rec, outf, "fasta")
+
+            fastas = glob.glob(os.path.join(output_root, "contigs",
+                                            "*" + args.ext))
+    else:
+        fastas = glob.glob(os.path.join(os.path.expanduser(inp),
+                                        "*" + args.ext))
+    return(fastas)
+
+
+if __name__ == "__main__":
     args = get_args()
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
@@ -228,31 +269,17 @@ if __name__ == "__main__":  # pragma: no cover
         output_root,
         "scannedScaffolds.gb")
     ##  get and check list of input files
-    if not os.path.isdir(os.path.expanduser(args.contigs_dir)):
-        logger.error("'%s' is not a valid directory",
-                     os.path.expanduser(args.contigs_dir))
-        sys.exit(1)
-    fastas = glob.glob(os.path.join(os.path.expanduser(args.contigs_dir),
-                                    "*" + args.ext))
+    fastas = getFastas(inp=args.contigs, output_root=output_root)
     if len(fastas) == 0:
         logger.error("No fasta files in %s with extention %s! Exiting",
-                     args.contigs_dir, args.ext)
+                     args.contigs, args.ext)
         sys.exit(1)
 
     gb_list = []
     for fasta in fastas:
-        # check for multiple entry fastas
-        with open(fasta, 'r') as f:
-            counter = 0
-            for rec in SeqIO.parse(f, "fasta"):
-                counter = counter + 1
-                if counter > 1:
-                    logger.error(
-                        "Fasta has multiple entries! " +
-                        "use splitMultifasta.sh to create single-entry " +
-                        "fastas from it. exiting...")
-                    sys.exit(1)
-
+        # check for multiple entry fastas.
+        # This can still happen if mutlifastas are in dir input
+        checkSingleFasta(fasta)
         with open(fasta, 'r') as f:
             header = f.readline().strip()
         accession = parse_fasta_header(header)

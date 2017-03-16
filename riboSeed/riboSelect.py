@@ -287,16 +287,12 @@ if __name__ == "__main__":
     output_root = os.path.abspath(os.path.expanduser(args.output))
     # Create output directory only if it does not exist
     try:
-        os.makedirs(args.output)
+        os.makedirs(output_root)
     except FileExistsError:
          # leading comment char'#' added for stream output usage
         print("#Selected output directory %s exists" %
-              args.output)
-        if not args.clobber:
-            print("exiting")
-            sys.exit(1)
-        else:
-            print("# continuing, and risking potential loss of data")
+              output_root)
+        sys.exit(1)
     logger = set_up_logging(
         verbosity=args.verbosity,
         outfile=str("%s_riboSelect_log.txt" %
@@ -311,22 +307,22 @@ if __name__ == "__main__":
         logger.debug("%s: %s", k, v)
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
 
-    # Check if output file exists; if so, remove it
-    output_path = os.path.join(args.output,
-                               str("riboSelect_grouped_loci.txt"))
-    if os.path.exists(output_path):
-        if args.clobber:
-            logger.info("removing existing output file\n")
-            os.remove(output_path)
-        else:
-            logger.error("Existing output file found!")
-            sys.exit(1)
+    # # Check if output file exists; if so, remove it
+    # output_path = os.path.join(output_root,
+    #                            str("riboSelect_grouped_loci.txt"))
+    # if os.path.exists(output_path):
+    #     if args.clobber:
+    #         logger.info("removing existing output file\n")
+    #         os.remove(output_path)
+    #     else:
+    #         logger.error("Existing output file found!")
+    #         sys.exit(1)
 
-    # get genome records into a list
+    # get genome records into a generator to count them
     genome_records = SeqIO.parse(args.genbank_genome, 'genbank')
     logger.info("Getting number of genbank entries")
     nrecs = sum(1 for x in genome_records)
-    logger.info("Loaded %i records", nrecs)
+    logger.info("Input has %i records", nrecs)
 
     # get list of loci matching feature and optionally specific features
     # also returns nfeat, a dict of feature count by genbank id

@@ -150,7 +150,9 @@ setup(
     # yet defined
     scripts=['riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
              'riboSeed/riboSnag.py', 'riboSeed/riboSwap.py',
-             'riboSeed/riboScan.py', "scripts/runme.py", "scripts/OSX_INSTALL_DEPS.sh",
+             'riboSeed/riboScan.py', "scripts/runme.py",
+             "scripts/OSX_INSTALL_DEPS.sh",
              'scripts/example_batch.sh',
-             'scripts/multifasta_splitter.sh', 'scripts/concatToyGenome.py'],
+             'scripts/splitMultifasta.sh',
+             'scripts/concatToyGenome.py'],
 )
