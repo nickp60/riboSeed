@@ -18,6 +18,7 @@ import traceback
 # need this line for unittesting
 sys.path.append(os.path.join('..', 'riboSeed'))
 from pyutilsnrw.utils3_5 import set_up_logging
+from Bio import SeqIO
 
 # --------------------------- classes --------------------------- #
 
@@ -71,6 +72,11 @@ def get_args():  # pragma: no cover
                           help="path to barrnap executable; " +
                           "default: %(default)s", default="barrnap",
                           type=str)
+    optional.add_argument("-c", "--cores", dest='cores',
+                          action="store",
+                          help="number of threads/cores to use; " +
+                          "default: %(default)s", default=2,
+                          choices=[1, 2, 4, 8, 16], type=int)
     optional.add_argument("-s", "--seqret_exe", dest='seqret_exe',
                           action="store",
                           help="path to seqret executable, usually " +
@@ -119,20 +125,23 @@ def parse_fasta_header(first_line):
     return accession
 
 
-def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom):
+def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, threads=1):
     assert shutil.which(exe) is not None, "barrnap executable not found!"
     assert thresh > 0 and thresh < 1, "Thresh must be between 0 and 1!"
     if exe.endswith("py"):
-        pyexe = sys.executable  # ensure running python barrnap uses >3.5
+        # ensure running python barrnap uses >3.5
+        pyexe = str(sys.executable + " ")
     else:
         pyexe = ""
-    cmd = "{5} {0} -k {1} {2} --reject {3} > {4}".format(
+    cmd = "{0}{1} -k {2} {3} --reject {4} --threads {5} > {6}".format(
+        pyexe,
         shutil.which(exe),
         kingdom,
         infasta,
         thresh,
-        outgff,
-        pyexe)
+        threads,
+        outgff
+        )
     return cmd
 
 
@@ -232,6 +241,18 @@ if __name__ == "__main__":  # pragma: no cover
 
     gb_list = []
     for fasta in fastas:
+        # check for multiple entry fastas
+        with open(fasta, 'r') as f:
+            counter = 0
+            for rec in SeqIO.parse(f, "fasta"):
+                counter = counter + 1
+                if counter > 1:
+                    logger.error(
+                        "Fasta has multiple entries! " +
+                        "use splitMultifasta.sh to create single-entry " +
+                        "fastas from it. exiting...")
+                    sys.exit(1)
+
         with open(fasta, 'r') as f:
             header = f.readline().strip()
         accession = parse_fasta_header(header)
@@ -240,6 +261,7 @@ if __name__ == "__main__":  # pragma: no cover
             infasta=fasta,
             outgff=os.path.join(output_root, "{0}.gff".format(accession)),
             exe=args.barrnap_exe,
+            threads=args.cores,
             thresh=args.id_thresh,
             kingdom=args.kingdom)
         logger.info("running barrnap cmd: %s", barrnap_cmd)

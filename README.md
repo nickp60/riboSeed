@@ -31,12 +31,17 @@ riboSeed is an supplemental assembly refinement method to try to address the iss
 The pipeline (currently) consists of optional preprocessing and two main stages:
 
 ## 0: Preprocessing
+
+### `splitMultifasta.sh`
+`splitMultifasta.sh` takes a single argument for the fasta file containing multiple contigs, and output them as individual contigs to the current working directory.  This is not sophisticated, it is essentially one awk call that is already shorter than this description.  `riboScan.py` will only work with single entry fastas.
+#### usage
+make a directory for the new files, and `cd` into it.  `splitMultifasta ../contigs.fa`
+
 ### `riboScan.py`
 `riboScan.py` preprocesses sequences straight from DNA fasta if a GenBank file with annotated rRNA products is not available.  The issue with many legacy annotations, assemblies, and scaffold collections is they are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml) and seqret (from [`emboss`](http://www.ebi.ac.uk/Tools/emboss/))  to be available in your path.
-
 #### Usage
 
-Move your data to its own directory, whether it is a single fasta genome or multiple fasta scaffolds.  For each file it finds in this dir with a given extension, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a GenBank file that contains just annotated rRNA features. The last step is a concatenation which, whether or not there are multiple files, makes a single (possibly multi-entry) genbank file perfect for riboSeed-ing.
+Each fasta must be a single entry fasta. Move your data to its own directory, whether it is a single fasta genome or multiple fasta scaffolds.  For each file it finds in this dir with a given extension, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a GenBank file that contains just annotated rRNA features. The last step is a concatenation which, whether or not there are multiple files, makes a single (possibly multi-entry) genbank file perfect for riboSeed-ing.
 
 ```
 usage: riboScan.py -o OUTPUT [-k {bac,euk,arc,mito}] [-t ID_THRESH]

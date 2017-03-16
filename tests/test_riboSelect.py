@@ -42,16 +42,20 @@ class riboSelect_TestCase(unittest.TestCase):
     def test_count_feature_hits_all_features(self):
         nfeatoccur, nfeat_simple = count_feature_hits(
             all_feature=True,
-            genome_seq_records=[],
+            gb_path=self.test_gb_file,
+            # genome_seq_records=[],
             specific_features=[],
-            locus_tag_dict={})
+            locus_tag_dict={},
+            logger=logger)
         self.assertEqual(nfeatoccur, None)
         self.assertEqual(nfeat_simple, None)
 
     def test_count_feature_hits(self):
         record = get_genbank_record(self.test_gb_file)[0]
         filtered, nfeat, nfeat_simple = \
-            get_filtered_locus_tag_dict([record], feature="rRNA",
+            get_filtered_locus_tag_dict(gb_path=self.test_gb_file,
+                                        feature="rRNA",
+                                        nrecs=1,
                                         specific_features="16S:23S",
                                         verbose=False,
                                         logger=logger)
@@ -101,9 +105,11 @@ class riboSelect_TestCase(unittest.TestCase):
         }
         nfeatoccur2, nfeat_simple2 = count_feature_hits(
             all_feature=False,
-            genome_seq_records=[record],
+            gb_path=self.test_gb_file,
+            # genome_seq_records=[record],
             specific_features=["16S", "23S"],
-            locus_tag_dict=filtered)
+            locus_tag_dict=filtered,
+            logger=logger)
         self.assertEqual(nfeat_simple2['NC_011751.1'], [7, 7])
         self.assertEqual(nfeatoccur2['NC_011751.1'], [['16S', 7], ['23S', 7]])
 
@@ -116,14 +122,18 @@ class riboSelect_TestCase(unittest.TestCase):
         # with self.assertRaises(SystemExit):
         # test that when given a bad feature empty results are returned
         bum_coords, bum_nfeat, bum_nfeat_simple = \
-            get_filtered_locus_tag_dict([record], feature="RRNA",
+            get_filtered_locus_tag_dict(gb_path=self.test_gb_file,
+                                        feature="RRNA",
                                         specific_features="16S",
+                                        nrecs=1,
                                         verbose=False,
                                         logger=logger)
         self.assertTrue([len(x) == 0 for x in
                          [bum_nfeat, bum_nfeat_simple, bum_coords]])
         bum_coords2, bum_nfeat2, bum_nfeat_simple2 = \
-            get_filtered_locus_tag_dict([record], feature="rRNA",
+            get_filtered_locus_tag_dict(gb_path=self.test_gb_file,
+                                        feature="rRNA",
+                                        nrecs=1,
                                         specific_features="18S",
                                         verbose=False,
                                         logger=logger)
@@ -131,7 +141,9 @@ class riboSelect_TestCase(unittest.TestCase):
                          [bum_nfeat2, bum_nfeat_simple2, bum_coords2]])
 
         filtered, nfeat, nfeat_simple = \
-            get_filtered_locus_tag_dict([record], feature="rRNA",
+            get_filtered_locus_tag_dict(gb_path=self.test_gb_file,
+                                        nrecs=1,
+                                        feature="rRNA",
                                         specific_features="16S",
                                         verbose=False,
                                         logger=logger)
@@ -167,13 +179,13 @@ class riboSelect_TestCase(unittest.TestCase):
 
     def test_parse_clusters_infer(self):
         record = get_genbank_record(self.test_gb_file)[0]
-        centers = parse_args_clusters(clusters='', recs=[record],
+        centers = parse_args_clusters(clusters='', nrecs=1,
                                       logger=logger)
         self.assertEqual(centers, [0])
 
     def test_parse_clusters_provide(self):
         record = get_genbank_record(self.test_gb_file)[0]
-        centers2 = parse_args_clusters(clusters='3', recs=[record],
+        centers2 = parse_args_clusters(clusters='3', nrecs=1,
                                        logger=logger)
         self.assertEqual(centers2, [3])
 
