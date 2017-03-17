@@ -38,7 +38,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, \
     file_len, check_version_from_cmd
 
 from riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
-    extract_coords_from_locus, get_genbank_rec_from_multigb
+    extract_coords_from_locus
 
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
@@ -65,7 +65,7 @@ class SeedGenome(object):
                  max_iterations=None, initial_map_sam=None, unmapped_sam=None,
                  clustered_loci_txt=None, seq_records=None, master_ngs_ob=None,
                  initial_map_sorted_bam=None, initial_map_prefix=None,
-                 assembled_seeds=None, logger=None):
+                 assembled_seeds=None, seq_records_count=None, logger=None):
         self.name = name  # get from commsanline in case running multiple
         self.this_iteration = this_iteration  # this should always start at 0
         self.max_iterations = max_iterations
@@ -106,10 +106,15 @@ class SeedGenome(object):
         self.next_reference_path = next_reference_path
         # where to put the combined contigs at the end:
         self.assembled_seeds = assembled_seeds
+        # this is set dynamically as well
+        self.seq_records_count = seq_records_count
         # a logger
         self.logger = logger
         self.check_mands()
-        self.attach_genome_seqrecords()  # this method comes first,
+        # self.attach_genome_seqrecords()  # this method comes first,
+        self.refreshSeqRecGenerator()  # this method comes first,
+        # sets self.seq_records_count
+        self.countSeqRecords()
         self.write_fasta_genome()  # because this method relies on it
         self.make_map_paths_and_dir()
 
@@ -152,7 +157,8 @@ class SeedGenome(object):
             with open(self.ref_fasta, 'w') as outfh:
                 sequences = SeqIO.parse(fh, "genbank")
                 count = SeqIO.write(sequences, outfh, "fasta")
-        assert count == len(self.seq_records), "Error parsing genbank file!"
+        assert count == self.seq_records_count, "Error parsing genbank file!"
+        self.refreshSeqRecGenerator()
 
     def pad_genbank(self, pad=5000, circular=False, logger=None):
         """ if the genome is circular (which it is, by default) adjust the
@@ -180,18 +186,28 @@ class SeedGenome(object):
                                     IUPAC.IUPACAmbiguousDNA()))
                         SeqIO.write(new_rec, outfh, "fasta")
                         count = count + 1
-                    assert count == len(self.seq_records), \
+                    assert count == self.seq_records_count, \
                         "Error parsing genbank file!"
             self.ref_fasta = new_fasta_ref
         else:
             pass
 
-    def attach_genome_seqrecords(self):
-        """attach a list of seqrecords.  In the future, this should be
-        a generator but for small genomes it doesnt seem to be an issue
+    def countSeqRecords(self):
+        self.seq_records_count = sum(1 for x in self.seq_records)
+        self.refreshSeqRecGenerator()
+
+    # def attach_genome_seqrecords(self):
+    #     """attach a list of seqrecords.  In the future, this should be
+    #     a generator but for small genomes it doesnt seem to be an issue
+    #     """
+    #     with open(self.genbank_path, 'r') as fh:
+    #         self.seq_records = list(SeqIO.parse(fh, "genbank"))
+    def refreshSeqRecGenerator(self):
+        """instead of using stored genbank records, this method restarts
+        the generator so that each time self.seq_records is accessed
+        this method can get things going again
         """
-        with open(self.genbank_path, 'r') as fh:
-            self.seq_records = list(SeqIO.parse(fh, "genbank"))
+        self.seq_records = SeqIO.parse(self.genbank_path, "genbank")
 
     def purge_old_files(self, all_iters=False):
         """ remove bulky files from two iterations ago, or if
@@ -722,6 +738,22 @@ def last_exception():
     exc_type, exc_value, exc_traceback = sys.exc_info()
     return ''.join(traceback.format_exception(exc_type, exc_value,
                                               exc_traceback))
+
+
+def get_rec_from_generator(recordID, gen, method=None):
+    """ given a record ID and and SeqIO generator return sequence of
+    genbank record that has all the loci, and call method to refresh generator
+    If on different sequences, return error
+    """
+    for record in gen:
+        if recordID == record.id:
+            if method is not None:
+                method()
+            return record
+        else:
+            pass
+    # if none found, raise error
+    raise ValueError("no record found matching record id %s!" % recordID)
 
 
 def get_smalt_full_install_cmds(smalt_exe, logger=None):
@@ -1869,10 +1901,10 @@ def add_coords_to_clusters(seedGenome, logger=None):
     for cluster in seedGenome.loci_clusters:  # for each cluster of loci
         # get seq record that cluster is  from
         try:
-            cluster.seq_record = \
-                get_genbank_rec_from_multigb(
-                    recordID=cluster.sequence_id,
-                    genbank_records=seedGenome.seq_records)
+            cluster.seq_record = get_rec_from_generator(
+                recordID=cluster.sequence_id,
+                gen=seedGenome.seq_records,
+                method=seedGenome.refreshSeqRecGenerator)
         except Exception as e:
             raise e
         try:  # make coord list
