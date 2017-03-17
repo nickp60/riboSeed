@@ -89,6 +89,7 @@ def count_feature_hits(all_feature, gb_path,
     - nfeatures_occur {record.id, [[16s, 5],[23s, 4],[5s,6]]}
     - nfeatures_simple {record.id [record.id, [5,4,6]}
     """
+    logger.info("counting occurances of %s", " ".join(specific_features))
     assert logger is not None, "Must use logging"
     #  This bit counts the number of hits per specific feature.
     logger.info("counting features")
@@ -106,7 +107,7 @@ def count_feature_hits(all_feature, gb_path,
                               if record.id in v}
                     for k, v in subset.items():
                         # hint: v[-1] should be the product annotation
-                        if any([i in x for x in v[-1]]):
+                        if any([i in v[-1]]):
                             hits = hits + 1
                         else:
                             pass
@@ -116,6 +117,7 @@ def count_feature_hits(all_feature, gb_path,
                 nfeat_simple[record.id] = hit_list_simple
     else:
         nfeatures_occur, nfeat_simple = None, None
+    print(nfeatures_occur)
     return(nfeatures_occur, nfeat_simple)
 
 
@@ -142,6 +144,7 @@ def get_filtered_locus_tag_dict(gb_path, nrecs, feature="rRNA",
     if specific_features is not None:
         specific_features = specific_features.split(":")
     locus_tag_dict = {}  # recipient structure
+    preunique_feats = []
     # loop through records
     with open(gb_path, "r") as genome_seq_records:
         # genome_records = list(SeqIO.parse(fh, 'genbank'))
@@ -169,6 +172,7 @@ def get_filtered_locus_tag_dict(gb_path, nrecs, feature="rRNA",
                         (specific_features is not None and
                          any([x in specific_features for x in product_list]))):
                         # key is start coord
+                        preunique_feats.extend([x for x in specific_features if x in product_list])
                         locus_tag_dict[(record.id, coords[0])] = [loc_number,
                                                                   record.id,
                                                                   locustag,
@@ -202,7 +206,7 @@ def get_filtered_locus_tag_dict(gb_path, nrecs, feature="rRNA",
         nfeat_simple = count_feature_hits(
             all_feature=specific_features is None,
             gb_path=gb_path,
-            specific_features=specific_features,
+            specific_features=set(preunique_feats),
             locus_tag_dict=locus_tag_dict,
             logger=logger)
     return(locus_tag_dict, nfeatures_occur, nfeat_simple)
@@ -370,13 +374,12 @@ if __name__ == "__main__":
             subset = {key: value for key, value in lociDict.items() if
                       rec.id in value}
             # skip if that doesnt have any hits
-            logger.debug("Subset loci:")
-            for k, v in subset.items():
-                logger.debug(str(k) + "\t" + str(v))
-
             if len(subset) == 0:
                 logger.info("no hits in {0}\n".format(rec.id))
                 continue
+            logger.debug("Subset loci:")
+            for k, v in subset.items():
+                logger.debug(str(k) + "\t" + str(v))
             logger.info("hits in {0}\n".format(rec.id))
 
             #  find nfeat for this genbank id by subsetting;
@@ -397,7 +400,7 @@ if __name__ == "__main__":
             indexes = [x[1] for x in list(subset)]  # get index back from tuple key
             ## if centers[i] is 0, try max and min sequentially; if that fails skip
             if centers_per_seq[i] == 0:
-                if min(rec_nfeat) == 0:
+                if min(rec_nfeat) <= 1:
                     current_centers = max(rec_nfeat)
                 else:
                     current_centers = min(rec_nfeat)
@@ -421,7 +424,7 @@ if __name__ == "__main__":
                 sys.exit(1)
             # add output lines to list
             outlines.append("# Generated cluters for {0} on {1}\n".format(
-                    rec.id, date))
+                rec.id, date))
             outlines.append("#$ FEATURE {0}\n".format(args.feature))
 
             for k, v in indexClusters.items():
