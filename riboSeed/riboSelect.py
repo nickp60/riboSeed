@@ -307,9 +307,9 @@ if __name__ == "__main__":
         logger.debug("%s: %s", k, v)
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
 
-    # # Check if output file exists; if so, remove it
-    # output_path = os.path.join(output_root,
-    #                            str("riboSelect_grouped_loci.txt"))
+    output_path = os.path.join(output_root,
+                               str("riboSelect_grouped_loci.txt"))
+    # Check if output file exists; if so, remove it
     # if os.path.exists(output_path):
     #     if args.clobber:
     #         logger.info("removing existing output file\n")

@@ -44,9 +44,10 @@ The pipeline (currently) consists of optional preprocessing and two main stages:
 riboScan can either use a directory of fastas or one (multi)fasta file.  If using a directory of fastas, provide the appropriate extension using the `-e` option. If using a (multi)fasta as input, it write out each entry to its own fasta in the `contigs` subdirectory that it makes in the output. For each of the fastas, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a GenBank file that contains just annotated rRNA features. The last step is a concatenation which, whether or not there are multiple files, makes a single (possibly multi-entry) genbank file perfect for riboSeed-ing.
 
 ```
-usage: riboScan.py -o OUTPUT [-k {bac,euk,arc,mito}] [-t ID_THRESH]
-                   [-b BARRNAP_EXE] [-s SEQRET_EXE] [-v {1,2,3,4,5}] [-h]
-                   contigs_dir ext
+usage: riboScan.py -o OUTPUT [-e EXT] [-k {bac,euk,arc,mito}] [-t ID_THRESH]
+                   [-b BARRNAP_EXE] [-n NAME] [-c {1,2,4,8,16}]
+                   [-s SEQRET_EXE] [-v {1,2,3,4,5}] [-h]
+                   contigs
 
 Given a directory of one or more chromosomes as fasta files, this facilitates
 reannotation of rDNA regions with Barrnap and outputs all sequences as a
@@ -73,6 +74,8 @@ optional arguments:
                         ignored. default: 0.5
   -b BARRNAP_EXE, --barrnap_exe BARRNAP_EXE
                         path to barrnap executable; default: barrnap
+  -n NAME, --name NAME  name to give the contig files; default: infered from
+                        file
   -s SEQRET_EXE, --seqret_exe SEQRET_EXE
                         path to seqret executable, usually installed with
                         emboss; default: seqret
@@ -83,7 +86,7 @@ optional arguments:
                         default: 2
   -h, --help            Displays this help message
 ```
-
+NOTE: If using a reference with long names or containing special characters, use the --name argument to rename the contigs to something a bit more convenient and less prone to errors when piping results.
 
 ## 1: Selection and Extraction
 
@@ -430,21 +433,20 @@ The tests for the module can be found under the `tests` directory. I run them wi
 
 
 ## Installation
-riboSeed is on Pypi, so you can install with pip or within a virtualenv (recommended):
+#### From Pypi
+riboSeed is on Pypi, so you can install with pip, preferably within a virtualenv (recommended):
 
+`virtualenv -p python3.5 venv-riboSeed`
+`source venv-riboSeed/bin/activate`
 `pip3.5 install riboSeed`
 
-or
-
-` virtualenv -p python3.5 venv-riboSeed `
-
+#### From GitHub
 You can also clone this repository, and run `python3.5 setup.py install`.
-
 
 In the scripts directory, there is a script called `runme.py` which run the pipeline on a small sample dataset.  it should output a folder to your current working dir called `integration_tests`.
 
 
-
+### Dependencies
 The trickiest part of this whole business is properly installing SMALT. BWA is definitely the easiest option, and the current default mapper, so don't bother with SMALT unless you need to.
 
 ### Python Requirements:

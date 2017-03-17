@@ -19,6 +19,8 @@ import traceback
 sys.path.append(os.path.join('..', 'riboSeed'))
 from pyutilsnrw.utils3_5 import set_up_logging
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 
 # --------------------------- classes --------------------------- #
 
@@ -75,6 +77,12 @@ def get_args():  # pragma: no cover
                           action="store",
                           help="path to barrnap executable; " +
                           "default: %(default)s", default="barrnap",
+                          type=str)
+    optional.add_argument("-n", "--name", dest='name',
+                          action="store",
+                          # default="contig",
+                          help="name to give the contig files; "
+                          "default: infered from file",
                           type=str)
     optional.add_argument("-c", "--cores", dest='cores',
                           action="store",
@@ -218,7 +226,7 @@ def checkSingleFasta(fasta):
                 sys.exit(1)
 
 
-def getFastas(inp, output_root):
+def getFastas(inp, output_root, name, logger):
     if not os.path.isdir(os.path.expanduser(inp)):
         if not os.path.isfile(os.path.expanduser(inp)):
             logger.error("'%s' is not a valid directory or file!",
@@ -228,11 +236,13 @@ def getFastas(inp, output_root):
             logger.info("spliting multifasta into multiple fastas " +
                         "for easier processing")
             os.makedirs(os.path.join(output_root, "contigs"))
-            with open(os.path.expanduser(inp), "r") as mf:
-                for rec in SeqIO.parse(mf, "fasta"):
-                    with open(os.path.join(output_root, "contigs",
-                                           rec.id + ".fa"), "w") as outf:
-                        SeqIO.write(rec, outf, "fasta")
+            splitMultifasta(multi=inp, output=output_root, name=name,
+                            logger=logger)
+            # with open(os.path.expanduser(inp), "r") as mf:
+            #     for rec in SeqIO.parse(mf, "fasta"):
+            #         with open(os.path.join(output_root, "contigs",
+            #                                rec.id + ".fa"), "w") as outf:
+            #             SeqIO.write(rec, outf, "fasta")
 
             fastas = glob.glob(os.path.join(output_root, "contigs",
                                             "*" + args.ext))
@@ -240,6 +250,29 @@ def getFastas(inp, output_root):
         fastas = glob.glob(os.path.join(os.path.expanduser(inp),
                                         "*" + args.ext))
     return(fastas)
+
+def splitMultifasta(multi, output, name, logger=None):
+    """regex stolen from SO
+    """
+    assert logger is not None, "must use logging"
+    with open(os.path.expanduser(multi), "r") as mf:
+        for idx, rec in enumerate(SeqIO.parse(mf, "fasta")):
+            if name is not None:
+                fname = name
+            else:
+                fname = rec.id
+            if not re.match("^[a-zA-Z0-9_]*$", fname):
+                logger.error("Problem with header %s", fname)
+                logger.error("file header contains special characters! " +
+                             "Valid characters are in set [a-zA-Z0-9_]; " +
+                             "rename with the --name option to prevent " +
+                             "later issues. Exiting...")
+                sys.exit(1)
+            header = fname + "_" + str(idx)
+            with open(os.path.join(output, "contigs",
+                                   header + ".fa"), "w") as outf:
+                renamed_rec = SeqRecord(rec.seq, id=header, description="")
+                SeqIO.write(renamed_rec, outf, "fasta")
 
 
 if __name__ == "__main__":
@@ -269,7 +302,8 @@ if __name__ == "__main__":
         output_root,
         "scannedScaffolds.gb")
     ##  get and check list of input files
-    fastas = getFastas(inp=args.contigs, output_root=output_root)
+    fastas = getFastas(inp=args.contigs, output_root=output_root,
+                       name=args.name, logger=logger)
     if len(fastas) == 0:
         logger.error("No fasta files in %s with extention %s! Exiting",
                      args.contigs, args.ext)
