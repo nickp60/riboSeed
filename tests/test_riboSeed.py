@@ -12,7 +12,7 @@ import os
 import unittest
 # import multiprocessing
 
-# from Bio.Seq import Seq
+from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from argparse import Namespace
 
@@ -33,7 +33,7 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     make_unmapped_partition_cmds, make_quick_quast_table, \
     check_fastqs_len_equal, parse_subassembly_return_code, \
     make_spades_empty_check, get_samtools_depths, \
-    decide_proceed_to_target
+    decide_proceed_to_target, get_rec_from_generator
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, stitch_together_target_regions, \
@@ -253,6 +253,8 @@ class riboSeedTestCase(unittest.TestCase):
         # self.to_be_removed.append(testlib_pe.smalt_dist_path)
 
     def test_SeedGenome(self):
+        with open(self.ref_gb, "r") as gbf:
+            reclist = list(SeqIO.parse(gbf, "genbank"))
         gen = SeedGenome(
             max_iterations=2,
             clustered_loci_txt=self.test_loci_file,
@@ -262,7 +264,7 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.test_dir,
                                                     "NC_011751.1.fasta")))
         self.assertTrue(os.path.exists(self.test_dir))
-        self.assertTrue(isinstance(gen.seq_records[0], SeqRecord))
+        self.assertEqual(tuple(gen.seq_records)[0].id, reclist[0].id)
 
     def test_SeedGenome_bad_instatiation(self):
         with self.assertRaises(ValueError):
@@ -328,6 +330,31 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertEqual(ref_smi_md5, md5(str(est_file + ".smi")))
         self.assertEqual(ref_sma_md5, md5(str(est_file + ".sma")))
         self.assertEqual(ref_mapping_len, file_len(est_file))
+
+    def test_get_rec_from_generator(self):
+        """ tests get_rec_from_generator, which replaces
+        get_genbank_rec_from_multigb
+        """
+        recsgen = None
+        with open(self.ref_gb, "r") as gbf:
+            global reclist
+            reclist = list(SeqIO.parse(gbf, "genbank"))
+            return reclist
+
+        def refreshGen():
+            recsgen = SeqIO.parse(self.ref_gb, "genbank")
+
+        refreshGen()
+        record = get_rec_from_generator(recordID='NC_011751.1',
+                                        method=refreshGen,
+                                        gen=recsgen)
+        # this check that it got refreshed
+        self.assertEqual(record.id, tuple(recsgen)[0].id)
+        self.assertEqual(record.id, reclist[0].id)
+        with self.assertRaises(ValueError):
+            get_rec_from_generator(recordID='NC_011751.X',
+                                   method=refreshGen,
+                                   gen=recsgen)
 
     def test_add_coords_to_SeedGenome(self):
         gen = SeedGenome(
