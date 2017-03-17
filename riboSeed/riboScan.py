@@ -251,9 +251,11 @@ def getFastas(inp, output_root, name, logger):
                                         "*" + args.ext))
     return(fastas)
 
+
 def splitMultifasta(multi, output, name, logger=None):
     """regex stolen from SO
     """
+    idlist = []
     assert logger is not None, "must use logging"
     with open(os.path.expanduser(multi), "r") as mf:
         for idx, rec in enumerate(SeqIO.parse(mf, "fasta")):
@@ -261,18 +263,21 @@ def splitMultifasta(multi, output, name, logger=None):
                 fname = name
             else:
                 fname = rec.id
-            if not re.match("^[a-zA-Z0-9_]*$", fname):
+            if fname in idlist:
+                fname = fname + "_" + str(idx)
+            if not re.match("^[a-zA-Z0-9_\.]*$", fname):
                 logger.error("Problem with header %s", fname)
                 logger.error("file header contains special characters! " +
                              "Valid characters are in set [a-zA-Z0-9_]; " +
                              "rename with the --name option to prevent " +
-                             "later issues. Exiting...")
+                             "later issues. I'm sorry, its a pain...\n" +
+                             "Exiting...")
                 sys.exit(1)
-            header = fname + "_" + str(idx)
             with open(os.path.join(output, "contigs",
-                                   header + ".fa"), "w") as outf:
-                renamed_rec = SeqRecord(rec.seq, id=header, description="")
+                                   fname + ".fa"), "w") as outf:
+                renamed_rec = SeqRecord(rec.seq, id=fname, description="")
                 SeqIO.write(renamed_rec, outf, "fasta")
+            idlist.append(fname)
 
 
 if __name__ == "__main__":
@@ -310,7 +315,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     gb_list = []
-    for fasta in fastas:
+    for fasta in sorted(fastas):
         # check for multiple entry fastas.
         # This can still happen if mutlifastas are in dir input
         checkSingleFasta(fasta)
