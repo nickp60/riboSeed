@@ -101,13 +101,16 @@ def count_feature_hits(all_feature, gb_path,
                 logger.debug("counting hits in %s", record.id)
                 hit_list = []  # [specific feature, count] list
                 hit_list_simple = []  # [count] list
+                subset = {k: v for k, v in locus_tag_dict.items()
+                          if record.id in v}
+                if len(subset) == 0:
+                    continue
+                logger.debug(subset)
                 for i in specific_features:
                     hits = 0
-                    subset = {k: v for k, v in locus_tag_dict.items()
-                              if record.id in v}
                     for k, v in subset.items():
                         # hint: v[-1] should be the product annotation
-                        if any([i in v[-1]]):
+                        if any([i == x for x in v[-1]]):
                             hits = hits + 1
                         else:
                             pass
@@ -117,7 +120,6 @@ def count_feature_hits(all_feature, gb_path,
                 nfeat_simple[record.id] = hit_list_simple
     else:
         nfeatures_occur, nfeat_simple = None, None
-    print(nfeatures_occur)
     return(nfeatures_occur, nfeat_simple)
 
 
@@ -145,6 +147,7 @@ def get_filtered_locus_tag_dict(gb_path, nrecs, feature="rRNA",
         specific_features = specific_features.split(":")
     locus_tag_dict = {}  # recipient structure
     preunique_feats = []
+
     # loop through records
     with open(gb_path, "r") as genome_seq_records:
         # genome_records = list(SeqIO.parse(fh, 'genbank'))
@@ -159,8 +162,9 @@ def get_filtered_locus_tag_dict(gb_path, nrecs, feature="rRNA",
                         if verbose:
                             logger.debug("no locus tag for this feature!")
                         continue
-                    product_list = multisplit([",", " ", "-", "_"],
-                                              feat.qualifiers.get("product")[0])
+                    product_list = multisplit(
+                        [",", " ", "-", "_"],
+                        feat.qualifiers.get("product")[0])
                     coords = [feat.location.start.position + 1,
                               feat.location.end.position]
                     if verbose:
@@ -172,7 +176,8 @@ def get_filtered_locus_tag_dict(gb_path, nrecs, feature="rRNA",
                         (specific_features is not None and
                          any([x in specific_features for x in product_list]))):
                         # key is start coord
-                        preunique_feats.extend([x for x in specific_features if x in product_list])
+                        preunique_feats.extend([x for x in specific_features if
+                                                x in product_list])
                         locus_tag_dict[(record.id, coords[0])] = [loc_number,
                                                                   record.id,
                                                                   locustag,
@@ -184,11 +189,11 @@ def get_filtered_locus_tag_dict(gb_path, nrecs, feature="rRNA",
                                          "list: %s", product_list)
                         pass
 
-                    loc_number = loc_number + 1  # increment index after feature
+                    loc_number = loc_number + 1  # increment idx after feature
                 else:
                     if verbose:
                         logger.debug("skipping: %s", feat.type)
-                    loc_number = loc_number + 1  # increment index after feature
+                    loc_number = loc_number + 1  # increment idx after feature
             # this is a soft warning, as we want to be able to loop
             # through all records before worrying
             if len(locus_tag_dict) < 1 and logger:
@@ -394,13 +399,23 @@ if __name__ == "__main__":
                              "submit the desired number of clusters with the  " +
                              "--clusters argument!\n")
                 sys.exit(1)
+            logger.debug("nfeat_simple")
+            # for k, v in nfeat_simple.items():
+            #     print(k)
+            #     print(v)
             rec_nfeat = list({k: v for k, v in nfeat_simple.items() if
                               rec.id in k}.values())[0]
             logger.debug("rec_nfeat: {0}".format(rec_nfeat))
+            if all([x == 0 for x in rec_nfeat]):
+                logger.error("unable to count features!")
+                sys.exit(1)
             indexes = [x[1] for x in list(subset)]  # get index back from tuple key
             ## if centers[i] is 0, try max and min sequentially; if that fails skip
             if centers_per_seq[i] == 0:
-                if min(rec_nfeat) <= 1:
+                # if only looking at two features, take the max
+                # if the smallest value is not greater than 1, take the max
+                # This is a shakey heuistic
+                if min(rec_nfeat) <= 1 or len(rec_nfeat) <= 2:
                     current_centers = max(rec_nfeat)
                 else:
                     current_centers = min(rec_nfeat)

@@ -25,7 +25,7 @@ sys.path.append(os.path.join(
 from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboScan import parse_fasta_header, make_barrnap_cmd, \
     add_locus_tags_to_gff, combine_gbs, append_accession_and_version, \
-    make_seqret_cmd, splitMultifasta, getFastas
+    make_seqret_cmd, splitMultifasta, getFastas, checkSingleFasta
 
 sys.dont_write_bytecode = True
 
@@ -176,6 +176,17 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(
             os.path.join(self.test_dir, "contigs", "snorkel_1.fa")))
         self.to_be_removed.append(os.path.join(self.test_dir, "contigs"))
+        with self.assertRaises(SystemExit):
+            getFastas(inp="notanactualfile", output_root=self.test_dir,
+                      ext=".fa", name="snorkel", logger=logger)
+        # dir with no contigs
+        with self.assertRaises(SystemExit):
+            getFastas(inp=self.test_dir, output_root=self.test_dir,
+                      ext=".notarealext", name="snorkel", logger=logger)
+
+    def test_checkSingleFasta(self):
+        with self.assertRaises(SystemExit):
+            checkSingleFasta(self.multifasta, logger=logger)
 
     def tearDown(self):
         """ delete temp files if no errors
