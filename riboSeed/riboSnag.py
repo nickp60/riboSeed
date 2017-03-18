@@ -388,7 +388,9 @@ def pad_genbank_sequence(cluster, logger=None, verbose=False):
     # take care of the sequence
     old_seq = cluster.seq_record.seq
     if cluster.padding > len(old_seq):
-        raise ValueError("padding cannot be greater than length of sequence")
+        logger.warning("padding cannot be greater than length of " +
+                       "sequence! returning original sequence")
+        return cluster
     new_seq = str(old_seq[-cluster.padding:]
                   + old_seq
                   + old_seq[0: cluster.padding])

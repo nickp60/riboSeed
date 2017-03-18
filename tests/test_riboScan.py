@@ -25,7 +25,7 @@ sys.path.append(os.path.join(
 from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboScan import parse_fasta_header, make_barrnap_cmd, \
     add_locus_tags_to_gff, combine_gbs, append_accession_and_version, \
-    make_seqret_cmd
+    make_seqret_cmd, splitMultifasta, getFastas
 
 sys.dont_write_bytecode = True
 
@@ -51,6 +51,8 @@ class riboSeedTestCase(unittest.TestCase):
                                            "with_locus.gff")
         self.combined_file = os.path.join(self.scan_ref_dir,
                                           "combined_gbs_just_kidding.txt")
+        self.multifasta = os.path.join(self.scan_ref_dir,
+                                       "multiFasta.fasta")
         self.no_accession_gb = os.path.join(self.scan_ref_dir,
                                             'no_accession_or_version.gb')
         self.with_accession_gb = os.path.join(self.scan_ref_dir,
@@ -60,27 +62,6 @@ class riboSeedTestCase(unittest.TestCase):
                                         'contigs.fasta')
         self.short_contig = os.path.join(self.ref_dir,
                                          'contigs.fasta')
-        self.ref_Ffastq = os.path.join(self.ref_dir,
-                                       'toy_reads1.fq')
-        self.ref_Rfastq = os.path.join(self.ref_dir,
-                                       'toy_reads2.fq')
-        self.ref_bam_prefix = os.path.join(self.ref_dir,
-                                           'test_bam_to_fastq')
-        self.smalt_exe = "smalt"
-        self.bwa_exe = "bwa"
-        self.samtools_exe = "samtools"
-        self.spades_exe = "spades.py"
-        self.quast_exe = "quast.py"
-        self.python2_7_exe = "python2"
-        self.test_estimation_file = os.path.join(self.test_dir,
-                                                 "est_distance.sam")
-        self.map_results_prefix = os.path.join(self.test_dir,
-                                               "test_mapping")
-        self.fastq_results_prefix = os.path.join(self.test_dir,
-                                                 "test_bam_to_fastq")
-        self.test_loci_file = os.path.join(os.path.dirname(__file__),
-                                           str("references" + os.path.sep +
-                                               'grouped_loci_reference.txt'))
         self.args = Namespace(skip_contol=False, kmers="21,33,55,77,99",
                               spades_exe="spades.py",
                               quast_exe="python2.7 quast.py",
@@ -177,11 +158,33 @@ class riboSeedTestCase(unittest.TestCase):
             "-outseq dest_file.gb").format(shutil.which("seqret"))
         self.assertEqual(ref_cmd, test_cmd)
 
+    # def test_splitMultifasta(self):
+    #     splitMultifasta(multi=self.multifasta,
+    #                     output=self.test_dir,
+    #                     name="ctg",
+    #                     logger=logger)
+    #     self.assertTrue(os.path.isfile(
+    #         os.path.join(self.test_dir, "contigs", "ctg_1.fa")))
+    #     self.to_be_removed.append(os.path.join(self.test_dir, "contigs"))
+        # shutil.rmtree(
+
+    def test_getFastas(self):
+        getFastas(inp=self.multifasta, output_root=self.test_dir,
+                  ext=".fa", name="snorkel", logger=logger)
+        self.assertTrue(os.path.isfile(
+            os.path.join(self.test_dir, "contigs", "snorkel.fa")))
+        self.assertTrue(os.path.isfile(
+            os.path.join(self.test_dir, "contigs", "snorkel_1.fa")))
+        self.to_be_removed.append(os.path.join(self.test_dir, "contigs"))
+
     def tearDown(self):
         """ delete temp files if no errors
         """
         for filename in self.to_be_removed:
-            os.unlink(filename)
+            try:
+                os.unlink(filename)
+            except IsADirectoryError:
+                shutil.rmtree(filename)
         pass
 
 if __name__ == '__main__':

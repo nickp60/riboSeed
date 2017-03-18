@@ -354,6 +354,8 @@ class NgsLib(object):
         """ before reasigning unmapped lib, delete
         useless files that were used in the previous iteration
         """
+        if self.master:
+            print("cannot remove master NgsLib")
         for f in [self.readF,
                   self.readR,
                   self.readS0]:

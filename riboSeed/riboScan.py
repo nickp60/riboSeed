@@ -226,7 +226,7 @@ def checkSingleFasta(fasta):
                 sys.exit(1)
 
 
-def getFastas(inp, output_root, name, logger):
+def getFastas(inp, output_root, ext, name, logger):
     if not os.path.isdir(os.path.expanduser(inp)):
         if not os.path.isfile(os.path.expanduser(inp)):
             logger.error("'%s' is not a valid directory or file!",
@@ -235,28 +235,24 @@ def getFastas(inp, output_root, name, logger):
         else:
             logger.info("spliting multifasta into multiple fastas " +
                         "for easier processing")
-            os.makedirs(os.path.join(output_root, "contigs"))
             splitMultifasta(multi=inp, output=output_root, name=name,
                             logger=logger)
-            # with open(os.path.expanduser(inp), "r") as mf:
-            #     for rec in SeqIO.parse(mf, "fasta"):
-            #         with open(os.path.join(output_root, "contigs",
-            #                                rec.id + ".fa"), "w") as outf:
-            #             SeqIO.write(rec, outf, "fasta")
 
             fastas = glob.glob(os.path.join(output_root, "contigs",
-                                            "*" + args.ext))
+                                            "*" + ext))
     else:
         fastas = glob.glob(os.path.join(os.path.expanduser(inp),
-                                        "*" + args.ext))
+                                        "*" + ext))
     return(fastas)
 
 
-def splitMultifasta(multi, output, name, logger=None):
+def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
     """regex stolen from SO
+    name is the name of the file, output is the parent dir for the output dir
     """
     idlist = []
     assert logger is not None, "must use logging"
+    os.makedirs(os.path.join(output, "contigs"))
     with open(os.path.expanduser(multi), "r") as mf:
         for idx, rec in enumerate(SeqIO.parse(mf, "fasta")):
             if name is not None:
@@ -308,7 +304,7 @@ if __name__ == "__main__":
         "scannedScaffolds.gb")
     ##  get and check list of input files
     fastas = getFastas(inp=args.contigs, output_root=output_root,
-                       name=args.name, logger=logger)
+                       ext=args.ext, name=args.name, logger=logger)
     if len(fastas) == 0:
         logger.error("No fasta files in %s with extention %s! Exiting",
                      args.contigs, args.ext)
