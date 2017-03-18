@@ -213,7 +213,7 @@ def make_seqret_cmd(exe, outgb, ingff, infasta):
     return cmd
 
 
-def checkSingleFasta(fasta):
+def checkSingleFasta(fasta, logger):
     with open(fasta, 'r') as f:
         counter = 0
         for rec in SeqIO.parse(f, "fasta"):
@@ -243,6 +243,10 @@ def getFastas(inp, output_root, ext, name, logger):
     else:
         fastas = glob.glob(os.path.join(os.path.expanduser(inp),
                                         "*" + ext))
+    if len(fastas) == 0:
+        logger.error("No fasta files in %s with extention %s! Exiting",
+                     inp, ext)
+        sys.exit(1)
     return(fastas)
 
 
@@ -305,16 +309,16 @@ if __name__ == "__main__":
     ##  get and check list of input files
     fastas = getFastas(inp=args.contigs, output_root=output_root,
                        ext=args.ext, name=args.name, logger=logger)
-    if len(fastas) == 0:
-        logger.error("No fasta files in %s with extention %s! Exiting",
-                     args.contigs, args.ext)
-        sys.exit(1)
+    # if len(fastas) == 0:
+    #     logger.error("No fasta files in %s with extention %s! Exiting",
+    #                  args.contigs, args.ext)
+    #     sys.exit(1)
 
     gb_list = []
     for fasta in sorted(fastas):
         # check for multiple entry fastas.
         # This can still happen if mutlifastas are in dir input
-        checkSingleFasta(fasta)
+        checkSingleFasta(fasta, logger=logger)
         with open(fasta, 'r') as f:
             header = f.readline().strip()
         accession = parse_fasta_header(header)
