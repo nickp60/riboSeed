@@ -38,14 +38,19 @@ Let's use the *Listeria monocytogenes str. 4b F2365* genome as reference, NCBI a
 $ get_genomes.py -q AE017262.2 -o ./
 ```
 
+## riboScan
+Now that we have the reference as a fasta file, lets use `riboScan.py` (essentially barrnap) to annotate the rDNAs in the genome:
 
-## RiboSelect
+```
+$ riboScan ./AE017262.2.fasta -o ./scan/
+```
+
+## riboSelect
 
 Now that we have our genbank file, lets try to run riboSelect (assuming that `riboSelect.py` is in your `$PATH`) to pull out the regions of interest.
 
-Because this genome is pretty new, we won't have to use riboScan.
 ```
-$ riboSelect.py ./AE017262.2.gb -o ./select_output/
+$ riboSelect.py ./scan/scannedScaffolds.gb -o ./select_output/
 2017-01-18 09:31:22 - INFO - Initializing logger
 2017-01-18 09:31:22 - INFO - Current usage:
 ./AE017262.2.gb -o ./scanned_output/
