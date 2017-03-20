@@ -250,7 +250,7 @@ class NgsLib(object):
     def __init__(self, name, master=False, readF=None, readR=None,
                  readS0=None, readS1=None, mapping_success=False,
                  smalt_dist_path=None, readlen=None, make_dist=False,
-                 libtype=None, logger=None, mapper_exe=None,
+                 libtype=None, logger=None, mapper_exe=None, liblist=None,
                  ref_fasta=None):
         self.name = name
         # Bool: whether this is a master record
@@ -277,11 +277,13 @@ class NgsLib(object):
         self.ref_fasta = ref_fasta
         # results of distance mapping
         self.smalt_dist_path = smalt_dist_path  # set this dynamically
+        self.liblist = liblist  # make dynamically
         self.logger = logger
         self.check_mands()
         self.set_libtype()
         self.get_readlen()
         self.smalt_insert_file()
+        self.listLibs()
 
     def check_mands(self):
         """ checks that all mandatory arguments are not none
@@ -362,6 +364,11 @@ class NgsLib(object):
             if f is not None:
                 if os.path.isfile(f):
                     os.unlink(f)
+
+    def listLibs(self):
+        self.liblist = [x for x in
+                        [self.readF, self.readR, self.readS0, self.readS1]
+                        if x is not None]
 
 
 class LociMapping(object):
@@ -2463,8 +2470,10 @@ if __name__ == "__main__":  # pragma: no cover
 # --------------------------------------------------------------------------- #
     # done with the iterations!  Lets free up some space
     if not args.keep_temps:
-        unmapped_ngsLib.purge_old_files()
-        seedGenome.purge_old_files(all_iters=True)
+        if not any([x in unmapped_ngsLib.liblist for
+                    x in seedGenome.master_ngs_ob.liblist]):
+            unmapped_ngsLib.purge_old_files()
+            seedGenome.purge_old_files(all_iters=True)
     # And add the remaining final contigs to the directory for combination
     if len([x for x in seedGenome.loci_clusters if x.keep_contigs]) == 0:
         logger.info("all contigs already copied to long_reads dir")
@@ -2482,7 +2491,14 @@ if __name__ == "__main__":  # pragma: no cover
             except Exception as e:
                 logger.error(last_exception())
                 sys.exit(1)
-
+    for dirpath, dirnames, files in os.walk(seedGenome.final_long_reads_dir):
+        if not files:
+            logger.error(
+                "No pseudocontigs found in the long reads output " +
+                "directory; unless there has been an error, it appears " +
+                "that the subassemblies did not yield pseudocontigs " +
+                "of sufficient quality.  Exiting")
+            sys.exit(1)
     logger.info("combining contigs from %s", seedGenome.final_long_reads_dir)
     seedGenome.assembled_seeds = combine_contigs(
         contigs_dir=seedGenome.final_long_reads_dir,
