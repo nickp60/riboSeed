@@ -211,6 +211,7 @@ class riboSeedTestCase(unittest.TestCase):
             mapper_exe=self.smalt_exe)
         self.assertEqual(testlib_s.libtype, "s_1")
         self.assertEqual(testlib_s.readlen, 145.0)
+        self.assertEqual(testlib_s.liblist, [self.ref_Ffastq])
         # test unnamed fails
         with self.assertRaises(ValueError):
             NgsLib(
