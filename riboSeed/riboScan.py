@@ -263,8 +263,8 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
                 fname = name
             else:
                 fname = rec.id
-            if fname in idlist:
-                fname = fname + "_" + str(idx)
+            # if fname in idlist:
+            fname = fname + "_" + str(idx)
             if not re.match("^[a-zA-Z0-9_\.]*$", fname):
                 logger.error("Problem with header %s", fname)
                 logger.error("file header contains special characters! " +
