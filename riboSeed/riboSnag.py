@@ -1404,11 +1404,12 @@ if __name__ == "__main__":
             excludedash=False,
             kingdom=args.kingdom,
             logger=logger)
-        title = str("Shannon Entropy by Position\n" +
-                    args.seq_name if args.seq_name is not None else
+        label_name = args.seq_name if args.seq_name is not None else \
                     os.path.basename(
                         os.path.splitext(
-                            args.genbank_genome)[0]))
+                            args.genbank_genome)[0])
+        title = str("Shannon Entropy by Position\n" +
+                    label_name)
 
         return_code = plot_scatter_with_anno(
             data=seq_entropy,

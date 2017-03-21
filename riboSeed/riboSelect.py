@@ -377,7 +377,7 @@ if __name__ == "__main__":
                             centers_per_seq[i], rec.id)
             # get subset of lociDict for that id
             subset = {key: value for key, value in lociDict.items() if
-                      rec.id in value}
+                      rec.id == value[1]}
             # skip if that doesnt have any hits
             if len(subset) == 0:
                 logger.info("no hits in {0}\n".format(rec.id))

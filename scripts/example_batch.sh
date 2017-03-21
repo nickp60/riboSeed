@@ -35,9 +35,9 @@ VENVEXE="$7"
 mkdir ${OUTDIR}
 ## enter virtual environment
 source ${VENVEXE}
-## riboSnag
-python3.5 riboScan.py ${FASTA} -o ${OUTDIR}/scan/ -v 1
+## riboScan
+riboScan.py ${FASTA} -o ${OUTDIR}/scan/ -v 1
 ## RiboSelect
-python3.5 riboSelect.py ${OUTDIR}/scan/scannedScaffolds.gb -o ${OUTDIR}select/ -v 1
+riboSelect.py ${OUTDIR}/scan/scannedScaffolds.gb -o ${OUTDIR}select/ -v 1
 ## RiboSeed
-python3.5 riboSeed.py ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -l ${FLANK} -r ${OUTDIR}/scan/scannedScaffolds.gb -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1 -c 4 -t 2
+riboSeed.py ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -l ${FLANK} -r ${OUTDIR}/scan/scannedScaffolds.gb -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1 -c 4 -t 2
