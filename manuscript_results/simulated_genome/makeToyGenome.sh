@@ -10,7 +10,7 @@ python3.5  ~/GitHub/riboSeed/riboSeed/riboScan.py ./BA000007.2.fasta -o ./toyGen
 # Cluster regions
 python3.5  ~/GitHub/riboSeed/riboSeed/riboSelect.py ./toyGenome/scan/scannedScaffolds.gb -o ./toyGenome/select/
 # extract regions with 5kb flanking
-python3.5  ~/GitHub/riboSeed/riboSeed/riboSnag.py ./toyGenome/scan/scannedScaffolds.gb  ./toyGenome/select/riboSelect_grouped_loci.txt -o ./toyGenome/snag/ -l 5000
+python3.5  ~/GitHub/riboSeed/riboSeed/riboSnag.py ./toyGenome/scan/scannedScaffolds.gb  ./toyGenome/select/riboSelect_grouped_loci.txt -o ./toyGenome/snag/ -l 5000 --just_extract
 # combine the extracted regions into a toy genome
 python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ./toyGenome/snag/ \*_riboSnag.fasta -o ./toyGenome/coli_genome/
 # generate reads from the toy genome simulating a MiSeq V3 rub

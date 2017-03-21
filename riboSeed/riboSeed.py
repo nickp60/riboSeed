@@ -574,7 +574,7 @@ def get_args():  # pragma: no cover
     optional.add_argument("-l", "--flanking_length",
                           help="length of flanking regions, in bp; " +
                           "default: %(default)s",
-                          default=1000, type=int, dest="flanking")
+                          default=2000, type=int, dest="flanking")
     optional.add_argument("-m", "--method_for_map", dest='method',
                           action="store", choices=["smalt", "bwa"],
                           help="available mappers: smalt and bwa; " +
@@ -631,13 +631,14 @@ def get_args():  # pragma: no cover
     #                       "to allow for selecting regions that cross the " +
     #                       "chromosome's origin; default: %(default)s")
     optional.add_argument("--ref_as_contig", dest='ref_as_contig',
-                          action="store", default="untrusted", type=str,
-                          choices=["None", "trusted", "untrusted"],
+                          action="store", type=str,
+                          choices=["trusted", "untrusted"],
                           help="if 'trusted', SPAdes will  use the seed " +
                           "sequences as a --trusted-contig; if 'untrusted', " +
                           "SPAdes will treat as --untrusted-contig. if '', " +
                           "seeds will not be used during assembly. " +
-                          "See SPAdes docs; default: %(default)s")
+                          "See SPAdes docs; default: if mapping " +
+                          "percentage over 85%: 'trusted', else: 'untrusted'")
     optional.add_argument("--keep_temps", dest='keep_temps',
                           default=False, action="store_true",
                           help="if not --keep_temps, mapping files will be " +
@@ -990,11 +991,15 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
         logger.info(str("PE mapped reads: " +
                         get_number_mapped(mapping_ob.pe_map_bam,
                                           samtools_exe=samtools_exe)))
-    logger.info(str("Combined mapped reads: " +
-                    get_number_mapped(mapping_ob.mapped_bam,
-                                      samtools_exe=samtools_exe)))
+    combined_map_string = get_number_mapped(mapping_ob.mapped_bam_unfiltered,
+                                            samtools_exe=samtools_exe)
+    logger.info(str("Combined mapped reads: " + combined_map_string))
+    # extract overall percentage as a float
+    map_percentage = float(combined_map_string.split("(")[1].split("%")[0])
+
     # apparently there have been no errors, so mapping success!
     ngsLib.mapping_success = True
+    return map_percentage
 
 
 def filter_bam_AS(inbam, outsam, score, logger=None):
@@ -1045,7 +1050,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                           samtools_exe, bwa_exe, score_minimum=None,
                           single_lib=False,
                           # ignore_singletons=False,
-                          add_args='-L 0,0 -U 0', logger=None):
+                          add_args='-L 0,0 -U 0 -a', logger=None):
     """
     #TODO rework this to read libtype of ngslib object
     requires at least paired end input, but can handle an additional library
@@ -1131,9 +1136,12 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
         logger.info(str("PE mapped reads: " +
                         get_number_mapped(mapping_ob.pe_map_bam,
                                           samtools_exe=samtools_exe)))
-    logger.info(str("Combined mapped reads: " +
-                    get_number_mapped(mapping_ob.mapped_bam_unfiltered,
-                                      samtools_exe=samtools_exe)))
+
+    combined_map_string = get_number_mapped(mapping_ob.mapped_bam_unfiltered,
+                                            samtools_exe=samtools_exe)
+    logger.info(str("Combined mapped reads: " + combined_map_string))
+    # extract overall percentage as a float
+    map_percentage = float(combined_map_string.split("(")[1].split("%")[0])
     logger.debug("filtering mapped reads with an AS score minimum of %i",
                  score_min)
     filter_bam_AS(inbam=mapping_ob.mapped_bam_unfiltered,
@@ -1148,7 +1156,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                       samtools_exe=samtools_exe)))
     # apparently there have been no errors, so mapping success!
     ngsLib.mapping_success = True
-
+    return map_percentage
 
 def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
                               which='mapped', source_ext="_sam",
@@ -1928,6 +1936,7 @@ def add_coords_to_clusters(seedGenome, logger=None):
 
 
 def get_final_assemblies_cmds(seedGenome, exes,
+                              ref_as_contig,
                               skip_control=True,
                               kmers="21,33,55,77,99", logger=None):
     """make cmds for runnning of SPAdes and QUAST final assembly and analysis.
@@ -1960,7 +1969,7 @@ def get_final_assemblies_cmds(seedGenome, exes,
             assert j == "de_fere_novo", \
                 "Only valid cases are de novo and de fere novo!"
             final_mapping.ref_fasta = seedGenome.assembled_seeds
-            assembly_ref_as_contig = 'trusted'
+            assembly_ref_as_contig = ref_as_contig
 
         # remove unneeded dir
         os.rmdir(final_mapping.mapping_subdir)
@@ -2141,15 +2150,6 @@ if __name__ == "__main__":  # pragma: no cover
         args.cores = multiprocessing.cpu_count()
         logger.info("Using %i cores", multiprocessing.cpu_count())
 
-    # Cannot set Nonetype objects via commandline directly and I dont want None
-    # to be default dehaviour, so here we convert 'None' to None.
-    # I have no moral compass
-    if args.ref_as_contig == 'None':
-        args.ref_as_contig = None
-
-    if args.method not in ["smalt", 'bwa']:
-        logger.error("'smalt' and 'bwa' only methods currently supported")
-        sys.exit(1)
     logger.info("checking for installations of all required external tools")
     logger.debug("creating an Exes object")
     try:
@@ -2362,7 +2362,7 @@ if __name__ == "__main__":  # pragma: no cover
             # # get rid of bwa mapper default args
             # if args.mapper_args == '-L 0,0 -U 0':
             #     args.mapper_args =
-            map_to_genome_ref_smalt(
+            map_percent = map_to_genome_ref_smalt(
                 mapping_ob=seedGenome.iter_mapping_list[
                     seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
@@ -2377,7 +2377,7 @@ if __name__ == "__main__":  # pragma: no cover
                 logger=logger)
         else:
             assert args.method == "bwa", "must be either bwa or smalt"
-            map_to_genome_ref_bwa(
+            map_percent = map_to_genome_ref_bwa(
                 mapping_ob=seedGenome.iter_mapping_list[
                     seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
@@ -2390,6 +2390,22 @@ if __name__ == "__main__":  # pragma: no cover
                 # add_args='-L 0,0 -U 0',
                 add_args=args.mapper_args,
                 logger=logger)
+        # on first time thorugh, infer ref_as_contig if not provided via commandline
+        if seedGenome.this_iteration == 0:
+            if args.ref_as_contig is None:
+                if map_percent > 85:
+                    ref_as_contig = "trusted"
+                else:
+                    ref_as_contig = "untrusted"
+                logger.info(
+                    str("unfiltered mapping percentage is %f2 so " +
+                        "'ref_as_contigs' is set to %s"),
+                    map_percent, ref_as_contig)
+            else:
+                ref_as_contig = args.ref_as_contig
+        else:
+            pass
+
         try:
             partition_mapping(seedGenome=seedGenome,
                               logger=logger,
@@ -2405,6 +2421,7 @@ if __name__ == "__main__":  # pragma: no cover
 
         extract_convert_assemble_cmds = []
         # generate spades cmds (cannot be multiprocessed)
+        # ref_as_contig must be 'trusted' here, a
         for cluster in clusters_to_process:
             cmdlist = []
             logger.debug("generating commands to convert bam to fastqs " +
@@ -2418,7 +2435,8 @@ if __name__ == "__main__":  # pragma: no cover
             spades_cmd = generate_spades_cmd(
                 mapping_ob=cluster.mappings[-1],
                 ngs_ob=new_ngslib, single_lib=True,
-                ref_as_contig='trusted', check_libs=True,
+                ref_as_contig="trusted",
+                check_libs=True,
                 as_paired=False, prelim=True,
                 k=args.pre_kmers,
                 spades_exe=sys_exes.spades, logger=logger)
@@ -2540,6 +2558,7 @@ if __name__ == "__main__":  # pragma: no cover
     # run final contigs
     spades_quast_cmds, quast_reports = get_final_assemblies_cmds(
         seedGenome=seedGenome, exes=sys_exes,
+        ref_as_contig=ref_as_contig,
         # spades_exe=sys_exes.spades,
         # quast_exe=sys_exes.quast, python2_7_exe=sys_exes.python2_7,
         skip_control=args.skip_control, kmers=args.kmers, logger=logger)

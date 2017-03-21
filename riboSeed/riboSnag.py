@@ -180,11 +180,13 @@ def get_args():  # pragma: no cover
                           "default: %(default)s",
                           action='store_true',
                           default=False, dest="no_revcomp")
-    optional.add_argument("--skip_check",
-                          help="Dont bother calculating Shannon Entropy; " +
+    optional.add_argument("-j", "--just_extract",
+                          help="Dont bother making an MSA, calculating " +
+                          "Shannon Entropy, BLASTing, generating plots etc; " +
+                          " just extract the regions ; " +
                           "default: %(default)s",
                           action='store_true',
-                          default=False, dest="skip_check")
+                          default=False, dest="just_extract")
     optional.add_argument("--msa_tool", dest="msa_tool",
                           choices=["mafft", "prank"],
                           action="store", default="mafft",
@@ -1351,7 +1353,7 @@ if __name__ == "__main__":
     )
 
     # make MSA and calculate entropy
-    if not args.skip_check:
+    if not args.just_extract:
         if args.clobber:
             logger.error("Cannot safely check SMA when --clobber is used!")
             sys.exit(1)
@@ -1424,6 +1426,6 @@ if __name__ == "__main__":
         #     output_prefix=os.path.join(output_root, "entropy_plot"),
         #     consensus=consensus_cov,
         #     tseq=tseq)
-    run_blast(query_list=region_files, ref=ref_fasta,
-              mbdb_exe=args.makeblastdb_exe, name=args.name,
-              output=args.output, logger=logger)
+        run_blast(query_list=region_files, ref=ref_fasta,
+                  mbdb_exe=args.makeblastdb_exe, name=args.name,
+                  output=args.output, logger=logger)
