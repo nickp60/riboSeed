@@ -1101,6 +1101,7 @@ class riboSeedTestCase(unittest.TestCase):
         gen.ref_fasta = self.ref_fasta
         final_cmds, quast_reports = \
             get_final_assemblies_cmds(
+                ref_as_contig="trusted",
                 seedGenome=gen, exes=test_exes,
                 skip_control=False, kmers="33,77,99", logger=logger)
         final_spades_cmds_ref = [

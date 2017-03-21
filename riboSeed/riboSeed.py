@@ -12,7 +12,7 @@ See README.md for more info and usage
 import argparse
 import sys
 import time
-import re
+import random
 import logging
 import os
 import shutil
@@ -20,6 +20,7 @@ import multiprocessing
 import subprocess
 import traceback
 import pysam
+import math
 
 from itertools import chain
 from collections import namedtuple
@@ -27,6 +28,13 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
+
+import numpy as np
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
 
 # need this line for unittesting
 sys.path.append(os.path.join('..', 'riboSeed'))
@@ -1012,11 +1020,13 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
     """
     notag = 0
     written = 0
+    score_list = []
     pysam.index(inbam)
     bam = pysam.AlignmentFile(inbam, "rb")
     osam = pysam.Samfile(outsam, 'wh', template=bam)
     for read in bam.fetch():
         if read.has_tag('AS'):
+            score_list.append(read.get_tag('AS'))
             if read.get_tag('AS') >= score:
                 osam.write(read)
                 written = written + 1
@@ -1029,6 +1039,7 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
     logger.debug("Reads after filtering: %i", written)
     if notag != 0:
         logger.debug("Reads lacking alignment score: %i", notag)
+    return(score_list)
 
 
 def sam_to_bam(samtools_exe, bam, sam, logger=None):
@@ -1144,9 +1155,9 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     map_percentage = float(combined_map_string.split("(")[1].split("%")[0])
     logger.debug("filtering mapped reads with an AS score minimum of %i",
                  score_min)
-    filter_bam_AS(inbam=mapping_ob.mapped_bam_unfiltered,
-                  outsam=mapping_ob.mapped_sam,
-                  score=score_min, logger=logger)
+    score_list = filter_bam_AS(inbam=mapping_ob.mapped_bam_unfiltered,
+                               outsam=mapping_ob.mapped_sam,
+                               score=score_min, logger=logger)
     sam_to_bam(bam=mapping_ob.mapped_bam,
                sam=mapping_ob.mapped_sam,
                samtools_exe=samtools_exe,
@@ -1156,7 +1167,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                       samtools_exe=samtools_exe)))
     # apparently there have been no errors, so mapping success!
     ngsLib.mapping_success = True
-    return map_percentage
+    return (map_percentage, score_list)
 
 def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
                               which='mapped', source_ext="_sam",
@@ -2116,6 +2127,188 @@ def copyToHandyDir(outdir, pre, seedGenome, hard=False, logger=None):
                 raise FileNotFoundError
 
 
+from bisect import bisect
+
+def printPlot(data, line=None, y=30, x=60, tick=.2,  title="test", logger=None):
+    data = sorted(data, reverse=True)
+    yax = "|"
+    xax = "_"
+    avbin = []
+    scaledy = []
+    lendata = len(data)
+    print(lendata)
+    ylab = str(max(data))
+    sli = math.ceil(lendata / x)
+    for i in range(0, x):
+        avbin.append(int(sum(data[i * sli: (i + 1) * sli]) / sli ))
+
+    avmax = max(avbin)
+    print(avbin)
+    for j in avbin:
+        scaledy.append(int((j / avmax) * x))
+    print(scaledy)
+    if line is not None:
+        scaled_line = int((line / avmax) * x)
+        lineidx = len(scaledy) - bisect(sorted(scaledy), scaled_line)
+    for idx, j in enumerate(scaledy):
+        if idx == 0:
+            sys.stdout.write(" " *int(x * .5) +  title + "\n")
+            sys.stdout.write(" " * 9 + "0" + " " * (x - 4) + ylab + "\n")
+            sys.stdout.write(" " * 10 + yax + (xax * x) + "|" + "\n")
+        if line is not None:
+            if lineidx == idx:
+                sys.stdout.write(" " * 10 + yax +
+                                 "*" * (x - 4) + "  " + str(line) + "\n")
+        if idx % int(tick * y) == 0:
+            # ticlab = str(len(data[0: len(data) - bisect(sorted(data),
+            #                                             avbin[idx])]))
+            ticlab = str(int((j / x) * avmax))
+            sys.stdout.write(ticlab.rjust(10, " " )  + yax + " " * j + "O\n")
+        else:
+            sys.stdout.write(" " * 10 + yax + " " * j + "O\n")
+
+
+
+
+def plotAsScores(score_list, score_min, outdir, logger=None):
+
+    assert logger is not None, "must use logging"
+    basename = os.path.join(outdir, "AS_score_plot")
+    if len(score_list) > 200000:
+        logger.info("Downsampling our pltting data to 20k points")
+        score_list = random.sample(score_list, 200000)
+    xmax = max(score_list)
+    ymax = max(set(score_list), key=score_list.count)
+    logger.info("score_min, xmax and ymax: %s, %s, %s", score_min, xmax, ymax)
+    # plt.figure()  # <- makes a new figure and sets it active (add this)
+    fig, (plt1, plt2) = plt.subplots(1, 2, sharex=False)
+    # ,
+    #                                  gridspec_kw={'height_ratios': [1, 1]})
+    plt1.hist(score_list, bins=50, color='b', alpha=0.9, label='Binned')
+    plt1.hist(score_list, bins=100,
+              cumulative=True, color='r', alpha=0.5,
+              label='Cumulative')
+    plt1.set_title('Read Alignment Score Histogram')
+    plt1.set_xlabel('Alignemnt Score')
+    plt1.set_ylabel('Abundance')
+    plt1.plot([score_min, score_min], [0, len(score_list) * 1.1],
+              color='green', linewidth=5, alpha=0.6)
+    plt1.axis([0, max(score_list), 0, len(score_list) * 1.1])
+    # plt1.set_yscale("log", nonposy='clip')
+    plt1.legend()
+    plt.tight_layout()
+    plt1.grid(True)
+    plt2.grid(True)
+
+    plt2.scatter(y=sorted(score_list, reverse=True),
+                 x=range(0, len(score_list)))
+    plt2.plot([0, len(score_list) * 1.1], [score_min, score_min],
+              color='green', linewidth=5, alpha=0.6)
+    plt2.axis([0,  len(score_list) * 1.1, 0, max(score_list) * 1.1 ])
+    plt2.set_title('Read Alignment Score, Sorted')
+    plt2.set_ylabel('Alignment Score')
+    plt2.set_xlabel('Index of Sorted Read')
+    fig.set_size_inches(12, 7.5)
+    fig.savefig(str(basename + '.png'), dpi=(200))
+    fig.savefig(str(basename + '.pdf'), dpi=(200))
+    printPlot(data=score_list, line=score_min, y=30, x=60, tick=.2,
+              title="Alignment Scores ", logger=None)
+
+
+#  n, bins, patches = plt.hist(x, 50, normed=1, facecolor='green', alpha=0.75)
+
+# # add a 'best fit' line
+# y = mlab.normpdf( bins, mu, sigma)
+# l = plt.plot(bins, y, 'r--', linewidth=1)
+
+# plt.xlabel('Smarts')
+# plt.ylabel('Probability')
+# plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu=100,\ \sigma=15$')
+# plt.axis([40, 160, 0, 0.03])
+# plt.grid(True)
+
+# plt.show()
+
+
+# ///
+
+#     fig, (ax1, ax2) = plt.subplots(1, 1, sharex=True,
+#                                    gridspec_kw={'height_ratios': [1, 1]})
+#     colors = ['#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',
+#               '#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F']
+#     ax1.set_title(title, y=1.08)
+#     xmin, xmax = 0, len(data)
+#     ymin, ymax = -0.1, (max(data) * 1.2)
+#     ax1.set_xlim([xmin, xmax])
+#     ax1.set_ylim([ymin, ymax])
+#     yjust = -.1
+#     for index, anno in enumerate(anno_list):
+#         rect1 = patches.Rectangle(
+#             (anno[1][0],  # starting x
+#              ymin),  # starting y
+#             anno[1][1] - anno[1][0],  # rel x end
+#             ymax - ymin,  # rel y end
+#             facecolor=mpl.colors.ColorConverter().to_rgba(
+#                 colors[index], alpha=0.2),
+#             edgecolor=mpl.colors.ColorConverter().to_rgba(
+#                 colors[index], alpha=0.2))
+#         rect2 = patches.Rectangle(
+#             (anno[1][0],  # starting x
+#              1),  # starting y
+#             anno[1][1] - anno[1][0],  # rel x end
+#             cov_max_depth,  # dont -1 beacuse start at 1
+#             facecolor=mpl.colors.ColorConverter().to_rgba(
+#                 colors[index], alpha=0.2),
+#             edgecolor=mpl.colors.ColorConverter().to_rgba(
+#                 colors[index], alpha=0.2))
+#         ax1.add_patch(rect1)
+#         ax2.add_patch(rect2)
+#         ax1.text((anno[1][0] + anno[1][1]) / 2,    # x location
+#                  ymax - 0.48 - yjust,                      # y location
+#                  anno[0][0:20],                          # text first 20 char
+#                  ha='center', color='red', weight='bold', fontsize=10)
+#         yjust = yjust * - 1
+#     ax1.scatter(x=df["Position"], y=df["Entropy"],
+#                 marker='o', color='black', s=2)
+#     # add smoothing for kicks
+#     df["fit"] = savitzky_golay(df["Entropy"].values, 351, 3)  # window size 51, polynomial order 3
+#     ax1.scatter(x=df["Position"], y=df["fit"], color='red', s=1)
+#     #
+#     ax1.set_ylabel('Shannon Entropy')
+#     ax1.get_yaxis().set_label_coords(-.05, 0.5)
+#     ax2.set_xlim([xmin, xmax])
+#     ax2.invert_yaxis()
+#     ax2.set_ylabel('Consensus Coverage')
+#     ax2.set_xlabel('Position (bp)')
+#     ax2.get_yaxis().set_label_coords(-.05, 0.5)
+#     # ax2.set_ylim([1, cov_max_depth + 1]) #, 1])
+#     ax2.bar(df_con.index, df_con["depth"],
+#             width=1, color='darkgrey', linewidth=0, edgecolor='darkgrey')
+#     # ax2.step(df_con.index, df_con["depth"],
+#     #          where='mid', color='darkgrey')
+#     for ax in [ax1, ax2]:
+#         ax.spines['right'].set_visible(False)
+#     # Only show ticks on the left and bottom spines
+#     ax1.spines['top'].set_visible(False)
+#     ax2.spines['bottom'].set_visible(False)
+#     ax.yaxis.set_ticks_position('left')
+#     ax2.xaxis.set_ticks_position('bottom')
+#     ax1.xaxis.set_ticks_position('top')
+#     ax1.tick_params(axis='y', colors='dimgrey')
+#     ax2.tick_params(axis='y', colors='dimgrey')
+#     ax1.tick_params(axis='x', colors='dimgrey')
+#     ax2.tick_params(axis='x', colors='dimgrey')
+#     ax1.yaxis.label.set_color('black')
+#     ax2.yaxis.label.set_color('black')
+#     ax1.xaxis.label.set_color('black')
+#     ax2.xaxis.label.set_color('black')
+#     plt.tight_layout()
+#     fig.set_size_inches(12, 7.5)
+#     fig.savefig(str(output_prefix + '.png'), dpi=(200))
+#     fig.savefig(str(output_prefix + '.pdf'), dpi=(200))
+
+
+
 if __name__ == "__main__":  # pragma: no cover
     args = get_args()
     # allow user to give relative paths
@@ -2377,7 +2570,7 @@ if __name__ == "__main__":  # pragma: no cover
                 logger=logger)
         else:
             assert args.method == "bwa", "must be either bwa or smalt"
-            map_percent = map_to_genome_ref_bwa(
+            map_percent, score_list = map_to_genome_ref_bwa(
                 mapping_ob=seedGenome.iter_mapping_list[
                     seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
@@ -2392,15 +2585,28 @@ if __name__ == "__main__":  # pragma: no cover
                 logger=logger)
         # on first time thorugh, infer ref_as_contig if not provided via commandline
         if seedGenome.this_iteration == 0:
-            if args.ref_as_contig is None:
-                if map_percent > 85:
-                    ref_as_contig = "trusted"
+            # do info for smalt mapping
+            if args.method == "bwa":
+                fig_dir = os.path.join(output_root, "figs")
+                os.makedirs(fig_dir)
+                # either use defined min or use the smae heuristic as mapping
+                plotAsScores(
+                    score_list,
+                    score_min=score_minimum if score_minimum is not None else
+                    int(round(float(seedGenome.master_ngs_ob.readlen) / 2.0)),
+                    outdir=fig_dir, logger=logger)
+
+                if args.ref_as_contig is None:
+                    if map_percent > 85:
+                        ref_as_contig = "trusted"
+                    else:
+                        ref_as_contig = "untrusted"
+                        logger.info(
+                            str("unfiltered mapping percentage is %f2 so " +
+                                "'ref_as_contigs' is set to %s"),
+                            map_percent, ref_as_contig)
                 else:
-                    ref_as_contig = "untrusted"
-                logger.info(
-                    str("unfiltered mapping percentage is %f2 so " +
-                        "'ref_as_contigs' is set to %s"),
-                    map_percent, ref_as_contig)
+                    ref_as_contig = args.ref_as_contig
             else:
                 ref_as_contig = args.ref_as_contig
         else:
