@@ -379,7 +379,7 @@ Results can be tuned by changing several of the default parameters.
 * `--score_min`: With either SMALT or BWA, this can be used to set the minimum mapping score. If using BWA, the default is not to supply a minimum and to rely on the BWA default.  If submitting a `--score_min` to BWA, double check that it is appropriate.  It appears to be extremely sensitive to read length, and having a too-low threshold for minimum mapping can seriously ruin ones day.  Check out IGB or similar to view your mappings if greater than, say, 5% or the reads are mapping in subsequent iterations.  If using SMALT, the default minimum is chosen using this formula:
 1.0 - (1.0 / (2.0 + *i*)), where *i* is the 0-based iteration.  This makes it progressively more stringent with each iteration, starting with a minimum score of half the read length. Again, visualize your mappings if anything looks amiss.
 
-* `--flanking_length`: Default is 2000.  That seems to be a good compromise between gaining unique sequence and not relying too much on the reference.
+* `-l, --flanking_length`: Default is 2000.  That seems to be a good compromise between gaining unique sequence and not relying too much on the reference.
 
 * `--kmers` and `--pre_kmers`: Adjust these as you otherwise would for a *de novo* assembly.
 
@@ -544,4 +544,4 @@ We recommend copying this file to your project directory, and customizing it as 
 
 
 ### `sge_batch.sh`
-If you have access to a hpc, this script makes it easier to submit riboSeed jobs.  Just set up a python virtualenv, edit the 7 fields in this script, make any other modifications needed to fit your job, and submit with `qsub`.
+If you have access to a hpc, this script makes it easier to submit riboSeed jobs via `example_batch.sh`.  Just set up a python virtualenv, edit the 7 fields in this script, make any other modifications needed to fit your job, and submit with `qsub`.

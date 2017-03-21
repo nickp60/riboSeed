@@ -2076,6 +2076,37 @@ def subprocess_run_list(cmdlist, hard=False, logger=None):
     return 0
 
 
+def copyToHandyDir(outdir, pre, seedGenome, hard=False, logger=None):
+    """ copy the resulting contigs
+    """
+    assert logger is not None, "Must use logging"
+    os.makedirs(outdir)
+    files_to_copy = [
+        os.path.join(seedGenome.output_root,
+                     "final_de_fere_novo_assembly", "contigs.fasta"),
+        os.path.join(seedGenome.output_root,
+                     "final_de_novo_assembly", "contigs.fasta"),
+        args.reference_genbank]
+    new_names = [pre + "_de_fere_novo_contigs.fasta",
+                 pre + "_de_novo_contigs.fasta",
+                 pre + ".gb"]
+    for idx, f in enumerate(files_to_copy):
+        logger.debug("copying %s to %s as %s",
+                     f,
+                     os.path.join(outdir, os.path.basename(f)),
+                     new_names[idx])
+        try:
+            shutil.copyfile(
+                f,
+                os.path.join(outdir, new_names[idx]))
+        except:
+            logger.warning("unable to copy %s to %s.",
+                           f, os.path.join(outdir, os.path.basename(f)))
+            logger.error(last_exception())
+            if hard:
+                raise FileNotFoundError
+
+
 if __name__ == "__main__":  # pragma: no cover
     args = get_args()
     # allow user to give relative paths
@@ -2557,7 +2588,11 @@ if __name__ == "__main__":  # pragma: no cover
         except Exception as e:
             logger.error("Error writing out combined quast report")
             logger.error(e)
-
+    # make dir for easy downloading from cluster
+    copyToHandyDir(outdir=os.path.join(output_root, "mauve"),
+                   pre=args.exp_name,
+                   seedGenome=seedGenome,
+                   hard=False, logger=logger)
     # Report that we've finished
     logger.info("Done: %s", time.asctime())
     logger.info("riboSeed Assembly: %s", seedGenome.output_root)
