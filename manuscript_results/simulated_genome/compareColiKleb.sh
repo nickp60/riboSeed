@@ -25,7 +25,7 @@ python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ./${ref}.fasta -o ./${i}_ref/sc
 # cluster
 python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ./${i}_ref/scan/scannedScaffolds.gb  -o ./${i}_ref/select/
 # run riboSeed
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ./${i}_ref/scan/scannedScaffolds.gb  -o ./${i}_ref/seed/ ./${i}_ref/select/riboSelect_grouped_loci.txt -F ./toyGenome/reads_1.fq -R ./toyGenome/reads_2.fq -z -v 1 -l ${FLANK}
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ./${i}_ref/scan/scannedScaffolds.gb  -o ./${i}_ref/seed/ ./${i}_ref/select/riboSelect_grouped_loci.txt -F ./toyGenome/reads_1.fq -R ./toyGenome/reads_2.fq -z -v 1 -l ${FLANK} 
 done
 
 # make copy of contigs renamed for mauve
