@@ -1,5 +1,5 @@
 #!/bin/bash
-# version 0.0.6
+# version 0.1.0
 #$ -cwd
 #$ -j yes
 #$ -V
@@ -24,7 +24,7 @@ if [ -d "$4" ]; then
     echo "play things safe, make a new directory for results"
     exit 1
 fi
-GB="$1"
+FASTA="$1"
 READ1="$2"
 READ2="$3"
 OUTDIR="$4"
@@ -35,7 +35,9 @@ VENVEXE="$7"
 mkdir ${OUTDIR}
 ## enter virtual environment
 source ${VENVEXE}
+## riboSnag
+python3.5 riboScan.py ${FASTA} -o ${OUTDIR}/scan/ -v 1
 ## RiboSelect
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${GB} -o ${OUTDIR}select/ -v 1
+python3.5 riboSelect.py ${OUTDIR}/scan/scannedScaffolds.gb -o ${OUTDIR}select/ -v 1
 ## RiboSeed
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -l ${FLANK} -r ${GB} -v 1 -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1 -c 4 -t 2
+python3.5 riboSeed.py ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -l ${FLANK} -r ${OUTDIR}/scan/scannedScaffolds.gb -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1 -c 4 -t 2

@@ -3,6 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 #
+FLANK=2000
 
 for i in "good" "bad";
 do
@@ -20,11 +21,11 @@ get_genomes.py -q $ref -o ./
 
 # anotate the rDNAs
 
-python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ./${ref} .fasta -o ./${i}_ref/scan/
+python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ./${ref}.fasta -o ./${i}_ref/scan/
 # cluster
 python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ./${i}_ref/scan/scannedScaffolds.gb  -o ./${i}_ref/select/
 # run riboSeed
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ./${i}_ref/scan/scannedScaffolds.gb  -o ./${i}_ref/seed/ ./${i}_ref/select/riboSelect_grouped_loci.txt -F ./toyGenome/reads_1.fq -R ./toyGenome/reads_2.fq -z -v 1 -l 2000
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ./${i}_ref/scan/scannedScaffolds.gb  -o ./${i}_ref/seed/ ./${i}_ref/select/riboSelect_grouped_loci.txt -F ./toyGenome/reads_1.fq -R ./toyGenome/reads_2.fq -z -v 1 -l ${FLANK}
 done
 
 # make copy of contigs renamed for mauve

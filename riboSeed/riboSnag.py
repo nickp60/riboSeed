@@ -44,7 +44,6 @@ from itertools import product  # for getting all possible kmers
 from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
     combine_contigs, check_version_from_cmd
 
-
 class LociCluster(object):
     """ organizes the clustering process instead of dealing with nested lists
     This holds the whole cluster of one to several individual loci
@@ -212,6 +211,13 @@ def get_args():  # pragma: no cover
                           choices=["mito", "euk", "arc", "bac"],
                           help="kingdom for barrnap; " +
                           "default: %(default)s")
+    optional.add_argument("-s", "--seq_name", dest='seq_name',
+                          action="store",
+                          help="name of genome; "
+                          "default: inferred from file name, as many cases" +
+                          "involve multiple contigs, etc, making inference  " +
+                          "from record intractable",
+                          type=str)
     # had to make this explicitly to call it a faux optional arg
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
@@ -318,6 +324,9 @@ def extract_coords_from_locus(cluster, feature="rRNA",
     assert logger is not None, "logging must be used!"
     loc_number = 0  # index for hits
     locus_tags = [x.locus_tag for x in cluster.loci_list]
+    if verbose:
+        logger.debug("Locus tags for cluster %s: %s", cluster.index,
+                     " ".join([x for x in locus_tags]))
     for feat in cluster.seq_record.features:
         if not feat.type in feature:
             continue
@@ -1011,17 +1020,37 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     return np.convolve(m[::-1], y, mode='valid')
 
 
-def main(clusters, genome_records, logger, verbose, no_revcomp,
+def get_rec_from_generator(recordID, gen, method=None):
+    """ given a record ID and and SeqIO generator return sequence of
+    genbank record that has all the loci, and call method to refresh generator
+    If on different sequences, return error
+    """
+    for record in gen:
+        if recordID == record.id:
+            if method is not None:
+                method()
+            return record
+        else:
+            pass
+    # if none found, raise error
+    raise ValueError("no record found matching record id %s!" % recordID)
+
+
+def main(clusters, gb_path, logger, verbose, no_revcomp,
          output, circular, flanking, prefix_name):
     get_rev_comp = no_revcomp is False  # kinda clunky
     extracted_regions = []
     logger.debug(clusters)
     for cluster in clusters:  # for each cluster of loci
         # get seq record that cluster is  from
+        logger.debug("fetching genbank record for %s", cluster.sequence_id)
         try:
-            cluster.seq_record = \
-                get_genbank_rec_from_multigb(recordID=cluster.sequence_id,
-                                             genbank_records=genome_records)
+            genome_records_gen = SeqIO.parse(gb_path, 'genbank')
+            cluster.seq_record = get_rec_from_generator(
+                recordID=cluster.sequence_id,
+                gen=genome_records_gen,
+                method=None)
+            logger.debug(cluster.seq_record)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
@@ -1029,14 +1058,15 @@ def main(clusters, genome_records, logger, verbose, no_revcomp,
         try:
             extract_coords_from_locus(
                 cluster=cluster, feature=cluster.feat_of_interest,
-                logger=logger)
+                logger=logger,
+                verbose=True)
         except Exception as e:
             logger.error(e)
             sys.exit(1)
-            logger.debug(
-                "Here are the detected region,coords, strand, product, " +
-                "locus tag, subfeatures and sequence id of the results:")
-            logger.debug(str(cluster.__dict__))
+        logger.debug(
+            "Here are the detected region,coords, strand, product, " +
+            "locus tag, subfeatures and sequence id of the results:")
+        logger.debug(str(cluster.__dict__))
         if circular:
             cluster_post_pad = pad_genbank_sequence(cluster=cluster,
                                                     logger=logger)
@@ -1098,8 +1128,10 @@ def main(clusters, genome_records, logger, verbose, no_revcomp,
     # write out the whole file as a fasta as well...
     # append in case of multiple records
     ref_fasta = os.path.join(output, str(prefix_name + "_genome.fasta"))
+    # refresh the generator
+    genome_records_gen = SeqIO.parse(gb_path, 'genbank')
     with open(ref_fasta, "a") as outfa:
-        for record in genome_records:
+        for record in genome_records_gen:
             SeqIO.write(record, outfa, "fasta")
             outfa.write('\n')
     return extracted_regions, ref_fasta, file_list
@@ -1272,7 +1304,7 @@ if __name__ == "__main__":
         logger.debug("%s: %s", k, v)
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
     # test whether executables are there
-    executables = ['barrnap']
+    executables = [args.barrnap_exe]
     test_ex = [check_installed_tools(x, logger=logger) for x in executables]
     if all(test_ex):
         logger.debug("All needed system executables found!")
@@ -1297,16 +1329,18 @@ if __name__ == "__main__":
         logger.error(e)
         sys.exit(1)
     # parse genbank records
-    with open(args.genbank_genome) as fh:
-        genome_records = list(SeqIO.parse(fh, 'genbank'))
+    # with open(args.genbank_genome) as fh:
+    #     genome_records = list(SeqIO.parse(fh, 'genbank'))
+    # genome_records_gen = SeqIO.parse(args.genbank_genome, 'genbank')
     regions = []
     logger.info("clusters:")
-    logger.info(clusters)
+    for cluster in clusters:
+            logger.info(cluster.__dict__)
     if args.name is None:  # if none given, use date for name (for out files)
         args.name = date
     regions, ref_fasta, region_files = main(
         clusters=clusters,
-        genome_records=genome_records,
+        gb_path=args.genbank_genome,
         logger=logger,
         verbose=False,
         flanking=args.flanking,
@@ -1371,6 +1405,7 @@ if __name__ == "__main__":
             kingdom=args.kingdom,
             logger=logger)
         title = str("Shannon Entropy by Position\n" +
+                    args.seq_name if args.seq_name is not None else
                     os.path.basename(
                         os.path.splitext(
                             args.genbank_genome)[0]))

@@ -751,7 +751,7 @@ def last_exception():
 
 def get_rec_from_generator(recordID, gen, method=None):
     """ given a record ID and and SeqIO generator return sequence of
-    genbank record that has all the loci, and call method to refresh generator
+    genbank record that has the loci, and call method to refresh generator
     If on different sequences, return error
     """
     for record in gen:
