@@ -2211,102 +2211,12 @@ def plotAsScores(score_list, score_min, outdir, logger=None):
     fig.set_size_inches(12, 7.5)
     fig.savefig(str(basename + '.png'), dpi=(200))
     fig.savefig(str(basename + '.pdf'), dpi=(200))
+    logger.info("Plotting alignment score:")
     printPlot(data=score_list, line=score_min, y=30, x=60, tick=.2,
               title="Alignment Scores ", logger=None)
-
-
-#  n, bins, patches = plt.hist(x, 50, normed=1, facecolor='green', alpha=0.75)
-
-# # add a 'best fit' line
-# y = mlab.normpdf( bins, mu, sigma)
-# l = plt.plot(bins, y, 'r--', linewidth=1)
-
-# plt.xlabel('Smarts')
-# plt.ylabel('Probability')
-# plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu=100,\ \sigma=15$')
-# plt.axis([40, 160, 0, 0.03])
-# plt.grid(True)
-
-# plt.show()
-
-
-# ///
-
-#     fig, (ax1, ax2) = plt.subplots(1, 1, sharex=True,
-#                                    gridspec_kw={'height_ratios': [1, 1]})
-#     colors = ['#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',
-#               '#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F']
-#     ax1.set_title(title, y=1.08)
-#     xmin, xmax = 0, len(data)
-#     ymin, ymax = -0.1, (max(data) * 1.2)
-#     ax1.set_xlim([xmin, xmax])
-#     ax1.set_ylim([ymin, ymax])
-#     yjust = -.1
-#     for index, anno in enumerate(anno_list):
-#         rect1 = patches.Rectangle(
-#             (anno[1][0],  # starting x
-#              ymin),  # starting y
-#             anno[1][1] - anno[1][0],  # rel x end
-#             ymax - ymin,  # rel y end
-#             facecolor=mpl.colors.ColorConverter().to_rgba(
-#                 colors[index], alpha=0.2),
-#             edgecolor=mpl.colors.ColorConverter().to_rgba(
-#                 colors[index], alpha=0.2))
-#         rect2 = patches.Rectangle(
-#             (anno[1][0],  # starting x
-#              1),  # starting y
-#             anno[1][1] - anno[1][0],  # rel x end
-#             cov_max_depth,  # dont -1 beacuse start at 1
-#             facecolor=mpl.colors.ColorConverter().to_rgba(
-#                 colors[index], alpha=0.2),
-#             edgecolor=mpl.colors.ColorConverter().to_rgba(
-#                 colors[index], alpha=0.2))
-#         ax1.add_patch(rect1)
-#         ax2.add_patch(rect2)
-#         ax1.text((anno[1][0] + anno[1][1]) / 2,    # x location
-#                  ymax - 0.48 - yjust,                      # y location
-#                  anno[0][0:20],                          # text first 20 char
-#                  ha='center', color='red', weight='bold', fontsize=10)
-#         yjust = yjust * - 1
-#     ax1.scatter(x=df["Position"], y=df["Entropy"],
-#                 marker='o', color='black', s=2)
-#     # add smoothing for kicks
-#     df["fit"] = savitzky_golay(df["Entropy"].values, 351, 3)  # window size 51, polynomial order 3
-#     ax1.scatter(x=df["Position"], y=df["fit"], color='red', s=1)
-#     #
-#     ax1.set_ylabel('Shannon Entropy')
-#     ax1.get_yaxis().set_label_coords(-.05, 0.5)
-#     ax2.set_xlim([xmin, xmax])
-#     ax2.invert_yaxis()
-#     ax2.set_ylabel('Consensus Coverage')
-#     ax2.set_xlabel('Position (bp)')
-#     ax2.get_yaxis().set_label_coords(-.05, 0.5)
-#     # ax2.set_ylim([1, cov_max_depth + 1]) #, 1])
-#     ax2.bar(df_con.index, df_con["depth"],
-#             width=1, color='darkgrey', linewidth=0, edgecolor='darkgrey')
-#     # ax2.step(df_con.index, df_con["depth"],
-#     #          where='mid', color='darkgrey')
-#     for ax in [ax1, ax2]:
-#         ax.spines['right'].set_visible(False)
-#     # Only show ticks on the left and bottom spines
-#     ax1.spines['top'].set_visible(False)
-#     ax2.spines['bottom'].set_visible(False)
-#     ax.yaxis.set_ticks_position('left')
-#     ax2.xaxis.set_ticks_position('bottom')
-#     ax1.xaxis.set_ticks_position('top')
-#     ax1.tick_params(axis='y', colors='dimgrey')
-#     ax2.tick_params(axis='y', colors='dimgrey')
-#     ax1.tick_params(axis='x', colors='dimgrey')
-#     ax2.tick_params(axis='x', colors='dimgrey')
-#     ax1.yaxis.label.set_color('black')
-#     ax2.yaxis.label.set_color('black')
-#     ax1.xaxis.label.set_color('black')
-#     ax2.xaxis.label.set_color('black')
-#     plt.tight_layout()
-#     fig.set_size_inches(12, 7.5)
-#     fig.savefig(str(output_prefix + '.png'), dpi=(200))
-#     fig.savefig(str(output_prefix + '.pdf'), dpi=(200))
-
+    logger.info("Line represents the minimum score; if it looks like " +
+                "this filtering threshold is inapporpriate, consider " +
+                "adjusting with --score_min")
 
 
 if __name__ == "__main__":  # pragma: no cover
