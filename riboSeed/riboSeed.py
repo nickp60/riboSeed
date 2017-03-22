@@ -1042,6 +1042,25 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
     return(score_list)
 
 
+def get_bam_AS(inbam, logger=None):
+    assert logger is not None, "must use logging"
+    score_list = []
+    count = 0
+    pysam.index(inbam)
+    bam = pysam.AlignmentFile(inbam, "rb")
+    for read in bam.fetch():
+        count = count + 1
+        if read.has_tag('AS'):
+            score_list.append(read.get_tag('AS'))
+        else:
+            pass
+    bam.close()
+    if len(score_list) != count:
+        logger.warning("%i reads did not have AS tags",
+                       count - len(score_list))
+    return score_list
+
+
 def sam_to_bam(samtools_exe, bam, sam, logger=None):
     """
     becasue pysam doesnt like to write bams in an iterator, which makes sense
@@ -1383,15 +1402,6 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     else:
         logger.info("%s The new contig differs from the reference " +
                     "seed by %i bases", prelog, contig_length_diff)
-    # if contig is really long, get rid of it
-    # if contig_len > (ref_len +
-    #                  (read_len * DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR)):
-    #     logger.warning(
-    #         "Contig length is exceedingly long!  We set the threshold of 6x " +
-    #         "the read length as the maximum allowed long-read length.  This " +
-    #         "is often indicative of bad mapping parameters, so the " +
-    #         "long-read will be discarded.  Return code 2")
-    #     return 2
     if contig_len > (ref_len + (2 * flank)):
         logger.warning(
             "Contig length is exceedingly long!  We set the threshold of " +
@@ -1610,7 +1620,7 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
 
 def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank,
                          logger=None):
-    """use withing PArtition mapping funtion;
+    """use within partition mapping funtion;
     makes LociMapping, get region coords, write extracted region,
     """
     mapping_subdir = os.path.join(
@@ -1857,6 +1867,7 @@ def partition_mapping(seedGenome, samtools_exe, flank,
                              logger=logger)
 
     mapped_regions = []
+    all_depths = []  # each entry is a tuple (idx, start_ave, end_ave)
     for cluster in cluster_list:
         mapped_partition_cmds, reg_to_extract = make_mapped_partition_cmds(
             cluster=cluster, mapping_ob=cluster.mappings[-1],
@@ -1897,7 +1908,7 @@ def partition_mapping(seedGenome, samtools_exe, flank,
                     start_ave_depth,
                     flank,
                     end_ave_depth)
-
+        all_depths.append((cluster.index, start_ave_depth, end_ave_depth))
     logger.info("mapped regions for iteration %i:\n%s",
                 seedGenome.this_iteration,
                 "\n".join([x for x in mapped_regions]))
@@ -1920,6 +1931,8 @@ def partition_mapping(seedGenome, samtools_exe, flank,
             seedGenome.this_iteration].mapped_ids_txt,
         unmapped_sam=seedGenome.iter_mapping_list[
             seedGenome.this_iteration].unmapped_sam)
+    # sam_score_list = get_sam_AS
+    return all_depths
 
 
 def add_coords_to_clusters(seedGenome, logger=None):
@@ -2129,44 +2142,49 @@ def copyToHandyDir(outdir, pre, seedGenome, hard=False, logger=None):
 
 from bisect import bisect
 
-def printPlot(data, line=None, y=30, x=60, tick=.2,  title="test", logger=None):
+def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
+              title="test", fill=False, logger=None):
+    """ ascii not what your program can do for you...
+    """
+    assert logger is not None, "must use logging"
     data = sorted(data, reverse=True)
-    yax = "|"
-    xax = "_"
+    xaxis = "|"
+    yaxis = "_"
     avbin = []
     scaledy = []
-    lendata = len(data)
-    print(lendata)
-    ylab = str(max(data))
-    sli = math.ceil(lendata / x)
-    for i in range(0, x):
+    # ylab = str(max(data))
+    ylab = str(len(data))
+    sli = math.ceil(len(data) / ymax)
+    #  get rough averages for a window
+    for i in range(0, ymax + 1):
         avbin.append(int(sum(data[i * sli: (i + 1) * sli]) / sli ))
 
     avmax = max(avbin)
-    print(avbin)
+    logger.debug("scaling to max of %i", avmax)
     for j in avbin:
-        scaledy.append(int((j / avmax) * x))
-    print(scaledy)
+        scaledy.append(int((j / avmax) * xmax))
     if line is not None:
-        scaled_line = int((line / avmax) * x)
+        scaled_line = int((line / avmax) * xmax)
         lineidx = len(scaledy) - bisect(sorted(scaledy), scaled_line)
+    plotlines = []
+    fillchar = " " if not fill else "X"
     for idx, j in enumerate(scaledy):
         if idx == 0:
-            sys.stdout.write(" " *int(x * .5) +  title + "\n")
-            sys.stdout.write(" " * 9 + "0" + " " * (x - 4) + ylab + "\n")
-            sys.stdout.write(" " * 10 + yax + (xax * x) + "|" + "\n")
+            plotlines.append(" " * int(xmax * .25) + title)
+            plotlines.append(" " * 9 + "0" + " " * (xmax - 2) + ylab )
+            plotlines.append(" " * 10 + xaxis + (yaxis * xmax) + "|")
         if line is not None:
             if lineidx == idx:
-                sys.stdout.write(" " * 10 + yax +
-                                 "*" * (x - 4) + "  " + str(line) + "\n")
-        if idx % int(tick * y) == 0:
-            # ticlab = str(len(data[0: len(data) - bisect(sorted(data),
-            #                                             avbin[idx])]))
-            ticlab = str(int((j / x) * avmax))
-            sys.stdout.write(ticlab.rjust(10, " " )  + yax + " " * j + "O\n")
+                plotlines.append(" " * 10 + xaxis +
+                                 "*" * (xmax - 4) + "  " + str(line))
+                fillchar = " "
+        if idx % int(tick * ymax) == 0:
+            # plot ticks at increments
+            ticlab = str(int((j / xmax) * avmax))
+            plotlines.append(ticlab.rjust(10, " " )  + xaxis + fillchar * j + "O")
         else:
-            sys.stdout.write(" " * 10 + yax + " " * j + "O\n")
-
+            plotlines.append(" " * 10 + xaxis + fillchar * j + "O")
+    logger.info("\n" + "\n".join(plotlines))
 
 
 
@@ -2204,20 +2222,37 @@ def plotAsScores(score_list, score_min, outdir, logger=None):
                  x=range(0, len(score_list)))
     plt2.plot([0, len(score_list) * 1.1], [score_min, score_min],
               color='green', linewidth=5, alpha=0.6)
-    plt2.axis([0,  len(score_list) * 1.1, 0, max(score_list) * 1.1 ])
+    plt2.axis([0, len(score_list) * 1.1, 0, max(score_list) * 1.1 ])
     plt2.set_title('Read Alignment Score, Sorted')
     plt2.set_ylabel('Alignment Score')
     plt2.set_xlabel('Index of Sorted Read')
     fig.set_size_inches(12, 7.5)
     fig.savefig(str(basename + '.png'), dpi=(200))
     fig.savefig(str(basename + '.pdf'), dpi=(200))
-    logger.info("Plotting alignment score:")
-    printPlot(data=score_list, line=score_min, y=30, x=60, tick=.2,
-              title="Alignment Scores ", logger=None)
-    logger.info("Line represents the minimum score; if it looks like " +
+    logger.info("Plotting alignment score of mapping:")
+    printPlot(data=score_list, line=score_min, ymax=30, xmax=60, tick=.2,
+              fill=True,
+              title="Average alignment Scores (y) by sorted read index (x)",
+              logger=logger)
+    logger.info("Filled area represents the reads retained after filtering. " +
+                "If it looks like " +
                 "this filtering threshold is inapporpriate, consider " +
                 "adjusting with --score_min")
 
+
+def reportRegionDepths(inp, logger):
+    assert logger is not None, "must use logging"
+    report_list = []
+    nclusters = len(inp[0])
+    for i in range(0, nclusters):
+        report_list.append("Cluster %i:" % i)
+        for itidx, iteration in enumerate(inp):
+            for cluster in iteration:
+                if cluster[0] == i:
+                    report_list.append(
+                        "\tIter %i -- 5'prime: %.2f  3prime %.2f" % (
+                            itidx, cluster[1], cluster[2]))
+    return(report_list)
 
 if __name__ == "__main__":  # pragma: no cover
     args = get_args()
@@ -2367,6 +2402,9 @@ if __name__ == "__main__":  # pragma: no cover
     for cluster in seedGenome.loci_clusters:
         cluster.master_ngs_ob = seedGenome.master_ngs_ob
 # --------------------------------------------------------------------------- #
+    # Performance summary lists
+    mapping_percentages = []
+    region_depths = []
     # now, we need to assemble each mapping object
     # this should exclude any failures
     while seedGenome.this_iteration <= args.iterations:
@@ -2401,6 +2439,21 @@ if __name__ == "__main__":  # pragma: no cover
                 next_seqrec = list(SeqIO.parse(nextref, 'fasta'))[0]  # next?
             for clu in clusters_to_process:
                 clu.seq_record = next_seqrec
+            # print qualities of mapped reads
+            for clu in clusters_to_process:
+                logger.debug("getting mapping scores for cluster %i from %s",
+                             clu.index, clu.mappings[-1].mapped_bam)
+                mapped_scores = get_bam_AS(
+                    inbam=clu.mappings[-1].mapped_bam,
+                    logger=logger)
+                printPlot(data=mapped_scores, line=score_minimum,
+                          ymax=25,
+                          xmax=60, tick=.2, fill=True,
+                          title=str("Average alignment Scores for cluster " +
+                                    "%i\n " % clu.index),
+                          logger=logger)
+                logger.info(str("-" * 40))
+
             # make new ngslib from unampped reads
             convert_cmd, unmapped_ngsLib = convert_bam_to_fastqs_cmd(
                 mapping_ob=seedGenome.iter_mapping_list[
@@ -2493,6 +2546,8 @@ if __name__ == "__main__":  # pragma: no cover
                 # add_args='-L 0,0 -U 0',
                 add_args=args.mapper_args,
                 logger=logger)
+        mapping_percentages.append("Iteration %i: %f" % (
+            seedGenome.this_iteration, map_percent))
         # on first time thorugh, infer ref_as_contig if not provided via commandline
         if seedGenome.this_iteration == 0:
             # do info for smalt mapping
@@ -2523,18 +2578,21 @@ if __name__ == "__main__":  # pragma: no cover
             pass
 
         try:
-            partition_mapping(seedGenome=seedGenome,
-                              logger=logger,
-                              samtools_exe=sys_exes.samtools,
-                              flank=args.flanking,
-                              cluster_list=clusters_to_process)
+            # again, this is [(idx, start_depth, end_depth)]
+            iter_depths = partition_mapping(
+                seedGenome=seedGenome,
+                logger=logger,
+                samtools_exe=sys_exes.samtools,
+                flank=args.flanking,
+                cluster_list=clusters_to_process)
         except Exception as e:
             logger.error("Error while partitioning reads from iteration %i",
                          seedGenome.this_iteration)
             logger.error(last_exception())
             logger.error(e)
             sys.exit(1)
-
+        logger.info(iter_depths)
+        region_depths.append(iter_depths)
         extract_convert_assemble_cmds = []
         # generate spades cmds (cannot be multiprocessed)
         # ref_as_contig must be 'trusted' here, a
@@ -2671,12 +2729,21 @@ if __name__ == "__main__":  # pragma: no cover
         logger=logger)
     logger.info("Combined Seed Contigs: %s", seedGenome.assembled_seeds)
     logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
+    # Diagnostics
+    logger.info("Mapping percentages per iteration: \n" +
+                "(Iteration 0, which maps to entire reference, should " +
+                "have a high value; other iterations are percentage of " +
+                "previously unmapped reads which now map to the seeded " +
+                "flanking regions, which may be very low)\n" +
+                "\n".join(mapping_percentages))
+    report = reportRegionDepths(inp=region_depths, logger=logger)
+    logger.info("Average depths of mapping for each cluster, by iteration:")
+    logger.info("\n" + "\n".join(report))
+
     # run final contigs
     spades_quast_cmds, quast_reports = get_final_assemblies_cmds(
         seedGenome=seedGenome, exes=sys_exes,
         ref_as_contig=ref_as_contig,
-        # spades_exe=sys_exes.spades,
-        # quast_exe=sys_exes.quast, python2_7_exe=sys_exes.python2_7,
         skip_control=args.skip_control, kmers=args.kmers, logger=logger)
 
     if args.serialize:
