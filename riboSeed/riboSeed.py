@@ -217,15 +217,17 @@ class SeedGenome(object):
         """
         self.seq_records = SeqIO.parse(self.genbank_path, "genbank")
 
-    def purge_old_files(self, all_iters=False):
+    def purge_old_files(self, all_iters=False, logger=None):
         """ remove bulky files from two iterations ago, or if
         all_iters, remove all big mapping files
         """
+        if logger:
+            logger.info("Removing uneeded files:")
         if all_iters:
             target_iters = range(0, self.max_iterations + 1)
         else:
             target_iters = [self.this_iteration - 2]
-            assert target_iters[0] >= 0, \
+            assert target_iters[0] < seedGenome.this_iteration - 1, \
                 "previous mapping is required, can only purge 2nd previous"
         for iter in target_iters:
             for f in [self.iter_mapping_list[iter].pe_map_bam,
@@ -238,6 +240,8 @@ class SeedGenome(object):
                 if f is not None:
                     if os.path.isfile(f):
                         os.unlink(f)
+                        if logger:
+                            logger.debug(f)
 
 
 class NgsLib(object):
@@ -360,10 +364,12 @@ class NgsLib(object):
                   self.libtype)
             return None
 
-    def purge_old_files(self):
+    def purge_old_files(self, logger=None):
         """ before reasigning unmapped lib, delete
         useless files that were used in the previous iteration
         """
+        if logger:
+            logger.info("Removing uneeded files:")
         if self.master:
             print("cannot remove master NgsLib")
         for f in [self.readF,
@@ -372,6 +378,8 @@ class NgsLib(object):
             if f is not None:
                 if os.path.isfile(f):
                     os.unlink(f)
+                    if logger:
+                        logger.debug(f)
 
     def listLibs(self):
         self.liblist = [x for x in
@@ -1196,10 +1204,10 @@ def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
     assert which in ['mapped', 'unmapped'], \
         "only valid options are mapped and unmapped"
     read_path_dict = {'readF': None, 'readR': None, 'readS': None}
+    logger.debug("preparing to convert extracted reads to make these files:")
     for key, value in read_path_dict.items():
         read_path_dict[key] = str(os.path.splitext(
             mapping_ob.mapped_bam)[0] + "_" + which + key + '.fastq')
-        logger.debug(read_path_dict[key])
 
     assert None not in read_path_dict.values(), \
         "Could not properly construct fastq names!"
@@ -1217,6 +1225,9 @@ def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
             read_path_dict['readF'],
             read_path_dict['readR'],
             read_path_dict['readS'])
+        for key in ['readF', 'readR', 'readS']:
+            logger.debug(read_path_dict[key])
+
     else:
         # This option outputs all the reads in a single fastq
         # its needed for low coverage mappings when the F and R
@@ -1226,6 +1237,7 @@ def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
             samtools_exe,
             getattr(mapping_ob, str(which + source_ext)),
             read_path_dict['readS'])
+        logger.debug(read_path_dict['readS'])
         # Flag the others for ignoral
         # read_path_dict['readF'] = None
         # read_path_dict['readR'] = None
@@ -1792,9 +1804,12 @@ def make_unmapped_partition_cmds(
     use the cgrep voodoo to make a sam file from the full library without
     the mapped reads. returns a cmd as a string
     """
-    # if not first iteration, copy previous iterms mapped_ids_txt
+    # starting at second iteration, copy previous iterms mapped_ids_txt
     # as a starting point so we can track the reads better.
-    if seedGenome.this_iteration != 0:
+    #  This used to get the first iterations mapped id's, but that was the
+    # overall mapping, which leaves out very few 'unmapped'.  so, we start at
+    # iteration 2
+    if seedGenome.this_iteration > 1:
         shutil.copyfile(
             seedGenome.iter_mapping_list[
                 seedGenome.this_iteration - 1].mapped_ids_txt,
@@ -1831,13 +1846,15 @@ def make_unmapped_partition_cmds(
     return unmapped_cmds, get_unmapped
 
 
-def pysam_extract_reads(sam, textfile, unmapped_sam):
+def pysam_extract_reads(sam, textfile, unmapped_sam, logger=None):
     """ This replaces the "LC_ALL " grep call from the above function. On macs,
     there is no speedup gained.
     """
     qfile = textfile  # contains read names of mapped reads
     sfile = sam  # mapping of all reads to genome
     ofile = unmapped_sam  # destination sam of all reads not in regions
+    nunmapped = 0
+    total = 0
     # Load query fixed strings as a set
     with open(qfile, 'r') as qfh:
         queries = {q.strip() for q in qfh.readlines() if len(q.strip())}
@@ -1845,11 +1862,16 @@ def pysam_extract_reads(sam, textfile, unmapped_sam):
     samfile = pysam.AlignmentFile(sfile, 'r')
     osam = pysam.Samfile(ofile, 'wh', template=samfile)
     for read in samfile.fetch():
+        total = total + 1
         if read.qname in queries:
             continue
         else:
             # write out read names not in textfile
+            nunmapped = nunmapped + 1
             osam.write(read)
+    if logger:
+        logger.info("Wrote %i of the %i  unmapped reads from %s to %s",
+                    nunmapped, total, sam, ofile)
     osam.close()
 
 
@@ -1925,12 +1947,16 @@ def partition_mapping(seedGenome, samtools_exe, flank,
                        stderr=subprocess.PIPE,
                        check=True)
     logger.info("using pysam to extract a subset of reads ")
+    # this may look wierd: for iteration 0, we extract from the mapping.
+    # for each one after that, we extract from the previous mapping.
+    unmapped_reads_index = 0 if seedGenome.this_iteration == 0 \
+        else seedGenome.this_iteration - 1
     pysam_extract_reads(
-        sam=seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
+        sam=seedGenome.iter_mapping_list[unmapped_reads_index].mapped_sam,
         textfile=seedGenome.iter_mapping_list[
             seedGenome.this_iteration].mapped_ids_txt,
         unmapped_sam=seedGenome.iter_mapping_list[
-            seedGenome.this_iteration].unmapped_sam)
+            seedGenome.this_iteration].unmapped_sam, logger=logger)
     # sam_score_list = get_sam_AS
     return all_depths
 
@@ -2428,12 +2454,13 @@ if __name__ == "__main__":  # pragma: no cover
             if seedGenome.this_iteration != 1:
                 # clear out old .sam files to save space
                 if not args.keep_temps:
-                    seedGenome.purge_old_files()
+                    logger.info("removing uneeded file:")
+                    seedGenome.purge_old_files(all_iters=False, logger=logger)
                     # delete the read files from the last mapping
                     # dont do this on first iteration cause those be the reads!
                     # and if they aren't backed up you are up a creek and
                     # probably very upset with me.
-                    unmapped_ngsLib.purge_old_files()
+                    unmapped_ngsLib.purge_old_files(logger=logger)
             # seqrecords for the clusters to be gen.next_reference_path
             with open(seedGenome.next_reference_path, 'r') as nextref:
                 next_seqrec = list(SeqIO.parse(nextref, 'fasta'))[0]  # next?
@@ -2452,7 +2479,7 @@ if __name__ == "__main__":  # pragma: no cover
                           title=str("Average alignment Scores for cluster " +
                                     "%i\n " % clu.index),
                           logger=logger)
-                logger.info(str("-" * 40))
+                logger.info(str("-" * 72))
 
             # make new ngslib from unampped reads
             convert_cmd, unmapped_ngsLib = convert_bam_to_fastqs_cmd(
@@ -2479,9 +2506,9 @@ if __name__ == "__main__":  # pragma: no cover
             # start with whole lib if first time through
             unmapped_ngsLib = seedGenome.master_ngs_ob
         # Run commands to map to the genome
-        # This makes it such that score minimum is now more stringent
-        # with each mapping.
         if not args.score_min:
+            # This makes it such that score minimum is now more stringent
+            # with each mapping.
             if args.method == 'smalt':
                 scaling_factor = 1.0 - (
                     1.0 / (2.0 + float(seedGenome.this_iteration)))
