@@ -152,7 +152,7 @@ setup(
              'riboSeed/riboSnag.py', 'riboSeed/riboSwap.py',
              'riboSeed/riboScan.py', "scripts/runme.py",
              "scripts/OSX_INSTALL_DEPS.sh",
-             'scripts/example_batch.sh',
-             'scripts/splitMultifasta.sh',
+             'scripts/riboBatch.sh',
+             # 'scripts/splitMultifasta.sh',
              'scripts/concatToyGenome.py'],
 )

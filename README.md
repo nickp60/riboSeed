@@ -376,8 +376,9 @@ optional arguments:
 
 Results can be tuned by changing several of the default parameters.
 
-* `--score_min`: With either SMALT or BWA, this can be used to set the minimum mapping score. If using BWA, the default is not to supply a minimum and to rely on the BWA default.  If submitting a `--score_min` to BWA, double check that it is appropriate.  It appears to be extremely sensitive to read length, and having a too-low threshold for minimum mapping can seriously ruin ones day.  Check out IGB or similar to view your mappings if greater than, say, 5% or the reads are mapping in subsequent iterations.  If using SMALT, the default minimum is chosen using this formula:
-1.0 - (1.0 / (2.0 + *i*)), where *i* is the 0-based iteration.  This makes it progressively more stringent with each iteration, starting with a minimum score of half the read length. Again, visualize your mappings if anything looks amiss.
+* `--score_min`:  This can be used to set the minimum mapping score. If using BWA, the default is not to supply a minimum and to rely on the BWA default.  If submitting a `--score_min` to BWA, double check that it is appropriate.  It appears to be extremely sensitive to read length, and having a too-low threshold for minimum mapping can seriously ruin ones day.  Check out IGB or similar to view your mappings if greater than, say, 5% or the reads are mapping in subsequent iterations.
+<!-- If using SMALT, the default minimum is chosen using this formula: -->
+<!-- 1.0 - (1.0 / (2.0 + *i*)), where *i* is the 0-based iteration.  This makes it progressively more stringent with each iteration, starting with a minimum score of half the read length. Again, visualize your mappings if anything looks amiss. -->
 
 * `-l, --flanking_length`: Default is 2000.  That seems to be a good compromise between gaining unique sequence and not relying too much on the reference.
 
@@ -385,11 +386,9 @@ Results can be tuned by changing several of the default parameters.
 
 * `--min_assembly_len`:  For bacteria, this is about 7000bp, as the rDNA regions for a typical operon of 16S 23S and 5S coding sequences combined usually are about that long.  If you are using non-standard rDNA regions, this should be adjusted to prevent spurious assemblies.
 
-* `--ref_as_contig`:  This can be used to guide how SPAdes treats the long read sequences during the assembly (`trusted` or `untrusted`).
+* `--ref_as_contig`:  This can be used to guide how SPAdes treats the long read sequences during the assembly (`trusted` or `untrusted`).  By default, this is infered from mapping percentage (`trusted` if over 85% of reads map to the reference)
 
 * `--iterations`:  Each iteration typically increases the length of the long read by approximately 5%.
-
-* `--smalt_scoring`: You can adjust the SMALT scoring matrix to fine-tune the mapping stringency.
 
 ## 3: Assembly Refinement
 ### `riboSwap.py`
@@ -447,7 +446,7 @@ In the scripts directory, there is a script called `runme.py` which run the pipe
 
 
 ### Dependencies
-The trickiest part of this whole business is properly installing SMALT. BWA is definitely the easiest option, and the current default mapper, so don't bother with SMALT unless you need to.
+<!-- The trickiest part of this whole business is properly installing SMALT. BWA is definitely the easiest option, and the current default mapper, so don't bother with SMALT unless you need to. -->
 
 ### Python Requirements:
 
@@ -480,68 +479,71 @@ riboSeed.py
 
 * SPAdes v3.8 or higher
 * BWA (tested with 0.7.12-r1039)
-* (or SMALT (tested with 0.7.6), see note below)
+<!-- * (or SMALT (tested with 0.7.6), see note below) -->
 * SAMTools (must be 1.3.1 or above)
 * QUAST (tested with 4.1)
 
-## Note on installation of SMALT
+<!-- ## Note on installation of SMALT -->
 
-Must have bambamc installed! If you get an error as follows,
+<!-- Must have bambamc installed! If you get an error as follows, -->
 
-```
-Error running test to check bambamc lib is installed!
+<!-- ``` -->
+<!-- Error running test to check bambamc lib is installed! -->
 
-```
+<!-- ``` -->
 
-it means that SMALT was installed without the bambamc library.  To install properly, see the install link below.  in short,
+<!-- it means that SMALT was installed without the bambamc library.  To install properly, see the install link below.  in short, -->
 
-```
-# download libtool if needed
-wget ftp://ftp.gnu.org/gnu/libtool/libtool-2.4.tar.xz
-tar xf libtool-2.4
-cd libtool-2.4
-./configure --prefix=$HOME
-make
-make install
-export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
+<!-- ``` -->
+<!-- # download libtool if needed -->
+<!-- wget ftp://ftp.gnu.org/gnu/libtool/libtool-2.4.tar.xz -->
+<!-- tar xf libtool-2.4 -->
+<!-- cd libtool-2.4 -->
+<!-- ./configure --prefix=$HOME -->
+<!-- make -->
+<!-- make install -->
+<!-- export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH -->
 
-# get bambamc
-git clone https://github.com/gt1/bambamc.git
-autoreconf -i -f
-./configure --prefix=$HOME
-make
-make install
+<!-- # get bambamc -->
+<!-- git clone https://github.com/gt1/bambamc.git -->
+<!-- autoreconf -i -f -->
+<!-- ./configure --prefix=$HOME -->
+<!-- make -->
+<!-- make install -->
 
-# download and install SMALT
-wget https://sourceforge.net/projects/smalt/files/smalt-0.7.6-static.tar.gz
-tar xf smalt-0.7.6-static
-cd smalt-0.7.6-smalt
-# this is the key step
-./configure --with-bambamc=yes BAMBAMC_CFLAGS="-I$HOME/include" BAMBAMC_LIBS="-L$HOME/lib -lbambamc" --prefix=$HOME
-$
-make
-make install
+<!-- # download and install SMALT -->
+<!-- wget https://sourceforge.net/projects/smalt/files/smalt-0.7.6-static.tar.gz -->
+<!-- tar xf smalt-0.7.6-static -->
+<!-- cd smalt-0.7.6-smalt -->
+<!-- # this is the key step -->
+<!-- ./configure --with-bambamc=yes BAMBAMC_CFLAGS="-I$HOME/include" BAMBAMC_LIBS="-L$HOME/lib -lbambamc" --prefix=$HOME -->
+<!-- $ -->
+<!-- make -->
+<!-- make install -->
 
-```
-https://sourceforge.net/projects/smalt/files/
+<!-- ``` -->
+<!-- https://sourceforge.net/projects/smalt/files/ -->
 
 
 ## Suggested Running
-### `example_batch.sh`
-There are a lot of commandline options for riboSeed, so it can help to run the pipeline as script. The included `example_batch.sh` script is run as follows:
+<!-- ### `example_batch.sh` -->
 
 
-```
-USAGE: /path/to/genome.gb  path/to/read1 path/to/read2 /path/to/outdir/ n_iterations n_flanking n_cores
-All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iterations, flanking_width, and n_cores
+<!-- ``` -->
+<!-- USAGE: /path/to/genome.gb  path/to/read1 path/to/read2 /path/to/outdir/ n_iterations n_flanking n_cores -->
+<!-- All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iterations, flanking_width, and n_cores -->
 
-example:
+<!-- example: -->
 
-./example_batch.sh ./sample_data/NC_011751.1.gb ./sample_data/toy_set/toy_reads1.fq  ./sample_data/toy_set/toy_reads2.fq ./results_dir/ 3 1000 4
+<!-- ./example_batch.sh ./sample_data/NC_011751.1.gb ./sample_data/toy_set/toy_reads1.fq  ./sample_data/toy_set/toy_reads2.fq ./results_dir/ 3 1000 4 -->
 
-```
+<!-- ``` -->
+
+### `riboBatch.sh`
+NOTE: You must have riboSeed installed in a `virtualenv` to use this script
+
+There are a lot of commandline options for riboSeed, so it can help to run the pipeline as script. The included `riboBatch.sh` script is an example.
+
+If you have access to a hpc, you can set up a python virtualenv, edit the 7 fields in this script, make any other modifications needed to fit your job, and submit with `qsub`.
+
 We recommend copying this file to your project directory, and customizing it as needed.
-
-
-### `sge_batch.sh`
-If you have access to a hpc, this script makes it easier to submit riboSeed jobs via `example_batch.sh`.  Just set up a python virtualenv, edit the 7 fields in this script, make any other modifications needed to fit your job, and submit with `qsub`.
