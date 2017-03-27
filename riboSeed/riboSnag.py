@@ -54,6 +54,7 @@ class LociCluster(object):
                  global_start_coord=None, global_end_coord=None,
                  seq_record=None, feat_of_interest=None, mappings=None,
                  extractedSeqRecord=None, cluster_dir_name=None,
+                 coverage_exclusion=None,
                  circular=False, output_root=None, final_contigs_path=None,
                  continue_iterating=True, keep_contigs=True):
         # int: unique identifier for cluster
@@ -85,7 +86,7 @@ class LociCluster(object):
         # path: for best contig after riboseed2 iterations
         self.keep_contigs = keep_contigs  # by default, include all
         self.continue_iterating = continue_iterating  # by default, keep going
-
+        self.coverage_exclusion = coverage_exclusion
         self.final_contig_path = final_contigs_path
         self.name_mapping_dir()
 

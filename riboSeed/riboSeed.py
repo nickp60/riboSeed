@@ -22,6 +22,7 @@ import traceback
 import pysam
 import math
 
+from bisect import bisect
 from itertools import chain
 from collections import namedtuple
 from Bio import SeqIO
@@ -640,6 +641,12 @@ def get_args():  # pragma: no cover
                           "--padding; " +
                           "default: %(default)s",
                           default=False, dest="linear", action="store_true")
+    optional.add_argument("-d", "--min_flank_depth",
+                          help="a subassembly will not be performed if this " +
+                          "minimum depth is not achieved on both the 3' and" +
+                          "5' end of the pseudocontig. " +
+                          "default: %(default)s",
+                          default=5, dest="min_flank_depth", type=float)
     # optional.add_argument("--padding", dest='padding', action="store",
     #                       default=5000, type=int,
     #                       help="if treating as circular, this controls the " +
@@ -1196,6 +1203,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     ngsLib.mapping_success = True
     return (map_percentage, score_list)
 
+
 def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
                               which='mapped', source_ext="_sam",
                               single=False, logger=None):
@@ -1360,6 +1368,11 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     assert logger is not None, "Must Use Logging"
     if seqname == '':
         seqname = os.path.splitext(os.path.basename(mapping_ob.ref_fasta))[0]
+    ### deal with those expluded from assembly by lack of coverage depth (coverage_exclusion=True)
+    # treat it the same as any failed subassembly: use last decent pseudocontig
+    if clu.coverage_exclusion is not None:
+        assert clu.coverage_exclusion, "this should only be set by the partition_mapping method."
+        return 1
     mapping_ob.assembled_contig = os.path.join(
         mapping_ob.assembly_subdir, "contigs.fasta")
     logger.debug("checking for the following file: \n{0}".format(
@@ -1610,7 +1623,7 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
     try:
         splits = result.stdout.decode("utf-8").split("\n")[0].split("\t")
         if len(splits) != 3:
-            logger.error("error splitting the results from samtools depth!")
+            logger.warning("unable to split the results from samtools depth")
         else:
             pass
     except Exception as e:
@@ -1875,7 +1888,7 @@ def pysam_extract_reads(sam, textfile, unmapped_sam, logger=None):
     osam.close()
 
 
-def partition_mapping(seedGenome, samtools_exe, flank,
+def partition_mapping(seedGenome, samtools_exe, flank, min_flank_depth,
                       cluster_list=None, logger=None):
     """ Extract interesting stuff based on coords, not a binary
     mapped/not_mapped condition
@@ -1890,6 +1903,7 @@ def partition_mapping(seedGenome, samtools_exe, flank,
 
     mapped_regions = []
     all_depths = []  # each entry is a tuple (idx, start_ave, end_ave)
+    filtered_cluster_list = []
     for cluster in cluster_list:
         mapped_partition_cmds, reg_to_extract = make_mapped_partition_cmds(
             cluster=cluster, mapping_ob=cluster.mappings[-1],
@@ -1902,7 +1916,6 @@ def partition_mapping(seedGenome, samtools_exe, flank,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE,
                            check=True)
-        mapped_regions.append(reg_to_extract)
         start_depths, start_ave_depth = get_samtools_depths(
             bam=seedGenome.iter_mapping_list[
                 seedGenome.this_iteration].sorted_mapped_bam,
@@ -1924,12 +1937,26 @@ def partition_mapping(seedGenome, samtools_exe, flank,
             samtools_exe=samtools_exe,
             logger=logger)
         logger.info("Coverage for cluster " +
-                    "%i:\n\t5' %ibp-region: %f4 \n\t3' %ibp-region: %f4",
+                    "%i:\n\t5' %ibp-region: %.2f \n\t3' %ibp-region: %.2f",
                     cluster.index,
                     flank,
                     start_ave_depth,
                     flank,
                     end_ave_depth)
+        if start_ave_depth < min_flank_depth:
+            logger.warning(str("cluster {0} has insufficient 5' flanking " +
+                           "coverage depth for subassembly, and will be " +
+                           "removed").format(cluster.index))
+            cluster.coverage_exclusion = True
+        elif end_ave_depth < min_flank_depth:
+            logger.warning(str("cluster {0} has insufficient 5' flanking " +
+                           "coverage depth for subassembly, and will be " +
+                           "removed").format(cluster.index))
+            cluster.coverage_exclusion = True
+        else:
+            mapped_regions.append(reg_to_extract)
+            filtered_cluster_list.append(cluster)
+        # regardsless, report stats here
         all_depths.append((cluster.index, start_ave_depth, end_ave_depth))
     logger.info("mapped regions for iteration %i:\n%s",
                 seedGenome.this_iteration,
@@ -1958,7 +1985,7 @@ def partition_mapping(seedGenome, samtools_exe, flank,
         unmapped_sam=seedGenome.iter_mapping_list[
             seedGenome.this_iteration].unmapped_sam, logger=logger)
     # sam_score_list = get_sam_AS
-    return all_depths
+    return (all_depths, filtered_cluster_list)
 
 
 def add_coords_to_clusters(seedGenome, logger=None):
@@ -2166,8 +2193,6 @@ def copyToHandyDir(outdir, pre, seedGenome, hard=False, logger=None):
                 raise FileNotFoundError
 
 
-from bisect import bisect
-
 def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
               title="test", fill=False, logger=None):
     """ ascii not what your program can do for you...
@@ -2276,7 +2301,7 @@ def reportRegionDepths(inp, logger):
             for cluster in iteration:
                 if cluster[0] == i:
                     report_list.append(
-                        "\tIter %i -- 5'prime: %.2f  3prime %.2f" % (
+                        "\tIter %i -- 5' coverage: %.2f  3' coverage %.2f" % (
                             itidx, cluster[1], cluster[2]))
     return(report_list)
 
@@ -2433,7 +2458,7 @@ if __name__ == "__main__":  # pragma: no cover
     region_depths = []
     # now, we need to assemble each mapping object
     # this should exclude any failures
-    while seedGenome.this_iteration <= args.iterations:
+    while seedGenome.this_iteration < args.iterations:
         logger.info("processing iteration %i", seedGenome.this_iteration)
         logger.debug("with new reference: %s", seedGenome.next_reference_path)
         clusters_to_process = [x for x in seedGenome.loci_clusters if
@@ -2473,6 +2498,9 @@ if __name__ == "__main__":  # pragma: no cover
                 mapped_scores = get_bam_AS(
                     inbam=clu.mappings[-1].mapped_bam,
                     logger=logger)
+                if len(mapped_scores) > 200000:
+                    logger.info("Downsampling our pltting data to 20k points")
+                    mapped_scores = random.sample(mapped_scores, 200000)
                 printPlot(data=mapped_scores, line=score_minimum,
                           ymax=25,
                           xmax=60, tick=.2, fill=True,
@@ -2606,24 +2634,48 @@ if __name__ == "__main__":  # pragma: no cover
 
         try:
             # again, this is [(idx, start_depth, end_depth)]
-            iter_depths = partition_mapping(
+            # clusters_post_partition are the clusters passing the minimum
+            # depth on the flanking regions.
+            iter_depths, clusters_to_subassemble = partition_mapping(
                 seedGenome=seedGenome,
                 logger=logger,
                 samtools_exe=sys_exes.samtools,
                 flank=args.flanking,
+                min_flank_depth=args.min_flank_depth,
                 cluster_list=clusters_to_process)
+            clusters_not_to_subassemble = [
+                x for x in clusters_to_process if
+                x.index in [
+                    y.index for y in clusters_to_subassemble]]
+            # for clu in clusters_to_process:
+            #     if clu.index not in [x.index for x in clusters_post_partition]:
+            #         try:
+            #             shutil.copyfile(
+            #                 cluster.mappings[-1].assembled_contig,
+            #                 os.path.join(seedGenome.final_contigs_dir,
+            #                              "{0}_cluster_{1}_iter_{2}.fasta".format(
+            #                                  clu.sequence_id,
+            #                                  clu.index,
+            #                                  clu.mappings[-1].iteration)))
+            #         except:
+            #             logger.warning("unable to copy %s to final contigs dir. " +
+            #                            "This is should have returned code 3, not 1.",
+            #                            cluster.mappings[-1].assembled_contig)
+            #             logger.error(last_exception())
+
         except Exception as e:
             logger.error("Error while partitioning reads from iteration %i",
                          seedGenome.this_iteration)
             logger.error(last_exception())
             logger.error(e)
             sys.exit(1)
+
         logger.info(iter_depths)
         region_depths.append(iter_depths)
         extract_convert_assemble_cmds = []
         # generate spades cmds (cannot be multiprocessed)
         # ref_as_contig must be 'trusted' here, a
-        for cluster in clusters_to_process:
+        for cluster in clusters_to_subassemble:
             cmdlist = []
             logger.debug("generating commands to convert bam to fastqs " +
                          "and assemble long reads")
@@ -2691,16 +2743,16 @@ if __name__ == "__main__":  # pragma: no cover
                 cluster=cluster,
                 final_contigs_dir=seedGenome.final_long_reads_dir,
                 logger=logger)
-        clusters_to_process = [x for x in seedGenome.loci_clusters if
-                               x.continue_iterating and
-                               x.keep_contigs]
-        if len(clusters_to_process) != 0:
+        clusters_for_pseudogenome = [
+            x for x in seedGenome.loci_clusters if
+            x.continue_iterating and x.keep_contigs]
+        if len(clusters_for_pseudogenome) != 0:
             faux_genome_path, faux_genome_len = make_faux_genome(
                 seedGenome=seedGenome,
                 iteration=seedGenome.this_iteration,
                 output_root=seedGenome.output_root,
                 nbuff=5000,
-                cluster_list=[x for x in clusters_to_process if
+                cluster_list=[x for x in clusters_for_pseudogenome if
                               x.continue_iterating],
                 logger=logger)
             logger.info("Length of buffered 'genome' for mapping: %i",
@@ -2728,7 +2780,10 @@ if __name__ == "__main__":  # pragma: no cover
     if len([x for x in seedGenome.loci_clusters if x.keep_contigs]) == 0:
         logger.info("all contigs already copied to long_reads dir")
     else:
-        for clu in [x for x in seedGenome.loci_clusters if x.keep_contigs]:
+        # for clu in [x for x in seedGenome.loci_clusters if x.keep_contigs]:
+        # this assumes that all the uable clusters not in
+        # clusters_for_pseudogenome have already been copied over
+        for clu in [x for x in clusters_for_pseudogenome if x.keep_contigs]:
             try:
                 shutil.copyfile(clu.mappings[-1].assembled_contig,
                                 os.path.join(
