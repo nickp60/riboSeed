@@ -646,7 +646,7 @@ def get_args():  # pragma: no cover
                           "minimum depth is not achieved on both the 3' and" +
                           "5' end of the pseudocontig. " +
                           "default: %(default)s",
-                          default=5, dest="min_flank_depth", type=float)
+                          default=0, dest="min_flank_depth", type=float)
     # optional.add_argument("--padding", dest='padding', action="store",
     #                       default=5000, type=int,
     #                       help="if treating as circular, this controls the " +
@@ -722,7 +722,7 @@ def get_args():  # pragma: no cover
                           "scorespec option; default: %(default)s")
     optional.add_argument("--mapper_args", dest='mapper_args',
                           action="store",
-                          default="-L 0,0 -U 0",
+                          default="-L 0,0 -U 0 -a",
                           help="submit custom parameters to mapper. " +
                           "And by mapper, I mean bwa, cause we dont support " +
                           "this option for SMALT, sorry. " +
@@ -1372,7 +1372,14 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     # treat it the same as any failed subassembly: use last decent pseudocontig
     if clu.coverage_exclusion is not None:
         assert clu.coverage_exclusion, "this should only be set by the partition_mapping method."
-        return 1
+        #  if this is the first iteration, return two
+        # Otherwise, copy the last decent contig to
+        # cluster.mappings[-1].assembled_contig,
+        if mapping_ob.iteration > 1:
+            cluster.mappings[-1].assembled_contig = cluster.mappings[-2].assembled_contig
+            return 1
+        else:
+            return 2
     mapping_ob.assembled_contig = os.path.join(
         mapping_ob.assembly_subdir, "contigs.fasta")
     logger.debug("checking for the following file: \n{0}".format(
@@ -1493,6 +1500,9 @@ def parse_subassembly_return_code(cluster, final_contigs_dir, skip_copy=False,
             cluster.continue_iterating = False
             cluster.keep_contigs = False
         else:
+            logger.info("copying %s to %s",
+                        cluster.mappings[-1].assembled_contig,
+                        final_contigs_dir)
             try:
                 shutil.copyfile(
                     cluster.mappings[-1].assembled_contig,
@@ -1605,8 +1615,10 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
         depth_cmd = str("{0} depth -r {2} {1}").format(
             samtools_exe, bamfile, region)
     # if not already sorted and indexed
+    logger.debug("running the following commands to get coverage:")
     if prep:
         for i in prep_cmds:  # index and sort
+            logger.debug(i)
             subprocess.run(i,
                            shell=sys.platform != "win32",
                            stdout=subprocess.PIPE,
@@ -1615,6 +1627,7 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
     else:
         pass
     # get the results from the depth call
+    logger.debug(depth_cmd)
     result = subprocess.run(depth_cmd,
                             shell=sys.platform != "win32",
                             stdout=subprocess.PIPE,
@@ -1631,12 +1644,13 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
     covs = [int(x.split("\t")[2]) for
             x in result.stdout.decode("utf-8").split("\n")[0: -1]]
     if len(covs) == 0:
-        logger.warning("Error parsing samtools depth results! " +
-                       "Here are the results:")
-        logger.warning(result)
-        logger.warning("This isn't always fatal, so we will continue.  " +
-                       "but take a look with IGB or similar so there aren't " +
-                       "any suprises down the road.")
+        if result.returncode != 0:
+            logger.warning("Error parsing samtools depth results! " +
+                           "Here are the results:")
+            logger.warning(result)
+            logger.warning("This isn't always fatal, so we will continue.  " +
+                           "but take a look with IGB or similar so there aren't " +
+                           "any suprises down the road.")
         return [[""], 0]
 
     average = float(sum(covs)) / float(len(covs))
@@ -1949,7 +1963,7 @@ def partition_mapping(seedGenome, samtools_exe, flank, min_flank_depth,
                            "removed").format(cluster.index))
             cluster.coverage_exclusion = True
         elif end_ave_depth < min_flank_depth:
-            logger.warning(str("cluster {0} has insufficient 5' flanking " +
+            logger.warning(str("cluster {0} has insufficient 3' flanking " +
                            "coverage depth for subassembly, and will be " +
                            "removed").format(cluster.index))
             cluster.coverage_exclusion = True
