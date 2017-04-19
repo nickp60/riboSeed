@@ -2454,8 +2454,10 @@ if __name__ == "__main__":  # pragma: no cover
         sys.exit(1)
     try:
         logger.info("padding genbank by %i", args.flanking)
+        logger.debug("old ref_fasta: %s", seedGenome.ref_fasta)
         seedGenome.pad_genbank(pad=args.flanking,
                                circular=args.linear is False, logger=logger)
+        logger.debug("new ref_fasta: %s", seedGenome.ref_fasta)
     except Exception as e:
         logger.error(e)
         logger.error(last_exception())
@@ -2547,6 +2549,8 @@ if __name__ == "__main__":  # pragma: no cover
         else:
             # start with whole lib if first time through
             unmapped_ngsLib = seedGenome.master_ngs_ob
+            # update ref since it may have been padded
+            unmapped_ngsLib.ref_fasta = seedGenome.ref_fasta
         # Run commands to map to the genome
         if not args.score_min:
             # This makes it such that score minimum is now more stringent
@@ -2617,6 +2621,18 @@ if __name__ == "__main__":  # pragma: no cover
                 logger=logger)
         mapping_percentages.append("Iteration %i: %f" % (
             seedGenome.this_iteration, map_percent))
+        # TODO maybe implement this in the future?
+        # if len(mapping_list) == 0:
+        #     logger.error(
+        #         "No reads mapped for this iteration. This could be to an " +
+        #         "error from samtools or elevated mapping stringency.")
+        #     if seedGenome.this_iteration != 0:
+        #         logger.warning(" proceeding to final assemblies")
+        #         break
+        #     else:
+        #         logger.error(" Exiting!")
+        #         sys.exit(1)
+
         # on first time thorugh, infer ref_as_contig if not provided via commandline
         if seedGenome.this_iteration == 0:
             # do info for smalt mapping

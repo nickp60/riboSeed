@@ -3,7 +3,12 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # get the reference Sakai genome
+if [ -e BA000007.2.fasta ]
+then
+echo "using local copy of reference"
+else
 get_genomes.py -q BA000007.2 -o ./
+fi
 
 # annotate regions
 python3.5  ~/GitHub/riboSeed/riboSeed/riboScan.py ./BA000007.2.fasta -o ./toyGenome/scan/
@@ -21,4 +26,4 @@ python3.5  ~/GitHub/riboSeed/riboSeed/riboScan.py ./toyGenome/coli_genome/concat
 
 # move a copy of the annotated genome to the "mauve" directory for convenience
 mkdir mauve
-cp ./toyGenome/coli_genome/scan/scannedScaffolds.gb ./mauve/concatenated_coli.gb
+cp ./toyGenome/coli_genome/scan/scannedScaffolds.gb ./mauve/reference.gb

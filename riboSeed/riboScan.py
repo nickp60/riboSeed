@@ -233,6 +233,10 @@ def getFastas(inp, output_root, ext, name, logger):
                          os.path.expanduser(inp))
             sys.exit(1)
         else:
+            if not os.path.getsize(os.path.expanduser(inp)) > 0:
+                logger.error("'%s' looks like an empty file!",
+                             os.path.expanduser(inp))
+                sys.exit(1)
             logger.info("spliting multifasta into multiple fastas " +
                         "for easier processing")
             splitMultifasta(multi=inp, output=output_root, name=name,
