@@ -947,9 +947,8 @@ def nonify_empty_lib_files(ngsLib, logger=None):
 
 def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
                             samtools_exe, smalt_exe,
-                            # ignore_singletons=False,
+                            genome_fasta,
                             score_minimum=None,
-                            single_lib=False,
                             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                             step=3, k=5, logger=None):
     """run smalt based on pased args
@@ -966,15 +965,15 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
                      "{0}").format(score_min))
     # index the reference
     cmdindex = str("{0} index -k {1} -s {2} {3} {3}").format(
-        smalt_exe, k, step, ngsLib.ref_fasta)
+        smalt_exe, k, step, genome_fasta)
     # map paired end reads to reference index
     smaltcommands = [cmdindex]
-    if not single_lib:
+    if "pe" in ngsLib.libtype:
         cmdmap = str('{0} map -l pe -S {1} ' +
                      '-m {2} -n {3} -g {4} -f bam -o {5} {6} {7} ' +
                      '{8}').format(smalt_exe, scoring,
                                    score_min, cores, ngsLib.smalt_dist_path,
-                                   mapping_ob.pe_map_bam, ngsLib.ref_fasta,
+                                   mapping_ob.pe_map_bam, genome_fasta,
                                    ngsLib.readF,
                                    ngsLib.readR)
         smaltcommands.append(cmdmap)
@@ -989,7 +988,7 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
             "{0} map -S {1} -m {2} -n {3} -g {4} -f bam -o {5} " +
             "{6} {7}").format(smalt_exe, scoring, score_min, cores,
                               ngsLib.smalt_dist_path, mapping_ob.s_map_bam,
-                              ngsLib.ref_fasta, ngsLib.readS0)
+                              genome_fasta, ngsLib.readS0)
         with open(mapping_ob.s_map_bam, 'w') as tempfile:
             tempfile.write("@HD riboseed_dummy_file")
         # merge together the singleton and pe reads
@@ -1017,7 +1016,7 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
                         get_number_mapped(mapping_ob.s_map_bam,
                                           samtools_exe=samtools_exe)))
     # report paired reads mapped
-    if not single_lib:
+    if "pe" in ngsLib.libtype:
         logger.info(str("PE mapped reads: " +
                         get_number_mapped(mapping_ob.pe_map_bam,
                                           samtools_exe=samtools_exe)))
@@ -1099,9 +1098,8 @@ def sam_to_bam(samtools_exe, bam, sam, logger=None):
 
 
 def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
-                          samtools_exe, bwa_exe, score_minimum=None,
-                          single_lib=False,
-                          # ignore_singletons=False,
+                          samtools_exe, bwa_exe, genome_fasta,
+                          score_minimum=None,
                           add_args='-L 0,0 -U 0 -a', logger=None):
     """
     #TODO rework this to read libtype of ngslib object
@@ -1120,7 +1118,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     logger.debug("using a score minimum of %i", score_min)
     # index the reference
     cmdindex = str("{0} index {1}").format(
-        bwa_exe, ngsLib.ref_fasta)
+        bwa_exe, genome_fasta)
     # map paired end reads to reference index.
     bwacommands = [cmdindex]
     if "pe" in ngsLib.libtype:
@@ -1131,7 +1129,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                       cores,  # 1
                                       add_args,  # 2
                                       # score_min,  # 3
-                                      ngsLib.ref_fasta,  # 3
+                                      genome_fasta,  # 3
                                       ngsLib.readF,  # 4
                                       ngsLib.readR,  # 5
                                       samtools_exe,  # 6
@@ -1139,7 +1137,8 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
         bwacommands.append(cmdmap)
     else:
         assert ngsLib.readS0 is not None, \
-            "No readS0 attribute found, cannot run mapping with 'single_lib'"
+            str("No readS0 attribute found, cannot run mapping with " +
+                "any reads in .readS0 or .readF and .readR")
 
     # if singletons are present, map those too.  Index is already made
     if ngsLib.readS0 is not None:  # and not ignore_singletons:
@@ -1150,7 +1149,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                          cores,  # 1
                                          add_args,  # 2
                                          # score_min,  # 3
-                                         ngsLib.ref_fasta,  # 3
+                                         genome_fasta,  # 3
                                          ngsLib.readS0,  # 4
                                          samtools_exe,  # 5
                                          mapping_ob.s_map_bam)  # 5)
@@ -2418,6 +2417,7 @@ if __name__ == "__main__":  # pragma: no cover
         sys.exit(1)
 
     # make first iteration look like future iterations
+    # this should also ensure the mapper uses the padded version
     seedGenome.next_reference_path = seedGenome.ref_fasta
     #
     for cluster in seedGenome.loci_clusters:
@@ -2492,11 +2492,9 @@ if __name__ == "__main__":  # pragma: no cover
                 logger.warning("pineapple")
                 logger.info(seedGenome.master_ngs_ob.ref_fasta)
                 unmapped_ngsLib = seedGenome.master_ngs_ob
-                unmapped_ngsLib.ref_fasta = seedGenome.next_reference_path
                 logger.info(seedGenome.master_ngs_ob.ref_fasta)
 
             unmapped_ngsLib.readlen = seedGenome.master_ngs_ob.readlen
-            # unmapped_ngsLib.ref_fasta = seedGenome.next_reference_path
             unmapped_ngsLib.smalt_dist_path = \
                 seedGenome.master_ngs_ob.smalt_dist_path
             logger.debug("converting unmapped bam into reads:")
@@ -2511,8 +2509,6 @@ if __name__ == "__main__":  # pragma: no cover
         else:
             # start with whole lib if first time through
             unmapped_ngsLib = seedGenome.master_ngs_ob
-            # update ref since it may have been padded
-            unmapped_ngsLib.ref_fasta = seedGenome.ref_fasta
         # Run commands to map to the genome
         if not args.score_min:
             # This makes it such that score minimum is now more stringent
@@ -2558,9 +2554,8 @@ if __name__ == "__main__":  # pragma: no cover
                     seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
                 cores=(args.cores * args.threads),
-                # ignore_singletons=args.ignoreS,
                 samtools_exe=sys_exes.samtools,
-                single_lib=seedGenome.this_iteration != 0 or seedGenome.master_ngs_ob.libtype == "s_1",
+                genome_fasta=seedGenome.next_reference_path,
                 smalt_exe=sys_exes.mapper,
                 score_minimum=score_minimum,
                 step=3, k=5,
@@ -2572,9 +2567,8 @@ if __name__ == "__main__":  # pragma: no cover
                 mapping_ob=seedGenome.iter_mapping_list[
                     seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
-                # ignore_singletons=args.ignoreS,
                 cores=(args.cores * args.threads),
-                single_lib=seedGenome.this_iteration != 0 or seedGenome.master_ngs_ob.libtype == "s_1",
+                genome_fasta=seedGenome.next_reference_path,
                 samtools_exe=sys_exes.samtools,
                 bwa_exe=sys_exes.mapper,
                 score_minimum=score_minimum,

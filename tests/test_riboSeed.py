@@ -527,6 +527,7 @@ class riboSeedTestCase(unittest.TestCase):
 
         map_to_genome_ref_smalt(
             mapping_ob=testmapping, ngsLib=testngs,
+            genome_fasta=self.ref_fasta,
             cores=4, samtools_exe=self.samtools_exe,
             smalt_exe=self.smalt_exe, score_minimum=48,
             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
@@ -551,6 +552,7 @@ class riboSeedTestCase(unittest.TestCase):
 
         map_to_genome_ref_smalt(
             mapping_ob=testmapping, ngsLib=testngs2,
+            genome_fasta=self.ref_fasta,
             cores=4, samtools_exe=self.samtools_exe,
             smalt_exe=self.smalt_exe, score_minimum=48,
             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
@@ -678,10 +680,12 @@ class riboSeedTestCase(unittest.TestCase):
             mapper_exe=self.bwa_exe,
             logger=logger)
 
-        map_to_genome_ref_bwa(mapping_ob=testmapping, ngsLib=testngs,
-                              cores=4, samtools_exe=self.samtools_exe,
-                              bwa_exe=self.bwa_exe, score_minimum=20,
-                              logger=logger)
+        map_to_genome_ref_bwa(
+            mapping_ob=testmapping, ngsLib=testngs,
+            genome_fasta=self.ref_fasta,
+            cores=4, samtools_exe=self.samtools_exe,
+            bwa_exe=self.bwa_exe, score_minimum=20,
+            logger=logger)
         mapped_str = get_number_mapped(testmapping.pe_map_bam,
                                        samtools_exe=self.samtools_exe)
         nmapped = int(mapped_str[0:5])
@@ -699,10 +703,12 @@ class riboSeedTestCase(unittest.TestCase):
             mapper_exe=self.bwa_exe,
             logger=logger)
 
-        map_to_genome_ref_bwa(mapping_ob=testmapping, ngsLib=testngs2,
-                              cores=4, samtools_exe=self.samtools_exe,
-                              bwa_exe=self.bwa_exe, score_minimum=20,
-                              logger=logger)
+        map_to_genome_ref_bwa(
+            mapping_ob=testmapping, ngsLib=testngs2,
+            genome_fasta=self.ref_fasta,
+            cores=4, samtools_exe=self.samtools_exe,
+            bwa_exe=self.bwa_exe, score_minimum=20,
+            logger=logger)
         mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
                                         samtools_exe=self.samtools_exe)
         mapped_str2 = get_number_mapped(testmapping.s_map_bam,
@@ -739,7 +745,7 @@ class riboSeedTestCase(unittest.TestCase):
                 region=None,
                 prep=True,
                 logger=logger))
-        print(results)
+        # print(results)
         self.assertEqual(round(results[0][1], 4), .9945)
 
     def test_check_fastqs_len_equal(self):
@@ -909,6 +915,7 @@ class riboSeedTestCase(unittest.TestCase):
 
         map_to_genome_ref_smalt(
             mapping_ob=testmapping, ngsLib=testngs,
+            genome_fasta=self.ref_fasta,
             cores=4, samtools_exe=self.samtools_exe,
             smalt_exe=self.smalt_exe, score_minimum=48,
             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
@@ -990,7 +997,7 @@ class riboSeedTestCase(unittest.TestCase):
             output_root=self.test_dir,
             logger=logger)
 
-        unmapped_cmds, grep_part = make_unmapped_partition_cmds(
+        unmapped_cmds = make_unmapped_partition_cmds(
             mapped_regions=["test:1-6", "test:3-77"],
             samtools_exe=self.samtools_exe, seedGenome=gen)
         mapped_txt = os.path.join(
@@ -1023,20 +1030,8 @@ class riboSeedTestCase(unittest.TestCase):
                     "NC_011751.1_mapping_iteration_0_sorted.bam"),
                 mapped_txt),
             "sort -u {0} -o {0}".format(mapped_txt)]
-        ref_grep_part = "LC_ALL=C grep -w -v -F -f {0} < {1} > {2}".format(
-            mapped_txt,
-            os.path.join(
-                self.test_dir,
-                "NC_011751.1_mapping_for_iteration_0",
-                "NC_011751.1_mapping_iteration_0.sam"),
-            os.path.join(
-                self.test_dir,
-                "NC_011751.1_mapping_for_iteration_0",
-                "NC_011751.1_mapping_iteration_0_unmapped.sam"))
-
         for i, ref in enumerate(ref_unmapped_cmds):
             self.assertEqual(unmapped_cmds[i], ref)
-        self.assertEqual(grep_part, ref_grep_part)
         # self.to_be_removed.append(mapped_txt)
 
     def test_make_faux_genome(self):
