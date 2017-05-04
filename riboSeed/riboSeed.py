@@ -51,7 +51,7 @@ from riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
 
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
-PACKAGE_VERSION = '0.0.6'
+PACKAGE_VERSION = '0.3.04'
 # --------------------------- classes --------------------------- #
 
 
