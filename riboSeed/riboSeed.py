@@ -143,11 +143,11 @@ class SeedGenome(object):
         self.iter_mapping_list = []
         for i in range(0, self.max_iterations + 1):
             self.iter_mapping_list.append(LociMapping(
-                name="{0}_mapping_for_iter_{1}".format(self.name, i),
+                name="{0}_mapping_iteration_{1}".format(self.name, i),
                 iteration=i,
                 mapping_subdir=os.path.join(
                     self.output_root,
-                    "{0}_mapping_for_iter_{1}".format(self.name, i)),
+                    "{0}_mapping_for_iteration_{1}".format(self.name, i)),
                 assembly_subdir_needed=False))
         if self.final_long_reads_dir is None:
             self.final_long_reads_dir = os.path.join(self.output_root,
@@ -457,12 +457,12 @@ class LociMapping(object):
         """ make a prefix and use it to name the future output files """
         mapping_prefix = os.path.join(
             self.mapping_subdir,
-            "{0}_iteration_{1}".format(self.name, self.iteration))
+            self.name)
         self.pe_map_bam = str(mapping_prefix + "_pe.bam")
         self.s_map_bam = str(mapping_prefix + "_s.bam")
         self.mapped_bam_unfiltered = str(mapping_prefix + "_unfiltered.bam")
         self.mapped_bam = str(mapping_prefix + ".bam")
-        self.unampped_bam = str(mapping_prefix + "unmapped.bam")
+        # self.unampped_bam = str(mapping_prefix + "unmapped.bam")
         self.sorted_mapped_bam = str(mapping_prefix + "_sorted.bam")
         self.mapped_sam = str(mapping_prefix + ".sam")
         self.unmapped_sam = str(mapping_prefix + "_unmapped.sam")
@@ -1780,48 +1780,6 @@ def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe,
     return (partition_cmds, region_to_extract)
 
 
-# def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
-#     unmapped_cmds = []
-#     """ given a list of regions (formatted for samtools view, etc) make a
-#     list of mapped reads (file path stored under mapped_ids_txt), and
-#     use the cgrep voodoo to make a sam file from the full library without
-#     the mapped reads. returns a cmd as a string
-#     """
-#     # if not first iteration, copy previous iterms mapped_ids_txt
-#     # as a starting point so we can track the reads better.
-#     if seedGenome.this_iteration != 0:
-#         copy_unmapped_txt_cmd = "cat {0} > {1}".format(
-#             seedGenome.iter_mapping_list[
-#                 seedGenome.this_iteration - 1].mapped_ids_txt,
-#             seedGenome.iter_mapping_list[
-#                 seedGenome.this_iteration].mapped_ids_txt)
-#         unmapped_cmds.append(copy_unmapped_txt_cmd)
-#     make_mapped_sam = "{0} view -o {1} -h {2}".format(
-#         samtools_exe,
-#         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
-#         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_bam)
-#     unmapped_cmds.append(make_mapped_sam)
-#     # for each region, add read names in that region to
-#     # a list (taken from previous iteration if there has been one)
-#     for region in mapped_regions:
-#         unmapped_cmds.append(
-#             "{0} view {1} {2} | cut -f1 >> {3}".format(
-#                 samtools_exe,
-#                 seedGenome.iter_mapping_list[
-#                     seedGenome.this_iteration].sorted_mapped_bam,
-#                 region,
-#                 seedGenome.iter_mapping_list[
-#                     seedGenome.this_iteration].mapped_ids_txt))
-#     uniquify_list = "sort -u {0}".format(
-#         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt)
-#     unmapped_cmds.append(uniquify_list)
-#     # from the global sam mapping filter out those in the reads_mapped_txt list
-#     get_unmapped = "LC_ALL=C grep -w -v -F -f {0} < {1} > {2}".format(
-#         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt,
-#         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
-#         seedGenome.iter_mapping_list[seedGenome.this_iteration].unmapped_sam)
-#     unmapped_cmds.append(get_unmapped)
-#     return unmapped_cmds
 
 def make_unmapped_partition_cmds(
         mapped_regions, samtools_exe, seedGenome):
@@ -1865,12 +1823,7 @@ def make_unmapped_partition_cmds(
     uniquify_list = "sort -u {0} -o {0}".format(
         seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt)
     unmapped_cmds.append(uniquify_list)
-    # from the global sam mapping filter out those in the reads_mapped_txt list
-    get_unmapped = "LC_ALL=C grep -w -v -F -f {0} < {1} > {2}".format(
-        seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_ids_txt,
-        seedGenome.iter_mapping_list[seedGenome.this_iteration].mapped_sam,
-        seedGenome.iter_mapping_list[seedGenome.this_iteration].unmapped_sam)
-    return unmapped_cmds, get_unmapped
+    return unmapped_cmds
 
 
 def pysam_extract_reads(sam, textfile, unmapped_sam, logger=None):
@@ -1976,10 +1929,9 @@ def partition_mapping(seedGenome, samtools_exe, flank, min_flank_depth,
                 seedGenome.this_iteration,
                 "\n".join([x for x in mapped_regions]))
 
-    unmapped_partition_cmds, extract_cmd = make_unmapped_partition_cmds(
+    unmapped_partition_cmds = make_unmapped_partition_cmds(
         mapped_regions=mapped_regions, samtools_exe=samtools_exe,
         seedGenome=seedGenome)
-    # unmapped_partition_cmds.append(extract_cmd)
     for cmd in unmapped_partition_cmds:
         logger.debug(cmd)
         subprocess.run([cmd],

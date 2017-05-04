@@ -391,11 +391,11 @@ class riboSeedTestCase(unittest.TestCase):
         cmd_ref = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
             self.samtools_exe, testmapping.mapped_bam,
             os.path.join(testmapping.mapping_subdir,
-                         "test_iteration_1_mappedreadF.fastq"),
+                         "test_mappedreadF.fastq"),
             os.path.join(testmapping.mapping_subdir,
-                         "test_iteration_1_mappedreadR.fastq"),
+                         "test_mappedreadR.fastq"),
             os.path.join(testmapping.mapping_subdir,
-                         "test_iteration_1_mappedreadS.fastq"), )
+                         "test_mappedreadS.fastq"), )
         self.assertEqual(cmd, cmd_ref)
 
     def test_generate_spades_cmds(self):
@@ -957,26 +957,26 @@ class riboSeedTestCase(unittest.TestCase):
                 self.samtools_exe,
                 os.path.join(
                     self.test_dir,
-                    "NC_011751.1_mapping_for_iter_0/" +
-                    "NC_011751.1_mapping_for_iter_0_iteration_0.bam"),
+                    "NC_011751.1_mapping_for_iteration_0",
+                    "NC_011751.1_mapping_iteration_0.bam"),
                 os.path.join(
                     self.test_dir,
-                    "NC_011751.1_mapping_for_iter_0/" +
-                    "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam")),
+                    "NC_011751.1_mapping_for_iteration_0",
+                    "NC_011751.1_mapping_iteration_0_sorted.bam")),
             "{0} index {1}".format(
                 self.samtools_exe,
                 os.path.join(
                     self.test_dir,
-                    "NC_011751.1_mapping_for_iter_0/" +
-                    "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam")),
+                    "NC_011751.1_mapping_for_iteration_0",
+                    "NC_011751.1_mapping_iteration_0_sorted.bam")),
             '{0} view -o {1} {2} NC_011751.1:5000-10000'.format(
                 self.samtools_exe,
                 os.path.join(self.test_dir,
-                             "LociMapping/test_iteration_1.bam"),
+                             "LociMapping", "test.bam"),
                 os.path.join(
                     self.test_dir,
-                    "NC_011751.1_mapping_for_iter_0/" +
-                    "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"))]
+                    "NC_011751.1_mapping_for_iteration_0",
+                    "NC_011751.1_mapping_iteration_0_sorted.bam"))]
         # print(region)
         self.assertEqual(region, "NC_011751.1:5000-10000")
         for i, cmd in enumerate(cmds):
@@ -995,44 +995,44 @@ class riboSeedTestCase(unittest.TestCase):
             samtools_exe=self.samtools_exe, seedGenome=gen)
         mapped_txt = os.path.join(
             self.test_dir,
-            "NC_011751.1_mapping_for_iter_0/" +
-            "NC_011751.1_mapping_for_iter_0_iteration_0_mapped.txt")
+            "NC_011751.1_mapping_for_iteration_0",
+            "NC_011751.1_mapping_iteration_0_mapped.txt")
 
         ref_unmapped_cmds = [
             "{0} view -o {1} -h {2}".format(
                 self.samtools_exe,
                 os.path.join(self.test_dir,
-                             "NC_011751.1_mapping_for_iter_0/" +
-                             "NC_011751.1_mapping_for_iter_0_iteration_0.sam"),
+                             "NC_011751.1_mapping_for_iteration_0",
+                             "NC_011751.1_mapping_iteration_0.sam"),
                 os.path.join(
                     self.test_dir,
-                    "NC_011751.1_mapping_for_iter_0/" +
-                    "NC_011751.1_mapping_for_iter_0_iteration_0.bam")),
+                    "NC_011751.1_mapping_for_iteration_0",
+                    "NC_011751.1_mapping_iteration_0.bam")),
             "{0} view {1} test:1-6 | cut -f1 >> {2}".format(
                 self.samtools_exe,
                 os.path.join(
                     self.test_dir,
-                    "NC_011751.1_mapping_for_iter_0/" +
-                    "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"),
+                    "NC_011751.1_mapping_for_iteration_0",
+                    "NC_011751.1_mapping_iteration_0_sorted.bam"),
                 mapped_txt),
             "{0} view {1} test:3-77 | cut -f1 >> {2}".format(
                 self.samtools_exe,
                 os.path.join(
                     self.test_dir,
-                    "NC_011751.1_mapping_for_iter_0/" +
-                    "NC_011751.1_mapping_for_iter_0_iteration_0_sorted.bam"),
+                    "NC_011751.1_mapping_for_iteration_0",
+                    "NC_011751.1_mapping_iteration_0_sorted.bam"),
                 mapped_txt),
             "sort -u {0} -o {0}".format(mapped_txt)]
         ref_grep_part = "LC_ALL=C grep -w -v -F -f {0} < {1} > {2}".format(
             mapped_txt,
             os.path.join(
                 self.test_dir,
-                "NC_011751.1_mapping_for_iter_0/" +
-                "NC_011751.1_mapping_for_iter_0_iteration_0.sam"),
+                "NC_011751.1_mapping_for_iteration_0",
+                "NC_011751.1_mapping_iteration_0.sam"),
             os.path.join(
                 self.test_dir,
-                "NC_011751.1_mapping_for_iter_0/" +
-                "NC_011751.1_mapping_for_iter_0_iteration_0_unmapped.sam"))
+                "NC_011751.1_mapping_for_iteration_0",
+                "NC_011751.1_mapping_iteration_0_unmapped.sam"))
 
         for i, ref in enumerate(ref_unmapped_cmds):
             self.assertEqual(unmapped_cmds[i], ref)
