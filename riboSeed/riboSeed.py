@@ -141,7 +141,7 @@ class SeedGenome(object):
         """ Given a output root, prepare all the needed subdirs and paths
         """
         self.iter_mapping_list = []
-        for i in range(0, self.max_iterations + 1):
+        for i in range(0, self.max_iterations):
             self.iter_mapping_list.append(LociMapping(
                 name="{0}_mapping_iteration_{1}".format(self.name, i),
                 iteration=i,
@@ -633,6 +633,13 @@ def get_args():  # pragma: no cover
                           help="if assembled contig is smaller than  " +
                           "--min_assembly_len, contig will still be included" +
                           " in assembly; default: inferred")
+    optional.add_argument("--subtract", dest='subtract',
+                          action="store_true",
+                          default=False,
+                          help="if --subtract reads already used in previous" +
+                          "round of subassembly will not be included in " +
+                          "subsequent rounds.  This can lead to problems " +
+                          "with multiple mapping and inflated coverage.")
     optional.add_argument("--linear",
                           help="if genome is known to not be circular and " +
                           "a region of interest (including flanking bits) " +
@@ -1116,7 +1123,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
         bwa_exe, ngsLib.ref_fasta)
     # map paired end reads to reference index.
     bwacommands = [cmdindex]
-    if not single_lib:
+    if "pe" in ngsLib.libtype:
         cmdmap = str('{0} mem -t {1} {2} -k 15 ' +
                      '{3} {4} {5} | {6} view -bh - | ' +
                      '{6} sort -o ' +
@@ -1148,7 +1155,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                          samtools_exe,  # 5
                                          mapping_ob.s_map_bam)  # 5)
         # merge together the singleton and pe reads, if there are any
-        if single_lib:
+        if "s" in ngsLib.libtype:
             cmdmergeS = str(
                 "{0} view -bh {1} > {2}"
             ).format(samtools_exe, mapping_ob.s_map_bam, mapping_ob.mapped_bam_unfiltered)
@@ -1177,7 +1184,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                         get_number_mapped(mapping_ob.s_map_bam,
                                           samtools_exe=samtools_exe)))
     # report paired reads mapped
-    if not single_lib:
+    if "pe" in ngsLib.libtype:
         logger.info(str("PE mapped reads: " +
                         get_number_mapped(mapping_ob.pe_map_bam,
                                           samtools_exe=samtools_exe)))
@@ -1780,9 +1787,7 @@ def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe,
     return (partition_cmds, region_to_extract)
 
 
-
-def make_unmapped_partition_cmds(
-        mapped_regions, samtools_exe, seedGenome):
+def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
     unmapped_cmds = []
     """ given a list of regions (formatted for samtools view, etc) make a
     list of mapped reads (file path stored under mapped_ids_txt), and
@@ -1791,10 +1796,7 @@ def make_unmapped_partition_cmds(
     """
     # starting at second iteration, copy previous iterms mapped_ids_txt
     # as a starting point so we can track the reads better.
-    #  This used to get the first iterations mapped id's, but that was the
-    # overall mapping, which leaves out very few 'unmapped'.  so, we start at
-    # iteration 2
-    if seedGenome.this_iteration > 1:
+    if seedGenome.this_iteration > 0:
         shutil.copyfile(
             seedGenome.iter_mapping_list[
                 seedGenome.this_iteration - 1].mapped_ids_txt,
@@ -1850,7 +1852,7 @@ def pysam_extract_reads(sam, textfile, unmapped_sam, logger=None):
             nunmapped = nunmapped + 1
             osam.write(read)
     if logger:
-        logger.info("Wrote %i of the %i  unmapped reads from %s to %s",
+        logger.info("Wrote %i unmapped reads of the %i total from %s to %s",
                     nunmapped, total, sam, ofile)
     osam.close()
 
@@ -2485,6 +2487,14 @@ if __name__ == "__main__":  # pragma: no cover
                 # ref fasta is used to make index cmd
                 ref_fasta=seedGenome.next_reference_path,
                 which='unmapped', logger=logger)
+            # unless subtract arg is used, use all reads each mapping
+            if not args.subtract:
+                logger.warning("pineapple")
+                logger.info(seedGenome.master_ngs_ob.ref_fasta)
+                unmapped_ngsLib = seedGenome.master_ngs_ob
+                unmapped_ngsLib.ref_fasta = seedGenome.next_reference_path
+                logger.info(seedGenome.master_ngs_ob.ref_fasta)
+
             unmapped_ngsLib.readlen = seedGenome.master_ngs_ob.readlen
             # unmapped_ngsLib.ref_fasta = seedGenome.next_reference_path
             unmapped_ngsLib.smalt_dist_path = \
