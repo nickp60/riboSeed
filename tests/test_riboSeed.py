@@ -247,7 +247,7 @@ class riboSeedTestCase(unittest.TestCase):
         testlib_pe = NgsLib(
             name="test",
             master=True,
-            make_dist=True,
+            make_dist=False,
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
             ref_fasta=self.ref_fasta,
@@ -263,7 +263,7 @@ class riboSeedTestCase(unittest.TestCase):
         testlib_killer = NgsLib(
             name="test",
             master=False,
-            make_dist=True,
+            make_dist=False,
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
             ref_fasta=self.ref_fasta,
