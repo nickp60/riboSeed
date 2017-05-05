@@ -2,8 +2,6 @@
 #-*- coding: utf-8 -*-
 
 """
-Minor Version Revisions:
- - spelling, pep8 compiance, renamed run_final_assemblies to get_final_assemblies_cmds
 Created on Sun Jul 24 19:33:37 2016
 
 See README.md for more info and usage
@@ -51,7 +49,7 @@ from riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
 
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
-PACKAGE_VERSION = '0.3.04'
+PACKAGE_VERSION = '0.3.05'
 # --------------------------- classes --------------------------- #
 
 
@@ -222,14 +220,15 @@ class SeedGenome(object):
         """ remove bulky files from two iterations ago, or if
         all_iters, remove all big mapping files
         """
-        if logger:
-            logger.info("Removing uneeded files:")
+        assert logger is not None, "Must use logging"
         if all_iters:
             target_iters = range(0, self.max_iterations + 1)
         else:
             target_iters = [self.this_iteration - 2]
             assert target_iters[0] < seedGenome.this_iteration - 1, \
                 "previous mapping is required, can only purge 2nd previous"
+        logger.debug("Looking for temp files to remove. " +
+                     "To keep all temp files, use the --keep_temps flag")
         for iter in target_iters:
             for f in [self.iter_mapping_list[iter].pe_map_bam,
                       self.iter_mapping_list[iter].s_map_bam,
@@ -241,8 +240,7 @@ class SeedGenome(object):
                 if f is not None:
                     if os.path.isfile(f):
                         os.unlink(f)
-                        if logger:
-                            logger.debug(f)
+                        logger.debug("deleting %f", f)
 
 
 class NgsLib(object):
@@ -365,22 +363,34 @@ class NgsLib(object):
                   self.libtype)
             return None
 
-    def purge_old_files(self, logger=None):
+    def purge_old_files(self, master, logger=None):
         """ before reasigning unmapped lib, delete
         useless files that were used in the previous iteration
+        return codes:
+         0) all is well
+         1) no files deleted due to conflict
         """
-        if logger:
-            logger.info("Removing uneeded files:")
+        assert master is not None, \
+            str("Must submit your master ngs lib as a control" +
+                " to prevent undesired deletions!")
+        assert logger is not None, "must use logging"
         if self.master:
-            print("cannot remove master NgsLib")
+            logger.warning("cannot remove master NgsLib!  skipping purge")
+            return 1
+
         for f in [self.readF,
                   self.readR,
                   self.readS0]:
             if f is not None:
                 if os.path.isfile(f):
-                    os.unlink(f)
-                    if logger:
-                        logger.debug(f)
+                    if f not in master.liblist:
+                        os.unlink(f)
+                        logger.debug("Deleted %s", f)
+                    else:
+                        logger.error(str("%s is in the master ngs object; " +
+                                         "cannot delete!"), f)
+                        return 1
+        return 0
 
     def listLibs(self):
         self.liblist = [x for x in
@@ -591,7 +601,7 @@ def get_args():  # pragma: no cover
     optional.add_argument("-l", "--flanking_length",
                           help="length of flanking regions, in bp; " +
                           "default: %(default)s",
-                          default=2000, type=int, dest="flanking")
+                          default=1000, type=int, dest="flanking")
     optional.add_argument("-m", "--method_for_map", dest='method',
                           action="store", choices=["smalt", "bwa"],
                           help="available mappers: smalt and bwa; " +
@@ -2175,7 +2185,7 @@ def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
     sli = math.ceil(len(data) / ymax)
     #  get rough averages for a window
     for i in range(0, ymax + 1):
-        avbin.append(int(sum(data[i * sli: (i + 1) * sli]) / sli ))
+        avbin.append(int(sum(data[i * sli: (i + 1) * sli]) / sli))
 
     avmax = max(avbin)
     logger.debug("scaling to max of %i", avmax)
@@ -2189,7 +2199,7 @@ def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
     for idx, j in enumerate(scaledy):
         if idx == 0:
             plotlines.append(" " * int(xmax * .25) + title)
-            plotlines.append(" " * 9 + "0" + " " * (xmax - 2) + ylab )
+            plotlines.append(" " * 9 + "0" + " " * (xmax - 2) + ylab)
             plotlines.append(" " * 10 + xaxis + (yaxis * xmax) + "|")
         if line is not None:
             if lineidx == idx:
@@ -2199,11 +2209,11 @@ def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
         if idx % int(tick * ymax) == 0:
             # plot ticks at increments
             ticlab = str(int((j / xmax) * avmax))
-            plotlines.append(ticlab.rjust(10, " " )  + xaxis + fillchar * j + "O")
+            plotlines.append(ticlab.rjust(10, " ") + xaxis + fillchar *
+                             j + "O")
         else:
             plotlines.append(" " * 10 + xaxis + fillchar * j + "O")
     logger.info("\n" + "\n".join(plotlines))
-
 
 
 def plotAsScores(score_list, score_min, outdir, logger=None):
@@ -2240,7 +2250,7 @@ def plotAsScores(score_list, score_min, outdir, logger=None):
                  x=range(0, len(score_list)))
     plt2.plot([0, len(score_list) * 1.1], [score_min, score_min],
               color='green', linewidth=5, alpha=0.6)
-    plt2.axis([0, len(score_list) * 1.1, 0, max(score_list) * 1.1 ])
+    plt2.axis([0, len(score_list) * 1.1, 0, max(score_list) * 1.1])
     plt2.set_title('Read Alignment Score, Sorted')
     plt2.set_ylabel('Alignment Score')
     plt2.set_xlabel('Index of Sorted Read')
@@ -2455,7 +2465,9 @@ if __name__ == "__main__":  # pragma: no cover
                     # dont do this on first iteration cause those be the reads!
                     # and if they aren't backed up you are up a creek and
                     # probably very upset with me.
-                    unmapped_ngsLib.purge_old_files(logger=logger)
+                    purgecode = unmapped_ngsLib.purge_old_files(
+                        master=seedGenome.master_ngs_ob,
+                        logger=logger)
             # seqrecords for the clusters to be gen.next_reference_path
             with open(seedGenome.next_reference_path, 'r') as nextref:
                 next_seqrec = list(SeqIO.parse(nextref, 'fasta'))[0]  # next?
@@ -2633,21 +2645,6 @@ if __name__ == "__main__":  # pragma: no cover
                 x for x in clusters_to_process if
                 x.index in [
                     y.index for y in clusters_to_subassemble]]
-            # for clu in clusters_to_process:
-            #     if clu.index not in [x.index for x in clusters_post_partition]:
-            #         try:
-            #             shutil.copyfile(
-            #                 cluster.mappings[-1].assembled_contig,
-            #                 os.path.join(seedGenome.final_contigs_dir,
-            #                              "{0}_cluster_{1}_iter_{2}.fasta".format(
-            #                                  clu.sequence_id,
-            #                                  clu.index,
-            #                                  clu.mappings[-1].iteration)))
-            #         except:
-            #             logger.warning("unable to copy %s to final contigs dir. " +
-            #                            "This is should have returned code 3, not 1.",
-            #                            cluster.mappings[-1].assembled_contig)
-            #             logger.error(last_exception())
 
         except Exception as e:
             logger.error("Error while partitioning reads from iteration %i",
@@ -2760,8 +2757,10 @@ if __name__ == "__main__":  # pragma: no cover
     if not args.keep_temps:
         if not any([x in unmapped_ngsLib.liblist for
                     x in seedGenome.master_ngs_ob.liblist]):
-            unmapped_ngsLib.purge_old_files()
-            seedGenome.purge_old_files(all_iters=True)
+            unmapped_ngsLib.purge_old_files(
+                master=seedGenome.master_ngs_ob,
+                logger=logger)
+            seedGenome.purge_old_files(all_iters=True, logger=logger)
     # And add the remaining final contigs to the directory for combination
     if len([x for x in seedGenome.loci_clusters if x.keep_contigs]) == 0:
         logger.info("all contigs already copied to long_reads dir")

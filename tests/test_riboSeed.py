@@ -108,6 +108,8 @@ class riboSeedTestCase(unittest.TestCase):
         self.to_be_removed.append(self.ref_fasta)
 
     def test_print_headsup(self):
+        """ This is called a test so it only gets called once
+        """
         print("""
         Thanks for running these tests!! You will see several logger warning
         messages that you should IGNORE. **sigh of relief** They verify error
@@ -124,6 +126,10 @@ class riboSeedTestCase(unittest.TestCase):
         """)
 
     def test_make_spades_empty_check(self):
+        """ construct spades command that check for file presense
+        this is useful when multiprocessing and unable to check before
+        sending the command out
+        """
         lib1 = "/path/to/lib1.fastq"
         lib2 = "/path/to/lib2.fastq"
         lib3 = "/path/to/lib3.fastq"
@@ -140,7 +146,7 @@ class riboSeedTestCase(unittest.TestCase):
             fullcmd)
 
     def test_Exes_bad_method(self):
-        """check badd method arg"""
+        """check bad method arg given to Exes object"""
         with self.assertRaises(ValueError):
             Exes(samtools=self.samtools_exe,
                  quast=self.quast_exe,
@@ -237,21 +243,38 @@ class riboSeedTestCase(unittest.TestCase):
                 ref_fasta=self.ref_fasta,
                 mapper_exe=self.smalt_exe)
 
-        # # check master (ie, generate a distance file with smalt
-        # testlib_pe = NgsLib(
-        #     name="test",
-        #     master=True,
-        #     make_dist=True,
-        #     readF=self.ref_Ffastq,
-        #     readR=self.ref_Rfastq,
-        #     ref_fasta=self.ref_fasta,
-        #     mapper_exe=self.smalt_exe,
-        #     logger=logger)
-        # self.assertTrue(os.path.exists(os.path.join(
-        #     self.test_dir, "smalt_distance_est.sam")))
-        # self.assertEqual(testlib_pe.libtype, "pe")
-        # self.assertEqual(testlib_pe.readlen, 145.0)
-        # self.to_be_removed.append(testlib_pe.smalt_dist_path)
+        # check master files cannot bge deleted
+        testlib_pe = NgsLib(
+            name="test",
+            master=True,
+            make_dist=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.smalt_exe,
+            logger=logger)
+        self.assertEqual(
+            1,  # return code for no deleting tool place
+            testlib_pe.purge_old_files(master=testlib_pe_s, logger=logger))
+        self.assertTrue(os.path.isfile(self.ref_Ffastq))
+        self.assertTrue(os.path.isfile(self.ref_Rfastq))
+
+        # test killer lib that tries to purge files that are in a master ob
+        testlib_killer = NgsLib(
+            name="test",
+            master=False,
+            make_dist=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.smalt_exe,
+            logger=logger)
+        self.assertEqual(
+            1,  # return code for no deleting tool place
+            testlib_killer.purge_old_files(master=testlib_pe_s, logger=logger))
+        self.assertTrue(os.path.isfile(self.ref_Ffastq))
+        self.assertTrue(os.path.isfile(self.ref_Rfastq))
+
 
     def test_SeedGenome(self):
         with open(self.ref_gb, "r") as gbf:
@@ -399,8 +422,7 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertEqual(cmd, cmd_ref)
 
     def test_generate_spades_cmds(self):
-        """Question: why the heck is there a space before the -o?
-        I troubleshot this for two hours to no avail.  Next!
+        """
         """
         testmapping = LociMapping(
             name="test",

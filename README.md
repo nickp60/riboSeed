@@ -479,7 +479,6 @@ riboSeed.py
 
 * SPAdes v3.8 or higher
 * BWA (tested with 0.7.12-r1039)
-<!-- * (or SMALT (tested with 0.7.6), see note below) -->
 * SAMTools (must be 1.3.1 or above)
 * QUAST (tested with 4.1)
 
