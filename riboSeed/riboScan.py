@@ -263,6 +263,8 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
     os.makedirs(os.path.join(output, "contigs"))
     with open(os.path.expanduser(multi), "r") as mf:
         for idx, rec in enumerate(SeqIO.parse(mf, "fasta")):
+            logger.debug("record %d:", idx)
+            logger.debug(rec)
             if name is not None:
                 fname = name
             else:
@@ -282,7 +284,8 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
                 renamed_rec = SeqRecord(rec.seq, id=fname, description="")
                 SeqIO.write(renamed_rec, outf, "fasta")
             idlist.append(fname)
-
+    logger.info("rewrote the following records")
+    logger.info(idlist)
 
 if __name__ == "__main__":
     args = get_args()

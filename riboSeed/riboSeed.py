@@ -49,7 +49,7 @@ from riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
 
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
-PACKAGE_VERSION = '0.3.05'
+PACKAGE_VERSION = '0.3.06'
 # --------------------------- classes --------------------------- #
 
 
@@ -240,7 +240,7 @@ class SeedGenome(object):
                 if f is not None:
                     if os.path.isfile(f):
                         os.unlink(f)
-                        logger.debug("deleting %f", f)
+                        logger.debug("deleting %s", f)
 
 
 class NgsLib(object):
@@ -1123,8 +1123,11 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
         score_min = score_minimum
     else:
         logger.debug(
-            "no bwa mapping score minprovided; default is 1/2 read length")
-        score_min = int(round(float(ngsLib.readlen) / 2.0))
+            "no bwa mapping score minprovided; default is 1/2 read " +
+            "length or 50, whichever is greater.")
+        # hard minimum of 50
+        score_min = max(int(round(float(ngsLib.readlen) / 2.0)),
+                        50)
     logger.debug("using a score minimum of %i", score_min)
     # index the reference
     cmdindex = str("{0} index {1}").format(
@@ -1378,7 +1381,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     2 = exclude contigs, and keep from iterating
     3 = exclude contigs, error ocurred
     """
-    DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR = 6
+    # DANGEROUS_CONTIG_LENGTH_THRESHOLD_FACTOR = 6
     prelog = "{0}-{1}-iter-{2}:".format("SEED_cluster", clu.index,
                                         mapping_ob.iteration)
     assert logger is not None, "Must Use Logging"
@@ -2416,9 +2419,9 @@ if __name__ == "__main__":  # pragma: no cover
         logger.error(last_exception())
         sys.exit(1)
     try:
-        logger.info("padding genbank by %i", args.flanking)
+        logger.info("padding genbank by %i", args.flanking * 3)
         logger.debug("old ref_fasta: %s", seedGenome.ref_fasta)
-        seedGenome.pad_genbank(pad=args.flanking,
+        seedGenome.pad_genbank(pad=args.flanking * 3,
                                circular=args.linear is False, logger=logger)
         logger.debug("new ref_fasta: %s", seedGenome.ref_fasta)
     except Exception as e:
@@ -2484,7 +2487,7 @@ if __name__ == "__main__":  # pragma: no cover
                     logger.info("Downsampling our pltting data to 20k points")
                     mapped_scores = random.sample(mapped_scores, 200000)
                 printPlot(data=mapped_scores, line=score_minimum,
-                          ymax=25,
+                          ymax=18,
                           xmax=60, tick=.2, fill=True,
                           title=str("Average alignment Scores for cluster " +
                                     "%i\n " % clu.index),
@@ -2501,10 +2504,7 @@ if __name__ == "__main__":  # pragma: no cover
                 which='unmapped', logger=logger)
             # unless subtract arg is used, use all reads each mapping
             if not args.subtract:
-                logger.warning("pineapple")
-                logger.info(seedGenome.master_ngs_ob.ref_fasta)
                 unmapped_ngsLib = seedGenome.master_ngs_ob
-                logger.info(seedGenome.master_ngs_ob.ref_fasta)
 
             unmapped_ngsLib.readlen = seedGenome.master_ngs_ob.readlen
             unmapped_ngsLib.smalt_dist_path = \
@@ -2615,7 +2615,7 @@ if __name__ == "__main__":  # pragma: no cover
                     outdir=fig_dir, logger=logger)
 
                 if args.ref_as_contig is None:
-                    if map_percent > 85:
+                    if map_percent > 80:
                         ref_as_contig = "trusted"
                     else:
                         ref_as_contig = "untrusted"

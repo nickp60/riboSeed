@@ -51,4 +51,14 @@ riboSelect.py ${OUTDIR}/scan/scannedScaffolds.gb -o ${OUTDIR}select/ -v 1
 riboSeed.py ${OUTDIR}select/riboSelect_grouped_loci.txt -F ${READ1} -R ${READ2} -l ${FLANK} -r ${OUTDIR}scan/scannedScaffolds.gb -i ${ITERATIONS} -o ${OUTDIR}seed/ -v 1 -c 4 -t 2 -n ${NAME}
 
 
+echo "Running progressive mauve"
+if [ -x `command -v progressiveMauve` ]
+then
+    echo "Running the folloing Mauve command: \n progressiveMauve --output=${OUTDIR}seed/mauve/pm_out ${OUTDIR}seed/mauve/${NAME}.gb ${OUTDIR}seed/mauve/${NAME}_de_fere_novo_contigs.fasta ${OUTDIR}seed/mauve/${NAME}_de_novo_contigs.fasta"
+    progressiveMauve --output=${OUTDIR}seed/mauve/pm_out ${OUTDIR}seed/mauve/${NAME}.gb ${OUTDIR}seed/mauve/${NAME}_de_fere_novo_contigs.fasta ${OUTDIR}seed/mauve/${NAME}_de_novo_contigs.fasta
+
+echo "Done! Get the results with the following command"
+echo "scp -r ${USER}@${HOST}:${OUTDIR}seed/${NAME}_de_fere_novo_contigs.fasta"
+fi
+
 echo "Task ended `date`"
