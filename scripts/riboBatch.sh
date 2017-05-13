@@ -1,5 +1,5 @@
 #!/bin/bash
-# version 0.2.0
+# version 0.3.0
 #  If submitting jobs to a cluster with SGE, set the variables
 #  below and the environment variables starting with #$.  Otherwise, you
 #  can submit arguments to commandline

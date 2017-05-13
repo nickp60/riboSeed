@@ -2403,12 +2403,17 @@ if __name__ == "__main__":  # pragma: no cover
             sys.exit(1)
     # read in riboSelect clusters, make a lociCluster ob for each,
     # which get placed in seedGenome.loci_clusters
-    seedGenome.loci_clusters = parse_clustered_loci_file(
-        filepath=seedGenome.clustered_loci_txt,
-        gb_filepath=seedGenome.genbank_path,
-        output_root=output_root,
-        circular=args.linear is False,
-        logger=logger)
+    try:
+        seedGenome.loci_clusters = parse_clustered_loci_file(
+            filepath=seedGenome.clustered_loci_txt,
+            gb_filepath=seedGenome.genbank_path,
+            output_root=output_root,
+            circular=args.linear is False,
+            logger=logger)
+    except Exception as e:
+        logger.error(e)
+        logger.error(last_exception())
+        sys.exit(1)
 
     # add coordinates for each locus in lociCluster.loci_list
     try:
@@ -2589,17 +2594,18 @@ if __name__ == "__main__":  # pragma: no cover
                 logger=logger)
         mapping_percentages.append("Iteration %i: %f" % (
             seedGenome.this_iteration, map_percent))
-        # TODO maybe implement this in the future?
-        # if len(mapping_list) == 0:
-        #     logger.error(
-        #         "No reads mapped for this iteration. This could be to an " +
-        #         "error from samtools or elevated mapping stringency.")
-        #     if seedGenome.this_iteration != 0:
-        #         logger.warning(" proceeding to final assemblies")
-        #         break
-        #     else:
-        #         logger.error(" Exiting!")
-        #         sys.exit(1)
+        # if things go really bad on the first mapping, get out while you can
+        if len(score_list) == 0:
+            logger.error(
+                "No reads mapped for this iteration. This could be to an " +
+                "error from samtools, bwa mem, a bad reference, " +
+                " or elevated mapping stringency. ")
+            if seedGenome.this_iteration != 0:
+                logger.warning(" proceeding to final assemblies")
+                break
+            else:
+                logger.error("Exiting!")
+                sys.exit(1)
 
         # on first time thorugh, infer ref_as_contig if not provided via commandline
         if seedGenome.this_iteration == 0:
