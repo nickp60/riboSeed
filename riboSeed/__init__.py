@@ -1,2 +1,2 @@
-# MAJOR CHANGES: added a manifest
-__version__ = '0.3.06'
+#
+from _version import __version__

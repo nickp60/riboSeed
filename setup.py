@@ -22,13 +22,24 @@ here = path.abspath(path.dirname(__file__))
 # with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 #     long_description = f.read()
 
-# from pyani
-with open(path.join(here, 'riboSeed', '__init__.py'), 'r') as fh:
-    for line in fh:
-        m = re.search(r"^__version__ = '(?P<version>[^']+)'$", line)
-        if m:
-            init_version = m.group('version')
-            break
+# # from pyani
+# with open(path.join(here, 'riboSeed', '__init__.py'), 'r') as fh:
+#     for line in fh:
+#         m = re.search(r"^__version__ = '(?P<version>[^']+)'$", line)
+#         if m:
+#             init_version = m.group('version')
+#             break
+# from http://stackoverflow.com/questions/458550/
+#         standard-way-to-embed-version-into-python-package
+VERSIONFILE = "riboSeed/_version.py"
+verstrline = open(VERSIONFILE, "rt").read()
+VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VSRE, verstrline, re.M)
+if mo:
+    verstr = mo.group(1)
+else:
+    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
+
 
 if sys.version_info <= (3, 0):
     sys.stderr.write("ERROR: riboseed requires Python 3.5 " +
@@ -45,7 +56,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=init_version,
+    version=verstr,
 
     description='riboSeed: assemble across rDNA regions',
     # long_description=long_description,
@@ -151,8 +162,8 @@ setup(
     scripts=['riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
              'riboSeed/riboSnag.py', 'riboSeed/riboSwap.py',
              'riboSeed/riboScan.py', "scripts/runme.py",
+             'riboSeed/riboSim.py',
              "scripts/OSX_INSTALL_DEPS.sh",
              'scripts/riboBatch.sh',
-             # 'scripts/splitMultifasta.sh',
              'scripts/concatToyGenome.py'],
 )

@@ -13,12 +13,12 @@ mkdir ./degenerate_output/mauve/
 python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ./toyGenome/coli_genome/concatenated_seq.fasta -o ./degenerate_output/ref_scan/ -v 1
 
 
-for i in 0 0.00001 0.00005 0.0001 0.0005 0.001 0.005 0.01 0.05 0.1
+for i in 0 0.00001 0.00005 0.00006 0.00007 0.00008 0.00009 0.0001 0.0005 0.001
 do
     # intrduce the mutations
     python3.5  ~/GitHub/riboSeed/riboSeed/riboSim.py ./toyGenome/coli_genome/concatenated_seq.fasta -f ${i} -o ./degenerate_output/degenerate_${i}/ -v 1
     # copy the file
-    cp ./degenerate_output/degenerate_${i}/concatenated_seq.fasta ./degenerate_output/genomes/
+    cp ./degenerate_output/degenerate_${i}/concatenated_seq.fasta ./degenerate_output/genomes/${i}_reference.fasta
     # generate the gb file for the sequence
     python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ./degenerate_output/degenerate_${i}/ -o ./degenerate_output/scan_${i}/ -e fasta -v 1
     # cluster

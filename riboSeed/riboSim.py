@@ -88,8 +88,8 @@ def ageSequence(rec, outfile, freq, logger=None):
     distr_counter = 0
     hist = []
     newseqlist = list(rec.seq)
-    print(rec.seq[1:10])
-    print(newseqlist[1:10])
+    # print(rec.seq[1:10])
+    # print(newseqlist[1:10])
     alph = ["A", "T", "C", "G"]
     for i, base in enumerate(rec.seq):
         distr_counter = distr_counter + 1
@@ -103,7 +103,7 @@ def ageSequence(rec, outfile, freq, logger=None):
             newseqlist[i] = random.choice(choices)
         else:
             hist.append(0)
-    print(hist[1:20])
+    # print(hist[1:20])
     logger.info("Changed %d of %d bases", change_counter, i)
     newrec = SeqRecord(
         id=rec.id,

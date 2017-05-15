@@ -20,6 +20,7 @@ import traceback
 import pysam
 import math
 
+from _version import __version__
 from bisect import bisect
 from itertools import chain
 from collections import namedtuple
@@ -49,7 +50,6 @@ from riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
 
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
-PACKAGE_VERSION = '0.3.06'
 # --------------------------- classes --------------------------- #
 
 
@@ -777,6 +777,9 @@ def get_args():  # pragma: no cover
                           action="store", default="python2.7",
                           help="Path to python2.7 executable, cause " +
                           "QUAST won't run on python3. default: %(default)s")
+    optional.add_argument('--version', action='version',
+                          version='%(prog)s {version}'.format(
+                              version=__version__))
     args = parser.parse_args()
     return args
 
@@ -2302,8 +2305,8 @@ if __name__ == "__main__":  # pragma: no cover
                             outfile=log_path,
                             name=__name__)
     # # log version of riboSeed, commandline options, and all settings
-    logger.info("riboSeed pipeline package version %s",
-                PACKAGE_VERSION)
+    logger.info("riboSeed pipeline package version: %s",
+            __version__)
 
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug("All settings used:")
@@ -2473,9 +2476,11 @@ if __name__ == "__main__":  # pragma: no cover
                     # dont do this on first iteration cause those be the reads!
                     # and if they aren't backed up you are up a creek and
                     # probably very upset with me.
-                    purgecode = unmapped_ngsLib.purge_old_files(
-                        master=seedGenome.master_ngs_ob,
-                        logger=logger)
+
+                    # purgecode = unmapped_ngsLib.purge_old_files(
+                    #     master=seedGenome.master_ngs_ob,
+                    #     logger=logger)
+
             # seqrecords for the clusters to be gen.next_reference_path
             with open(seedGenome.next_reference_path, 'r') as nextref:
                 next_seqrec = list(SeqIO.parse(nextref, 'fasta'))[0]  # next?
