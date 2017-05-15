@@ -1,6 +1,7 @@
 include *.md
 include LICENSE
 include requirements.txt
+include riboSeed/_version.py
 include sample_data/*
 include riboSeed/integration_data/*
 graft riboSeed/integration_data
