@@ -19,8 +19,14 @@ import subprocess
 import traceback
 import pysam
 import math
+import pkg_resources
 
-from _version import __version__
+try:  # ie, if an installed pkg from pip or other using setup.py
+    __version__ = pkg_resources.require("riboSeed")[0].version
+except DistributionNotFound:  # development mode
+    from _version import __version__
+
+
 from bisect import bisect
 from itertools import chain
 from collections import namedtuple
