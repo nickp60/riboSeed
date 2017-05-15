@@ -21,11 +21,10 @@ import pysam
 import math
 import pkg_resources
 
-try:  # ie, if an installed pkg from pip or other using setup.py
-    __version__ = pkg_resources.require("riboSeed")[0].version
-except DistributionNotFound:  # development mode
+try:  # development mode
     from _version import __version__
-
+except ImportError:  # ie, if an installed pkg from pip or other using setup.py
+    __version__ = pkg_resources.require("riboSeed")[0].version
 
 from bisect import bisect
 from itertools import chain
