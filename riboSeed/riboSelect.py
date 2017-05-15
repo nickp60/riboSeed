@@ -237,7 +237,7 @@ def parse_args_clusters(clusters, nrecs, logger=None):
     return centers
 
 
-def pure_python_kmeans(data, centers=3, kind=int, DEBUG=True):
+def pure_python_kmeans(data, centers=3, kind=int, DEBUG=True, attempt=0):
     """giveb 1d list of numberic data and number of centers, returns a
     csv with the data and cluster, and LP's disapointment
     """
@@ -264,8 +264,22 @@ def pure_python_kmeans(data, centers=3, kind=int, DEBUG=True):
     with open(os.path.join(os.getcwd(), "km_script.R"), "w") as f:
         for i in rcmds:
             f.write(i + "\n")
-    subprocess.run("Rscript km_script.R", shell=sys.platform != 'win32',
-                   check=True)
+    try:
+        subprocess.run("Rscript km_script.R", shell=sys.platform != 'win32',
+                       check=True)
+    except Exception as e:
+        logger.warning(e)
+        if attempt > 3:
+            logger.warning("sometimes this happens, and yes, I am ashamed" +
+                           "it. Retrying %d of 3 times")
+            attempt = attempt + 1
+            return pure_python_kmeans(data=data, centers=centers, kind=kind,
+                                      DEBUG=DEBUG, attempt=attempt)
+        else:
+            logger.error(e)
+            logger.error("clustering failed 3 times; exiting")
+            sys.exit(1)
+
     with open("pure_python_kmeans_list.csv", mode='r') as infile:
         reader = csv.reader(infile)
         indexClusterDict = {}
