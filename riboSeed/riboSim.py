@@ -142,9 +142,7 @@ if __name__ == "__main__":  # pragma: no cover
     output_file = os.path.join(
         output_root,
         os.path.basename(args.fasta))
-    # if os.path.exists(output_file):
-    #     raise OSError("existing output file")
-    ###
+
     random.seed(args.seed)
     with open(args.fasta, "r") as infile:
         for rec in SeqIO.parse(infile, "fasta"):
