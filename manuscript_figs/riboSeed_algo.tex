@@ -1,0 +1,84 @@
+
+\documentclass[]{standalone}
+% \usepackage{geometry}
+% \geometry{marginparwidth=0cm,paperwidth=11cm,
+%   paperheight=25cm,verbose}
+\usepackage[]{algorithm2e}
+\begin{document}
+
+\sffamily
+
+
+\SetKwProg{Scan}{riboScan}{ }{end}
+\SetKwProg{Select}{riboSelect}{ }{end}
+\SetKwProg{Seed}{riboSeed}{ }{end}
+\begin{algorithm}[H]
+%  \KwData{reference, reads}
+%  % initialization\;
+%  \Scan{(reference fastas)}{
+%    \For{chromosome in reference}{
+%      run Barrnap to find rRNAs\;
+%      add locus tags to gff\;
+%      convert to genbank\;
+%    }
+%    combine genbanks\;
+%    return scannedScaffolds\;
+%  }
+%  \hrule
+% % \end{algorithm}
+% % \pagebreak
+% % \begin{algorithm}[H]
+%  \Select{(scannedScaffolds)}{
+%    parse coordinated of rRNAs\;
+%    cluster into operons\;
+%    return grouped\_loci\;
+%  }
+%  \hrule
+% \end{algorithm}
+% \pagebreak
+% \begin{algorithm}[H]
+  % \Seed{(scannedScaffolds, grouped\_loci, reads, iters)}{
+  %   reference = scannedScaffolds\;
+  %   clusters = parse grouped\_loci\;
+  %   \For{i in iters}{
+  %     map reads to reference\;
+  %     \For{cluster in clusters}{
+  %       filter and extract reads within clusters and flanking\;
+  %       subassemble with SPAdes\;
+  %       return pseudocontig\;
+  %     }
+  %     assess subassembly\;
+  %     \If {success}{
+  %       make fauxgenome from pseudocontigs \;
+  %       reference = fauxgenome
+  %       continue
+  %     }
+  %     \If{last iteration}{
+  %       run SPAdes with pseudocontigs\;
+  %     }
+  %   }
+  % }
+  \Seed{(reference, riboSelect\_clusters, reads, iters)}{
+    ref = reference\;
+    clusters = parse riboSelect\_clusters\;
+    \For{i in iters}{
+      map reads to ref\;
+      \For{cluster in clusters}{
+        filter and extract reads within clusters and flanking\;
+        subassemble with SPAdes\;
+        return pseudocontig\;
+      }
+      assess subassembly\;
+      \If {success}{
+        make fauxgenome from pseudocontigs \;
+        ref = fauxgenome
+        continue
+      }
+      \If{last iteration}{
+        run SPAdes with reads and pseudocontigs\;
+      }
+    }
+  }
+\end{algorithm}
+% convert ~/GitHub/riboSeed/manuscript_figs/riboSeed_algo.pdf ~/GitHub/riboSeed/manuscript_figs/riboSeed_algo.png
+\end{document}

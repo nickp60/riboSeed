@@ -6,7 +6,7 @@ IFS=$'\n\t'
 # process original
 # only need to do this once;
 # we arent doing indels so the coords are the same
-SEED=2
+SEED=17
 OUTDIRBASE="./"
 OUTDIR="${OUTDIRBASE}`date +%F`_degenerate_output_${SEED}"
 

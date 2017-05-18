@@ -19,7 +19,7 @@ python3.5  ~/GitHub/riboSeed/riboSeed/riboSnag.py ./toyGenome/scan/scannedScaffo
 # combine the extracted regions into a toy genome
 python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ./toyGenome/snag/ \*_riboSnag.fasta -o ./toyGenome/coli_genome/
 # generate reads from the toy genome simulating a MiSeq V3 rub
-~/bin/art_bin_MountRainier/art_illumina -ss MSv3 -i ./toyGenome/coli_genome/concatenated_seq.fasta -p -l 250 -f 25 -m 300 -s 10 -o ./toyGenome/reads_
+~/bin/art_bin_MountRainier/art_illumina -ss MSv3 -i ./toyGenome/coli_genome/concatenated_seq.fasta -p -l 250 -f 20 -m 300 -s 10 -o ./toyGenome/reads_
 # annotate the toy genome for mauve visualization
 python3.5  ~/GitHub/riboSeed/riboSeed/riboScan.py ./toyGenome/coli_genome/concatenated_seq.fasta -o ./toyGenome/coli_genome/scan/
 
