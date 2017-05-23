@@ -696,8 +696,8 @@ def plot_scatter_with_anno(data,
     cov_max_depth = max(df_con['depth'])
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True,
                                    gridspec_kw={'height_ratios': [4, 1]})
-    colors = ['#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',
-              '#FF8306', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F']
+    colors = ['#ff4c05', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',
+              '#ff4c05', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F']
     ax1.set_title(title, y=1.08)
     xmin, xmax = 0, len(data)
     ymin, ymax = -0.1, (max(data) * 1.2)
