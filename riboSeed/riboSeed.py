@@ -227,21 +227,21 @@ class SeedGenome(object):
         """
         assert logger is not None, "Must use logging"
         if all_iters:
-            target_iters = range(0, self.max_iterations + 1)
+            target_iters = range(0, self.max_iterations)
         else:
             target_iters = [self.this_iteration - 2]
             assert target_iters[0] < seedGenome.this_iteration - 1, \
                 "previous mapping is required, can only purge 2nd previous"
         logger.debug("Looking for temp files to remove. " +
                      "To keep all temp files, use the --keep_temps flag")
-        for iter in target_iters:
-            for f in [self.iter_mapping_list[iter].pe_map_bam,
-                      self.iter_mapping_list[iter].s_map_bam,
-                      self.iter_mapping_list[iter].mapped_sam,
-                      self.iter_mapping_list[iter].mapped_bam,
-                      self.iter_mapping_list[iter].unmapped_sam,
-                      self.iter_mapping_list[iter].unmapped_bam,
-                      self.iter_mapping_list[iter].sorted_mapped_bam]:
+        for i in target_iters:
+            for f in [self.iter_mapping_list[i].pe_map_bam,
+                      self.iter_mapping_list[i].s_map_bam,
+                      self.iter_mapping_list[i].mapped_sam,
+                      self.iter_mapping_list[i].mapped_bam,
+                      self.iter_mapping_list[i].unmapped_sam,
+                      self.iter_mapping_list[i].unmapped_bam,
+                      self.iter_mapping_list[i].sorted_mapped_bam]:
                 if f is not None:
                     if os.path.isfile(f):
                         os.unlink(f)
@@ -683,7 +683,7 @@ def get_args():  # pragma: no cover
                           "SPAdes will treat as --untrusted-contig. if '', " +
                           "seeds will not be used during assembly. " +
                           "See SPAdes docs; default: if mapping " +
-                          "percentage over 85%: 'trusted', else: 'untrusted'")
+                          "percentage over 85%%: 'trusted', else 'untrusted'")
     optional.add_argument("--keep_temps", dest='keep_temps',
                           default=False, action="store_true",
                           help="if not --keep_temps, mapping files will be " +
@@ -752,12 +752,12 @@ def get_args():  # pragma: no cover
                           "optional arguments. Proceed with caution!  " +
                           "default: %(default)s")
 
-    # had to make this explicitly to call it a faux optional arg
+    # # had to make this explicitly to call it a faux optional arg
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
 
-    # TODO  Make these check a config file
+    # # TODO  Make these check a config file
     optional.add_argument("--spades_exe", dest="spades_exe",
                           action="store", default="spades.py",
                           help="Path to SPAdes executable; " +
@@ -1475,6 +1475,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
                        "is not greater than length set by " +
                        "--min_assembly_len. Assembly will likely fail if " +
                        "the contig does not meet the length of the seed")
+        # if mapping_ob.iteration > 0: pineapple
         if include_short_contigs:
             logger.warning("Continuing, but if this occurs for more " +
                            "than one seed, we reccommend  you abort and " +
@@ -1675,9 +1676,9 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
             logger.warning("Error parsing samtools depth results! " +
                            "Here are the results:")
             logger.warning(result)
-            logger.warning("This isn't always fatal, so we will continue.  " +
-                           "but take a look with IGB or similar so there aren't " +
-                           "any suprises down the road.")
+            logger.warning("This isn't always fatal, so we will continue. " +
+                           "but take a look with IGB or similar so there " +
+                           "aren't any suprises down the road.")
         return [[""], 0]
 
     average = float(sum(covs)) / float(len(covs))
@@ -2311,7 +2312,7 @@ if __name__ == "__main__":  # pragma: no cover
                             name=__name__)
     # # log version of riboSeed, commandline options, and all settings
     logger.info("riboSeed pipeline package version: %s",
-            __version__)
+                __version__)
 
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug("All settings used:")
@@ -2406,7 +2407,8 @@ if __name__ == "__main__":  # pragma: no cover
         logger.debug("Checking that the fastq pair have equal number of reads")
         try:
             check_fastqs_len_equal(file1=args.fastq1, file2=args.fastq2)
-        except Exception as e:  # not just value error, whatever file_len throws
+        except Exception as e:
+            # not just value error, whatever file_len throws
             logger.error(last_exception())
             sys.exit(1)
     # read in riboSelect clusters, make a lociCluster ob for each,
@@ -2617,7 +2619,8 @@ if __name__ == "__main__":  # pragma: no cover
                 logger.error("Exiting!")
                 sys.exit(1)
 
-        # on first time thorugh, infer ref_as_contig if not provided via commandline
+        # on first time through, infer ref_as_contig if not
+        #   provided via commandline
         if seedGenome.this_iteration == 0:
             # do info for smalt mapping
             if args.method == "bwa":
@@ -2771,12 +2774,12 @@ if __name__ == "__main__":  # pragma: no cover
 # --------------------------------------------------------------------------- #
     # done with the iterations!  Lets free up some space
     if not args.keep_temps:
-        if not any([x in unmapped_ngsLib.liblist for
-                    x in seedGenome.master_ngs_ob.liblist]):
-            unmapped_ngsLib.purge_old_files(
-                master=seedGenome.master_ngs_ob,
-                logger=logger)
-            seedGenome.purge_old_files(all_iters=True, logger=logger)
+        # if not any([x in unmapped_ngsLib.liblist for
+        #             x in seedGenome.master_ngs_ob.liblist]):
+            # unmapped_ngsLib.purge_old_files(
+            #     master=seedGenome.master_ngs_ob,
+            #     logger=logger)
+        seedGenome.purge_old_files(all_iters=True, logger=logger)
     # And add the remaining final contigs to the directory for combination
     if len([x for x in seedGenome.loci_clusters if x.keep_contigs]) == 0:
         logger.info("all contigs already copied to long_reads dir")
@@ -2801,10 +2804,10 @@ if __name__ == "__main__":  # pragma: no cover
         if not files:
             logger.error(
                 "No pseudocontigs found in the long reads output " +
-                "directory; unless there has been an error, it appears " +
+                "directory; it appears " +
                 "that the subassemblies did not yield pseudocontigs " +
-                "of sufficient quality.  Exiting")
-            sys.exit(1)
+                "of sufficient quality.  Exiting with code 0")
+            sys.exit(0)
     logger.info("combining contigs from %s", seedGenome.final_long_reads_dir)
     seedGenome.assembled_seeds = combine_contigs(
         contigs_dir=seedGenome.final_long_reads_dir,
@@ -2813,15 +2816,15 @@ if __name__ == "__main__":  # pragma: no cover
     logger.info("Combined Seed Contigs: %s", seedGenome.assembled_seeds)
     logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
     # Diagnostics
-    logger.info("Mapping percentages per iteration: \n" +
-                "(Iteration 0, which maps to entire reference, should " +
-                "have a high value; other iterations are percentage of " +
-                "previously unmapped reads which now map to the seeded " +
-                "flanking regions, which may be very low)\n" +
-                "\n".join(mapping_percentages))
-    report = reportRegionDepths(inp=region_depths, logger=logger)
-    logger.info("Average depths of mapping for each cluster, by iteration:")
-    logger.info("\n" + "\n".join(report))
+    # logger.info("Mapping percentages per iteration: \n" +
+    #             "(Iteration 0, which maps to entire reference, should " +
+    #             "have a high value; other iterations are percentage of " +
+    #             "previously unmapped reads which now map to the seeded " +
+    #             "flanking regions, which may be very low)\n" +
+    #             "\n".join(mapping_percentages))
+    # report = reportRegionDepths(inp=region_depths, logger=logger)
+    # logger.info("Average depths of mapping for each cluster, by iteration:")
+    # logger.info("\n" + "\n".join(report))
 
     # run final contigs
     spades_quast_cmds, quast_reports = get_final_assemblies_cmds(
