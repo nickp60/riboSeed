@@ -327,8 +327,8 @@ if __name__ == "__main__":
         # This can still happen if mutlifastas are in dir input
         checkSingleFasta(fasta, logger=logger)
         with open(fasta, 'r') as f:
-            header = f.readline().strip()
-        accession = parse_fasta_header(header)
+            rec = next(SeqIO.parse(f, "fasta"))
+        accession = rec.id
         logger.info("Accession for %s: %s", fasta, accession)
         barrnap_cmd = make_barrnap_cmd(
             infasta=fasta,
