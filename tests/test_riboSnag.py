@@ -12,6 +12,9 @@ import shutil
 
 from Bio import SeqIO
 
+sys.path.append(os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
+
 from pyutilsnrw.utils3_5 import get_genbank_record, combine_contigs, md5
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \

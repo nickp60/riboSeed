@@ -41,6 +41,7 @@ from itertools import product  # for getting all possible kmers
 # from heatmapcluster import heatmapcluster
 
 #from pyutilsnrw import utils3_5
+sys.path.append(os.path.join('..', 'riboSeed'))
 from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
     combine_contigs, check_version_from_cmd
 
@@ -1087,13 +1088,19 @@ def main(clusters, gb_path, logger, verbose, no_revcomp,
         except Exception as e:
             logger.error(e)
             sys.exit(1)
+        # this is to allow sorting later
+        cluster_post_stitch.extractedSeqRecord.name = \
+            cluster_post_stitch.global_start_coord
         extracted_regions.append(cluster_post_stitch.extractedSeqRecord)
     # after each cluster has been extracted, write out results
     logger.debug(extracted_regions)
+    # This keeps the records being produced in the same order each time
+    sorted_regions = sorted(extracted_regions, key=lambda x: int(x.name),
+                            reverse=False)
     file_list = []
-    for index, region in enumerate(extracted_regions):
-        logger.debug(index)
-        logger.debug(region)
+    for index, region in enumerate(sorted_regions):
+        logger.debug("index: %d", index)
+        logger.debug("region: %s", region)
         if prefix_name is None:
             prefix_name = date
         # make dir for blastable partial seeds
