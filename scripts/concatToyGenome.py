@@ -39,7 +39,7 @@ def concat_genome(input_dir, ext, outpath, verbose=False):
     """for each fasta, read in, add to existing string, and when finished,
     write out as single-entry fasta
     """
-    fastas = glob.glob(str(input_dir + ext))
+    fastas = sorted(glob.glob(str(input_dir + ext)))
     if len(fastas) == 0:
         if verbose:
             print("No files found!")
@@ -49,6 +49,7 @@ def concat_genome(input_dir, ext, outpath, verbose=False):
                   "{0}:{1}".format(ext, " ".join(fastas))))
     new_seq = ""
     for filen in fastas:
+        print("Adding %s to combined sequence" % filen)
         with open(filen, 'r') as i_file:
             seq_rec = list(SeqIO.parse(i_file, 'fasta'))[0]
             new_seq = new_seq + str(seq_rec.seq)

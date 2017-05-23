@@ -29,7 +29,7 @@ from pyutilsnrw.utils3_5 import set_up_logging
 
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
-        description="This uses the Kimura model of genome evolution " +
+        description="This uses the JC model of genome evolution " +
         "to test the effectiveness of riboSeed on divergent " +
         "reference sequences.",
         add_help=False)  # to allow for custom help
@@ -60,10 +60,16 @@ def get_args():  # pragma: no cover
                           default=.01, type=float,
                           help="Probability of mutated bases" +
                           "default: %(default)s")
+    optional.add_argument("-e", "--end_length", dest='end_length',
+                          action="store",
+                          default=None, type=int,
+                          help="if value given, only mutated the ends " +
+                          "of the sequences and ignore the middle" +
+                          "default: %(default)s")
     optional.add_argument("-s", "--seed", dest='seed',
                           action="store",
                           default=27, type=int,
-                          help="cause reproduciblity" +
+                          help="cause reproduciblity; " +
                           "default: %(default)s")
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
@@ -81,7 +87,7 @@ def last_exception():
                                               exc_traceback))
 
 
-def ageSequence(rec, outfile, freq, logger=None):
+def ageSequence(rec, outfile, freq, end_length, logger=None):
     assert logger is not None, "must use logging"
     logger.info("frequncy of mutation: %f", freq)
     change_counter = 0
@@ -91,18 +97,33 @@ def ageSequence(rec, outfile, freq, logger=None):
     # print(rec.seq[1:10])
     # print(newseqlist[1:10])
     alph = ["A", "T", "C", "G"]
+    seqlen = len(rec.seq)
+    if end_length is None:
+        ignore_region = []
+    elif not seqlen - (2 * end_length) > 1:
+        raise ValueError("Edge width cannot be greater than half the " +
+                         "length of the sequence ")
+    else:
+        ignore_region = set([idx for sublist in
+                             [range(end_length, seqlen - end_length)]
+                             for idx in sublist])
     for i, base in enumerate(rec.seq):
-        distr_counter = distr_counter + 1
-        # this should be the geometric distribution
-        if random.random() < (1 - ((1 - freq) ** distr_counter)):
-            hist.append(1)
-            distr_counter = 0
-            change_counter = change_counter + 1
-            choices = alph[:]
-            choices.remove(base)
-            newseqlist[i] = random.choice(choices)
-        else:
+        if i % 5000 == 0:
+            logger.debug("processing base %d of %d", i, seqlen)
+        if i in ignore_region:
             hist.append(0)
+        else:
+            distr_counter = distr_counter + 1
+            # this should be the geometric distribution
+            if random.random() < (1 - ((1 - freq) ** distr_counter)):
+                hist.append(1)
+                distr_counter = 0
+                change_counter = change_counter + 1
+                choices = alph[:]
+                choices.remove(base)
+                newseqlist[i] = random.choice(choices)
+            else:
+                hist.append(0)
     # print(hist[1:20])
     logger.info("Changed %d of %d bases", change_counter, i)
     newrec = SeqRecord(
@@ -146,7 +167,7 @@ if __name__ == "__main__":  # pragma: no cover
     random.seed(args.seed)
     with open(args.fasta, "r") as infile:
         for rec in SeqIO.parse(infile, "fasta"):
-            ageSequence(rec, freq=args.frequency,
+            ageSequence(rec, freq=args.frequency, end_length=args.end_length,
                         outfile=output_file, logger=logger)
     # Report that we've finished
     logger.info("Done: %s", time.asctime())
