@@ -10,10 +10,10 @@ require(phytools)
 require(ggstance)
 src_folders <-"~/GitHub/riboSeed/manuscript_results/degen_performance"
 dir(src_folders)
-folders<- dir(src_folders, pattern = "degenerate_output_",full.names = T)
+folders<- dir(src_folders, pattern = "24_degenerate_output_",full.names = T)
 folders
 
-out_folder <- "~/GitHub/riboSeed/manuscript_results/degen_performance/2017-05-17_results/"
+out_folder <- "~/GitHub/riboSeed/manuscript_results/degen_performance/2017-05-24_results/"
 dir.create(out_folder)
 seeds <- c()
 for (d in folders){
@@ -57,7 +57,7 @@ treedf<-data.frame(name=tree$tip.label,# ord=1:length(tree$tip.label),
 
 dput(tree$tip.label) 
  
-nsuc <- read.csv("~/GitHub/riboSeed/manuscript_results/degen_performance/2015-05-aggregated_results.csv", stringsAsFactors = F)
+nsuc <- read.csv("~/GitHub/riboSeed/manuscript_results/degen_performance/2015-05-24_aggregated_results.csv", stringsAsFactors = F)
 nsuc<-merge(nsuc, treedf, by="name")
 dt<-fortify(tree)
 (p<-ggtree(tree, ladderize = T) +
@@ -104,7 +104,13 @@ dt<-fortify(tree)
     labs(x="\n", title=""))
 
 
+pdf(file = "~/GitHub/riboSeed/manuscript_results/degen_performance/2017-05-24_results/plot.pdf", width = 8, height = 4)
 multiplot(plotlist = list(p,lab,q), ncol=3, widths = c(.5,.1,.45))
+dev.off()
+png(filename = "~/GitHub/riboSeed/manuscript_results/degen_performance/2017-05-24_results/plot.png", width = 8, height = 4, units = "in", res = 300)
+multiplot(plotlist = list(p,lab,q), ncol=3, widths = c(.5,.1,.45))
+dev.off()
+
 
  # d1 <- data.frame(name=tree$tip.label, location=tree$edge.length[1:9])
 # p1 <- p %<+% d1 + geom_tippoint(aes(color=location))
