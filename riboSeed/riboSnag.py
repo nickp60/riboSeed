@@ -514,7 +514,7 @@ def prepare_prank_cmd(outdir, combined_fastas, prank_exe,
         prank_exe, add_args, combined_fastas,
         os.path.join(outdir, outfile_name))
     logger.debug("PRANK command: \n %s", prank_cmd)
-    return (prank_cmd, os.path.join(outdir, str(outfile_name + ".fasta")))
+    return (prank_cmd, os.path.join(outdir, str(outfile_name + ".best.fas")))
 
 
 def prepare_mafft_cmd(outdir, combined_fastas, mafft_exe,

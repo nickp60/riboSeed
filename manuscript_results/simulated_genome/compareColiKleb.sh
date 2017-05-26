@@ -5,6 +5,7 @@ IFS=$'\n\t'
 #
 FLANK=2000
 
+
 for i in "good" "bad";
 do
     if [ $i == "good" ];
@@ -36,10 +37,10 @@ done
 
 # make copy of contigs renamed for mauve
 echo "copying contigs to mauve dir"
+cp ./toyGenome/coli_genome/scan/scannedScaffolds.gb ./mauve/reference.gb
+
 cp ./good_ref/seed/final_de_fere_novo_assembly/contigs.fasta ./mauve/coli_de_fere_novo.fa
 
 cp ./good_ref/seed/final_de_novo_assembly/contigs.fasta ./mauve/coli_de_novo.fa
 
 cp ./bad_ref/seed/final_de_fere_novo_assembly/contigs.fasta ./mauve/kleb_de_fere_novo.fa
-
-cp ./toyGenome/coli_genome/scan/scannedScaffolds.gb ./mauve/reference.gb
