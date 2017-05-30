@@ -89,7 +89,7 @@ def last_exception():
 
 
 def makeRegions(outdir, gff, dest, name="", logger=None):
-    coord_list = [] 
+    coord_list = []
     with open(gff, "r") as gf:
         for idx, line in enumerate(gf):
             if idx is not 0:
@@ -97,14 +97,14 @@ def makeRegions(outdir, gff, dest, name="", logger=None):
                 coord_list.append([fields[0], fields[3], fields[4]])
     logger.debug("coord list:")
     logger.debug(coord_list)
-    
+
     with open(dest, "w") as out:
         for coords in coord_list:
             line = "\t".join(coords) if name is "" else \
                    "{0}\t{1}\t{2}".format(
                        name, coords[1], coords[2])
             out.write(line + "\n")
-            
+
     # # skip first line, get columns with chrom, start, end, separated by tabs
     # cmd = "awk '{if (NR!=1) {print $1,$4,$5}}' OFS='\\t' " + "{0} > {1}".format(
     #     gff,
@@ -116,7 +116,7 @@ def makeRegions(outdir, gff, dest, name="", logger=None):
     #                stdout=subprocess.PIPE,
     #                stderr=subprocess.PIPE,
     #                check=True)
-    
+
 def bedtoolsShuffle(region, destdir, genome, bedtools_exe, n=10, logger=None):
     for i in range(0, n):
         bedcmd = "{0} shuffle -i {1} -g {2} > {3}_{4}".format(
@@ -133,9 +133,9 @@ def bedtoolsShuffle(region, destdir, genome, bedtools_exe, n=10, logger=None):
 def samtoolsGetDepths(samtools_exe, ref, bam, ref_reg_file, sample_reg_dir, outdir ):
     """ return list [ref_file, [list, of, sample, files]]
     """
-    
+
     sample_files = glob.glob(os.path.join(sample_reg_dir, "*"))
-    ref_out = os.path.join(outdir, "ref_out_depth") 
+    ref_out = os.path.join(outdir, "ref_out_depth")
     cmds = []
     ref_cmd = "{0} view -b -F 256 {1} | {0} depth -b {2} - > {3}".format(
         samtools_exe,
@@ -143,7 +143,7 @@ def samtoolsGetDepths(samtools_exe, ref, bam, ref_reg_file, sample_reg_dir, outd
         ref_reg_file,
         ref_out)
     cmds.append(ref_cmd)
-    sample_outs = []    
+    sample_outs = []
     for idx, f in enumerate(sample_files):
         sample_out = os.path.join(outdir, "sample_out_depth_" + str(idx))
         cmd = "{0} view -b -F 256 {1} | {0} depth -b {2} - > {3}".format(
@@ -221,6 +221,7 @@ def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
             plotlines.append(" " * 10 + xaxis + fillchar * j + "O")
     logger.info("\n" + "\n".join(plotlines))
 
+
 def mean(x):
     return float(sum(x)) / max(len(x), 1)
 
@@ -236,7 +237,7 @@ if __name__ == "__main__":
         sys.exit(1)
     t0 = time.time()
     log_path = os.path.join(output_root,
-                            str("{0}_riboStack_log.txt".format(
+                            str("riboStack_log_{0}.txt".format(
                                 time.strftime("%Y%m%d%H%M"))))
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
@@ -245,7 +246,7 @@ if __name__ == "__main__":
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
         logger.debug("{0}: {1}".format(k, v))
-        
+
     # check exes
     bedtools_exe = shutil.which("bedtools")
     samtools_exe = shutil.which("samtools")
@@ -254,7 +255,7 @@ if __name__ == "__main__":
             logger.error("must have bedtools and samtools installed " +
                          "and available in $PATH")
             sys.exit(1)
-    
+
     gff = os.path.join(args.riboScan_dir, "scannedScaffolds.gff")
     fasta = os.path.join(args.riboScan_dir, "scannedScaffolds.fa")
     logger.info("GFF file: %s", gff)
@@ -278,7 +279,7 @@ if __name__ == "__main__":
         res = res.split("\t")
         name, length = res[1].split(":")[1], int(res[2].split(":")[1])
         logger.debug("nameL %s", name)
-        
+
     makeRegions(outdir=output_root, gff=gff, name=name,
                 dest=rDNA_regions, logger=logger)
     logger.info("Shuffling with bedtools")
@@ -296,7 +297,7 @@ if __name__ == "__main__":
                     destdir=os.path.join(output_root, "shuffleRegions"),
                     n=10, genome=os.path.join(output_root, "bedtools_genome"),
                     logger=logger)
-    
+
 
 
     ref_depth_path, sample_depths_paths = samtoolsGetDepths(
@@ -337,5 +338,3 @@ if __name__ == "__main__":
 
     print("Average depth in rDNA regions:\t%d" % mean(ref_depths))
     print("Average depth in 10 sets of randomly sampled non-rDNA regions:\t%d" % mean(sample_means))
-
-    

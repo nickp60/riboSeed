@@ -149,7 +149,7 @@ if __name__ == "__main__":  # pragma: no cover
         sys.exit(1)
     t0 = time.time()
     log_path = os.path.join(output_root,
-                            str("{0}_riboSim_log.txt".format(
+                            str("riboSim_log_{0}.txt".format(
                                 time.strftime("%Y%m%d%H%M"))))
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,

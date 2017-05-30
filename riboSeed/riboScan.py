@@ -186,7 +186,7 @@ def combine_gbs(finalgb, gb_list):
             with open(fname) as infile:
                 for line in infile:
                     if line.startswith("##") and idx != 0:
-                       continue     
+                       continue
                     outfile.write(line)
 
 
@@ -253,7 +253,7 @@ def getFastas(inp, output_root, ext, name, logger):
         logger.error("No fasta files in %s with extention %s! Exiting",
                      inp, ext)
         sys.exit(1)
-    # unify the output of multifasta 
+    # unify the output of multifasta
     combine_gbs(finalgb=os.path.join(output_root, "scannedScaffolds.fa"),
                 gb_list=fastas)
     return(fastas)
@@ -303,7 +303,7 @@ if __name__ == "__main__":
         sys.exit(1)
     t0 = time.time()
     log_path = os.path.join(output_root,
-                            str("{0}_riboScan_log.txt".format(
+                            str("riboScan_log_{0}.txt".format(
                                 time.strftime("%Y%m%d%H%M"))))
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
@@ -371,7 +371,7 @@ if __name__ == "__main__":
         gff_list.append(tagged_gff)
     ### no more fastas
     combine_gbs(finalgb=output_file, gb_list=gb_list)
-    # this is why you give things intellegent method names 
+    # this is why you give things intellegent method names
     combine_gbs(finalgb=output_file_gff, gb_list=gff_list)
     # Report that we've finished
     logger.info("Done: %s", time.asctime())
