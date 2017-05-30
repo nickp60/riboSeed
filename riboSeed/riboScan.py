@@ -182,9 +182,11 @@ def add_locus_tags_to_gff(gff, acc):
 
 def combine_gbs(finalgb, gb_list):
     with open(finalgb, 'w') as outfile:
-        for fname in gb_list:
+        for idx, fname in enumerate(gb_list):
             with open(fname) as infile:
                 for line in infile:
+                    if line.startswith("##") and idx != 0:
+                       continue     
                     outfile.write(line)
 
 
@@ -251,6 +253,9 @@ def getFastas(inp, output_root, ext, name, logger):
         logger.error("No fasta files in %s with extention %s! Exiting",
                      inp, ext)
         sys.exit(1)
+    # unify the output of multifasta 
+    combine_gbs(finalgb=os.path.join(output_root, "scannedScaffolds.fa"),
+                gb_list=fastas)
     return(fastas)
 
 
@@ -310,9 +315,8 @@ if __name__ == "__main__":
     for k, v in sorted(vars(args).items()):
         logger.debug("{0}: {1}".format(k, v))
 
-    output_file = os.path.join(
-        output_root,
-        "scannedScaffolds.gb")
+    output_file = os.path.join(output_root, "scannedScaffolds.gb")
+    output_file_gff = os.path.join(output_root, "scannedScaffolds.gff")
     ##  get and check list of input files
     fastas = getFastas(inp=args.contigs, output_root=output_root,
                        ext=args.ext, name=args.name, logger=logger)
@@ -322,6 +326,7 @@ if __name__ == "__main__":
     #     sys.exit(1)
 
     gb_list = []
+    gff_list = []  # for tagged gffs, that is
     for fasta in sorted(fastas):
         # check for multiple entry fastas.
         # This can still happen if mutlifastas are in dir input
@@ -363,8 +368,11 @@ if __name__ == "__main__":
             ingb=unfinished_gb,
             finalgb=os.path.join(output_root, "{0}.gb".format(accession)))
         gb_list.append(os.path.join(output_root, "{0}.gb".format(accession)))
+        gff_list.append(tagged_gff)
     ### no more fastas
     combine_gbs(finalgb=output_file, gb_list=gb_list)
+    # this is why you give things intellegent method names 
+    combine_gbs(finalgb=output_file_gff, gb_list=gff_list)
     # Report that we've finished
     logger.info("Done: %s", time.asctime())
     logger.info("combined scaffolds can be found here: %s", output_file)

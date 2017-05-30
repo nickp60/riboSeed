@@ -391,6 +391,11 @@ Results can be tuned by changing several of the default parameters.
 * `--iterations`:  Each iteration typically increases the length of the long read by approximately 5%.
 
 ## 3: Assembly Refinement
+### `riboStack.py`
+Decause assembly using short reads often collases rDNA repeats, it is not uncommon to find a reference genome that has less than the actual number of rDNAs.  riboStack uses `bedtools` and `samtools` to determine the coverage across rDNA regiosn, adn compares that coverage depth to 10 sets of randomly selected non-rDNA regions.  If the number of rDNAs in the reference matches the number of rDNAs in your sequecned isolate, the coverage should be pretty similar. However, if the coverage in your rDNA regions is significantly higher, than there are likely more rDNAs in your sequenced isoalte that there are in the reference, which is something to be aware of.
+
+It requires a mapping BAM file and the riboScan output directory as input.
+
 ### `riboSwap.py`
 Infrequently, `riboSeed` has joined together contigs that appear incorrect according to your reference.  If you are at all unhappy with a bridging, `riboSwap.py` allows swapping of a "bad" contig for one or more syntenic contigs from the *de novo* assembly.
 #### USAGE
