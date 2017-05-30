@@ -9,6 +9,10 @@ import logging
 import os
 import unittest
 
+# I hate this line but it works :(
+sys.path.append(os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
+
 from riboSeed.riboSelect import get_filtered_locus_tag_dict, \
     pure_python_kmeans, count_feature_hits, parse_args_clusters
 from pyutilsnrw.utils3_5 import get_genbank_record, check_installed_tools

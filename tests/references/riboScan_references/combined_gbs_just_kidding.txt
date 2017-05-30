@@ -21,7 +21,6 @@ BA000007.2	barrnap:0.7	rRNA	4980824	4980934	1e-11	+	.	Name=5S_rRNA;product=5S ri
 BA000007.2	barrnap:0.7	rRNA	5016956	5018493	0	+	.	Name=16S_rRNA;product=16S ribosomal RNA
 BA000007.2	barrnap:0.7	rRNA	5018851	5021752	0	+	.	Name=23S_rRNA;product=23S ribosomal RNA
 BA000007.2	barrnap:0.7	rRNA	5021850	5021960	1e-11	+	.	Name=5S_rRNA;product=5S ribosomal RNA
-##gff-version 3
 BA000007.2	barrnap:0.7	rRNA	227105	228642	0	+	.	locus_tag=BA000007.2_0;Name=16S_rRNA;product=16S ribosomal RNA
 BA000007.2	barrnap:0.7	rRNA	229092	231991	0	+	.	locus_tag=BA000007.2_1;Name=23S_rRNA;product=23S ribosomal RNA
 BA000007.2	barrnap:0.7	rRNA	232089	232199	1e-11	+	.	locus_tag=BA000007.2_2;Name=5S_rRNA;product=5S ribosomal RNA

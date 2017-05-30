@@ -132,7 +132,7 @@ class riboSeedTestCase(unittest.TestCase):
                     gb_list=[self.no_locus_gff,
                              self.with_locus_gff])
         self.assertEqual(md5(temp_gb), md5(self.combined_file))
-        self.to_be_removed.append(temp_gb)
+        # self.to_be_removed.append(temp_gb)
 
     def test_append_accession_and_version(self):
         temp_gb2 = os.path.join(self.scan_ref_dir, "temp_acessioned.gb")
