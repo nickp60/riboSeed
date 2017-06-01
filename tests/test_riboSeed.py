@@ -33,7 +33,8 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     make_unmapped_partition_cmds, make_quick_quast_table, \
     check_fastqs_len_equal, parse_subassembly_return_code, \
     make_spades_empty_check, get_samtools_depths, \
-    decide_proceed_to_target, get_rec_from_generator
+    decide_proceed_to_target, get_rec_from_generator, \
+    check_kmer_vs_reads
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, stitch_together_target_regions, \
@@ -275,7 +276,6 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(self.ref_Ffastq))
         self.assertTrue(os.path.isfile(self.ref_Rfastq))
 
-
     def test_SeedGenome(self):
         with open(self.ref_gb, "r") as gbf:
             reclist = list(SeqIO.parse(gbf, "genbank"))
@@ -311,6 +311,50 @@ class riboSeedTestCase(unittest.TestCase):
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
         self.assertTrue(os.path.isdir(testmapping.mapping_subdir))
 
+    def test_check_kmer_bad_input(self):
+        with self.assertRaises(ValueError):
+            # non integer
+            check_kmer_vs_reads(k="33,22,55,spinach,77",
+                                readlen=50, min_diff=2, logger=logger)
+        with self.assertRaises(ValueError):
+            # non comma delim
+            check_kmer_vs_reads(k="33,22;55,77",
+                                readlen=50, min_diff=2, logger=logger)
+
+    def test_check_kmer_skip_auto(self):
+        self.assertEqual("auto",
+                         check_kmer_vs_reads(k="auto",
+                                             readlen=50,
+                                             min_diff=2, logger=logger))
+
+    def test_check_kmer_filter_big(self):
+        # remove too big ks
+        self.assertEqual("21,33",
+                         check_kmer_vs_reads(k="21,33,55,77",
+                                             readlen=50, min_diff=2,
+                                             logger=logger))
+
+    def test_check_kmer_filter_close(self):
+        # remove too close k
+        self.assertEqual("21,33,55",
+                         check_kmer_vs_reads(k="21,33,55,77",
+                                             readlen=79, min_diff=2,
+                                             logger=logger))
+
+    def test_check_kmer_filter_even(self):
+        # remove even k
+        self.assertEqual("21,33,55",
+                         check_kmer_vs_reads(k="21,33,55,77,90",
+                                             readlen=79, min_diff=2,
+                                             logger=logger))
+
+    def test_check_kmer_good(self):
+        # remove even k
+        self.assertEqual("21,33,55,77,127",
+                         check_kmer_vs_reads(k="21,33,55,77,127",
+                                             readlen=250, min_diff=2,
+                                             logger=logger))
+
     def test_get_smalt_full_install_cmds(self):
         """
         """
@@ -331,29 +375,29 @@ class riboSeedTestCase(unittest.TestCase):
         for index, cmd in enumerate(check_cmds):
             self.assertEqual(cmd, check_cmds_ref[index])
 
-    @unittest.skipIf(
-        shutil.which("smalt") is None,
-        "SMALT executable not found, skipping."+
-        "If this isnt an error from travis deployment, you probably "+
-        "should install it")
-    def test_estimate_distances_smalt(self):
-        """ test estimate insert disances
-        """
-        if os.path.exists(self.test_estimation_file):
-            print("warning! existing distance estimation file!")
-        est_file = estimate_distances_smalt(outfile=self.test_estimation_file,
-                                            smalt_exe=self.smalt_exe,
-                                            ref_genome=self.ref_fasta,
-                                            fastq1=self.ref_Ffastq,
-                                            fastq2=self.ref_Rfastq,
-                                            cores=1,
-                                            logger=logger)
-        ref_smi_md5 = "a444ccbcb486a8af29736028640e87cf"  # determined manually
-        ref_sma_md5 = "4ce0c8b453f2bdabd73eaf8b5ee4f376"  # determined manually
-        ref_mapping_len = 9271  # mapping doesnt have exact order, so cant md5
-        self.assertEqual(ref_smi_md5, md5(str(est_file + ".smi")))
-        self.assertEqual(ref_sma_md5, md5(str(est_file + ".sma")))
-        self.assertEqual(ref_mapping_len, file_len(est_file))
+    # @unittest.skipIf(
+    #     shutil.which("smalt") is None,
+    #     "SMALT executable not found, skipping."+
+    #     "If this isnt an error from travis deployment, you probably "+
+    #     "should install it")
+    # def test_estimate_distances_smalt(self):
+    #     """ test estimate insert disances
+    #     """
+    #     if os.path.exists(self.test_estimation_file):
+    #         print("warning! existing distance estimation file!")
+    #     est_file = estimate_distances_smalt(outfile=self.test_estimation_file,
+    #                                         smalt_exe=self.smalt_exe,
+    #                                         ref_genome=self.ref_fasta,
+    #                                         fastq1=self.ref_Ffastq,
+    #                                         fastq2=self.ref_Rfastq,
+    #                                         cores=1,
+    #                                         logger=logger)
+    #     ref_smi_md5 = "a444ccbcb486a8af29736028640e87cf"  # determined manually
+    #     ref_sma_md5 = "4ce0c8b453f2bdabd73eaf8b5ee4f376"  # determined manually
+    #     ref_mapping_len = 9271  # mapping doesnt have exact order, so cant md5
+    #     self.assertEqual(ref_smi_md5, md5(str(est_file + ".smi")))
+    #     self.assertEqual(ref_sma_md5, md5(str(est_file + ".sma")))
+    #     self.assertEqual(ref_mapping_len, file_len(est_file))
 
     def test_get_rec_from_generator(self):
         """ tests get_rec_from_generator, which replaces
@@ -523,77 +567,77 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(ngs_ob.readR is None)
         self.to_be_removed.append(empty_file)
 
-    @unittest.skipIf(
-        shutil.which("smalt") is None,
-        "smalt executable not found, skipping."+
-        "If this isnt an error from travis deployment, you probably "+
-        "should install it")
-    def test_map_with_smalt(self):
-        # becasue multiple mapping are assingmed randomly (pseudorandomly?),
-        # this accepts a range of expected results
-        testmapping = LociMapping(
-            name="test",
-            iteration=1,
-            assembly_subdir=self.test_dir,
-            ref_fasta=self.ref_fasta,
-            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-        testngs = NgsLib(
-            name="test",
-            master=True,
-            make_dist=True,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe,
-            logger=logger)
+    # @unittest.skipIf(
+    #     shutil.which("smalt") is None,
+    #     "smalt executable not found, skipping."+
+    #     "If this isnt an error from travis deployment, you probably "+
+    #     "should install it")
+    # def test_map_with_smalt(self):
+    #     # becasue multiple mapping are assingmed randomly (pseudorandomly?),
+    #     # this accepts a range of expected results
+    #     testmapping = LociMapping(
+    #         name="test",
+    #         iteration=1,
+    #         assembly_subdir=self.test_dir,
+    #         ref_fasta=self.ref_fasta,
+    #         mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+    #     testngs = NgsLib(
+    #         name="test",
+    #         master=True,
+    #         make_dist=True,
+    #         readF=self.ref_Ffastq,
+    #         readR=self.ref_Rfastq,
+    #         ref_fasta=self.ref_fasta,
+    #         mapper_exe=self.smalt_exe,
+    #         logger=logger)
 
-        map_to_genome_ref_smalt(
-            mapping_ob=testmapping, ngsLib=testngs,
-            genome_fasta=self.ref_fasta,
-            cores=4, samtools_exe=self.samtools_exe,
-            smalt_exe=self.smalt_exe, score_minimum=48,
-            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-            step=3, k=5, logger=logger)
-        mapped_str = get_number_mapped(testmapping.pe_map_bam,
-                                       samtools_exe=self.samtools_exe)
-        nmapped = int(mapped_str[0:5])
-        nperc = float(mapped_str[-13:-8])
-        print("\nSMALT: number of PE reads mapped: %f2" % nmapped)
-        print("SMALT: percentage of PE reads mapped: %2f" % nperc)
-        ###
-        testngs2 = NgsLib(
-            name="test",
-            master=True,
-            make_dist=True,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            readS0=self.ref_Rfastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe,
-            logger=logger)
+    #     map_to_genome_ref_smalt(
+    #         mapping_ob=testmapping, ngsLib=testngs,
+    #         genome_fasta=self.ref_fasta,
+    #         cores=4, samtools_exe=self.samtools_exe,
+    #         smalt_exe=self.smalt_exe, score_minimum=48,
+    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+    #         step=3, k=5, logger=logger)
+    #     mapped_str = get_number_mapped(testmapping.pe_map_bam,
+    #                                    samtools_exe=self.samtools_exe)
+    #     nmapped = int(mapped_str[0:5])
+    #     nperc = float(mapped_str[-13:-8])
+    #     print("\nSMALT: number of PE reads mapped: %f2" % nmapped)
+    #     print("SMALT: percentage of PE reads mapped: %2f" % nperc)
+    #     ###
+    #     testngs2 = NgsLib(
+    #         name="test",
+    #         master=True,
+    #         make_dist=True,
+    #         readF=self.ref_Ffastq,
+    #         readR=self.ref_Rfastq,
+    #         readS0=self.ref_Rfastq,
+    #         ref_fasta=self.ref_fasta,
+    #         mapper_exe=self.smalt_exe,
+    #         logger=logger)
 
-        map_to_genome_ref_smalt(
-            mapping_ob=testmapping, ngsLib=testngs2,
-            genome_fasta=self.ref_fasta,
-            cores=4, samtools_exe=self.samtools_exe,
-            smalt_exe=self.smalt_exe, score_minimum=48,
-            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-            step=3, k=5, logger=logger)
-        mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
-                                        samtools_exe=self.samtools_exe)
-        mapped_str2 = get_number_mapped(testmapping.s_map_bam,
-                                        samtools_exe=self.samtools_exe)
-        nmapped2 = int(mapped_str2[0:5])
-        nperc2 = float(mapped_str2[-13:-8])
-        print("SMALT: number of s reads mapped: %f2" % nmapped2)
-        print("SMALT: percentage of s reads mapped: %f2" % nperc2)
+    #     map_to_genome_ref_smalt(
+    #         mapping_ob=testmapping, ngsLib=testngs2,
+    #         genome_fasta=self.ref_fasta,
+    #         cores=4, samtools_exe=self.samtools_exe,
+    #         smalt_exe=self.smalt_exe, score_minimum=48,
+    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+    #         step=3, k=5, logger=logger)
+    #     mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
+    #                                     samtools_exe=self.samtools_exe)
+    #     mapped_str2 = get_number_mapped(testmapping.s_map_bam,
+    #                                     samtools_exe=self.samtools_exe)
+    #     nmapped2 = int(mapped_str2[0:5])
+    #     nperc2 = float(mapped_str2[-13:-8])
+    #     print("SMALT: number of s reads mapped: %f2" % nmapped2)
+    #     print("SMALT: percentage of s reads mapped: %f2" % nperc2)
 
-        ###
-        self.assertTrue(12500 < nmapped < 12680)
-        self.assertTrue(34.3 < nperc < 34.81)
-        ###
-        self.assertTrue(6400 < nmapped2 < 6500)
-        self.assertTrue(34.3 < nperc2 < 35.8)
+    #     ###
+    #     self.assertTrue(12500 < nmapped < 12680)
+    #     self.assertTrue(34.3 < nperc < 34.81)
+    #     ###
+    #     self.assertTrue(6400 < nmapped2 < 6500)
+    #     self.assertTrue(34.3 < nperc2 < 35.8)
 
     def test_parse_subassembly_return_code_0(self):
         gen = SeedGenome(
@@ -617,6 +661,8 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(gen.loci_clusters[0].keep_contigs)
 
     def test_parse_subassembly_return_code_1(self):
+        """ this is depreciated, and should raise a valueError
+        """
         gen = SeedGenome(
             max_iterations=1,
             genbank_path=self.ref_gb,
@@ -631,12 +677,13 @@ class riboSeedTestCase(unittest.TestCase):
             circular=False,
             logger=logger)
         gen.loci_clusters[0].assembly_success = 1
-        parse_subassembly_return_code(cluster=gen.loci_clusters[0],
-                                      final_contigs_dir=self.test_dir,
-                                      skip_copy=True,
-                                      logger=logger)
-        self.assertFalse(gen.loci_clusters[0].continue_iterating)
-        self.assertFalse(gen.loci_clusters[0].keep_contigs)
+        with self.assertRaises(ValueError):
+            parse_subassembly_return_code(cluster=gen.loci_clusters[0],
+                                          final_contigs_dir=self.test_dir,
+                                          skip_copy=True,
+                                          logger=logger)
+        # self.assertFalse(gen.loci_clusters[0].continue_iterating)
+        # self.assertFalse(gen.loci_clusters[0].keep_contigs)
 
     def test_parse_subassembly_return_code_2(self):
         gen = SeedGenome(
@@ -828,24 +875,24 @@ class riboSeedTestCase(unittest.TestCase):
             include_short_contigs=False, keep_best_contig=True,
             seqname='', logger=logger)
         self.assertEqual(code_0, 0)
-        code_1 = evaluate_spades_success(
-            clu,
-            mapping_ob=testmapping,
-            proceed_to_target=False, target_len=None,
-            read_len=300,
-            min_assembly_len=10000,
-            include_short_contigs=True, keep_best_contig=True,
-            seqname='', logger=logger)
-        self.assertEqual(code_1, 1)
-        code_1a = evaluate_spades_success(  # test proceed_to_target
-            clu,
-            mapping_ob=testmapping,
-            proceed_to_target=True, target_len=6000,
-            read_len=300,
-            min_assembly_len=5000,
-            include_short_contigs=True, keep_best_contig=True,
-            seqname='', logger=logger)
-        self.assertEqual(code_1a, 1)
+        # code_1 = evaluate_spades_success(
+        #     clu,
+        #     mapping_ob=testmapping,
+        #     proceed_to_target=False, target_len=None,
+        #     read_len=300,
+        #     min_assembly_len=10000,
+        #     include_short_contigs=True, keep_best_contig=True,
+        #     seqname='', logger=logger)
+        # self.assertEqual(code_1, 1)
+        # code_1a = evaluate_spades_success(  # test proceed_to_target
+        #     clu,
+        #     mapping_ob=testmapping,
+        #     proceed_to_target=True, target_len=6000,
+        #     read_len=300,
+        #     min_assembly_len=5000,
+        #     include_short_contigs=True, keep_best_contig=True,
+        #     seqname='', logger=logger)
+        # self.assertEqual(code_1a, 1)
         code_2 = evaluate_spades_success(
             clu,
             mapping_ob=testmapping,

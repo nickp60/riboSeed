@@ -3,14 +3,17 @@ set -euo pipefail
 IFS=$'\n\t'
 
 #
-FLANK=1000
+FLANK=2000
 
 
 for i in "good" "bad";
 do
     if [ $i == "good" ];
     then
+	# ref="BA000007.2"
 	ref="NC_000913.3"
+	# ref="NZ_CP008957.1"
+	# ref="NC_011751.1"
     else
 	ref="CP003200.1"
     fi
@@ -31,11 +34,12 @@ python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ./${ref}.fasta -o ./${i}_ref/sc
 # cluster
 python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ./${i}_ref/scan/scannedScaffolds.gb  -o ./${i}_ref/select/
 # run riboSeed
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ./${i}_ref/scan/scannedScaffolds.gb  -o ./${i}_ref/seed/ ./${i}_ref/select/riboSelect_grouped_loci.txt -F ./toyGenome/reads_1.fq -R ./toyGenome/reads_2.fq -i 3 -z -v 1 -l ${FLANK}  --keep_temps
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ./${i}_ref/scan/scannedScaffolds.gb  -o ./${i}_ref/seed/ ./${i}_ref/select/riboSelect_grouped_loci.txt -F ./toyGenome/reads_1.fq -R ./toyGenome/reads_2.fq -i 3 -z -v 1 -l ${FLANK}
 done
 
 # make copy of contigs renamed for mauve
 echo "copying contigs to mauve dir"
+mkdir mauve
 cp ./toyGenome/coli_genome/scan/scannedScaffolds.gb ./mauve/reference.gb
 
 cp ./good_ref/seed/final_de_fere_novo_assembly/contigs.fasta ./mauve/coli_de_fere_novo.fa

@@ -614,12 +614,18 @@ def get_args():  # pragma: no cover
                           default='bwa', type=str)
     optional.add_argument("-c", "--cores", dest='cores', action="store",
                           default=None, type=int,
+                          help="cores used" +
+                          "; default: %(default)s")
+    optional.add_argument("--memory", dest='memory', action="store",
+                          default=8, type=int,
                           help="cores for multiprocessing" +
                           "; default: %(default)s")
     optional.add_argument("-k", "--kmers", dest='kmers', action="store",
-                          default="21,33,55,77,99,127", type=str,
+                          default="auto", type=str,
                           help="kmers used for final assembly" +
-                          ", separated by commas; default: %(default)s")
+                          ", separated by commas such as" +
+                          "21,33,55,77,99,127 . Defaults to 'auto', where " +
+                          "SPAdes chooses. ; default: %(default)s")
     optional.add_argument("-p", "--pre_kmers", dest='pre_kmers',
                           action="store",
                           default="21,33,55,77,99", type=str,
@@ -684,11 +690,11 @@ def get_args():  # pragma: no cover
                           "seeds will not be used during assembly. " +
                           "See SPAdes docs; default: if mapping " +
                           "percentage over 85%%: 'trusted', else 'untrusted'")
-    optional.add_argument("--keep_temps", dest='keep_temps',
+    optional.add_argument("--clean_temps", dest='clean_temps',
                           default=False, action="store_true",
-                          help="if not --keep_temps, mapping files will be " +
+                          help="if --clean_temps, mapping files will be " +
                           "removed once they are no no longer needed during " +
-                          "the iterations; " +
+                          "the mapping iterations to save space; " +
                           "default: %(default)s")
     optional.add_argument("--skip_control", dest='skip_control',
                           action="store_true",
@@ -1300,7 +1306,13 @@ def generate_spades_cmd(
     #TODO dynamicllly choose kmers based on read len and whether prelim
     """
     assert logger is not None, "Must Use Logging"
-    kmers = k  # .split[","]
+
+    # make kmer comamnd empty if using "auto", or set to something like
+    # -k 55,77,99
+    if k is not 'auto':
+        kmers = "-k " + k
+    else:
+        kmers = ""
     #  prepare reference, if being used
     if ref_as_contig is not None:
         alt_contig = "--{0}-contigs {1}".format(
@@ -1343,12 +1355,12 @@ def generate_spades_cmd(
 
     if prelim:
         cmd = str(
-            "{0} --only-assembler --cov-cutoff off --sc --careful -k {1} " +
+            "{0} --only-assembler --cov-cutoff off --sc --careful {1} " +
             "{2} {3} {4} -o {5}"
         ).format(spades_exe, kmers, reads, alt_contig, addLibs,
                  mapping_ob.assembly_subdir)
     else:
-        cmd = "{0} --careful -k {1} {2} {3} {4} -o {5}".format(
+        cmd = "{0} --careful {1} {2} {3} {4} -o {5}".format(
             spades_exe, kmers, reads, alt_contig, addLibs,
             mapping_ob.assembly_subdir)
     if check_libs:
@@ -1385,7 +1397,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
                             seqname='', logger=None):
     """return success codes:
     0 = include contigs, all good
-    1 = include contigs, but dont keep iterating
+    DEPRECIATED! 1 = include contigs, but dont keep iterating
     2 = exclude contigs, and keep from iterating
     3 = exclude contigs, error ocurred
     """
@@ -1395,17 +1407,22 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     assert logger is not None, "Must Use Logging"
     if seqname == '':
         seqname = os.path.splitext(os.path.basename(mapping_ob.ref_fasta))[0]
-    ### deal with those expluded from assembly by lack of coverage depth (coverage_exclusion=True)
-    # treat it the same as any failed subassembly: use last decent pseudocontig
+    ### deal with those excluded from assembly by lack of coverage depth
+    ###  ie  (coverage_exclusion=True)
     if clu.coverage_exclusion is not None:
-        assert clu.coverage_exclusion, "this should only be set by the partition_mapping method."
+        assert clu.coverage_exclusion, \
+            "this should only be set by the partition_mapping method."
         #  if this is the first iteration, return two
-        # Otherwise, copy the last decent contig to
-        # cluster.mappings[-1].assembled_contig,
+        # Otherwise,  UPDATED: continue with warning
         if mapping_ob.iteration > 1:
-            cluster.mappings[-1].assembled_contig = cluster.mappings[-2].assembled_contig
-            return 1
+            cluster.mappings[-1].assembled_contig = \
+                cluster.mappings[-2].assembled_contig
+            logger.warning(" the coverage is worryingly low, but we " +
+                           "will continue.")
+            return 0
         else:
+            logger.info("the coverage is worryingly low, and as this " +
+                        "is the first iteration, we must discard this contig")
             return 2
     mapping_ob.assembled_contig = os.path.join(
         mapping_ob.assembly_subdir, "contigs.fasta")
@@ -1475,30 +1492,30 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
                        "is not greater than length set by " +
                        "--min_assembly_len. Assembly will likely fail if " +
                        "the contig does not meet the length of the seed")
-        # if mapping_ob.iteration > 0: pineapple
+        # if mapping_ob.iteration > 0:
         if include_short_contigs:
-            logger.warning("Continuing, but if this occurs for more " +
+            logger.warning("Continuing to , but if this occurs for more " +
                            "than one seed, we reccommend  you abort and " +
                            "retry with longer seeds, a different ref, " +
                            "or re-examine the riboSnag clustering")
-            logger.warning("Return code 1")
-            return 1
+            logger.warning("Return code 0")
+            return 0
         else:
             logger.warning("Return code 2")
             return 2
     elif proceed_to_target and contig_len >= target_seed_len:
         logger.info("target length threshold! has been reached; " +
-                    "skipping future iterations.  return code 1")
-        return 1
+                    "skipping future iterations.  return code 0")
+        return 0
     # if not first time through, ensure adequate change between iterations to
     # avoid problems with trying to assemble a very small number of reads
     elif min_delta > abs(contig_length_diff) and mapping_ob.iteration != 0:
-        logger.warning(
+        logger.warning(str(
             "The length of the assembled contig didn't change more " +
-            "more than 10bp between rounds of iteration. Continuing" +
-            " will likely cause error; skipping future iterations." +
-            " return code 1")
-        return 1
+            "more than {0}bp between rounds of iteration. Continuing " +
+            "will likely cause error; skipping future iterations. " +
+            "return code 0").format(min_delta))
+        return 0
     else:
         logger.debug("return code 0")
         return 0
@@ -1508,6 +1525,11 @@ def parse_subassembly_return_code(cluster, final_contigs_dir, skip_copy=False,
                                   logger=None):
     """ given a return code from the above spades success function,
     set object attributes as needed
+    20170531 depreciated return code 1: as we have moved to using the
+    whole library for mapping, not just the unmapped reads, it is more
+    important to keep in even unchanging contigs to allow for
+    competition during mapping
+
     ----------------------
     return success codes:
     0 = include contigs, all good
@@ -1524,30 +1546,34 @@ def parse_subassembly_return_code(cluster, final_contigs_dir, skip_copy=False,
         cluster.continue_iterating = False
         cluster.keep_contigs = False
     elif cluster.assembly_success == 1:
-        if skip_copy:  # ONLY FOR TESTING!
-            cluster.continue_iterating = False
-            cluster.keep_contigs = False
-        else:
-            logger.info("copying %s to %s",
-                        cluster.mappings[-1].assembled_contig,
-                        final_contigs_dir)
-            try:
-                shutil.copyfile(
-                    cluster.mappings[-1].assembled_contig,
-                    os.path.join(final_contigs_dir,
-                                 "{0}_cluster_{1}_iter_{2}.fasta".format(
-                                     cluster.sequence_id,
-                                     cluster.index,
-                                     cluster.mappings[-1].iteration)))
-            except:
-                logger.warning("unable to copy %s to final contigs dir. " +
-                               "This is should have returned code 3, not 1.",
-                               cluster.mappings[-1].assembled_contig)
-                logger.error(last_exception())
-        cluster.continue_iterating = False
-        # The combine contigs step check for 'keep contigs flag, so
-        # since you have already copied it, set the flag to false
-        cluster.keep_contigs = False
+        raise ValueError("return code 1 depreciated! a warning can be " +
+                         "issued for short asssemblies, but they must " +
+                         "remain in the pseudogenome" )
+        # if skip_copy:  # ONLY FOR TESTING!
+        #     cluster.continue_iterating = False
+        #     cluster.keep_contigs = False
+        # else:
+        #     cluster.freeze = True  # freeze
+        #     logger.info("copying %s to %s",
+        #                 cluster.mappings[-1].assembled_contig,
+        #                 final_contigs_dir)
+        #     try:
+        #         shutil.copyfile(
+        #             cluster.mappings[-1].assembled_contig,
+        #             os.path.join(final_contigs_dir,
+        #                          "{0}_cluster_{1}_iter_{2}.fasta".format(
+        #                              cluster.sequence_id,
+        #                              cluster.index,
+        #                              cluster.mappings[-1].iteration)))
+        #     except:
+        #         logger.warning("unable to copy %s to final contigs dir. " +
+        #                        "This is should have returned code 3, not 1.",
+        #                        cluster.mappings[-1].assembled_contig)
+        #         logger.error(last_exception())
+        # cluster.continue_iterating = True
+        # # The combine contigs step check for 'keep contigs flag, so
+        # # since you have already copied it, set the flag to false
+        # cluster.keep_contigs = False
     elif cluster.assembly_success == 0:
         cluster.continue_iterating = True
         cluster.keep_contigs = True
@@ -1613,6 +1639,37 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
         except Exception as e:
             raise e
     return mainDict
+
+
+def check_kmer_vs_reads(k, readlen, min_diff=2, logger=None):
+    assert logger is not None, "must use logging! "
+    # ignore this if we are letting spades
+    if k is 'auto':
+        logger.debug("no need to check k, we let spades set k")
+        return k
+    try:
+        klist = [int(x) for x in k.split(",")]
+    except Exception as e:
+        logger.error("error splitting kmers by comma!")
+        logger.error(e)
+        logger.error(last_exception())
+        raise ValueError
+    logger.debug(klist)
+    new_ks = []
+    for i in klist:
+        if i > readlen:
+            logger.info("removing %d from list of kmers: exceeds read length",
+                        i)
+        elif readlen - i <= min_diff:
+            logger.info("removing %d from list of kmers: too close " +
+                        "to read length", i)
+        elif i % 2 == 0:
+            logger.info("removing %d from list of kmers: must be odd", i)
+        else:
+            new_ks.append(i)
+    logger.debug("final ks:")
+    logger.debug(new_ks)
+    return ",".join([str(x) for x in new_ks])
 
 
 def get_samtools_depths(samtools_exe, bam, chrom, start, end,
@@ -1882,6 +1939,8 @@ def partition_mapping(seedGenome, samtools_exe, flank, min_flank_depth,
                       cluster_list=None, logger=None):
     """ Extract interesting stuff based on coords, not a binary
     mapped/not_mapped condition
+    Also, if min_flanking_depth, mark reads with low
+    mapping coverage for exclusion
     """
     mapped_regions = []
     logger.info("processing mapping for iteration %i",
@@ -1951,7 +2010,7 @@ def partition_mapping(seedGenome, samtools_exe, flank, min_flank_depth,
     logger.info("mapped regions for iteration %i:\n%s",
                 seedGenome.this_iteration,
                 "\n".join([x for x in mapped_regions]))
-
+    # make commands to extract all the reads NOT mapping to the rDNA regions
     unmapped_partition_cmds = make_unmapped_partition_cmds(
         mapped_regions=mapped_regions, samtools_exe=samtools_exe,
         seedGenome=seedGenome)
@@ -2369,7 +2428,15 @@ if __name__ == "__main__":  # pragma: no cover
     except ValueError:
         logger.error("Exiting")
         sys.exit(1)
-
+    # check and warn user about potential RAM issues
+    if args.memory < 6 or int(args.memory / args.cores) < 6:
+        logger.warning("Danger!  We recommend that you have a minimum of " +
+                       "6GB memory (or 6GB memory per core is using " +
+                       "multiprocessing) available. If you have less " +
+                       "than that per core, SPAdes may run out of memory.")
+        logger.warning("You can continue as configured if needed, and if a " +
+                       "SPAdes error occurs, you can still use the long " +
+                       "reads generated by riboSeed in a standalone assembly")
 # --------------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #
 
@@ -2402,6 +2469,16 @@ if __name__ == "__main__":  # pragma: no cover
         logger=logger,
         mapper_exe=sys_exes.mapper,
         ref_fasta=seedGenome.ref_fasta)
+
+    checked_k = check_kmer_vs_reads(
+        k=args.kmers,
+        readlen=seedGenome.master_ngs_ob.readlen,
+        min_diff=2, logger=logger)
+    checked_prek = check_kmer_vs_reads(
+        k=args.pre_kmers,
+        readlen=seedGenome.master_ngs_ob.readlen,
+        min_diff=2, logger=logger)
+
     if "pe" in seedGenome.master_ngs_ob.libtype:
         # check equal length fastq.  This doesnt actually check propper pairs
         logger.debug("Checking that the fastq pair have equal number of reads")
@@ -2476,17 +2553,13 @@ if __name__ == "__main__":  # pragma: no cover
         if seedGenome.this_iteration != 0:
             if seedGenome.this_iteration != 1:
                 # clear out old .sam files to save space
-                if not args.keep_temps:
+                if args.clean_temps:
                     logger.info("removing uneeded file:")
-                    seedGenome.purge_old_files(all_iters=False, logger=logger)
                     # delete the read files from the last mapping
                     # dont do this on first iteration cause those be the reads!
                     # and if they aren't backed up you are up a creek and
                     # probably very upset with me.
-
-                    # purgecode = unmapped_ngsLib.purge_old_files(
-                    #     master=seedGenome.master_ngs_ob,
-                    #     logger=logger)
+                    seedGenome.purge_old_files(all_iters=False, logger=logger)
 
             # seqrecords for the clusters to be gen.next_reference_path
             with open(seedGenome.next_reference_path, 'r') as nextref:
@@ -2660,10 +2733,12 @@ if __name__ == "__main__":  # pragma: no cover
                 flank=args.flanking,
                 min_flank_depth=args.min_flank_depth,
                 cluster_list=clusters_to_process)
-            clusters_not_to_subassemble = [
-                x for x in clusters_to_process if
-                x.index in [
-                    y.index for y in clusters_to_subassemble]]
+
+            # clusters_not_to_subassemble = [
+            #     x for x in clusters_to_process if
+            #     x.index in [
+            #         y.index for y in clusters_to_subassemble] |
+            #     x.freeze]
 
         except Exception as e:
             logger.error("Error while partitioning reads from iteration %i",
@@ -2675,8 +2750,10 @@ if __name__ == "__main__":  # pragma: no cover
         logger.info(iter_depths)
         region_depths.append(iter_depths)
         extract_convert_assemble_cmds = []
-        # generate spades cmds (cannot be multiprocessed)
-        # ref_as_contig must be 'trusted' here, a
+        # generate spades cmds (cannot be multiprocessed becuase of python's
+        #  inability to pass objects to multiprocessing)
+        # ref_as_contig must be 'trusted' here because of the multimapping/
+        #  coverage issues
         for cluster in clusters_to_subassemble:
             cmdlist = []
             logger.debug("generating commands to convert bam to fastqs " +
@@ -2693,9 +2770,29 @@ if __name__ == "__main__":  # pragma: no cover
                 ref_as_contig="trusted",
                 check_libs=True,
                 as_paired=False, prelim=True,
-                k=args.pre_kmers,
+                k=checked_prek,
                 spades_exe=sys_exes.spades, logger=logger)
-            cmdlist.append(spades_cmd)
+        # setting some thread limits here
+            if args.serialize:
+                cmdA, cmdB = spades_cmd.split("--careful")
+                logger.info("Allocating SPAdes %dgb of memory", args.memory)
+                cmdlist.append("{0} -t {1} -m {2} {3}".format(
+                    cmdA,
+                    args.cores,
+                    args.memory,
+                    cmdB))
+            else:
+                # make sure spades doesnt hog processors or ram
+                mem_each = int(args.memory / args.cores)  # should be floor
+                logger.info(
+                    "Allocating SPAdes %dgb of memory for each of %d cores",
+                    args.memory, args.cores)
+                cmdA, cmdB = spades_cmd.split("--careful")
+                cmdlist.append("{0} -t {1} -m {2} {3}".format(
+                    cmdA,
+                    1,
+                    mem_each,
+                    cmdB))
 
             cluster.mappings[-1].mapped_ngslib = new_ngslib
             extract_convert_assemble_cmds.append(cmdlist)
@@ -2736,6 +2833,7 @@ if __name__ == "__main__":  # pragma: no cover
                 mapping_ob=cluster.mappings[-1],
                 include_short_contigs=args.include_short_contigs,
                 keep_best_contig=True,
+                min_delta=10,
                 flank=args.flanking,
                 seqname='', logger=logger,
                 min_assembly_len=args.min_assembly_len,
@@ -2773,7 +2871,7 @@ if __name__ == "__main__":  # pragma: no cover
 # --------------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #
     # done with the iterations!  Lets free up some space
-    if not args.keep_temps:
+    if args.clean_temps:
         # if not any([x in unmapped_ngsLib.liblist for
         #             x in seedGenome.master_ngs_ob.liblist]):
             # unmapped_ngsLib.purge_old_files(
@@ -2781,7 +2879,12 @@ if __name__ == "__main__":  # pragma: no cover
             #     logger=logger)
         seedGenome.purge_old_files(all_iters=True, logger=logger)
     # And add the remaining final contigs to the directory for combination
-    if len([x for x in seedGenome.loci_clusters if x.keep_contigs]) == 0:
+    contigs_moved_before_list_iter = \
+        [x.final_contig_path for x in seedGenome.loci_clusters
+         if not x.keep_contigs]
+    logger.debug("Contigs moved prior to final iteration:")
+    logger.debug(contigs_moved_before_list_iter)
+    if len(contigs_moved_before_list_iter) == len(seedGenome.loci_clusters):
         logger.info("all contigs already copied to long_reads dir")
     else:
         # for clu in [x for x in seedGenome.loci_clusters if x.keep_contigs]:
@@ -2822,15 +2925,15 @@ if __name__ == "__main__":  # pragma: no cover
     #             "previously unmapped reads which now map to the seeded " +
     #             "flanking regions, which may be very low)\n" +
     #             "\n".join(mapping_percentages))
-    # report = reportRegionDepths(inp=region_depths, logger=logger)
-    # logger.info("Average depths of mapping for each cluster, by iteration:")
-    # logger.info("\n" + "\n".join(report))
+    report = reportRegionDepths(inp=region_depths, logger=logger)
+    logger.info("Average depths of mapping for each cluster, by iteration:")
+    logger.info("\n" + "\n".join(report))
 
     # run final contigs
     spades_quast_cmds, quast_reports = get_final_assemblies_cmds(
         seedGenome=seedGenome, exes=sys_exes,
         ref_as_contig=ref_as_contig,
-        skip_control=args.skip_control, kmers=args.kmers, logger=logger)
+        skip_control=args.skip_control, kmers=checked_k, logger=logger)
 
     if args.serialize:
         logger.warning("running without multiprocessing!")

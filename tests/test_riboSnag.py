@@ -301,7 +301,7 @@ class riboSnag_TestCase(unittest.TestCase):
             logger=logger)
         mafft_cmd_1, results_path = prepare_mafft_cmd(
             outdir=self.testdirname,
-            outfile_name="best_MSA.fasta",
+            outfile_name="best_MSA",
             combined_fastas=unaligned_seqs,
             mafft_exe=self.mafft_exe,
             add_args="-t=sometree",
@@ -311,7 +311,7 @@ class riboSnag_TestCase(unittest.TestCase):
                                          "best_MSA"))
         idealmafft = "mafft -t=sometree {0} > {1}".format(
             unaligned_seqs, os.path.join(self.testdirname,
-                                         "best_MSA.fasta"))
+                                         "best_MSA.best.fas"))
         self.assertEqual(idealprank, prank_cmd_1)
         self.assertEqual(idealmafft, mafft_cmd_1)
         self.to_be_removed.append(unaligned_seqs)
@@ -350,7 +350,7 @@ class riboSnag_TestCase(unittest.TestCase):
                                          "best_MSA"))
         idealmafft = "mafft -t=sometree {0} > {1}".format(
             unaligned_seqs, os.path.join(self.testdirname,
-                                         "best_MSA.fasta"))
+                                         "best_MSA.best.fas"))
         self.assertEqual(results_path2, results_path1)
         self.assertEqual(idealprank, msa_cmd2)
         self.assertEqual(idealmafft, msa_cmd1)

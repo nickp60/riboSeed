@@ -318,8 +318,8 @@ if __name__ == "__main__":
         sys.exit(1)
     logger = set_up_logging(
         verbosity=args.verbosity,
-        outfile=str("riboSelect_log_%s.txt" %
-                    os.path.join(output_root,
+        outfile=os.path.join(output_root,
+                             str("riboSelect_log_%s.txt" %
                                  time.strftime("%Y%m%d%H%M"))),
         name=__name__)
 

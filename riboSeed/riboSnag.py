@@ -522,16 +522,17 @@ def prepare_mafft_cmd(outdir, combined_fastas, mafft_exe,
                       add_args="", outfile_name="best_MSA",
                       logger=None):
     """returns command line for constructing MSA with
-    mafft and the path to results file
+    mafft and the path to results file.  
+    We call it best.fas to match the mafft result
     """
     assert logger is not None, "Must use logger"
     if not os.path.exists(outdir):
         raise FileNotFoundError("output directory not found!")
     mafft_cmd = "{0} {1} {2} > {3}".format(
         mafft_exe, add_args, combined_fastas,
-        os.path.join(outdir, outfile_name))
+        os.path.join(outdir, outfile_name + ".best.fas"))
     logger.debug("MAFFT command: \n %s", mafft_cmd)
-    return (mafft_cmd, os.path.join(outdir, outfile_name))
+    return (mafft_cmd, os.path.join(outdir, outfile_name + ".best.fas"))
 
 
 def calc_Shannon_entropy(matrix):
@@ -896,7 +897,7 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
                                  logger=logger):
             msa_cmd, results_path = prepare_mafft_cmd(
                 outdir=outdir,
-                outfile_name="best_MSA.fasta",
+                outfile_name="best_MSA",
                 combined_fastas=unaligned_seqs,
                 mafft_exe=mafft_exe,
                 add_args=args,
