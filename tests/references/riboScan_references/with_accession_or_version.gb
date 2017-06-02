@@ -1,6 +1,6 @@
 LOCUS       BA000007.2           5498450 bp    DNA     linear   UNC 19-JAN-2017
 ACCESSION   BA000007.2
-VERSION     BA000007.2
+VERSION     BA000007.2  GI:0000000
 DEFINITION  Escherichia coli O157:H7 str. Sakai DNA, complete genome.
 FEATURES             Location/Qualifiers
      rRNA            227105..228642

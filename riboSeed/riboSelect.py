@@ -332,14 +332,10 @@ if __name__ == "__main__":
 
     output_path = os.path.join(output_root,
                                str("riboSelect_grouped_loci.txt"))
-    # Check if output file exists; if so, remove it
-    # if os.path.exists(output_path):
-    #     if args.clobber:
-    #         logger.info("removing existing output file\n")
-    #         os.remove(output_path)
-    #     else:
-    #         logger.error("Existing output file found!")
-    #         sys.exit(1)
+    if os.path.splitext(args.genbank_genome)[1] in [".fa", ".fasta"]:
+        logger.error("Input must be a genbank file; this appears to " +
+                     "be a fasta ")
+        sys.exit(1)
 
     # get genome records into a generator to count them
     genome_records = SeqIO.parse(args.genbank_genome, 'genbank')

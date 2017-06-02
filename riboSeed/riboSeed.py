@@ -621,7 +621,7 @@ def get_args():  # pragma: no cover
                           help="cores for multiprocessing" +
                           "; default: %(default)s")
     optional.add_argument("-k", "--kmers", dest='kmers', action="store",
-                          default="auto", type=str,
+                          default="21,33,55,77,99,127", type=str,
                           help="kmers used for final assembly" +
                           ", separated by commas such as" +
                           "21,33,55,77,99,127 . Defaults to 'auto', where " +
@@ -1667,8 +1667,6 @@ def check_kmer_vs_reads(k, readlen, min_diff=2, logger=None):
             logger.info("removing %d from list of kmers: must be odd", i)
         else:
             new_ks.append(i)
-    logger.debug("final ks:")
-    logger.debug(new_ks)
     return ",".join([str(x) for x in new_ks])
 
 
@@ -2478,6 +2476,9 @@ if __name__ == "__main__":  # pragma: no cover
         k=args.pre_kmers,
         readlen=seedGenome.master_ngs_ob.readlen,
         min_diff=2, logger=logger)
+    logger.debug("Using the following kmer values pre and final assemblies:")
+    logger.debug(checked_k)
+    logger.debug(checked_prek)
 
     if "pe" in seedGenome.master_ngs_ob.libtype:
         # check equal length fastq.  This doesnt actually check propper pairs

@@ -191,12 +191,16 @@ def combine_gbs(finalgb, gb_list):
 
 
 def append_accession_and_version(accession, ingb, finalgb):
+    """updated to add a dummy GI number as well
+    """
     with open(finalgb, 'w') as outfile:
         with open(ingb) as infile:
             for idx, line in enumerate(infile):
                 if idx == 1:
-                    repline = "ACCESSION   {0}\nVERSION     {0}\n{1}".format(
-                        accession, line)
+                    repline = "ACCESSION   {0}\nVERSION     {0}{1}{2}".format(
+                        accession,
+                        "  GI:0000000\n",
+                        line)
                     outfile.write(repline)
                 else:
                     outfile.write(line)
