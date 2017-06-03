@@ -25,10 +25,18 @@ import itertools
 import multiprocessing
 
 import numpy as np
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+
+try:
+    import matplotlib as mpl
+    mpl.use('Agg')
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+    PLOT = True
+except Exception as e:  # most likely an ImportError, but not sure
+    print(e)
+    print("looks like you have some issue with matplotlib.  " +
+          "Classic matplotlib, amirite? Plotting is disabled")
+    PLOT = False
 import pandas as pd
 
 from Bio import SeqIO
@@ -522,7 +530,7 @@ def prepare_mafft_cmd(outdir, combined_fastas, mafft_exe,
                       add_args="", outfile_name="best_MSA",
                       logger=None):
     """returns command line for constructing MSA with
-    mafft and the path to results file.  
+    mafft and the path to results file.
     We call it best.fas to match the mafft result
     """
     assert logger is not None, "Must use logger"
@@ -1362,7 +1370,8 @@ if __name__ == "__main__":
     )
 
     # make MSA and calculate entropy
-    if not args.just_extract:
+    # reminder, PLOT is set by matplotlib avail
+    if not args.just_extract and PLOT:
         if args.clobber:
             logger.error("Cannot safely check SMA when --clobber is used!")
             sys.exit(1)
