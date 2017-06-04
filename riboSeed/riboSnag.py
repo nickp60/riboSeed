@@ -24,18 +24,18 @@ import shutil
 import itertools
 import multiprocessing
 
-import numpy as np
-
+#
 try:
+    import numpy as np
     import matplotlib as mpl
     mpl.use('Agg')
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
     PLOT = True
-except Exception as e:  # most likely an ImportError, but not sure
+except Exception as e:  # most likely an ImportError, but Im not taking chances
     print(e)
-    print("looks like you have some issue with matplotlib.  " +
-          "Classic matplotlib, amirite? Plotting is disabled")
+    print("\nlooks like you have some issue with matplotlib.  " +
+          "Classic matplotlib, amirite? Plotting is disabled\n")
     PLOT = False
 import pandas as pd
 

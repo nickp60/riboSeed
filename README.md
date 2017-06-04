@@ -28,11 +28,10 @@ Genome assembly gobbles RAM. If you, like me, are working on a 4gb RAM lappy, do
 
 riboSeed is an supplemental assembly refinement method to try to address the issue of multiple ribosomal regions in a genome, as these create repeates unresolvable by short read sequencing.  It takes advantage of the fact that while each region is identical, the regions flanking are unique, and therefore can potentially be used to seed an assembly in such a way that rDNA regions are bridged.
 
-The pipeline (currently) consists of optional preprocessing and two main stages:
+The pipeline consists of 3 main stages: preprocessing, de fere novo assembly, and visualization/assessment
 
 ## 0: Preprocessing
 
-### `splitMultifasta.sh`
 <!-- `splitMultifasta.sh` takes a single argument for the fasta file containing multiple contigs, and output them as individual contigs to the current working directory.  This is not sophisticated, it is essentially one awk call that is already shorter than this description.  `riboScan.py` will only work with single entry fastas. -->
 <!-- #### usage -->
 <!-- make a directory for the new files, and `cd` into it.  `splitMultifasta ../contigs.fa` -->
@@ -88,7 +87,6 @@ optional arguments:
 ```
 NOTE: If using a reference with long names or containing special characters, use the --name argument to rename the contigs to something a bit more convenient and less prone to errors when piping results.
 
-## 1: Selection and Extraction
 
 ### `riboSelect.py`
 `riboSelect.py` searches the genome for rRNA annotations, clusters them into likely ribosomal groups, and outputs a colon-separated list of clustered rRNA locus tags by record id.
@@ -155,79 +153,8 @@ optional arguments:
 
 ```
 
-## Assessing rDNA regions
-### `riboSnag.py`
-`riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
 
-Additionally, it does a lot of plotting to visualize the Shannon entropy, coverage, occurrences, and other useful metrics.
-
-THIS SCRIPT IS NOT LONGER A REQUIRED PART OF THE PIPELINE! It is still included as the plots it generates can be useful for troubleshooting.
-
-#### Usage:
-
-```
-usage: riboSnag.py [-o OUTPUT] [-n NAME] [-l FLANKING] [--msa_kmers] [-c]
-                   [-p PADDING] [-v VERBOSITY] [--clobber] [--no_revcomp]
-                   [--skip_check] [--msa_tool {mafft,prank}]
-                   [--prank_exe PRANK_EXE] [--mafft_exe MAFFT_EXE]
-                   [--barrnap_exe BARRNAP_EXE]
-                   [--makeblastdb_exe MAKEBLASTDB_EXE]
-                   [--kingdom {mito,euk,arc,bac}] [-h]
-                   genbank_genome clustered_loci
-
-Use to extract regions of interest based on supplied Locus tags and evaluate
-the extracted regions
-
-positional arguments:
-  genbank_genome        Genbank file (WITH SEQUENCE)
-  clustered_loci        output from riboSelect
-
-required named arguments:
-  -o OUTPUT, --output OUTPUT
-                        output directory; default:
-                        /home/nicholas/GitHub/riboSeed
-
-optional arguments:
-  -n NAME, --name NAME  rename the contigs with this prefixdefault: date
-                        (YYYYMMDD)
-  -l FLANKING, --flanking_length FLANKING
-                        length of flanking regions, in bp; default: 1000
-  --msa_kmers           calculate kmer similarity based on aligned sequences
-                        instead of raw sequences;default: False
-  -c, --circular        if the genome is known to be circular, and an region
-                        of interest (including flanking bits) extends past
-                        chromosome end, this extends the seqence past
-                        chromosome origin forward by 5kb; default: False
-  -p PADDING, --padding PADDING
-                        if treating as circular, this controls the length of
-                        sequence added to the 5' and 3' ends to allow for
-                        selecting regions that cross the chromosom's origin;
-                        default: 5000
-  -v VERBOSITY, --verbosity VERBOSITY
-                        1 = debug(), 2 = info(), 3 = warning(), 4 = error()
-                        and 5 = critical(); default: 2
-  --clobber             overwrite previous output filesdefault: False
-  --no_revcomp          default returns reverse complimented seq if majority
-                        of regions on reverse strand. if --no_revcomp, this is
-                        overwriddendefault: False
-  --skip_check          Dont bother calculating Shannon Entropy; default:
-                        False
-  --msa_tool {mafft,prank}
-                        Path to PRANK executable; default: mafft
-  --prank_exe PRANK_EXE
-                        Path to PRANK executable; default: prank
-  --mafft_exe MAFFT_EXE
-                        Path to MAFFT executable; default: mafft
-  --barrnap_exe BARRNAP_EXE
-                        Path to barrnap executable; default: barrnap
-  --makeblastdb_exe MAKEBLASTDB_EXE
-                        Path to makeblastdb executable; default: makeblastdb
-  --kingdom {mito,euk,arc,bac}
-                        kingdom for barrnap; default: bac
-  -h, --help            Displays this help message
-```
-
-## 2: Seeded Assembly
+## 2: *De fere novo* Assembly
 ### `riboSeed.py`
 `riboSeed.py` maps reads to a genome and (1) extracts reads mapping to rDNA regions, (2) perfoms subassemblies on each pool of extracted reads to recover the rDNA complete with flanking regions (resulting in a pseudocontig) (3) concatenates a;; pseudocontigs into them into a pseudogenome with 5kb spacers of N's in between, (5) map remaining reads to the pseudogenome, and (6) repeat steps 1-5 for a given number of iterations (default 3 iterations). Finally, riboSeed runs SPAdes assemblied with and without the pseudocontigs and the resulting assemblies are assessed with QUAST.
 
@@ -390,7 +317,78 @@ Results can be tuned by changing several of the default parameters.
 
 * `--iterations`:  Each iteration typically increases the length of the long read by approximately 5%.
 
-## 3: Assembly Refinement
+## 3: Visualization/Assessment
+
+### `riboSnag.py`
+`riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
+
+Additionally, it does a lot of plotting to visualize the Shannon entropy, coverage, occurrences, and other useful metrics.
+
+
+#### Usage:
+
+```
+usage: riboSnag.py [-o OUTPUT] [-n NAME] [-l FLANKING] [--msa_kmers] [-c]
+                   [-p PADDING] [-v VERBOSITY] [--clobber] [--no_revcomp]
+                   [--skip_check] [--msa_tool {mafft,prank}]
+                   [--prank_exe PRANK_EXE] [--mafft_exe MAFFT_EXE]
+                   [--barrnap_exe BARRNAP_EXE]
+                   [--makeblastdb_exe MAKEBLASTDB_EXE]
+                   [--kingdom {mito,euk,arc,bac}] [-h]
+                   genbank_genome clustered_loci
+
+Use to extract regions of interest based on supplied Locus tags and evaluate
+the extracted regions
+
+positional arguments:
+  genbank_genome        Genbank file (WITH SEQUENCE)
+  clustered_loci        output from riboSelect
+
+required named arguments:
+  -o OUTPUT, --output OUTPUT
+                        output directory; default:
+                        /home/nicholas/GitHub/riboSeed
+
+optional arguments:
+  -n NAME, --name NAME  rename the contigs with this prefixdefault: date
+                        (YYYYMMDD)
+  -l FLANKING, --flanking_length FLANKING
+                        length of flanking regions, in bp; default: 1000
+  --msa_kmers           calculate kmer similarity based on aligned sequences
+                        instead of raw sequences;default: False
+  -c, --circular        if the genome is known to be circular, and an region
+                        of interest (including flanking bits) extends past
+                        chromosome end, this extends the seqence past
+                        chromosome origin forward by 5kb; default: False
+  -p PADDING, --padding PADDING
+                        if treating as circular, this controls the length of
+                        sequence added to the 5' and 3' ends to allow for
+                        selecting regions that cross the chromosom's origin;
+                        default: 5000
+  -v VERBOSITY, --verbosity VERBOSITY
+                        1 = debug(), 2 = info(), 3 = warning(), 4 = error()
+                        and 5 = critical(); default: 2
+  --clobber             overwrite previous output filesdefault: False
+  --no_revcomp          default returns reverse complimented seq if majority
+                        of regions on reverse strand. if --no_revcomp, this is
+                        overwriddendefault: False
+  --skip_check          Dont bother calculating Shannon Entropy; default:
+                        False
+  --msa_tool {mafft,prank}
+                        Path to PRANK executable; default: mafft
+  --prank_exe PRANK_EXE
+                        Path to PRANK executable; default: prank
+  --mafft_exe MAFFT_EXE
+                        Path to MAFFT executable; default: mafft
+  --barrnap_exe BARRNAP_EXE
+                        Path to barrnap executable; default: barrnap
+  --makeblastdb_exe MAKEBLASTDB_EXE
+                        Path to makeblastdb executable; default: makeblastdb
+  --kingdom {mito,euk,arc,bac}
+                        kingdom for barrnap; default: bac
+  -h, --help            Displays this help message
+```
+
 ### `riboStack.py`
 Decause assembly using short reads often collases rDNA repeats, it is not uncommon to find a reference genome that has less than the actual number of rDNAs.  riboStack uses `bedtools` and `samtools` to determine the coverage across rDNA regiosn, adn compares that coverage depth to 10 sets of randomly selected non-rDNA regions.  If the number of rDNAs in the reference matches the number of rDNAs in your sequecned isolate, the coverage should be pretty similar. However, if the coverage in your rDNA regions is significantly higher, than there are likely more rDNAs in your sequenced isoalte that there are in the reference, which is something to be aware of.
 
@@ -437,12 +435,19 @@ The tests for the module can be found under the `tests` directory. I run them wi
 
 
 ## Installation
-#### From Pypi
+#### From Pypi (recommended)
 riboSeed is on Pypi, so you can install with pip, preferably within a virtualenv (recommended):
 
 `virtualenv -p python3.5 venv-riboSeed`
 `source venv-riboSeed/bin/activate`
 `pip3.5 install riboSeed`
+
+
+#### From TestPypi
+To install the bleeding-edge version, install from testpypi:
+`virtualenv -p python3.5 venv-riboSeed`
+`source venv-riboSeed/bin/activate`
+`pip install --extra-index-url https://testpypi.python.org/pypi riboSeed`
 
 #### From GitHub
 You can also clone this repository, and run `python3.5 setup.py install`.
