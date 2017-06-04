@@ -158,7 +158,7 @@ class riboSeedTestCase(unittest.TestCase):
                  method="bowtie")
 
     def test_Exes_bad_attribute(self):
-        """ check bad instatiation """
+        """ check bad instantiation """
         with self.assertRaises(AssertionError):
             Exes(samtools=None,
                  quast=self.quast_exe,
