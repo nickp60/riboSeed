@@ -205,15 +205,11 @@ class SeedGenome(object):
             pass
 
     def countSeqRecords(self):
+        """ Nothing fancy; just a quick way to get the number of records
+        """
         self.seq_records_count = sum(1 for x in self.seq_records)
         self.refreshSeqRecGenerator()
 
-    # def attach_genome_seqrecords(self):
-    #     """attach a list of seqrecords.  In the future, this should be
-    #     a generator but for small genomes it doesnt seem to be an issue
-    #     """
-    #     with open(self.genbank_path, 'r') as fh:
-    #         self.seq_records = list(SeqIO.parse(fh, "genbank"))
     def refreshSeqRecGenerator(self):
         """instead of using stored genbank records, this method restarts
         the generator so that each time self.seq_records is accessed
@@ -238,7 +234,7 @@ class SeedGenome(object):
             for f in [self.iter_mapping_list[i].pe_map_bam,
                       self.iter_mapping_list[i].s_map_bam,
                       self.iter_mapping_list[i].mapped_sam,
-                      self.iter_mapping_list[i].mapped_bam,
+                      # self.iter_mapping_list[i].mapped_bam,  # for riboStack
                       self.iter_mapping_list[i].unmapped_sam,
                       self.iter_mapping_list[i].unmapped_bam,
                       self.iter_mapping_list[i].sorted_mapped_bam]:
@@ -320,10 +316,7 @@ class NgsLib(object):
                         "Must have at least either a paired library or " +
                         "single library")
                 else:
-                    # if self.readS1 is None:
                     self.libtype = "s_1"  # single library
-                    # else:
-                    #     self.libtype = "s_2"  # 2 single libraries
             else:
                 raise ValueError("cannot set library type from one PE read")
         else:
@@ -624,8 +617,10 @@ def get_args():  # pragma: no cover
                           default="21,33,55,77,99,127", type=str,
                           help="kmers used for final assembly" +
                           ", separated by commas such as" +
-                          "21,33,55,77,99,127 . Defaults to 'auto', where " +
-                          "SPAdes chooses. ; default: %(default)s")
+                          "21,33,55,77,99,127 . Can be set to 'auto', where " +
+                          "SPAdes chooses.  We ensure kmers are not " +
+                          "too big or too close to read length" +
+                          "; default: %(default)s")
     optional.add_argument("-p", "--pre_kmers", dest='pre_kmers',
                           action="store",
                           default="21,33,55,77,99", type=str,
@@ -639,13 +634,13 @@ def get_args():  # pragma: no cover
                           "default with smalt is inferred from " +
                           "read length. If using BWA, reads mapping with AS" +
                           "score lower than this will be rejected" +
-                          "; default with SWA is half of read length")
+                          "; default with BWA is half of read length")
     optional.add_argument("-a", "--min_assembly_len", dest='min_assembly_len',
                           action="store",
                           default=6000, type=int,
                           help="if initial SPAdes assembly largest contig " +
                           "is not at least as long as --min_assembly_len, " +
-                          "exit. Set this to the length of the seed " +
+                          "reject. Set this to the length of the seed " +
                           "sequence; if it is not achieved, seeding across " +
                           "regions will likely fail; default: %(default)s")
     optional.add_argument("--include_shorts", dest='include_short_contigs',
@@ -689,7 +684,7 @@ def get_args():  # pragma: no cover
                           "SPAdes will treat as --untrusted-contig. if '', " +
                           "seeds will not be used during assembly. " +
                           "See SPAdes docs; default: if mapping " +
-                          "percentage over 85%%: 'trusted', else 'untrusted'")
+                          "percentage over 80%%: 'trusted', else 'untrusted'")
     optional.add_argument("--clean_temps", dest='clean_temps',
                           default=False, action="store_true",
                           help="if --clean_temps, mapping files will be " +
@@ -983,7 +978,7 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
 
     logger.info("Mapping reads to reference genome with SMALT")
     # check min score
-    assert score_minimum is not None, "must assign score outside map function!"
+    assert score_minimum is not None, "must sassign score outside map function!"
     score_min = score_minimum
     logger.debug(str("using a score min of " +
                      "{0}").format(score_min))
@@ -1088,6 +1083,8 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
 
 
 def get_bam_AS(inbam, logger=None):
+    """ Return the mappign scores for downstream QC plotting.
+    """
     assert logger is not None, "must use logging"
     score_list = []
     count = 0
@@ -1125,10 +1122,9 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                           samtools_exe, bwa_exe, genome_fasta,
                           score_minimum=None,
                           add_args='-L 0,0 -U 0 -a', logger=None):
-    """
-    #TODO rework this to read libtype of ngslib object
-    requires at least paired end input, but can handle an additional library
-    of singleton reads. Will not work on just singletons
+    """ Map to bam.  maps PE and S reads separately,
+    then combines them into a X_mapped.bam file
+    TODO:: break up into execution and comamnd generation
     """
 
     logger.info("Mapping reads to reference genome with BWA")
@@ -1155,7 +1151,6 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                      '{7} - ').format(bwa_exe,  # 0
                                       cores,  # 1
                                       add_args,  # 2
-                                      # score_min,  # 3
                                       genome_fasta,  # 3
                                       ngsLib.readF,  # 4
                                       ngsLib.readR,  # 5
@@ -1175,7 +1170,6 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
             '{5} sort -o {6} - ').format(bwa_exe,  # 0
                                          cores,  # 1
                                          add_args,  # 2
-                                         # score_min,  # 3
                                          genome_fasta,  # 3
                                          ngsLib.readS0,  # 4
                                          samtools_exe,  # 5
@@ -1549,31 +1543,6 @@ def parse_subassembly_return_code(cluster, final_contigs_dir, skip_copy=False,
         raise ValueError("return code 1 depreciated! a warning can be " +
                          "issued for short asssemblies, but they must " +
                          "remain in the pseudogenome" )
-        # if skip_copy:  # ONLY FOR TESTING!
-        #     cluster.continue_iterating = False
-        #     cluster.keep_contigs = False
-        # else:
-        #     cluster.freeze = True  # freeze
-        #     logger.info("copying %s to %s",
-        #                 cluster.mappings[-1].assembled_contig,
-        #                 final_contigs_dir)
-        #     try:
-        #         shutil.copyfile(
-        #             cluster.mappings[-1].assembled_contig,
-        #             os.path.join(final_contigs_dir,
-        #                          "{0}_cluster_{1}_iter_{2}.fasta".format(
-        #                              cluster.sequence_id,
-        #                              cluster.index,
-        #                              cluster.mappings[-1].iteration)))
-        #     except:
-        #         logger.warning("unable to copy %s to final contigs dir. " +
-        #                        "This is should have returned code 3, not 1.",
-        #                        cluster.mappings[-1].assembled_contig)
-        #         logger.error(last_exception())
-        # cluster.continue_iterating = True
-        # # The combine contigs step check for 'keep contigs flag, so
-        # # since you have already copied it, set the flag to false
-        # cluster.keep_contigs = False
     elif cluster.assembly_success == 0:
         cluster.continue_iterating = True
         cluster.keep_contigs = True
@@ -1670,10 +1639,9 @@ def check_kmer_vs_reads(k, readlen, min_diff=2, logger=None):
     return ",".join([str(x) for x in new_ks])
 
 
-def get_samtools_depths(samtools_exe, bam, chrom, start, end,
-                        prep=False, region=None, logger=None):
-    """ Use samtools depth and awk to get the average coverage depth of a
-    particular region
+def make_samtools_depth_cmds(exe, bam, chrom, start, end, region=None, prep=False):
+    """ this just makes the commands to get the depth from samtools.
+    If prep, the sam file gets sorted and indexed first
     """
     prep_cmds = []
     # cmd = "samtools depth ./iter_1_s_mappi.bam -r scannedScaffolds:5000-6000"
@@ -1681,11 +1649,9 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
         os.path.dirname(bam),
         str(os.path.splitext(os.path.basename(bam))[0] + "_sorted.bam"))
     # sort that bam, just in case
-    prep_cmds.append(str("{0} sort {1} > {2}").format(
-        samtools_exe, bam, sorted_bam))
+    prep_cmds.append(str("{0} sort {1} > {2}").format(exe, bam, sorted_bam))
     # index that bam!
-    prep_cmds.append(str("{0} index {1}").format(
-        samtools_exe, sorted_bam))
+    prep_cmds.append(str("{0} index {1}").format(exe, sorted_bam))
     if prep:
         bamfile = sorted_bam
     else:
@@ -1693,29 +1659,16 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
     # extract the depth stats for a region
     if region is None:
         depth_cmd = str("{0} depth -r {2}:{3}-{4} {1}").format(
-            samtools_exe, bamfile, chrom, start, end)
+            exe, bamfile, chrom, start, end)
     else:
         depth_cmd = str("{0} depth -r {2} {1}").format(
-            samtools_exe, bamfile, region)
-    # if not already sorted and indexed
-    logger.debug("running the following commands to get coverage:")
-    if prep:
-        for i in prep_cmds:  # index and sort
-            logger.debug(i)
-            subprocess.run(i,
-                           shell=sys.platform != "win32",
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE,
-                           check=True)
-    else:
-        pass
-    # get the results from the depth call
-    logger.debug(depth_cmd)
-    result = subprocess.run(depth_cmd,
-                            shell=sys.platform != "win32",
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            check=False)
+            exe, bamfile, region)
+    return (prep_cmds, depth_cmd)
+
+
+def parse_samtools_depth_results(result):
+    """ parses out the subprocess results from samtools depth
+    """
     try:
         splits = result.stdout.decode("utf-8").split("\n")[0].split("\t")
         if len(splits) != 3:
@@ -1738,6 +1691,36 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
 
     average = float(sum(covs)) / float(len(covs))
     return [covs, average]
+
+
+def get_samtools_depths(samtools_exe, bam, chrom, start, end,
+                        prep=False, region=None, logger=None):
+    """ Use samtools depth and awk to get the average coverage depth of a
+    particular region
+    """
+    prep_cmds, depth_cmd = make_samtools_depth_cmds(
+        exe=samtools_exe, bam=bam, chrom=chrom,
+        start=start, end=end, region=region, prep=prep)
+    logger.debug("running the following commands to get coverage:")
+    if prep:
+        for i in prep_cmds:  # index and sort
+            logger.debug(i)
+            subprocess.run(i,
+                           shell=sys.platform != "win32",
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           check=True)
+    else:
+        pass
+    # get the results from the depth call
+    logger.debug(depth_cmd)
+    result = subprocess.run(depth_cmd,
+                            shell=sys.platform != "win32",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            check=False)
+    covs, ave = parse_samtools_depth_results(result)
+    return [covs, ave]
 
 
 def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank,
@@ -2129,7 +2112,6 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     nbuffer = "N" * nbuff
     faux_genome = ""
     counter = 0
-    # new_seq_name = "{0}_iter_{1}".format(seedGenome.name, iteration)
     new_seq_name = seedGenome.name
     if len(cluster_list) == 0:
         return 1
@@ -2351,7 +2333,7 @@ def reportRegionDepths(inp, logger):
                             itidx, cluster[1], cluster[2]))
     return(report_list)
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":
     args = get_args()
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
@@ -2735,12 +2717,6 @@ if __name__ == "__main__":  # pragma: no cover
                 min_flank_depth=args.min_flank_depth,
                 cluster_list=clusters_to_process)
 
-            # clusters_not_to_subassemble = [
-            #     x for x in clusters_to_process if
-            #     x.index in [
-            #         y.index for y in clusters_to_subassemble] |
-            #     x.freeze]
-
         except Exception as e:
             logger.error("Error while partitioning reads from iteration %i",
                          seedGenome.this_iteration)
@@ -2873,11 +2849,6 @@ if __name__ == "__main__":  # pragma: no cover
 # --------------------------------------------------------------------------- #
     # done with the iterations!  Lets free up some space
     if args.clean_temps:
-        # if not any([x in unmapped_ngsLib.liblist for
-        #             x in seedGenome.master_ngs_ob.liblist]):
-            # unmapped_ngsLib.purge_old_files(
-            #     master=seedGenome.master_ngs_ob,
-            #     logger=logger)
         seedGenome.purge_old_files(all_iters=True, logger=logger)
     # And add the remaining final contigs to the directory for combination
     contigs_moved_before_list_iter = \
@@ -2888,7 +2859,6 @@ if __name__ == "__main__":  # pragma: no cover
     if len(contigs_moved_before_list_iter) == len(seedGenome.loci_clusters):
         logger.info("all contigs already copied to long_reads dir")
     else:
-        # for clu in [x for x in seedGenome.loci_clusters if x.keep_contigs]:
         # this assumes that all the uable clusters not in
         # clusters_for_pseudogenome have already been copied over
         for clu in [x for x in clusters_for_pseudogenome if x.keep_contigs]:

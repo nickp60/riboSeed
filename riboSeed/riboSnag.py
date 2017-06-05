@@ -315,15 +315,10 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
     if len(clusters) == 0:
         raise ValueError("No Clusters Found!!")
     # match up seqrecords
-    # with open(gb_filepath) as fh:
-    #     gb_records = list(SeqIO.parse(fh, 'genbank'))
     gb_records = SeqIO.index(gb_filepath, 'genbank')
     for clu in clusters:
         clu.feat_of_interest = feature
         clu.seq_record = gb_records[clu.sequence_id]
-        # clu.seq_record = get_genbank_rec_from_multigb(
-        #     recordID=clu.sequence_id,
-        #     genbank_records=gb_records)
     gb_records.close()
     return clusters
 

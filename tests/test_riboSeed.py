@@ -34,7 +34,8 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     check_fastqs_len_equal, parse_subassembly_return_code, \
     make_spades_empty_check, get_samtools_depths, \
     decide_proceed_to_target, get_rec_from_generator, \
-    check_kmer_vs_reads
+    check_kmer_vs_reads, make_samtools_depth_cmds, \
+    parse_samtools_depth_results
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, stitch_together_target_regions, \
@@ -51,7 +52,7 @@ logger = logging
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among other things wont run if tried " +
                  " with less than python 3.5")
-class riboSeedTestCase(unittest.TestCase):
+class riboSeedShallow(unittest.TestCase):
     """ tests for riboSeed.py
     """
     def setUp(self):
@@ -179,25 +180,6 @@ class riboSeedTestCase(unittest.TestCase):
                  bwa=self.bwa_exe,
                  method="bwa")
 
-    @unittest.skipIf(shutil.which("bwa") is None or
-                     shutil.which("quast.py") is None or
-                     shutil.which("smalt") is None or
-                     shutil.which("python2.7") is None or
-                     shutil.which("spades.py") is None,
-                     "bwa executable not found, skipping.If this isnt an " +
-                     "error from travis deployment, you probably " +
-                     "should install it")
-    def test_Exes_(self):
-        """check with  executable"""
-        test_exes = Exes(samtools=self.samtools_exe,
-                         quast=self.quast_exe,
-                         python2_7=self.python2_7_exe,
-                         smalt=self.smalt_exe,
-                         spades=self.spades_exe,
-                         bwa=self.bwa_exe,
-                         method="bwa")
-        self.assertEqual(test_exes.mapper, shutil.which(test_exes.bwa))
-
     def test_NgsLib(self):
         # make a non-master object
         testlib_pe_s = NgsLib(
@@ -229,8 +211,6 @@ class riboSeedTestCase(unittest.TestCase):
                 readS0="dummy",
                 ref_fasta=self.ref_fasta,
                 mapper_exe=self.smalt_exe)
-        # self.assertFalse(os.path.exists(os.path.join(
-        #     self.test_dir, "smalt_distance_est.sam")))
         self.assertEqual(testlib_pe_s.libtype, "pe_s")
         self.assertEqual(testlib_pe_s.readlen, None)
         # test fails with singe PE file
@@ -278,7 +258,7 @@ class riboSeedTestCase(unittest.TestCase):
 
     def test_SeedGenome(self):
         with open(self.ref_gb, "r") as gbf:
-            reclist = list(SeqIO.parse(gbf, "genbank"))
+            rec = next(SeqIO.parse(gbf, "genbank"))
         gen = SeedGenome(
             max_iterations=2,
             clustered_loci_txt=self.test_loci_file,
@@ -288,7 +268,7 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.test_dir,
                                                     "NC_011751.1.fasta")))
         self.assertTrue(os.path.exists(self.test_dir))
-        self.assertEqual(tuple(gen.seq_records)[0].id, reclist[0].id)
+        self.assertEqual(tuple(gen.seq_records)[0].id, rec.id)
 
     def test_SeedGenome_bad_instatiation(self):
         with self.assertRaises(ValueError):
@@ -374,30 +354,6 @@ class riboSeedTestCase(unittest.TestCase):
                 self.smalt_exe, test_bam, index, test_reads)]
         for index, cmd in enumerate(check_cmds):
             self.assertEqual(cmd, check_cmds_ref[index])
-
-    # @unittest.skipIf(
-    #     shutil.which("smalt") is None,
-    #     "SMALT executable not found, skipping."+
-    #     "If this isnt an error from travis deployment, you probably "+
-    #     "should install it")
-    # def test_estimate_distances_smalt(self):
-    #     """ test estimate insert disances
-    #     """
-    #     if os.path.exists(self.test_estimation_file):
-    #         print("warning! existing distance estimation file!")
-    #     est_file = estimate_distances_smalt(outfile=self.test_estimation_file,
-    #                                         smalt_exe=self.smalt_exe,
-    #                                         ref_genome=self.ref_fasta,
-    #                                         fastq1=self.ref_Ffastq,
-    #                                         fastq2=self.ref_Rfastq,
-    #                                         cores=1,
-    #                                         logger=logger)
-    #     ref_smi_md5 = "a444ccbcb486a8af29736028640e87cf"  # determined manually
-    #     ref_sma_md5 = "4ce0c8b453f2bdabd73eaf8b5ee4f376"  # determined manually
-    #     ref_mapping_len = 9271  # mapping doesnt have exact order, so cant md5
-    #     self.assertEqual(ref_smi_md5, md5(str(est_file + ".smi")))
-    #     self.assertEqual(ref_sma_md5, md5(str(est_file + ".sma")))
-    #     self.assertEqual(ref_mapping_len, file_len(est_file))
 
     def test_get_rec_from_generator(self):
         """ tests get_rec_from_generator, which replaces
@@ -567,78 +523,6 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(ngs_ob.readR is None)
         self.to_be_removed.append(empty_file)
 
-    # @unittest.skipIf(
-    #     shutil.which("smalt") is None,
-    #     "smalt executable not found, skipping."+
-    #     "If this isnt an error from travis deployment, you probably "+
-    #     "should install it")
-    # def test_map_with_smalt(self):
-    #     # becasue multiple mapping are assingmed randomly (pseudorandomly?),
-    #     # this accepts a range of expected results
-    #     testmapping = LociMapping(
-    #         name="test",
-    #         iteration=1,
-    #         assembly_subdir=self.test_dir,
-    #         ref_fasta=self.ref_fasta,
-    #         mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-    #     testngs = NgsLib(
-    #         name="test",
-    #         master=True,
-    #         make_dist=True,
-    #         readF=self.ref_Ffastq,
-    #         readR=self.ref_Rfastq,
-    #         ref_fasta=self.ref_fasta,
-    #         mapper_exe=self.smalt_exe,
-    #         logger=logger)
-
-    #     map_to_genome_ref_smalt(
-    #         mapping_ob=testmapping, ngsLib=testngs,
-    #         genome_fasta=self.ref_fasta,
-    #         cores=4, samtools_exe=self.samtools_exe,
-    #         smalt_exe=self.smalt_exe, score_minimum=48,
-    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-    #         step=3, k=5, logger=logger)
-    #     mapped_str = get_number_mapped(testmapping.pe_map_bam,
-    #                                    samtools_exe=self.samtools_exe)
-    #     nmapped = int(mapped_str[0:5])
-    #     nperc = float(mapped_str[-13:-8])
-    #     print("\nSMALT: number of PE reads mapped: %f2" % nmapped)
-    #     print("SMALT: percentage of PE reads mapped: %2f" % nperc)
-    #     ###
-    #     testngs2 = NgsLib(
-    #         name="test",
-    #         master=True,
-    #         make_dist=True,
-    #         readF=self.ref_Ffastq,
-    #         readR=self.ref_Rfastq,
-    #         readS0=self.ref_Rfastq,
-    #         ref_fasta=self.ref_fasta,
-    #         mapper_exe=self.smalt_exe,
-    #         logger=logger)
-
-    #     map_to_genome_ref_smalt(
-    #         mapping_ob=testmapping, ngsLib=testngs2,
-    #         genome_fasta=self.ref_fasta,
-    #         cores=4, samtools_exe=self.samtools_exe,
-    #         smalt_exe=self.smalt_exe, score_minimum=48,
-    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-    #         step=3, k=5, logger=logger)
-    #     mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
-    #                                     samtools_exe=self.samtools_exe)
-    #     mapped_str2 = get_number_mapped(testmapping.s_map_bam,
-    #                                     samtools_exe=self.samtools_exe)
-    #     nmapped2 = int(mapped_str2[0:5])
-    #     nperc2 = float(mapped_str2[-13:-8])
-    #     print("SMALT: number of s reads mapped: %f2" % nmapped2)
-    #     print("SMALT: percentage of s reads mapped: %f2" % nperc2)
-
-    #     ###
-    #     self.assertTrue(12500 < nmapped < 12680)
-    #     self.assertTrue(34.3 < nperc < 34.81)
-    #     ###
-    #     self.assertTrue(6400 < nmapped2 < 6500)
-    #     self.assertTrue(34.3 < nperc2 < 35.8)
-
     def test_parse_subassembly_return_code_0(self):
         gen = SeedGenome(
             max_iterations=1,
@@ -682,8 +566,6 @@ class riboSeedTestCase(unittest.TestCase):
                                           final_contigs_dir=self.test_dir,
                                           skip_copy=True,
                                           logger=logger)
-        # self.assertFalse(gen.loci_clusters[0].continue_iterating)
-        # self.assertFalse(gen.loci_clusters[0].keep_contigs)
 
     def test_parse_subassembly_return_code_2(self):
         gen = SeedGenome(
@@ -726,100 +608,6 @@ class riboSeedTestCase(unittest.TestCase):
                                       logger=logger)
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
         self.assertFalse(gen.loci_clusters[0].keep_contigs)
-
-    @unittest.skipIf(shutil.which("bwa") is None,
-                     "bwa executable not found, skipping." +
-                     "If this isnt an error from travis deployment, you " +
-                     "probably should install it")
-    def test_map_with_bwa(self):
-        # becasue multiple mapping are assingmed randomly (pseudorandomly?),
-        # this accepts a range of expected results
-        testmapping = LociMapping(
-            name="test",
-            iteration=1,
-            assembly_subdir=self.test_dir,
-            ref_fasta=self.ref_fasta,
-            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-        testngs = NgsLib(
-            name="test",
-            master=True,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.bwa_exe,
-            logger=logger)
-
-        map_to_genome_ref_bwa(
-            mapping_ob=testmapping, ngsLib=testngs,
-            genome_fasta=self.ref_fasta,
-            cores=4, samtools_exe=self.samtools_exe,
-            bwa_exe=self.bwa_exe, score_minimum=20,
-            logger=logger)
-        mapped_str = get_number_mapped(testmapping.pe_map_bam,
-                                       samtools_exe=self.samtools_exe)
-        nmapped = int(mapped_str[0:5])
-        nperc = float(mapped_str[-13:-8])
-        print("\nBWA: number of PE reads mapped: %f2" % nmapped)
-        print("BWA: percentage of PE reads mapped: %2f" % nperc)
-        ###
-        testngs2 = NgsLib(
-            name="test",
-            master=True,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            readS0=self.ref_Rfastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.bwa_exe,
-            logger=logger)
-
-        map_to_genome_ref_bwa(
-            mapping_ob=testmapping, ngsLib=testngs2,
-            genome_fasta=self.ref_fasta,
-            cores=4, samtools_exe=self.samtools_exe,
-            bwa_exe=self.bwa_exe, score_minimum=20,
-            logger=logger)
-        mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
-                                        samtools_exe=self.samtools_exe)
-        mapped_str2 = get_number_mapped(testmapping.s_map_bam,
-                                        samtools_exe=self.samtools_exe)
-        nmapped2 = int(mapped_str2[0:5])
-        nperc2 = float(mapped_str2[-13:-8])
-        print("BWA: number of s reads mapped: %f2" % nmapped2)
-        print("BWA: percentage of s reads mapped: %f2" % nperc2)
-
-        ###
-        self.assertTrue(13000 < nmapped < 14000)
-        self.assertTrue(35.8 < nperc < 37.4)
-        ###
-        self.assertTrue(6300 < nmapped2 < 7000)
-        self.assertTrue(35.0 < nperc2 < 36.8)
-
-    @unittest.skipIf(shutil.which("samtools") is None,
-                     "samtools executable not found, skipping." +
-                     "If this isnt an error from travis deployment, you " +
-                     "probably should install it")
-    def test_get_samtools_depths(self):
-        """test bam generated by using SMALT to map the
-        sample data reads (from the bam install check) to this reference
-        (e coli genome with simplified chromosome name, gi12345)
-        """
-        print("starting depth test")
-        depthdir = os.path.join(self.ref_dir, "samtools_depth_test_files")
-        # ref = os.path.join(depthdir, "test_ref.fasta")
-        test_bam = os.path.join(depthdir, "newref.bam")
-        region = (1, 10000000)
-        results = []
-        for i in [region]:
-            results.append(get_samtools_depths(
-                samtools_exe=self.samtools_exe,
-                bam=test_bam,
-                chrom="gi12345", start=region[0],
-                end=region[1],
-                region=None,
-                prep=True,
-                logger=logger))
-        # print(results)
-        self.assertEqual(round(results[0][1], 4), .9945)
 
     def test_check_fastqs_len_equal(self):
         failed = False
@@ -945,62 +733,6 @@ class riboSeedTestCase(unittest.TestCase):
     def test_partition_mapping(self):
         # this mostly does system calls; cant really test smoothlu
         pass
-
-    @unittest.skipIf(shutil.which("smalt") is None, "smalt executable not found, skipping."+
-                     "If this isnt an error from travis deployment, you probably "+
-                     "should install it")
-    def test_prepare_next_mapping(self):
-        gen = SeedGenome(
-            max_iterations=1,
-            genbank_path=self.ref_gb,
-            clustered_loci_txt=self.test_loci_file,
-            output_root=self.test_dir,
-            logger=logger)
-        testmapping = LociMapping(
-            name="test",
-            iteration=1,
-            assembly_subdir=self.test_dir,
-            ref_fasta=self.ref_fasta,
-            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-        testngs = NgsLib(
-            name="test",
-            master=True,
-            make_dist=True,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe,
-            logger=logger)
-        gen.master_ngs_ob = testngs
-        gen.loci_clusters = parse_clustered_loci_file(
-            filepath=gen.clustered_loci_txt,
-            gb_filepath=gen.genbank_path,
-            output_root=self.test_dir,
-            padding=1000,
-            circular=False,
-            logger=logger)
-        add_coords_to_clusters(seedGenome=gen,
-                               logger=logger)
-        gen.next_reference_path = gen.ref_fasta
-        #
-        for cluster in gen.loci_clusters:
-            cluster.master_ngs_ob = gen.master_ngs_ob
-
-        map_to_genome_ref_smalt(
-            mapping_ob=testmapping, ngsLib=testngs,
-            genome_fasta=self.ref_fasta,
-            cores=4, samtools_exe=self.samtools_exe,
-            smalt_exe=self.smalt_exe, score_minimum=48,
-            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-            step=3, k=5, logger=logger)
-        clu = gen.loci_clusters[0]
-        self.assertEqual(len(clu.mappings), 0)
-        prepare_next_mapping(
-            cluster=clu, seedGenome=gen, samtools_exe=self.samtools_exe,
-            flank=0,
-            logger=logger)
-        new_name = "NC_011751.1_cluster_{0}".format(clu.index)
-        self.assertEqual(clu.mappings[-1].name, new_name)
 
     def test_mapped_partition_cmds(self):
         gen = SeedGenome(
@@ -1228,6 +960,45 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertTrue(proceed)
         self.assertFalse(dont_proceed)
 
+    def test_samtools_depth_cmds_no_prep(self):
+        """ check cmds: with region, no prep
+        """
+        self.assertEqual(
+            (["samtools.iam sort test.bam > test_sorted.bam",
+              "samtools.iam index test_sorted.bam"],
+             "samtools.iam depth -r chrom1:33-99 test.bam"),
+            make_samtools_depth_cmds(
+                exe="samtools.iam",
+                bam="test.bam", chrom="", start="", end="",
+                region="chrom1:33-99", prep=False)
+        )
+
+    def test_samtools_depth_cmds_prep(self):
+        """ check cmds: with region and prep
+        """
+        self.assertEqual(
+            (["samtools.iam sort test.bam > test_sorted.bam",
+              "samtools.iam index test_sorted.bam"],
+             "samtools.iam depth -r chrom1:33-99 test_sorted.bam"),
+            make_samtools_depth_cmds(
+                exe="samtools.iam",
+                bam="test.bam", chrom="", start="", end="",
+                region="chrom1:33-99", prep=True)
+        )
+
+    def test_samtools_depth_cmds_coords(self):
+        """ check cmds: without region, no prep
+        """
+        self.assertEqual(
+            (["samtools.iam sort test.bam > test_sorted.bam",
+              "samtools.iam index test_sorted.bam"],
+             "samtools.iam depth -r chrom1:33-99 test.bam"),
+            make_samtools_depth_cmds(
+                exe="samtools.iam",
+                bam="test.bam", chrom="chrom1", start=33, end=99,
+                region=None, prep=False)
+        )
+
     def tearDown(self):
         """ delete temp files if no errors
         """
@@ -1235,5 +1006,342 @@ class riboSeedTestCase(unittest.TestCase):
             os.unlink(filename)
         pass
 
+
+
+@unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
+                 "Subprocess.call among other things wont run if tried " +
+                 " with less than python 3.5")
+class riboSeedDeep(unittest.TestCase):
+    """ tests for riboSeed.py
+    """
+    def setUp(self):
+        self.test_dir = os.path.join(os.path.dirname(__file__),
+                                     "output_riboseed_tests")
+        self.spades_dir = os.path.join(os.path.dirname(__file__),
+                                       "output_riboseed_tests",
+                                       "SPAdes_results")
+        self.ref_dir = os.path.join(os.path.dirname(__file__), "references")
+        self.ref_gb = os.path.join(self.ref_dir,
+                                   'NC_011751.1.gb')
+        self.ref_fasta = os.path.join(self.test_dir,
+                                      'cluster1.fasta')
+        self.good_contig = os.path.join(self.ref_dir,
+                                        'contigs.fasta')
+        self.short_contig = os.path.join(self.ref_dir,
+                                         'contigs.fasta')
+        self.ref_Ffastq = os.path.join(self.ref_dir,
+                                       'toy_reads1.fq')
+        self.ref_Rfastq = os.path.join(self.ref_dir,
+                                       'toy_reads2.fq')
+        self.ref_bam_prefix = os.path.join(self.ref_dir,
+                                           'test_bam_to_fastq')
+        self.smalt_exe = "smalt"
+        self.bwa_exe = "bwa"
+        self.samtools_exe = "samtools"
+        self.spades_exe = "spades.py"
+        self.quast_exe = "quast.py"
+        self.python2_7_exe = "python2"
+        self.test_estimation_file = os.path.join(self.test_dir,
+                                                 "est_distance.sam")
+        self.map_results_prefix = os.path.join(self.test_dir,
+                                               "test_mapping")
+        self.fastq_results_prefix = os.path.join(self.test_dir,
+                                                 "test_bam_to_fastq")
+        self.test_loci_file = os.path.join(os.path.dirname(__file__),
+                                           str("references" + os.path.sep +
+                                               'grouped_loci_reference.txt'))
+        self.args = Namespace(skip_contol=False, kmers="21,33,55,77,99",
+                              spades_exe="spades.py",
+                              quast_exe="python2.7 quast.py",
+                              cores=2)
+        self.cores = 2
+        self.maxDiff = 2000
+        self.to_be_removed = []
+        if not os.path.exists(self.test_dir):
+            os.makedirs(self.test_dir, exist_ok=True)
+        self.copy_fasta()
+
+    def copy_fasta(self):
+        """ make a disposable copy
+        """
+        shutil.copy(os.path.join(self.ref_dir, 'cluster1.fasta'),
+                    self.ref_fasta)
+        self.to_be_removed.append(self.ref_fasta)
+
+    @unittest.skipIf(shutil.which("bwa") is None or
+                     shutil.which("quast.py") is None or
+                     shutil.which("smalt") is None or
+                     shutil.which("python2.7") is None or
+                     shutil.which("spades.py") is None,
+                     "bwa executable not found, skipping.If this isnt an " +
+                     "error from travis deployment, you probably " +
+                     "should install it")
+    def test_Exes_(self):
+        """check with  executable"""
+        test_exes = Exes(samtools=self.samtools_exe,
+                         quast=self.quast_exe,
+                         python2_7=self.python2_7_exe,
+                         smalt=self.smalt_exe,
+                         spades=self.spades_exe,
+                         bwa=self.bwa_exe,
+                         method="bwa")
+        self.assertEqual(test_exes.mapper, shutil.which(test_exes.bwa))
+
+    # @unittest.skipIf(
+    #     shutil.which("smalt") is None,
+    #     "SMALT executable not found, skipping."+
+    #     "If this isnt an error from travis deployment, you probably "+
+    #     "should install it")
+    # def test_estimate_distances_smalt(self):
+    #     """ test estimate insert disances
+    #     """
+    #     if os.path.exists(self.test_estimation_file):
+    #         print("warning! existing distance estimation file!")
+    #     est_file = estimate_distances_smalt(outfile=self.test_estimation_file,
+    #                                         smalt_exe=self.smalt_exe,
+    #                                         ref_genome=self.ref_fasta,
+    #                                         fastq1=self.ref_Ffastq,
+    #                                         fastq2=self.ref_Rfastq,
+    #                                         cores=1,
+    #                                         logger=logger)
+    #     ref_smi_md5 = "a444ccbcb486a8af29736028640e87cf"  # determined manually
+    #     ref_sma_md5 = "4ce0c8b453f2bdabd73eaf8b5ee4f376"  # determined manually
+    #     ref_mapping_len = 9271  # mapping doesnt have exact order, so cant md5
+    #     self.assertEqual(ref_smi_md5, md5(str(est_file + ".smi")))
+    #     self.assertEqual(ref_sma_md5, md5(str(est_file + ".sma")))
+    #     self.assertEqual(ref_mapping_len, file_len(est_file))
+
+    # @unittest.skipIf(
+    #     shutil.which("smalt") is None,
+    #     "smalt executable not found, skipping."+
+    #     "If this isnt an error from travis deployment, you probably "+
+    #     "should install it")
+    # def test_map_with_smalt(self):
+    #     # becasue multiple mapping are assingmed randomly (pseudorandomly?),
+    #     # this accepts a range of expected results
+    #     testmapping = LociMapping(
+    #         name="test",
+    #         iteration=1,
+    #         assembly_subdir=self.test_dir,
+    #         ref_fasta=self.ref_fasta,
+    #         mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+    #     testngs = NgsLib(
+    #         name="test",
+    #         master=True,
+    #         make_dist=True,
+    #         readF=self.ref_Ffastq,
+    #         readR=self.ref_Rfastq,
+    #         ref_fasta=self.ref_fasta,
+    #         mapper_exe=self.smalt_exe,
+    #         logger=logger)
+
+    #     map_to_genome_ref_smalt(
+    #         mapping_ob=testmapping, ngsLib=testngs,
+    #         genome_fasta=self.ref_fasta,
+    #         cores=4, samtools_exe=self.samtools_exe,
+    #         smalt_exe=self.smalt_exe, score_minimum=48,
+    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+    #         step=3, k=5, logger=logger)
+    #     mapped_str = get_number_mapped(testmapping.pe_map_bam,
+    #                                    samtools_exe=self.samtools_exe)
+    #     nmapped = int(mapped_str[0:5])
+    #     nperc = float(mapped_str[-13:-8])
+    #     print("\nSMALT: number of PE reads mapped: %f2" % nmapped)
+    #     print("SMALT: percentage of PE reads mapped: %2f" % nperc)
+    #     ###
+    #     testngs2 = NgsLib(
+    #         name="test",
+    #         master=True,
+    #         make_dist=True,
+    #         readF=self.ref_Ffastq,
+    #         readR=self.ref_Rfastq,
+    #         readS0=self.ref_Rfastq,
+    #         ref_fasta=self.ref_fasta,
+    #         mapper_exe=self.smalt_exe,
+    #         logger=logger)
+
+    #     map_to_genome_ref_smalt(
+    #         mapping_ob=testmapping, ngsLib=testngs2,
+    #         genome_fasta=self.ref_fasta,
+    #         cores=4, samtools_exe=self.samtools_exe,
+    #         smalt_exe=self.smalt_exe, score_minimum=48,
+    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+    #         step=3, k=5, logger=logger)
+    #     mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
+    #                                     samtools_exe=self.samtools_exe)
+    #     mapped_str2 = get_number_mapped(testmapping.s_map_bam,
+    #                                     samtools_exe=self.samtools_exe)
+    #     nmapped2 = int(mapped_str2[0:5])
+    #     nperc2 = float(mapped_str2[-13:-8])
+    #     print("SMALT: number of s reads mapped: %f2" % nmapped2)
+    #     print("SMALT: percentage of s reads mapped: %f2" % nperc2)
+
+    #     ###
+    #     self.assertTrue(12500 < nmapped < 12680)
+    #     self.assertTrue(34.3 < nperc < 34.81)
+    #     ###
+    #     self.assertTrue(6400 < nmapped2 < 6500)
+    #     self.assertTrue(34.3 < nperc2 < 35.8)
+
+    @unittest.skipIf(shutil.which("bwa") is None,
+                     "bwa executable not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
+    def test_map_with_bwa(self):
+        # becasue multiple mapping are assingmed randomly (pseudorandomly?),
+        # this accepts a range of expected results
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        testngs = NgsLib(
+            name="test",
+            master=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.bwa_exe,
+            logger=logger)
+
+        map_to_genome_ref_bwa(
+            mapping_ob=testmapping, ngsLib=testngs,
+            genome_fasta=self.ref_fasta,
+            cores=4, samtools_exe=self.samtools_exe,
+            bwa_exe=self.bwa_exe, score_minimum=20,
+            logger=logger)
+        mapped_str = get_number_mapped(testmapping.pe_map_bam,
+                                       samtools_exe=self.samtools_exe)
+        nmapped = int(mapped_str[0:5])
+        nperc = float(mapped_str[-13:-8])
+        print("\nBWA: number of PE reads mapped: %f2" % nmapped)
+        print("BWA: percentage of PE reads mapped: %2f" % nperc)
+        ###
+        testngs2 = NgsLib(
+            name="test",
+            master=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            readS0=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.bwa_exe,
+            logger=logger)
+
+        map_to_genome_ref_bwa(
+            mapping_ob=testmapping, ngsLib=testngs2,
+            genome_fasta=self.ref_fasta,
+            cores=4, samtools_exe=self.samtools_exe,
+            bwa_exe=self.bwa_exe, score_minimum=20,
+            logger=logger)
+        mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
+                                        samtools_exe=self.samtools_exe)
+        mapped_str2 = get_number_mapped(testmapping.s_map_bam,
+                                        samtools_exe=self.samtools_exe)
+        nmapped2 = int(mapped_str2[0:5])
+        nperc2 = float(mapped_str2[-13:-8])
+        print("BWA: number of s reads mapped: %f2" % nmapped2)
+        print("BWA: percentage of s reads mapped: %f2" % nperc2)
+
+        ###
+        self.assertTrue(13000 < nmapped < 14000)
+        self.assertTrue(35.8 < nperc < 37.4)
+        ###
+        self.assertTrue(6300 < nmapped2 < 7000)
+        self.assertTrue(35.0 < nperc2 < 36.8)
+
+    @unittest.skipIf(shutil.which("samtools") is None,
+                     "samtools executable not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
+    def test_get_samtools_depths(self):
+        """test bam generated by using SMALT to map the
+        sample data reads (from the bam install check) to this reference
+        (e coli genome with simplified chromosome name, gi12345)
+        """
+        print("starting depth test")
+        depthdir = os.path.join(self.ref_dir, "samtools_depth_test_files")
+        # ref = os.path.join(depthdir, "test_ref.fasta")
+        test_bam = os.path.join(depthdir, "newref.bam")
+        region = (1, 10000000)
+        results = []
+        for i in [region]:
+            results.append(get_samtools_depths(
+                samtools_exe=self.samtools_exe,
+                bam=test_bam,
+                chrom="gi12345", start=region[0],
+                end=region[1],
+                region=None,
+                prep=True,
+                logger=logger))
+        # print(results)
+        self.assertEqual(round(results[0][1], 4), .9945)
+
+    @unittest.skipIf(shutil.which("smalt") is None, "smalt executable not found, skipping."+
+                     "If this isnt an error from travis deployment, you probably "+
+                     "should install it")
+    def test_prepare_next_mapping(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        testngs = NgsLib(
+            name="test",
+            master=True,
+            make_dist=True,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.smalt_exe,
+            logger=logger)
+        gen.master_ngs_ob = testngs
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=1000,
+            circular=False,
+            logger=logger)
+        add_coords_to_clusters(seedGenome=gen,
+                               logger=logger)
+        gen.next_reference_path = gen.ref_fasta
+        #
+        for cluster in gen.loci_clusters:
+            cluster.master_ngs_ob = gen.master_ngs_ob
+
+        map_to_genome_ref_smalt(
+            mapping_ob=testmapping, ngsLib=testngs,
+            genome_fasta=self.ref_fasta,
+            cores=4, samtools_exe=self.samtools_exe,
+            smalt_exe=self.smalt_exe, score_minimum=48,
+            scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
+            step=3, k=5, logger=logger)
+        clu = gen.loci_clusters[0]
+        self.assertEqual(len(clu.mappings), 0)
+        prepare_next_mapping(
+            cluster=clu, seedGenome=gen, samtools_exe=self.samtools_exe,
+            flank=0,
+            logger=logger)
+        new_name = "NC_011751.1_cluster_{0}".format(clu.index)
+        self.assertEqual(clu.mappings[-1].name, new_name)
+
+    def tearDown(self):
+        """ delete temp files if no errors
+        """
+        for filename in self.to_be_removed:
+            os.unlink(filename)
+        pass
+
+
 if __name__ == '__main__':
+    print("in a rush? run:  nosetests --with-coverage " +
+          "tests/test_riboSeed.py:riboSeedShallow -v --cover-package")
     unittest.main()
