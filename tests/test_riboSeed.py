@@ -35,7 +35,7 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     make_spades_empty_check, get_samtools_depths, \
     decide_proceed_to_target, get_rec_from_generator, \
     check_kmer_vs_reads, make_samtools_depth_cmds, \
-    parse_samtools_depth_results
+    parse_samtools_depth_results, make_modest_spades_cmd
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, stitch_together_target_regions, \
@@ -101,16 +101,17 @@ class riboSeedShallow(unittest.TestCase):
         if not os.path.exists(self.test_dir):
             os.makedirs(self.test_dir, exist_ok=True)
         self.copy_fasta()
+        self.print_headsup()
 
     def copy_fasta(self):
-        """ make a disposable copy
+        """ make a disposable copy of the cluster fasta
         """
         shutil.copy(os.path.join(self.ref_dir, 'cluster1.fasta'),
                     self.ref_fasta)
         self.to_be_removed.append(self.ref_fasta)
 
-    def test_print_headsup(self):
-        """ This is called a test so it only gets called once
+    def print_headsup(self):
+        """ Warn about some expected error messages
         """
         print("""
         Thanks for running these tests!! You will see several logger warning
@@ -159,7 +160,7 @@ class riboSeedShallow(unittest.TestCase):
                  method="bowtie")
 
     def test_Exes_bad_attribute(self):
-        """ check bad instantiation """
+        """ check bad instantiation of Exes object"""
         with self.assertRaises(AssertionError):
             Exes(samtools=None,
                  quast=self.quast_exe,
@@ -170,7 +171,8 @@ class riboSeedShallow(unittest.TestCase):
                  method="bwa")
 
     def test_Exes_bad_exe(self):
-        """check with nonexistant executable"""
+        """check Exes with nonexistant executable
+        """
         with self.assertRaises(ValueError):
             Exes(samtools="nottheactualsamtools_exe",
                  quast=self.quast_exe,
@@ -181,6 +183,8 @@ class riboSeedShallow(unittest.TestCase):
                  method="bwa")
 
     def test_NgsLib(self):
+        """ Can we create an NgsLib object correctly
+        """
         # make a non-master object
         testlib_pe_s = NgsLib(
             name="test",
@@ -257,6 +261,8 @@ class riboSeedShallow(unittest.TestCase):
         self.assertTrue(os.path.isfile(self.ref_Rfastq))
 
     def test_SeedGenome(self):
+        """ Can we create a seedGenome object
+        """
         with open(self.ref_gb, "r") as gbf:
             rec = next(SeqIO.parse(gbf, "genbank"))
         gen = SeedGenome(
@@ -271,6 +277,7 @@ class riboSeedShallow(unittest.TestCase):
         self.assertEqual(tuple(gen.seq_records)[0].id, rec.id)
 
     def test_SeedGenome_bad_instatiation(self):
+        """ Does SeedGenome fail when missing attributes """
         with self.assertRaises(ValueError):
             SeedGenome(
                 max_iterations=2,
@@ -280,6 +287,8 @@ class riboSeedShallow(unittest.TestCase):
                 output_root=None)
 
     def test_LociMapping(self):
+        """ Does LociMapping instatiate correctly
+        """
         with self.assertRaises(ValueError):
             LociMapping(
                 name=None,
@@ -292,6 +301,8 @@ class riboSeedShallow(unittest.TestCase):
         self.assertTrue(os.path.isdir(testmapping.mapping_subdir))
 
     def test_check_kmer_bad_input(self):
+        """ does kmer checker fail with a bad input
+        """
         with self.assertRaises(ValueError):
             # non integer
             check_kmer_vs_reads(k="33,22,55,spinach,77",
@@ -302,41 +313,47 @@ class riboSeedShallow(unittest.TestCase):
                                 readlen=50, min_diff=2, logger=logger)
 
     def test_check_kmer_skip_auto(self):
+        """ does kmer checker ignore 'auto' properly
+        """
         self.assertEqual("auto",
                          check_kmer_vs_reads(k="auto",
                                              readlen=50,
                                              min_diff=2, logger=logger))
 
     def test_check_kmer_filter_big(self):
-        # remove too big ks
+        """ does kmer checker remove too big ks
+        """
         self.assertEqual("21,33",
                          check_kmer_vs_reads(k="21,33,55,77",
                                              readlen=50, min_diff=2,
                                              logger=logger))
 
     def test_check_kmer_filter_close(self):
-        # remove too close k
+        """ does kmer checker remove too close k
+        """
         self.assertEqual("21,33,55",
                          check_kmer_vs_reads(k="21,33,55,77",
                                              readlen=79, min_diff=2,
                                              logger=logger))
 
     def test_check_kmer_filter_even(self):
-        # remove even k
+        """ does kmer checker remove even k
+        """
         self.assertEqual("21,33,55",
                          check_kmer_vs_reads(k="21,33,55,77,90",
                                              readlen=79, min_diff=2,
                                              logger=logger))
 
     def test_check_kmer_good(self):
-        # remove even k
+        """ does kmer checker work when all is well
+        """
         self.assertEqual("21,33,55,77,127",
                          check_kmer_vs_reads(k="21,33,55,77,127",
                                              readlen=250, min_diff=2,
                                              logger=logger))
 
     def test_get_smalt_full_install_cmds(self):
-        """
+        """ can we make the commands to check smalt instaltion
         """
         smalttestdir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                     "sample_data",
@@ -356,7 +373,8 @@ class riboSeedShallow(unittest.TestCase):
             self.assertEqual(cmd, check_cmds_ref[index])
 
     def test_get_rec_from_generator(self):
-        """ tests get_rec_from_generator, which replaces
+        """ can we get a record of interest from a SeqIO generator
+        tests get_rec_from_generator, which replaces
         get_genbank_rec_from_multigb
         """
         recsgen = None
@@ -381,6 +399,8 @@ class riboSeedShallow(unittest.TestCase):
                                    gen=recsgen)
 
     def test_add_coords_to_SeedGenome(self):
+        """ can we parse a loci_coords file and add to seedGenome
+        """
         gen = SeedGenome(
             max_iterations=1,
             genbank_path=self.ref_gb,
@@ -902,12 +922,15 @@ class riboSeedShallow(unittest.TestCase):
         final_cmds, quast_reports = \
             get_final_assemblies_cmds(
                 ref_as_contig="trusted",
+                cores=4,
+                serialize=True,
+                memory=8,
                 seedGenome=gen, exes=test_exes,
                 skip_control=False, kmers="33,77,99", logger=logger)
         final_spades_cmds_ref = [
             str(
                 "if [ -s {1} ] && [ -s {2} ] ; then " +
-                "{0} --careful -k 33,77,99 --pe1-1 {1} " +
+                "{0} -t 4 -m 8 --careful -k 33,77,99 --pe1-1 {1} " +
                 "--pe1-2 {2} --trusted-contigs {3}  -o {4} " +
                 "; else echo 'input lib not found, " +
                 "skipping this SPAdes call' ; fi"
@@ -917,7 +940,7 @@ class riboSeedShallow(unittest.TestCase):
                 os.path.join(self.test_dir, "final_de_fere_novo_assembly")),
             str(
                 "if [ -s {1} ] && [ -s {2} ] ; then " +
-                "{0} --careful -k 33,77,99 --pe1-1 {1} " +
+                "{0} -t 4 -m 8 --careful -k 33,77,99 --pe1-1 {1} " +
                 "--pe1-2 {2}   -o {3} " +
                 "; else echo 'input lib not found, " +
                 "skipping this SPAdes call' ; fi"
@@ -998,6 +1021,30 @@ class riboSeedShallow(unittest.TestCase):
                 bam="test.bam", chrom="chrom1", start=33, end=99,
                 region=None, prep=False)
         )
+
+    def test_make_modest_spades_cmd(self):
+        """ test serialized allocation"""
+        cmd = "spades.py --careful some args and stuff"
+        self.assertEqual(
+            "spades.py -t 4 -m 8 --careful some args and stuff",
+            make_modest_spades_cmd(cmd=cmd, cores=4, memory=8,
+                                   serialize=True, logger=logger))
+
+    def test_make_modest_spades_cmd_parallel(self):
+        """ test parallel allocation"""
+        cmd = "spades.py --careful some args and stuff"
+        self.assertEqual(
+            "spades.py -t 1 -m 2 --careful some args and stuff",
+            make_modest_spades_cmd(cmd=cmd, cores=4, memory=8,
+                                   serialize=False, logger=logger))
+
+    def test_make_modest_spades_cmd_odd(self):
+        """ test parallel allocation, odd values"""
+        cmd = "spades.py --careful some args and stuff"
+        self.assertEqual(
+            "spades.py -t 1 -m 3 --careful some args and stuff",
+            make_modest_spades_cmd(cmd=cmd, cores=3, memory=11,
+                                   serialize=False, logger=logger))
 
     def tearDown(self):
         """ delete temp files if no errors
@@ -1234,7 +1281,7 @@ class riboSeedDeep(unittest.TestCase):
             cores=4, samtools_exe=self.samtools_exe,
             bwa_exe=self.bwa_exe, score_minimum=20,
             logger=logger)
-        mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
+        mapped_str2g = get_number_mapped(testmapping.pe_map_bam,
                                         samtools_exe=self.samtools_exe)
         mapped_str2 = get_number_mapped(testmapping.s_map_bam,
                                         samtools_exe=self.samtools_exe)

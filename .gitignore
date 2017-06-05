@@ -116,3 +116,8 @@ manuscript_results/simulated_genome/seed_concatenated/
 manuscript_results/simulated_reads_kleb/reads/
 manuscript_results/simulated_reads_coli/reads/
 manuscript_results/simulated_genome/seed_kleb_concatenated_coli_reads/
+tests/output_*/
+tests/manuscript_*/
+manuscript_*/
+docs/.sass-cache/
+docs/_site/

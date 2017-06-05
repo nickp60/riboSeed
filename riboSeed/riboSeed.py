@@ -2043,6 +2043,9 @@ def add_coords_to_clusters(seedGenome, logger=None):
 
 def get_final_assemblies_cmds(seedGenome, exes,
                               ref_as_contig,
+                              cores,
+                              memory,
+                              serialize,
                               skip_control=True,
                               kmers="21,33,55,77,99", logger=None):
     """make cmds for runnning of SPAdes and QUAST final assembly and analysis.
@@ -2087,7 +2090,9 @@ def get_final_assemblies_cmds(seedGenome, exes,
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
             k=kmers, spades_exe=exes.spades, logger=logger)
-
+        modest_spades_cmd = make_modest_spades_cmd(
+            cmd=spades_cmd, cores=cores, memory=memory,
+            serialize=serialize, logger=logger)
         ref = str("-R %s" % seedGenome.ref_fasta)
         quast_cmd = str("{0} {1} {2} {3} -o {4}").format(
             exes.python2_7,
@@ -2097,7 +2102,7 @@ def get_final_assemblies_cmds(seedGenome, exes,
             os.path.join(seedGenome.output_root, str("quast_" + j)))
         quast_reports.append(os.path.join(seedGenome.output_root,
                                           str("quast_" + j), "report.tsv"))
-        cmd_list.append([spades_cmd, quast_cmd])
+        cmd_list.append([modest_spades_cmd, quast_cmd])
     return(cmd_list, quast_reports)
 
 
@@ -2332,6 +2337,35 @@ def reportRegionDepths(inp, logger):
                         "\tIter %i -- 5' coverage: %.2f  3' coverage %.2f" % (
                             itidx, cluster[1], cluster[2]))
     return(report_list)
+
+
+def make_modest_spades_cmd(cmd, cores, memory, serialize=False, logger=None):
+    """ adjust spades commands to use set amounts of cores and memory
+    returns the command, split on "--careful", cause why would you run
+    SPAdes with "--reckless"?
+    """
+    assert logger is not None, "Must use logging"
+    if serialize:
+        cmdA, cmdB = cmd.split("--careful")
+        logger.info("Allocating SPAdes %dgb of memory", memory)
+        return "{0}-t {1} -m {2} --careful{3}".format(
+            cmdA,
+            cores,
+            memory,
+            cmdB)
+    else:
+        # make sure spades doesnt hog processors or ram
+        mem_each = int(memory / cores)  # should be floor
+        logger.info(
+            "Allocating SPAdes %dgb of memory for each of %d cores",
+            memory, cores)
+        cmdA, cmdB = cmd.split("--careful")
+        return "{0}-t {1} -m {2} --careful{3}".format(
+            cmdA,
+            1,
+            mem_each,
+            cmdB)
+
 
 if __name__ == "__main__":
     args = get_args()
@@ -2749,27 +2783,11 @@ if __name__ == "__main__":
                 as_paired=False, prelim=True,
                 k=checked_prek,
                 spades_exe=sys_exes.spades, logger=logger)
-        # setting some thread limits here
-            if args.serialize:
-                cmdA, cmdB = spades_cmd.split("--careful")
-                logger.info("Allocating SPAdes %dgb of memory", args.memory)
-                cmdlist.append("{0} -t {1} -m {2} {3}".format(
-                    cmdA,
-                    args.cores,
-                    args.memory,
-                    cmdB))
-            else:
-                # make sure spades doesnt hog processors or ram
-                mem_each = int(args.memory / args.cores)  # should be floor
-                logger.info(
-                    "Allocating SPAdes %dgb of memory for each of %d cores",
-                    args.memory, args.cores)
-                cmdA, cmdB = spades_cmd.split("--careful")
-                cmdlist.append("{0} -t {1} -m {2} {3}".format(
-                    cmdA,
-                    1,
-                    mem_each,
-                    cmdB))
+            # setting some thread limits here
+            modest_spades_cmd = make_modest_spades_cmd(
+                cmd=spades_cmd, cores=args.cores, memory=args.memory,
+                serialize=args.serialize, logger=logger)
+            cmdlist.append(modest_spades_cmd)
 
             cluster.mappings[-1].mapped_ngslib = new_ngslib
             extract_convert_assemble_cmds.append(cmdlist)
@@ -2903,11 +2921,14 @@ if __name__ == "__main__":
     # run final contigs
     spades_quast_cmds, quast_reports = get_final_assemblies_cmds(
         seedGenome=seedGenome, exes=sys_exes,
+        cores=args.cores,
+        memory=args.memory,
+        serialize=args.serialize,
         ref_as_contig=ref_as_contig,
         skip_control=args.skip_control, kmers=checked_k, logger=logger)
 
     if args.serialize:
-        logger.warning("running without multiprocessing!")
+        logger.info("running without multiprocessing!")
         # unpack nested spades quast list
         for cmd in [j for i in spades_quast_cmds for j in i]:
             logger.debug(cmd)

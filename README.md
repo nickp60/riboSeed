@@ -97,7 +97,7 @@ If not using `riboScan.py` or if not working with a bacterial genome, you will n
 
 NOTE: the format of the output text file is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropriate. The format is `genome_sequence_id locus_tag1:locus_tag2`, where each line represents a cluster. See example below, where 14 rRNAs are clustered into 6 groups:
 
-NOTE 2: In order to streamline things, as of version 0.0.3 there will be a commented header line with the feature type in the format "#$ FEATURE <featuretype>", such as "#S FEATURE rRNA".
+NOTE 2: In order to streamline things, as of version 0.0.3 there will be a commented header line with the feature type in the format "#$ FEATURE <featuretype>", such as `#$ FEATURE rRNA`.
 
 ```
 #$ FEATURE rRNA
@@ -438,16 +438,16 @@ The tests for the module can be found under the `tests` directory. I run them wi
 #### From Pypi (recommended)
 riboSeed is on Pypi, so you can install with pip, preferably within a virtualenv (recommended):
 
-`virtualenv -p python3.5 venv-riboSeed`
-`source venv-riboSeed/bin/activate`
-`pip3.5 install riboSeed`
+```virtualenv -p python3.5 venv-riboSeed
+source venv-riboSeed/bin/activate
+pip3.5 install riboSeed```
 
 
 #### From TestPypi
 To install the bleeding-edge version, install from testpypi:
-`virtualenv -p python3.5 venv-riboSeed`
-`source venv-riboSeed/bin/activate`
-`pip install --extra-index-url https://testpypi.python.org/pypi riboSeed`
+```virtualenv -p python3.5 venv-riboSeed
+source venv-riboSeed/bin/activate
+pip install --extra-index-url https://testpypi.python.org/pypi riboSeed```
 
 #### From GitHub
 You can also clone this repository, and run `python3.5 setup.py install`.
@@ -483,7 +483,6 @@ riboSnag.py
 * PRANK or Mafft
 * BLAST+ suite
 * Barrnap (must be 0.7 or above)
-** note that barrnap has certain Perl requirements that may not be included on your machine.  Ensure barrnap runs fine before trying riboSnag.py
 
 riboSeed.py
 
@@ -492,6 +491,7 @@ riboSeed.py
 * SAMTools (must be 1.3.1 or above)
 * QUAST (tested with 4.1)
 
+NOTE: barrnap has certain Perl requirements that may not be included on your machine. Ensure barrnap runs fine before trying riboSnag.py.  Or try [python barrnap](https://github.com/nickp60/barrnap/).
 <!-- ## Note on installation of SMALT -->
 
 <!-- Must have bambamc installed! If you get an error as follows, -->
