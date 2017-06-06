@@ -149,20 +149,34 @@ def test1(ax):
 
 mycolors = {
     "pinkish": mpl.colors.ColorConverter().to_rgba(
-        "#ff4c05", alpha=0.2),
+        "#ff4c05", alpha=1),
     "redish": mpl.colors.ColorConverter().to_rgba(
-        "#ff4c05", alpha=0.8),
+        "#ff4c05", alpha=1),
     "yellish": mpl.colors.ColorConverter().to_rgba(
-        "#FFFB07", alpha=0.2),
+        "#FFFB07", alpha=1),
     "greenish": mpl.colors.ColorConverter().to_rgba(
-        "#04FF08", alpha=0.2),
+        "#04FF08", alpha=1),
     "bluish": mpl.colors.ColorConverter().to_rgba(
-        "#06B9FF", alpha=0.2),
+        "#06B9FF", alpha=1),
     "greyish": mpl.colors.ColorConverter().to_rgba(
-        "#6505FF", alpha=0.2),
+        "#6505FF", alpha=1),
     "clear": mpl.colors.ColorConverter().to_rgba(
-        "#FF012F", alpha=0.0),
+        "#FF012F", alpha=0),
 }
+
+
+bgcols = {
+    "blue": mpl.colors.ColorConverter().to_rgba(
+        "#6795A6", alpha=0.5),
+    "green": mpl.colors.ColorConverter().to_rgba(
+        "#5EA662", alpha=0.5),
+    "yellow": mpl.colors.ColorConverter().to_rgba(
+        "#EBE418", alpha=0.5),
+    "purle": mpl.colors.ColorConverter().to_rgba(
+        "#EB87A3", alpha=0.5),
+    "red": mpl.colors.ColorConverter().to_rgba(
+        "#EB7D7D", alpha=0.5),
+    }
 
 
 def parseBbcols(filelist):
@@ -170,8 +184,6 @@ def parseBbcols(filelist):
     """
     comps_list = []
     for i, f in enumerate(filelist):
-        if i == 0:
-            continue
         with open(f, "r") as infile:
             temp = [x.strip().split("\t") for x in infile.readlines()]
             temp2 = []
@@ -180,8 +192,6 @@ def parseBbcols(filelist):
                 # temp = [int(x) for x in [y for y in temp[1:len(temp)]]]
         comps_list.append(temp2)  # get rid of header
     return (comps_list)
-
-
 
 
 def plot_mauve_compare(refgb,
@@ -196,40 +206,77 @@ def plot_mauve_compare(refgb,
         "must have same amount of assemblies as bbcols"
     with open(refgb, "r") as rg:
         ref_recs = list(SeqIO.parse(rg, "genbank"))
-
+    assembly_lens
+    # for seq in assembly_list:
+    #     with open(seq, "r") as inseq:
+    #         assembly_lens = [len(x) for x in list(SeqIO.parse(
     bbcols = parseBbcols(bbcols_list)
     npanels = len(assembly_list) + 1
     ref_combined_len = sum([len(x) for x in ref_recs]) + bufferlen
     print(len(ref_recs[0]))
     print(ref_combined_len)
-    fig, axX = plt.subplots(npanels, 1, sharex=True,
-                            gridspec_kw={
-                                'height_ratios': [1 for x in range(npanels)]})
-    axX[0].set_title(title, y=1.08)
+    fig, ax = plt.subplots(1, 1)
+    ax.set_title(title, y=1.08)
     relheight = ref_combined_len * aspect
-    relheighteach = relheight / npanels
+    coding_height = .05 * relheight
+    centers = [
+        (relheight / float(npanels + 1)) +
+        ((relheight / float(npanels + 1)) * x)
+        for x in range(npanels)]
+    centers.reverse()
+    print(centers)
     xmin, xmax = 0, ref_combined_len
-    ymin, ymax = relheighteach * .5, - relheighteach * .5
-    for ax in axX:
-        ax.set_xlim([xmin, xmax])
-        ax.set_ylim([ymin, ymax])
+    ymin, ymax = 0, relheight
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
     # yjust = -.1
+    #  plot the color shadings
+    unused_cols = ["blue", "green", "yellow", "purple", "red"]
+    for i, bblist in enumerate(bbcols):
+        for As, Ae, Bs, Be in bblist:
+            if (Bs == 0 and Be == 0) or \
+               (As == 0 and Ae == 0):
+                continue
+            verts = [
+                (Bs, centers[i + 1]),  # left, bottom
+                (As, centers[0]),  # left, top
+                (Ae, centers[0]),  # right, top
+                (Be, centers[i + 1]),  # right, bottom
+                (Bs, centers[i + 1]),  # ignored
+            ]
+
+            codes = [mpl.path.Path.MOVETO,
+                     mpl.path.Path.LINETO,
+                     mpl.path.Path.LINETO,
+                     mpl.path.Path.LINETO,
+                     mpl.path.Path.CLOSEPOLY]
+
+            path = mpl.path.Path(verts, codes)
+
+            patch = patches.PathPatch(path,
+                                      facecolor=bgcols.get(unused_cols[0]),
+                                      edgecolor=mycolors.get("clear"),
+                                      lw=2)
+            ax.add_patch(patch)
+        unused_cols.pop(0)
+
     # add annotations
     last_chrom_end = 0
     for record in ref_recs:
         # coding sequence
+        print(centers[0] * .005)
         coding_box = FancyBboxPatch(
-            (last_chrom_end, - relheighteach * .05),
-            len(record), relheighteach * .1,
-            boxstyle="round,pad=0,rounding_size=" + str(relheighteach / 100),
+            (last_chrom_end, centers[0] - coding_height / 2),
+            len(record), coding_height,
+            boxstyle="round,pad=0,rounding_size=" + str(centers[0] / 50),
             mutation_aspect=.5,
             # mutation_scale=.5,
             fc=mycolors['greyish'],
             ec=mycolors['clear']
         )
         buffer_box = FancyBboxPatch(
-            (last_chrom_end + len(record), - relheighteach * .05),
-            last_chrom_end + len(record) + bufferlen, relheighteach * .1,
+            (last_chrom_end + len(record), centers[0] - coding_height / 2),
+            last_chrom_end + len(record) + bufferlen, coding_height,
             boxstyle="round,pad=0,rounding_size=0",
             mutation_aspect=.5,
             # mutation_scale=.5,
@@ -237,8 +284,8 @@ def plot_mauve_compare(refgb,
             ec=mycolors['clear']
         )
         last_chrom_end = last_chrom_end + len(record) + bufferlen
-        axX[0].add_patch(coding_box)
-        axX[0].add_patch(buffer_box)
+        ax.add_patch(coding_box)
+        ax.add_patch(buffer_box)
         for i, feature in enumerate(record.features):
             if feature.type != "rRNA" and i == 0:
                 #Exclude this feature
@@ -246,16 +293,17 @@ def plot_mauve_compare(refgb,
             feat_len = \
                 feature.location.end.position - feature.location.start.position
             anno_box = FancyBboxPatch(
-                (feature.location.start.position, - relheighteach * .1),
-                feat_len, relheighteach * .2,
-                boxstyle="round,pad=0,rounding_size=" + str(feat_len / 3),
+                (feature.location.start.position,
+                 centers[0] - coding_height),
+                feat_len, coding_height * 2,
+                boxstyle="round,pad=0,rounding_size=" + str(feat_len / 2),
                 mutation_aspect=.5,
                 # mutation_scale=.5,
                 fc=mycolors['redish'],
                 ec=mycolors['redish']
             )
 
-            axX[0].add_patch(anno_box)
+            ax.add_patch(anno_box)
 
     for i in range(npanels):
     # for each assembly
@@ -267,17 +315,17 @@ def plot_mauve_compare(refgb,
         for record in contigs:
 
             coding_box = FancyBboxPatch(
-                (last_contig_end, - relheighteach * .05),
-                len(record), relheighteach * .1,
-                boxstyle="round,pad=0,rounding_size=" + str(relheighteach / 100),
+                (last_contig_end, centers[i] - coding_height / 2),
+                len(record), coding_height,
+                boxstyle="round,pad=0,rounding_size=" + str(centers[i] / 100),
                 mutation_aspect=.5,
                 # mutation_scale=.5,
                 fc=mycolors['greyish'],
                 ec=mycolors['clear']
             )
             buffer_box = FancyBboxPatch(
-                (last_contig_end + len(record), - relheighteach * .05),
-                last_contig_end + len(record) + bufferlen, relheighteach * .1,
+                (last_contig_end + len(record), centers[i] - coding_height / 2),
+                last_contig_end + len(record) + bufferlen, coding_height,
                 boxstyle="round,pad=0,rounding_size=0",
                 mutation_aspect=.5,
                 # mutation_scale=.5,
@@ -285,30 +333,9 @@ def plot_mauve_compare(refgb,
                 ec=mycolors['clear']
             )
             last_contig_end = last_contig_end + len(record) + bufferlen
-            axX[i].add_patch(coding_box)
-            axX[i].add_patch(buffer_box)
+            ax.add_patch(coding_box)
+            ax.add_patch(buffer_box)
 
-    for i, bblist in enumerate(bbcols):
-        for block in bblist:
-
-            verts = [
-                (0., 0.),  # left, bottom
-                (0., 1.),  # left, top
-                (1., 1.),  # right, top
-                (1., 0.),  # right, bottom
-                (0., 0.),  # ignored
-            ]
-
-            codes = [mpl.path.Path.MOVETO,
-                     mpl.path.Path.LINETO,
-                     mpl.path.Path.LINETO,
-                     mpl.path.Path.LINETO,
-                     mpl.path.Path.CLOSEPOLY]
-
-            path = mpl.path.Path(verts, codes)
-
-            patch = patches.PathPatch(path, facecolor='orange', lw=2)
-            ax[i].add_patch(patch)
 
     # for index, anno in enumerate(anno_list):
     #     rect1 = patches.Rectangle(
