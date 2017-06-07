@@ -438,16 +438,20 @@ The tests for the module can be found under the `tests` directory. I run them wi
 #### From Pypi (recommended)
 riboSeed is on Pypi, so you can install with pip, preferably within a virtualenv (recommended):
 
-```virtualenv -p python3.5 venv-riboSeed
+```
+virtualenv -p python3.5 venv-riboSeed
 source venv-riboSeed/bin/activate
-pip3.5 install riboSeed```
+pip3.5 install riboSeed
+```
 
 
 #### From TestPypi
 To install the bleeding-edge version, install from testpypi:
-```virtualenv -p python3.5 venv-riboSeed
+```
+virtualenv -p python3.5 venv-riboSeed
 source venv-riboSeed/bin/activate
-pip install --extra-index-url https://testpypi.python.org/pypi riboSeed```
+pip install --extra-index-url https://testpypi.python.org/pypi riboSeed
+```
 
 #### From GitHub
 You can also clone this repository, and run `python3.5 setup.py install`.

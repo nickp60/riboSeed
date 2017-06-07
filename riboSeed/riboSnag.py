@@ -24,7 +24,7 @@ import shutil
 import itertools
 import multiprocessing
 
-#
+
 try:
     import numpy as np
     import matplotlib as mpl
@@ -52,6 +52,7 @@ from itertools import product  # for getting all possible kmers
 sys.path.append(os.path.join('..', 'riboSeed'))
 from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
     combine_contigs, check_version_from_cmd
+
 
 class LociCluster(object):
     """ organizes the clustering process instead of dealing with nested lists
@@ -911,48 +912,6 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
     return(msa_cmd, results_path)
 
 
-def plot_alignment_3d(consensus, tseq, output_prefix):  # pragma: no cover
-    """ under development.  no progress for a while
-    """
-    from mpl_toolkits.mplot3d import Axes3D
-    import matplotlib
-    import numpy as np
-    from scipy.interpolate import interp1d
-    from matplotlib import cm
-    from matplotlib import pyplot as plt
-    step = 0.04
-    maxval = 1.0
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    ### Make differences
-
-    # for index, value in enumerate(consensus):
-
-
-    ###
-    u=np.array([0,1,2,1,0,2,4,6,4,2,1])
-    v=np.array([4,4,6,3,6,4,1,4,4,4,4])
-    r=np.array([0,1,2,3,4,5,6,7,8,9,10])
-    f=interp1d(r,u)
-
-    # walk along the circle
-    p = np.linspace(0,2*np.pi,20)
-    R,P = np.meshgrid(r,p)
-    # transform them to cartesian system
-    X,Y = R*np.cos(P),R*np.sin(P)
-
-    # Z=2
-    # print(X)
-    # print(Y)
-    Z=f(R)
-
-    # ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.jet)
-    ax.scatter(X, Y, Z)#, rstride=1, cstride=1, cmap=cm.jet)
-    ax.set_xticks([])
-    fig.savefig(str(output_prefix + '3d..png'), dpi=(200))
-    fig.savefig(str(output_prefix + '3d..pdf'), dpi=(200))
-
-
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     r"""
     http://scipy.github.io/old-wiki/pages/Cookbook/SavitzkyGolay
@@ -1018,11 +977,12 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     order_range = range(order + 1)
     half_window = (window_size - 1) // 2
     # precompute coefficients
-    b = np.mat([[k ** i for i in order_range] for k in range(- half_window, half_window + 1)])
+    b = np.mat([[k ** i for i in order_range] for k in
+                range(- half_window, half_window + 1)])
     m = np.linalg.pinv(b).A[deriv] * rate ** deriv * factorial(deriv)
     # pad the signal at the extremes with
     # values taken from the signal itself
-    firstvals = y[0] - np.abs(y[1: half_window + 1][:: -1] - y[0] )
+    firstvals = y[0] - np.abs(y[1: half_window + 1][:: -1] - y[0])
     lastvals = y[-1] + np.abs(y[-half_window - 1: -1][:: -1] - y[-1])
     y = np.concatenate((firstvals, y, lastvals))
     return np.convolve(m[::-1], y, mode='valid')
@@ -1420,9 +1380,9 @@ if __name__ == "__main__":
             kingdom=args.kingdom,
             logger=logger)
         label_name = args.seq_name if args.seq_name is not None else \
-                    os.path.basename(
-                        os.path.splitext(
-                            args.genbank_genome)[0])
+            os.path.basename(
+                os.path.splitext(
+                    args.genbank_genome)[0])
         title = str("Shannon Entropy by Position\n" +
                     label_name)
 

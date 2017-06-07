@@ -61,9 +61,9 @@ SAMTOOLS_MIN_VERSION = '1.3.1'
 class SeedGenome(object):
     """ This object is the "master" object which holds slots for each
     cluster's mappings, the sequencing library, and keeps track of the
-    current iteration as execution prgresses.
+    current iteration as execution progresses.
 
-    When instatiated, self.check_mands() checks that all required attributes
+    When instantiated, self.check_mands() checks that all required attributes
     are present, self.attach_genome_seqRecords() parses and loads the gb data,
     self.write_fasta_genome() writes a .fasta version of the genome for later
     use, and self.make_map_paths_and_dir() sets up the required directories for
@@ -108,9 +108,9 @@ class SeedGenome(object):
         self.unmapped_mapping_list = unmapped_mapping_list
         # holds dynamically updated list of remaining unmapped
         self.unmapped_sam = unmapped_sam
-        # after paritioning, the last mapping list is extraced into this ngs ob
+        # after partitioning, the last mapping list is extracted into this ngs ob
         self.unmapped_ngsLib = unmapped_ngsLib
-        # path to file mapped readnames are appended to
+        # path to file mapped read names are appended to
         self.reads_mapped_txt = reads_mapped_txt
         # destination for seeded contigs prior to final assemblies
         self.final_long_reads_dir = final_long_reads_dir
@@ -1542,7 +1542,7 @@ def parse_subassembly_return_code(cluster, final_contigs_dir, skip_copy=False,
     elif cluster.assembly_success == 1:
         raise ValueError("return code 1 depreciated! a warning can be " +
                          "issued for short asssemblies, but they must " +
-                         "remain in the pseudogenome" )
+                         "remain in the pseudogenome")
     elif cluster.assembly_success == 0:
         cluster.continue_iterating = True
         cluster.keep_contigs = True
@@ -2618,7 +2618,7 @@ if __name__ == "__main__":
                 seedGenome.master_ngs_ob.smalt_dist_path
             logger.debug("converting unmapped bam into reads:")
             seedGenome.master_ngs_ob.ref_fasta = seedGenome.next_reference_path
-            # dont worry about wasting time makign these libraries if
+            # dont worry about wasting time making these libraries if
             # not subtracting previously mapped reads
             if args.subtract:
                 for cmd in [convert_cmd]:  # may have more cmds here in future
