@@ -2618,13 +2618,16 @@ if __name__ == "__main__":
                 seedGenome.master_ngs_ob.smalt_dist_path
             logger.debug("converting unmapped bam into reads:")
             seedGenome.master_ngs_ob.ref_fasta = seedGenome.next_reference_path
-            for cmd in [convert_cmd]:  # may have more cmds here in future
-                logger.debug(cmd)
-                subprocess.run([cmd],
-                               shell=sys.platform != "win32",
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE,
-                               check=True)
+            # dont worry about wasting time makign these libraries if
+            # not subtracting previously mapped reads
+            if args.subtract:
+                for cmd in [convert_cmd]:  # may have more cmds here in future
+                    logger.debug(cmd)
+                    subprocess.run([cmd],
+                                   shell=sys.platform != "win32",
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   check=True)
         else:
             # start with whole lib if first time through
             unmapped_ngsLib = seedGenome.master_ngs_ob
