@@ -2519,7 +2519,7 @@ if __name__ == "__main__":
         logger.error(last_exception())
         sys.exit(1)
 
-    # add coordinates for each locus in lociCluster.loci_list
+    # add coordinates to lociCluster.loci_list
     try:
         add_coords_to_clusters(seedGenome=seedGenome,
                                logger=logger)
@@ -2538,13 +2538,13 @@ if __name__ == "__main__":
         logger.error(last_exception())
         sys.exit(1)
 
-    # make first iteration look like future iterations
+    # make first iteration look like future iterations:
     # this should also ensure the mapper uses the padded version
     seedGenome.next_reference_path = seedGenome.ref_fasta
     #
     for cluster in seedGenome.loci_clusters:
         cluster.master_ngs_ob = seedGenome.master_ngs_ob
-# --------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------
     # Performance summary lists
     mapping_percentages = []
     region_depths = []

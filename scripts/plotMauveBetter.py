@@ -6,146 +6,15 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from matplotlib.patches import FancyBboxPatch
 
-from reportlab.lib import colors
-from reportlab.lib.units import cm
-from Bio.Graphics import GenomeDiagram
-from Bio.Graphics.GenomeDiagram import CrossLink
 from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 import os
-
-mycolors = [
-    None,
-    colors.Color(255/255, 68/255, 6/255, alpha=0.5),
-    colors.Color(20/255, 166/255, 6/255, alpha=0.5)
-]
-
-refrecord = SeqIO.read(os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/mauve/reference.gb"), "genbank")
-
-defererecord = list(SeqIO.parse(os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_fere/alignment2/coli_de_fere_novo.fa.fas"), "fasta"))
-df_bb = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_fere/alignment2/alignment2.backbone")
-
-denovorecord = list(SeqIO.parse(os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_novo/alignment2/coli_de_novo.fa.fas"), "fasta"))
-
-dn_bb = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_novo/alignment2/alignment2.backbone")
-
-bbs = [[], df_bb, dn_bb]
-
-# #Create the feature set and its feature objects,
-# gd_feature_set = GenomeDiagram.FeatureSet()
-# name = "Proux Fig 6"
-# gd_diagram = GenomeDiagram.Diagram(name)
-
-# max_len = 0
-# for j, record in enumerate([refrecord, defererecord, denovorecord]):
-#     if not isinstance(record, list):
-#         max_len = max(max_len, len(record))
-#         gd_track_for_features = gd_diagram.new_track(
-#             1,
-#             name=record.name,
-#             greytrack=True,
-#             height=.3,
-#             start=0, end=len(record))
-#         gd_feature_set = gd_track_for_features.new_set()
-
-#         for i, feature in enumerate(record.features):
-#             if feature.type != "rRNA":
-#                 #Exclude this feature
-#                 continue
-#             # print (feature)
-#             gd_feature_set.add_feature(
-#                 feature,
-#                 sigil="ARROW",
-#                 arrowshaft_height=1,
-#                 color=colors.red,
-#                 label=True,
-#                 name=feature.qualifiers["note"][0],
-#                 label_position="start",
-#                 label_size=6, label_angle=45)
-#     else:
-#         this_max = sum([len(x) for x in record])
-#         gd_track_for_features = gd_diagram.new_track(
-#             j + 1,
-#             name="track %s" % str(j + 1),
-#             greytrack=True,
-#             height=0.2,
-#             start=0, end=this_max)
-#         gd_feature_set = gd_track_for_features.new_set()
-#         pos = 0
-#         for contig in record:
-#             feature = SeqFeature(FeatureLocation(pos, pos + len(contig)))
-#             pos = pos + len(contig)
-#             gd_feature_set.add_feature(
-#                 feature,
-#                 # sigil="OCTO",
-#                 # color=gene_colors[i],
-#                 color=colors.grey,
-#                 border=colors.black,
-#                 label=True,
-#                 name="lorp",
-#                 label_position="start",
-#                 label_size=6,
-#                 label_angle=45)
-
-# for i, rec in reversed(list(enumerate(comps_list))):
-#     # if i != 1:
-#     #     continue
-#     for line in rec:
-#         print(line)
-#         track_X = gd_diagram.tracks[1]
-#         track_Y = gd_diagram.tracks[i + 1]
-#         A_start, A_end, B_start, B_end = line
-#         color = mycolors[i]
-#         if (B_start == 0 and B_end == 0) or \
-#            (A_start == 0 and A_end == 0):
-#             continue
-#         link_xy = CrossLink((track_X, A_start, A_end),
-#                             (track_Y, B_start, B_end),
-#                             color,  # fill
-#                             border=color)  # border
-#         gd_diagram.cross_track_links.append(link_xy)
-
-# print(gd_diagram.__dict__)
-# #Create a track, and a diagram
-# gd_diagram.draw(format="linear", orientation="landscape", pagesize='A4',
-#                 fragments=1, start=0, end=110000)
-# gd_diagram.write(os.path.expanduser("~/GitHub/riboSeed/plasmid_linear.pdf"),
-#                  "PDF")
-from matplotlib.patches import FancyBboxPatch
-
-def draw_bbox(ax, bb):
-    # boxstyle=square with pad=0, i.e. bbox itself.
-    p_bbox = FancyBboxPatch((bb.xmin, bb.ymin),
-                            abs(bb.width), abs(bb.height),
-                            boxstyle="square,pad=0.",
-                            ec="k", fc="none", zorder=10.,
-                            )
-    ax.add_patch(p_bbox)
-
-
-def test1(ax):
-
-    # a fancy box with round corners. pad=0.1
-    p_fancy = FancyBboxPatch((bb.xmin, bb.ymin),
-                             abs(bb.width), abs(bb.height),
-                             boxstyle="round,pad=0.1",
-                             fc=(1., .8, 1.),
-                             ec=(1., 0.5, 1.))
-
-    ax.add_patch(p_fancy)
-
-    ax.text(0.1, 0.8,
-            r' boxstyle="round,pad=0.1"',
-            size=10, transform=ax.transAxes)
-
-    # draws control points for the fancy box.
-    #l = p_fancy.get_path().vertices
-    #ax.plot(l[:,0], l[:,1], ".")
-
-    # draw the original bbox in black
-    draw_bbox(ax, bb)
-
+import sys
+import argparse
+import glob
+import subprocess
 
 mycolors = {
     "pinkish": mpl.colors.ColorConverter().to_rgba(
@@ -159,28 +28,92 @@ mycolors = {
     "bluish": mpl.colors.ColorConverter().to_rgba(
         "#06B9FF", alpha=1),
     "greyish": mpl.colors.ColorConverter().to_rgba(
-        "#6505FF", alpha=1),
+        "#7E7F97", alpha=1),
     "clear": mpl.colors.ColorConverter().to_rgba(
         "#FF012F", alpha=0),
 }
 
 
 bgcols = {
-    "blue": mpl.colors.ColorConverter().to_rgba(
-        "#6795A6", alpha=0.5),
+    "purle": mpl.colors.ColorConverter().to_rgba(
+        "#EB87A3", alpha=0.5),
     "green": mpl.colors.ColorConverter().to_rgba(
         "#5EA662", alpha=0.5),
     "yellow": mpl.colors.ColorConverter().to_rgba(
         "#EBE418", alpha=0.5),
-    "purle": mpl.colors.ColorConverter().to_rgba(
-        "#EB87A3", alpha=0.5),
     "red": mpl.colors.ColorConverter().to_rgba(
         "#EB7D7D", alpha=0.5),
+    "blue": mpl.colors.ColorConverter().to_rgba(
+        "#6795A6", alpha=0.5),
     }
 
 
-def parseBbcols(filelist):
-    """ Given a list of .bbcols files, write out as nested list
+def get_args():  # pragma: no cover
+    """get the arguments as a main parser with subparsers
+    for named required arguments and optional arguments
+    """
+    parser = argparse.ArgumentParser(
+        description="Pretty up the plots generated by mauve contig mover",
+        add_help=False)
+    parser.add_argument("files",
+                        help="list of files for comparison, starting with " +
+                        "a genbank file and having at least one fasta file " +
+                        "with the contigs afterward",  nargs="+")
+    requiredNamed = parser.add_argument_group('required named arguments')
+    requiredNamed.add_argument("-o", "--outdir",
+                               help="output directory; default: %(default)s",
+                               default=os.getcwd(),
+                               type=str, dest="outdir")
+
+    optional = parser.add_argument_group('optional arguments')
+    optional.add_argument("-n", "--names",
+                          help="name the resulting plot and output " +
+                          "dirs; comma-separate",
+                          default=None, dest="names",
+                          action="store", type=str)
+    optional.add_argument("-r", "--replot",
+                          help="replot, using a previous run of analyses",
+                          default=False, dest="replot",
+                          action="store_true")
+    optional.add_argument("--mauve_exe", dest="mauve_exe",
+                          action="store", default="~/mauve_snapshot_2015-02-13/Mauve.jar",
+                          help="path to Mauve.jar; " +
+                          "default: %(default)s")
+    # had to make this explicitly to call it a faux optional arg
+    optional.add_argument("-h", "--help",
+                          action="help", default=argparse.SUPPRESS,
+                          help="Displays this help message")
+    args = parser.parse_args()
+    return args
+
+
+def makeContigMovercmds(ref, files, outdir, mauve_exe):
+    cmds = []
+    results = []
+    for f in files:
+        thisdir = os.path.join(outdir, "ref_vs_" + os.path.splitext(os.path.basename(f))[0])
+        cmd = "java -Xmx500m -cp {0}  org.gel.mauve.contigs.ContigOrderer -output {1} -ref {2} -draft {3}".format(
+            mauve_exe,
+            thisdir,
+            ref,
+            f)
+        cmds.append(cmd)
+        results.append(thisdir)
+    return(cmds, results)
+
+
+def findBestAlignments(outdir):
+    dirs = os.listdir(outdir)
+    print(dirs)
+    maxiter  = max([int(x.split("alignment")[1]) for x in dirs])
+    print(maxiter)
+    maxiterdir = [x for x in dirs if int(x.split("alignment")[1]) == maxiter]
+    print(maxiterdir)
+    return(os.path.join(outdir, maxiterdir[0], ""))
+
+
+def parseBackbones(filelist):
+    """ Given a list of .backbones files, write out as nested list
     """
     comps_list = []
     for i, f in enumerate(filelist):
@@ -196,53 +129,59 @@ def parseBbcols(filelist):
 
 def plot_mauve_compare(refgb,
                        assembly_list,
-                       bbcols_list,
+                       backbones_list,
                        bufferlen=10000,
+                       breakwidth=40,
                        aspect=.6,
                        names=["Position", "Entropy"],
                        title="Shannon Entropy by Position",
                        output_prefix="entropy_plot.png"):
-    assert len(assembly_list) == len(bbcols_list), \
-        "must have same amount of assemblies as bbcols"
+    assert len(assembly_list) == len(backbones_list), \
+        "must have same amount of assemblies as backbones"
     with open(refgb, "r") as rg:
         ref_recs = list(SeqIO.parse(rg, "genbank"))
-    assembly_lens
-    # for seq in assembly_list:
-    #     with open(seq, "r") as inseq:
-    #         assembly_lens = [len(x) for x in list(SeqIO.parse(
-    bbcols = parseBbcols(bbcols_list)
+    assembly_lens = [[sum([len(x) for x in ref_recs])]]
+    for seq in assembly_list:
+        with open(seq, "r") as inseq:
+            assembly_lens.append([len(x) for x in list(SeqIO.parse(inseq, "fasta"))])
+    backbones = parseBackbones(backbones_list)
     npanels = len(assembly_list) + 1
-    ref_combined_len = sum([len(x) for x in ref_recs]) + bufferlen
-    print(len(ref_recs[0]))
-    print(ref_combined_len)
+    max_combined_len = max([sum(x) for x in assembly_lens]) + bufferlen
+    print(max_combined_len)
     fig, ax = plt.subplots(1, 1)
     ax.set_title(title, y=1.08)
-    relheight = ref_combined_len * aspect
+    relheight = max_combined_len * aspect
     coding_height = .05 * relheight
-    centers = [
-        (relheight / float(npanels + 1)) +
-        ((relheight / float(npanels + 1)) * x)
-        for x in range(npanels)]
-    centers.reverse()
-    print(centers)
-    xmin, xmax = 0, ref_combined_len
+    # set the centers as starting relative to  relheight - (2* codingdepth)
+    relinner = relheight - (coding_height * 3)
+    centers = []
+    for i in range(npanels):
+        if i == 0:
+            centers.append(relheight - (coding_height * 1.5))
+        elif i == npanels - 1:
+            centers.append(0 + (coding_height * 1.5))
+        else:
+            centers.append(relheight - ((coding_height * 1.5) +
+                                        (relinner / float(npanels - 1))  * i))
+    xmin, xmax = 0, max_combined_len
     ymin, ymax = 0, relheight
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
-    # yjust = -.1
     #  plot the color shadings
-    unused_cols = ["blue", "green", "yellow", "purple", "red"]
-    for i, bblist in enumerate(bbcols):
+    unused_cols = ["red", "green", "yellow", "purple", "red", "blue"]
+    nudge = coding_height / 2
+    patch_list = []
+    for i, bblist in enumerate(backbones):
         for As, Ae, Bs, Be in bblist:
             if (Bs == 0 and Be == 0) or \
                (As == 0 and Ae == 0):
                 continue
             verts = [
-                (Bs, centers[i + 1]),  # left, bottom
-                (As, centers[0]),  # left, top
-                (Ae, centers[0]),  # right, top
-                (Be, centers[i + 1]),  # right, bottom
-                (Bs, centers[i + 1]),  # ignored
+                (Bs, centers[i + 1] + nudge),  # left, bottom
+                (As, centers[0] - nudge),  # left, top
+                (Ae, centers[0] - nudge),  # right, top
+                (Be, centers[i + 1] + nudge),  # right, bottom
+                (Bs, centers[i + 1] + nudge),  # ignored
             ]
 
             codes = [mpl.path.Path.MOVETO,
@@ -257,8 +196,10 @@ def plot_mauve_compare(refgb,
                                       facecolor=bgcols.get(unused_cols[0]),
                                       edgecolor=mycolors.get("clear"),
                                       lw=2)
-            ax.add_patch(patch)
+            patch_list.append(patch)
         unused_cols.pop(0)
+    # we want the first annotation on top
+    [ax.add_patch(p) for p in list(reversed(patch_list))]
 
     # add annotations
     last_chrom_end = 0
@@ -274,18 +215,18 @@ def plot_mauve_compare(refgb,
             fc=mycolors['greyish'],
             ec=mycolors['clear']
         )
-        buffer_box = FancyBboxPatch(
-            (last_chrom_end + len(record), centers[0] - coding_height / 2),
-            last_chrom_end + len(record) + bufferlen, coding_height,
-            boxstyle="round,pad=0,rounding_size=0",
-            mutation_aspect=.5,
-            # mutation_scale=.5,
-            fc=mycolors['clear'],
-            ec=mycolors['clear']
-        )
-        last_chrom_end = last_chrom_end + len(record) + bufferlen
+        # buffer_box = FancyBboxPatch(
+        #     (last_chrom_end + len(record), centers[0] - coding_height / 2),
+        #     last_chrom_end + len(record) + bufferlen, coding_height,
+        #     boxstyle="round,pad=0,rounding_size=0",
+        #     mutation_aspect=.5,
+        #     # mutation_scale=.5,
+        #     fc=mycolors['clear'],
+        #     ec=mycolors['clear']
+        # )
+        last_chrom_end = last_chrom_end + len(record)
         ax.add_patch(coding_box)
-        ax.add_patch(buffer_box)
+        # ax.add_patch(buffer_box)
         for i, feature in enumerate(record.features):
             if feature.type != "rRNA" and i == 0:
                 #Exclude this feature
@@ -317,108 +258,105 @@ def plot_mauve_compare(refgb,
             coding_box = FancyBboxPatch(
                 (last_contig_end, centers[i] - coding_height / 2),
                 len(record), coding_height,
-                boxstyle="round,pad=0,rounding_size=" + str(centers[i] / 100),
+                boxstyle="round,pad=0,rounding_size=" + str(centers[i] / 50),
                 mutation_aspect=.5,
                 # mutation_scale=.5,
                 fc=mycolors['greyish'],
                 ec=mycolors['clear']
             )
             buffer_box = FancyBboxPatch(
-                (last_contig_end + len(record), centers[i] - coding_height / 2),
-                last_contig_end + len(record) + bufferlen, coding_height,
+                (last_contig_end + len(record) - breakwidth, centers[i] - coding_height),
+                breakwidth, coding_height * 2,
                 boxstyle="round,pad=0,rounding_size=0",
                 mutation_aspect=.5,
                 # mutation_scale=.5,
-                fc=mycolors['clear'],
+                fc="black",
                 ec=mycolors['clear']
             )
-            last_contig_end = last_contig_end + len(record) + bufferlen
+            last_contig_end = last_contig_end + len(record)
             ax.add_patch(coding_box)
             ax.add_patch(buffer_box)
 
+    ax.set_yticks(np.array(centers))
+    ax.set_yticklabels(names)
+    ax.get_yaxis().set_label_coords(-.05, .1)
+    ax.yaxis.set_ticks_position('left')
+    ax.xaxis.set_ticks_position('top')
+    # ax.tick_params(axis='y', colors='dimgrey')
+    ax.tick_params(axis='x', colors='dimgrey')
+    ax.yaxis.label.set_color('black')
+    ax.xaxis.label.set_color('black')
+    ax.spines['top'].set_visible(True)
+    ax.spines["left"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
 
-    # for index, anno in enumerate(anno_list):
-    #     rect1 = patches.Rectangle(
-    #         (anno[1][0],  # starting x
-    #          ymin),  # starting y
-    #         anno[1][1] - anno[1][0],  # rel x end
-    #         ymax - ymin,  # rel y end
-    #         facecolor=mpl.colors.ColorConverter().to_rgba(
-    #             colors[index], alpha=0.2),
-    #         edgecolor=mpl.colors.ColorConverter().to_rgba(
-    #             colors[index], alpha=0.2))
-    #     rect2 = patches.Rectangle(
-    #         (anno[1][0],  # starting x
-    #          1),  # starting y
-    #         anno[1][1] - anno[1][0],  # rel x end
-    #         cov_max_depth,  # dont -1 beacuse start at 1
-    #         facecolor=mpl.colors.ColorConverter().to_rgba(
-    #             colors[index], alpha=0.2),
-    #         edgecolor=mpl.colors.ColorConverter().to_rgba(
-    #             colors[index], alpha=0.2))
-    #     ax1.add_patch(rect1)
-    #     ax2.add_patch(rect2)
-    #     ax1.text((anno[1][0] + anno[1][1]) / 2,    # x location
-    #              ymax - 0.48 - yjust,                      # y location
-    #              anno[0][0:20],                          # text first 20 char
-    #              ha='center', color='red', weight='bold', fontsize=10)
-    #     yjust = yjust * - 1
-    # ax1.scatter(x=df["Position"], y=df["Entropy"],
-    #             marker='o', color='black', s=2)
-    # # add smoothing for kicks
-    # df["fit"] = savitzky_golay(df["Entropy"].values, 351, 3)  # window size 51, polynomial order 3
-    # ax1.scatter(x=df["Position"], y=df["fit"], color='red', s=1)
-    # #
-    # ax1.set_ylabel('Shannon Entropy')
-    # ax1.get_yaxis().set_label_coords(-.05, 0.5)
-    # ax2.set_xlim([xmin, xmax])
-    # ax2.invert_yaxis()
-    # ax2.set_ylabel('Consensus Coverage')
-    # ax2.set_xlabel('Position (bp)')
-    # ax2.get_yaxis().set_label_coords(-.05, 0.5)
-    # # ax2.set_ylim([1, cov_max_depth + 1]) #, 1])
-    # ax2.bar(df_con.index, df_con["depth"],
-    #         width=1, color='darkgrey', linewidth=0, edgecolor='darkgrey')
-    # # ax2.step(df_con.index, df_con["depth"],
-    # #          where='mid', color='darkgrey')
-    # for ax in [ax1, ax2]:
-    #     ax.spines['right'].set_visible(False)
-    # # Only show ticks on the left and bottom spines
-    # ax1.spines['top'].set_visible(False)
-    # ax2.spines['bottom'].set_visible(False)
-    # ax.yaxis.set_ticks_position('left')
-    # ax2.xaxis.set_ticks_position('bottom')
-    # ax1.xaxis.set_ticks_position('top')
-    # ax1.tick_params(axis='y', colors='dimgrey')
-    # ax2.tick_params(axis='y', colors='dimgrey')
-    # ax1.tick_params(axis='x', colors='dimgrey')
-    # ax2.tick_params(axis='x', colors='dimgrey')
-    # ax1.yaxis.label.set_color('black')
-    # ax2.yaxis.label.set_color('black')
-    # ax1.xaxis.label.set_color('black')
-    # ax2.xaxis.label.set_color('black')
     plt.tight_layout()
     fig.subplots_adjust(hspace=0)
-    fig.set_size_inches(12, 7.5)
+    fig.set_size_inches(12, 12 * aspect)
     fig.savefig(str(output_prefix + '.png'), dpi=(200))
     fig.savefig(str(output_prefix + '.pdf'), dpi=(200))
     return 0
 
 if __name__ == "__main__":
-    refgbpath = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/mauve/reference.gb")
+    args = get_args()
+    try:
+        os.makedirs(args.outdir)
+        os.makedirs(os.path.join(args.outdir, "reordering"))
+    except:
+        if args.replot:
+            print("using existing output dir and alignment results")
+        else:
+            raise IOError
+    cmds, result_paths = makeContigMovercmds(
+        ref=args.files[0], files=args.files[1:],
+        outdir=os.path.join(args.outdir, "reordering"),
+        mauve_exe=args.mauve_exe)
+    if not args.replot:
+        for i in cmds:
+            try:
+                print(i)
+                subprocess.run([i],
+                               shell=sys.platform != "win32",
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               check=True)
+            except Exception as e:
+                print(e)
+                sys.exit(1)
+    # get the path to the dir for the last iteration of the reorderer
+    best_aln_dirs = [findBestAlignments(i) for i in result_paths]
+    assembly_list = []
+    backbone_list = []
+    for d in best_aln_dirs:
+        assembly_list.append(glob.glob(d + "*.fas")[0])
+        backbone_list.append(glob.glob(d + "*.backbone")[0])
 
-    deferepath = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_fere/alignment2/coli_de_fere_novo.fa.fas")
 
-    df_bb = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_fere/alignment2/alignment2.backbone")
+    # refgbpath = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/mauve/reference.gb")
 
-    denovopath = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_novo/alignment2/coli_de_novo.fa.fas")
+    # deferepath = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_fere/alignment2/coli_de_fere_novo.fa.fas")
 
-    dn_bb = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_novo/alignment2/alignment2.backbone")
+    # df_bb = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_fere/alignment2/alignment2.backbone")
 
-    plot_mauve_compare(refgb=refgbpath,
-                       assembly_list=[deferepath, denovopath],
-                       bbcols_list=[df_bb, dn_bb],
+    # denovopath = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_novo/alignment2/coli_de_novo.fa.fas")
+
+    # dn_bb = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_novo/alignment2/alignment2.backbone")
+    # deklebpath = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_fere_kleb/alignment2/kleb_de_fere_novo.fa.fas")
+
+    # dk_bb = os.path.expanduser("~/GitHub/riboSeed/manuscript_results/simulated_genome/de_fere_kleb/alignment2/alignment2.backbone")
+
+    plot_mauve_compare(refgb=args.files[0],
+                       # refgb=refgbpath,
+                       # assembly_list=[deferepath, denovopath, deklebpath],
+                       # backbones_list=[df_bb, dn_bb, dk_bb],
+                       assembly_list=assembly_list,
+                       backbones_list=backbone_list,
+                       # names=["reference", "de_novo", "de_fere", "de_kleb"],
+                       names=args.names.split(","),
                        bufferlen=1000,
-                       names=["Position", "Entropy"],
-                       title="Shannon Entropy by Position",
-                       output_prefix="./test_plot.png")
+                       breakwidth=100,
+                       title="",
+                       aspect=.4,
+                       output_prefix=os.path.join(args.outdir,
+                                                  "PrettyMauve"))
