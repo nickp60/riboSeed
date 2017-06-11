@@ -2378,8 +2378,8 @@ if __name__ == "__main__":
         sys.exit(1)
     t0 = time.time()
     log_path = os.path.join(output_root,
-                            str("{0}_riboSeed_log.txt".format(
-                                time.strftime("%Y%m%d%H%M"))))
+                            "riboSeed_log.txt")
+
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)

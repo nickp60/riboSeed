@@ -1007,6 +1007,8 @@ def get_rec_from_generator(recordID, gen, method=None):
 def main(clusters, gb_path, logger, verbose, no_revcomp,
          output, circular, flanking, prefix_name):
     get_rev_comp = no_revcomp is False  # kinda clunky
+    flanking_regions_output = os.path.join(output, "flanking_regions_output")
+    os.makedirs(flanking_regions_output)
     extracted_regions = []
     logger.debug(clusters)
     for cluster in clusters:  # for each cluster of loci
@@ -1092,13 +1094,34 @@ def main(clusters, gb_path, logger, verbose, no_revcomp,
         ####
         filename = "{0}_region_{1}_{2}.fasta".format(
             prefix_name, index + 1, "riboSnag")
+        filename_flanking = "{0}_region_{1}_{2}_flanking_regions.fasta".format(
+            prefix_name, index + 1, "riboSnag")
         # TODO make discription work when writing seqrecord
         # TODO move date tag to fasta description?
         # i.description = str("{0}_riboSnag_{1}_flanking_{2}_within".format(
         #                           output_index, args.flanking, args.within))
+        # output full region
         with open(os.path.join(output, filename), "w") as outfile:
             SeqIO.write(region, outfile, "fasta")
             outfile.write('\n')
+
+        # Output 5' region and 3' region
+        upstream_flanking = SeqRecord(
+            Seq(str(region.seq[0: flanking]), IUPAC.IUPACAmbiguousDNA()),
+            id="{0}_upstream_flanking_{1}:{2}".format(region.id, 0, flanking))
+        downstream_flanking = SeqRecord(
+            Seq(str(region.seq[-flanking: len(region.seq)]),
+                IUPAC.IUPACAmbiguousDNA()),
+            id="{0}_downstream_flanking_{1}:{2}".format(
+                region.id, len(region.seq)-flanking, len(region.seq)))
+        with open(os.path.join(flanking_regions_output,
+                               filename_flanking), "w") as outfile:
+            SeqIO.write(upstream_flanking, outfile, "fasta")
+            outfile.write('\n')
+            SeqIO.write(downstream_flanking, outfile, "fasta")
+        # output 3' region
+
+
     # write out the whole file as a fasta as well...
     # append in case of multiple records
     ref_fasta = os.path.join(output, str(prefix_name + "_genome.fasta"))
