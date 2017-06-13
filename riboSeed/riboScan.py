@@ -311,9 +311,7 @@ if __name__ == "__main__":
         print("Output directory already exists; exiting...")
         sys.exit(1)
     t0 = time.time()
-    log_path = os.path.join(output_root,
-                            str("riboScan_log_{0}.txt".format(
-                                time.strftime("%Y%m%d%H%M"))))
+    log_path = os.path.join(output_root, "riboScan_log_{0}.txt")
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)

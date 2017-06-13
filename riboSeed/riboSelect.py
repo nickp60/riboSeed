@@ -318,9 +318,7 @@ if __name__ == "__main__":
         sys.exit(1)
     logger = set_up_logging(
         verbosity=args.verbosity,
-        outfile=os.path.join(output_root,
-                             str("riboSelect_log_%s.txt" %
-                                 time.strftime("%Y%m%d%H%M"))),
+        outfile=os.path.join(output_root, "riboSelect_log_%s.txt"),
         name=__name__)
 
     # log = sys.stderr.write  # to keep streaming clean if this goes that route
