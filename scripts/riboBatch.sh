@@ -65,12 +65,12 @@ then
 fi
 
 mkdir ${OUTDIR}results
-cp ${OUTDIR}seed/mauve/ ${OUTDIR}results
+cp -r ${OUTDIR}seed/mauve/ ${OUTDIR}results
 cp ${OUTDIR}seed/riboSeed.log ${OUTDIR}results
 cp ${OUTDIR}scan/riboScan.log ${OUTDIR}results
 cp ${OUTDIR}select/riboSelect.log ${OUTDIR}results
 cp ${OUTDIR}seed/mauve_riboScored/riboScore_hits.txt  ${OUTDIR}results
-cp ${OUTDIR}seed/mauve_riboScored/riboScore_log.txt  ${OUTDIR}results
+cp ${OUTDIR}seed/mauve_riboScored/riboScore.log  ${OUTDIR}results
 cp ${OUTDIR}seed/mauve_riboScored/riboScore_report.txt  ${OUTDIR}results
 
 

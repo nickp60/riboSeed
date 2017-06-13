@@ -182,18 +182,9 @@ def filter_recip_BLAST_df(df1, df2, min_percent, min_lens, logger=None):
                     logger.debug(tempdf2)
                     nonrecip_hits.append([gene, genome])
                 else:
-                    # logger.debug(tempdf1)
-                    # logger.debug("tempdf2")
-                    # logger.debug(tempdf2)
-                    # logger.debug("subset1")
-                    # logger.debug(subset1)
-                    # logger.debug("subset2")
-                    # logger.debug(subset2)
                     if subset1.iloc[0]["query_id"] == subset2.iloc[0]["subject_id"]:
                         recip_hits.append([gene, genome])
                         logger.debug("Reciprocol hits for %s in %s!", gene, genome)
-                        # print(subset1.iloc[0]["query_id"])
-                        # print(min_lens[subset1.iloc[0]["query_id"]])
                         if subset1.iloc[0]["alignment_length"] >= \
                            (min_lens[subset1.iloc[0]["query_id"]] - 0):
                             filtered = filtered.append(subset1)
@@ -346,8 +337,7 @@ def main(args):
     else:
         sys.stderr.write("Output Directory already exists!\n")
         sys.exit(1)
-    log_path = os.path.join(output_root,
-                            "riboScore_log.txt")
+    log_path = os.path.join(output_root, "riboScore.log")
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
@@ -533,12 +523,14 @@ def main(args):
             for line in flanking_hits:
                 f.write("\t".join(line) + "\n")
         good_hits = 0 + sum([1 for x in flanking_hits if x[1] == "good"])
+        ambig_hits = 0 + sum([1 for x in flanking_hits if x[1] == "?"])
         bad_hits = 0 + sum([1 for x in flanking_hits if x[1] == "bad"])
         report_list.append("{0}\t{1}\t{2}\t{3}".format(
             os.path.abspath(os.path.expanduser(args.indir)),
             fasta,
             len(ref_snags),
             good_hits,
+            ambig_hits,
             bad_hits
         ))
     with open(os.path.join(output_root, "riboScore_report.txt"), "a") as r:

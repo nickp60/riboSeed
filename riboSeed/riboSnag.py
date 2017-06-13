@@ -1288,9 +1288,7 @@ if __name__ == "__main__":
             sys.exit(1)
         else:
             print("# continuing, and risking potential loss of data")
-    log_path = os.path.join(output_root,
-                            str("riboSnag_log_{0}.txt".format(
-                                time.strftime("%Y%m%d%H%M"))))
+    log_path = os.path.join(output_root, "riboSnag.log")
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
