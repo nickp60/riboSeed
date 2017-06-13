@@ -163,6 +163,8 @@ setup(
              'riboSeed/riboSnag.py', 'riboSeed/riboSwap.py',
              'riboSeed/riboScan.py', "scripts/runme.py",
              'riboSeed/riboSim.py',
+             'riboSeed/riboSketch.py',
+             'riboSeed/riboScore.py',
              'riboSeed/riboStack.py',
              "scripts/OSX_INSTALL_DEPS.sh",
              'scripts/riboBatch.sh',

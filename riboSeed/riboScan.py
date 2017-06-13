@@ -95,6 +95,11 @@ def get_args():  # pragma: no cover
                           "installed with emboss; " +
                           "default: %(default)s", default="seqret",
                           type=str)
+    optional.add_argument("-m", "--min_length", dest='min_length',
+                          action="store",
+                          help="skip the scaffold if its shorter than this " +
+                          "default: %(default)s", default=0,
+                          type=int)
     optional.add_argument("-v", "--verbosity", dest='verbosity',
                           action="store",
                           default=2, type=int, choices=[1, 2, 3, 4, 5],
@@ -272,8 +277,8 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
     os.makedirs(os.path.join(output, "contigs"))
     with open(os.path.expanduser(multi), "r") as mf:
         for idx, rec in enumerate(SeqIO.parse(mf, "fasta")):
-            logger.debug("record %d:", idx)
-            logger.debug(rec)
+            logger.debug("record %d: %s", idx, rec.id)
+            # logger.debug(rec)
             if name is not None:
                 fname = name
             else:
@@ -293,8 +298,8 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
                 renamed_rec = SeqRecord(rec.seq, id=fname, description="")
                 SeqIO.write(renamed_rec, outf, "fasta")
             idlist.append(fname)
-    logger.info("rewrote the following records")
-    logger.info(idlist)
+    logger.debug("rewrote the following records")
+    logger.debug("\n".join(idlist))
 
 if __name__ == "__main__":
     args = get_args()
@@ -338,6 +343,10 @@ if __name__ == "__main__":
         with open(fasta, 'r') as f:
             rec = next(SeqIO.parse(f, "fasta"))
         accession = rec.id
+        if args.min_length > len(rec.seq):
+            logger.debug("Skipping %s: must be %d bp, set by --min_length",
+                         accession, args.min_length)
+            continue
         logger.info("Accession for %s: %s", fasta, accession)
         barrnap_cmd = make_barrnap_cmd(
             infasta=fasta,

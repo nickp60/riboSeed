@@ -1,4 +1,5 @@
 Biopython==1.68
+pysam==0.9.1.4
 coverage==4.2
 pyutilsnrw>=0.0.768
 numpy>=1.11.2

@@ -2,6 +2,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+echo "this is depreciated cause its included in the compareColiKleb.sh because we need to test with multiple batches of reads"
+exit 1
+
 ref="BA000007.2"
 #ref="NC_000913.3"
 # get the reference Sakai genome
