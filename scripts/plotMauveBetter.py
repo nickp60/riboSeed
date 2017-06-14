@@ -307,7 +307,8 @@ if __name__ == "__main__":
         if args.replot:
             print("using existing output dir and alignment results")
         else:
-            raise IOError
+            sys.stderr.write("Output Directory already exists!\n")
+            sys.exit(1)
     cmds, result_paths = makeContigMovercmds(
         ref=args.files[0], files=args.files[1:],
         outdir=os.path.join(args.outdir, "reordering"),

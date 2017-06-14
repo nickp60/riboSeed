@@ -93,7 +93,7 @@ NOTE: If using a reference with long names or containing special characters, use
 
 You will probably want to preview your file to figure out the syntax used. (ie, 16s vs 16S, rRNA vs RRNA, etc...)
 
-If not using `riboScan.py` or if not working with a bacterial genome, you will need to change `--specific_features` appropriately to reflect the annotations in your reference (ie, for a fungal genome, use `--specific_features 5_8S:18S:28S`).
+If not using `riboScan.py` or if not working with a prokaryotic genome, you will need to change `--specific_features` appropriately to reflect the annotations in your reference (ie, for a fungal genome, use `--specific_features 5_8S:18S:28S`).
 
 NOTE: the format of the output text file is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropriate. The format is `genome_sequence_id locus_tag1:locus_tag2`, where each line represents a cluster. See example below, where 14 rRNAs are clustered into 6 groups:
 
@@ -475,12 +475,12 @@ In the scripts directory, there is a script called `runme.py` which run the pipe
 
 riboScan.py
 
-* Barrnap
+* Barrnap (must be 0.7 or above)
 * Seqret
 
 riboSelect.py
 
-* R (don't ask...)
+* None
 
 riboSnag.py
 
@@ -496,61 +496,9 @@ riboSeed.py
 * QUAST (tested with 4.1)
 
 NOTE: barrnap has certain Perl requirements that may not be included on your machine. Ensure barrnap runs fine before trying riboSnag.py.  Or try [python barrnap](https://github.com/nickp60/barrnap/).
-<!-- ## Note on installation of SMALT -->
-
-<!-- Must have bambamc installed! If you get an error as follows, -->
-
-<!-- ``` -->
-<!-- Error running test to check bambamc lib is installed! -->
-
-<!-- ``` -->
-
-<!-- it means that SMALT was installed without the bambamc library.  To install properly, see the install link below.  in short, -->
-
-<!-- ``` -->
-<!-- # download libtool if needed -->
-<!-- wget ftp://ftp.gnu.org/gnu/libtool/libtool-2.4.tar.xz -->
-<!-- tar xf libtool-2.4 -->
-<!-- cd libtool-2.4 -->
-<!-- ./configure --prefix=$HOME -->
-<!-- make -->
-<!-- make install -->
-<!-- export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH -->
-
-<!-- # get bambamc -->
-<!-- git clone https://github.com/gt1/bambamc.git -->
-<!-- autoreconf -i -f -->
-<!-- ./configure --prefix=$HOME -->
-<!-- make -->
-<!-- make install -->
-
-<!-- # download and install SMALT -->
-<!-- wget https://sourceforge.net/projects/smalt/files/smalt-0.7.6-static.tar.gz -->
-<!-- tar xf smalt-0.7.6-static -->
-<!-- cd smalt-0.7.6-smalt -->
-<!-- # this is the key step -->
-<!-- ./configure --with-bambamc=yes BAMBAMC_CFLAGS="-I$HOME/include" BAMBAMC_LIBS="-L$HOME/lib -lbambamc" --prefix=$HOME -->
-<!-- $ -->
-<!-- make -->
-<!-- make install -->
-
-<!-- ``` -->
-<!-- https://sourceforge.net/projects/smalt/files/ -->
 
 
 ## Suggested Running
-<!-- ### `example_batch.sh` -->
-
-
-<!-- ``` -->
-<!-- USAGE: /path/to/genome.gb  path/to/read1 path/to/read2 /path/to/outdir/ n_iterations n_flanking n_cores -->
-<!-- All mandatory arguments: genome.gb, genome.fasta, read1, read2, output_dir, iterations, flanking_width, and n_cores -->
-
-<!-- example: -->
-
-<!-- ./example_batch.sh ./sample_data/NC_011751.1.gb ./sample_data/toy_set/toy_reads1.fq  ./sample_data/toy_set/toy_reads2.fq ./results_dir/ 3 1000 4 -->
-
-<!-- ``` -->
 
 ### `riboBatch.sh`
 NOTE: You must have riboSeed installed in a `virtualenv` to use this script

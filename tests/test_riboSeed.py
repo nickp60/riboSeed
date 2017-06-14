@@ -57,9 +57,9 @@ class riboSeedShallow(unittest.TestCase):
     """
     def setUp(self):
         self.test_dir = os.path.join(os.path.dirname(__file__),
-                                     "output_riboseed_tests")
+                                     "output_riboSeed_tests")
         self.spades_dir = os.path.join(os.path.dirname(__file__),
-                                       "output_riboseed_tests",
+                                       "output_riboSeed_tests",
                                        "SPAdes_results")
         self.ref_dir = os.path.join(os.path.dirname(__file__), "references")
         self.ref_gb = os.path.join(self.ref_dir,

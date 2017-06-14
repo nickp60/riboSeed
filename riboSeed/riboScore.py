@@ -525,8 +525,8 @@ def main(args):
         ambig_hits = 0 + sum([1 for x in flanking_hits if x[1] == "?"])
         bad_hits = 0 + sum([1 for x in flanking_hits if x[1] == "bad"])
         report_list.append("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(
-            os.path.abspath(os.path.expanduser(args.indir)), #0
-            fasta,  # 1
+            os.path.abspath(os.path.expanduser(args.indir)),  # 0
+            os.path.basename(fasta),  # 1
             len(ref_snags),  # 2
             good_hits,  # 3
             ambig_hits,  # 4

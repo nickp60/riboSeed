@@ -33,12 +33,12 @@ logger = logging
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among other things wont run if tried " +
                  " with less than python 3.5")
-class riboSeedTestCase(unittest.TestCase):
+class riboScoreTestCase(unittest.TestCase):
     """ tests for riboSeed.py
     """
     def setUp(self):
         self.test_dir = os.path.join(os.path.dirname(__file__),
-                                     "output_riboScan_tests")
+                                     "output_riboScore_tests")
         self.ref_dir = os.path.join(
             os.path.dirname(__file__), "references", "")
         self.scan_ref_dir = os.path.join(os.path.dirname(__file__),

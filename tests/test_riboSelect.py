@@ -14,7 +14,7 @@ sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 from riboSeed.riboSelect import get_filtered_locus_tag_dict, \
-    pure_python_kmeans, count_feature_hits, parse_args_clusters
+    dict_from_jenks, count_feature_hits, parse_args_clusters
 from pyutilsnrw.utils3_5 import get_genbank_record, check_installed_tools
 
 logger = logging
@@ -30,7 +30,7 @@ class riboSelect_TestCase(unittest.TestCase):
     def setUp(self):
         self.curdir = os.getcwd()
         self.testdirname = os.path.join(os.path.dirname(__file__),
-                                        "output_utils3_5_tests")
+                                        "output_riboSelect_tests")
         self.test_loci_file = os.path.join(os.path.dirname(__file__),
                                            str("references" + os.path.sep +
                                                'grouped_loci_reference.txt'))
@@ -117,6 +117,55 @@ class riboSelect_TestCase(unittest.TestCase):
         self.assertEqual(nfeat_simple2['NC_011751.1'], [7, 7])
         self.assertEqual(nfeatoccur2['NC_011751.1'], [['16S', 7], ['23S', 7]])
 
+    def test_dict_from_jenks(self):
+        res_dict = {
+            "1": [5001, 6988, 9985],
+            "2": [20096, 21991, 24988],
+            "3": [35099, 37086, 40083, 40328],
+            "4": [50439, 52334, 55333],
+            "5": [65444, 67431, 70430],
+            "6": [80541, 82436, 85435],
+            "7": [95546, 97441, 100440]
+        }
+
+        coli_data  = [5001, 6988, 9985, 20096, 21991, 24988, 35099, 37086,
+                      40083, 40328, 50439, 52334, 55333, 65444, 67431, 70430,
+                      80541, 82436, 85435, 95546, 97441, 100440]
+        self.assertEqual(res_dict,
+                         dict_from_jenks(
+                             data=coli_data, centers=7, logger=logger))
+
+    def test_dict_from_jenks_1cents(self):
+
+        coli_data  = [5001, 6988, 9985, 20096, 21991, 24988, 35099, 37086,
+                      40083, 40328, 50439, 52334, 55333, 65444, 67431, 70430,
+                      80541, 82436, 85435, 95546, 97441, 100440]
+        res_dict  = {
+            "1": [5001, 6988, 9985, 20096, 21991, 24988, 35099, 37086,
+                  40083, 40328, 50439, 52334, 55333, 65444, 67431, 70430,
+                  80541, 82436, 85435, 95546, 97441, 100440]
+            }
+        self.assertEqual(res_dict,
+                         dict_from_jenks(
+                             data=coli_data, centers=1, logger=logger))
+
+    def test_dict_from_jenks_0cents(self):
+        coli_data  = [5001, 6988, 9985]
+        with self.assertRaises(AssertionError):
+            dict_from_jenks(data=coli_data, centers=0, logger=logger)
+
+    def test_dict_from_jenks_exceed(self):
+
+        coli_data  = [5001, 6988, 9985]
+        res_dict = {
+            "1": [5001],
+            "2": [6988],
+            "3": [9985]
+        }
+        self.assertEqual(
+            res_dict,
+            dict_from_jenks(data=coli_data, centers=5, logger=logger))
+
     def test_locus_tag_dict(self):
         """test different scenarios of trying to get features
         from a gb file with get_filtered_locus_tag_dict
@@ -151,8 +200,6 @@ class riboSelect_TestCase(unittest.TestCase):
                                         specific_features="16S",
                                         verbose=False,
                                         logger=logger)
-        # for k, v in filtered.items():
-        #     print(k, v)
         self.assertEqual(len(filtered), 7)
         # check length of 1st item (ie, occurances) is same
         self.assertEqual(len(nfeat['NC_011751.1']),
@@ -161,25 +208,6 @@ class riboSelect_TestCase(unittest.TestCase):
                           ['ribosomal', 'RNA', '16S']],
                          filtered[('NC_011751.1', 4428675)])
         self.assertEqual(nfeat_simple, {'NC_011751.1': [7]})
-
-    def test_dopey_kmeans_function(self):
-        """As they say, don't look a gift kmeans in the mouth
-        """
-        r_is_installed = check_installed_tools("R",
-                                               hard=False, logger=logger)
-        if r_is_installed:
-            test_for_clustering = [4, 5, 5, 6, 10,
-                                   3, 18, 34, 44, 38]
-            # debug is true in case we need to assess created files
-            clusters = pure_python_kmeans(test_for_clustering,
-                                          centers=3, DEBUG=True,
-                                          kind=int)
-            ref_dict = {'2': [3, 4, 5, 5, 6, 10], '1': [34, 38, 44], '3': [18]}
-            self.assertEqual(ref_dict, clusters)
-            # delete list.csv and Kmeans.R if we get this far
-            os.remove(os.path.join(os.getcwd(),
-                                   "pure_python_kmeans_list.csv"))
-            os.remove(os.path.join(os.getcwd(), "km_script.R"))
 
     def test_parse_clusters_infer(self):
         record = get_genbank_record(self.test_gb_file)[0]

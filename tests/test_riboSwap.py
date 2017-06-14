@@ -32,12 +32,12 @@ logger = logging
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among other things wont run if tried " +
                  " with less than python 3.5")
-class riboSeedTestCase(unittest.TestCase):
+class riboSwapTestCase(unittest.TestCase):
     """ tests for riboSeed.py
     """
     def setUp(self):
         self.test_dir = os.path.join(os.path.dirname(__file__),
-                                     "output_riboScan_tests")
+                                     "output_riboSwap_tests")
         self.ref_dir = os.path.join(os.path.dirname(__file__), "references")
         self.ref_gb = os.path.join(self.ref_dir,
                                    'NC_011751.1.gb')
@@ -78,7 +78,6 @@ class riboSeedTestCase(unittest.TestCase):
         # self.copy_fasta()
 
     def test_remove_bad_contig(self):
-        """check with nonexistant executable"""
         outfile = os.path.join(self.test_dir, "contigs_minus_NODE_2.fasta")
         remove_bad_contig(infile=self.bad_fasta,
                           # outfile=self.good_fasta,
@@ -93,7 +92,6 @@ class riboSeedTestCase(unittest.TestCase):
         self.to_be_removed.append(outfile)
 
     def test_fail_remove_bad_contig(self):
-        """check with nonexistant executable"""
         outfile = os.path.join(self.test_dir, "contigs_minus_NODE_3.fasta")
         with self.assertRaises(ValueError):
             remove_bad_contig(infile=self.bad_fasta,
@@ -102,7 +100,6 @@ class riboSeedTestCase(unittest.TestCase):
                               logger=logger)
 
     def test_append_replacement_contigs(self):
-        """check with nonexistant executable"""
         outfile = os.path.join(self.test_dir, "contigs_minus_NODE_3.fasta")
         remove_bad_contig(infile=self.bad_fasta,
                           # outfile=self.good_fasta,
@@ -116,9 +113,9 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertEqual(md5(outfile),
                          md5(os.path.join(self.ref_dir,
                                           "ref_swapped_contigs.fasta")))
+        self.to_be_removed.append(outfile)
 
     def test_fail_append_replacement_contigs(self):
-        """check with nonexistant executable"""
         outfile = os.path.join(self.test_dir, "contigs_minus_NODE_3.fasta")
         remove_bad_contig(infile=self.bad_fasta,
                           outfile=outfile,
@@ -129,6 +126,7 @@ class riboSeedTestCase(unittest.TestCase):
                 infile=self.good_fasta, outfile=outfile,
                 name_list="NODE_4_:NODE_5_:NODE_45_".split(":"),
                 logger=logger)
+        self.to_be_removed.append(outfile)
 
     def tearDown(self):
         """ delete temp files if no errors
