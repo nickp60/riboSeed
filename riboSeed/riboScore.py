@@ -62,8 +62,7 @@ def get_args():
 
 
 def make_nuc_nuc_recip_blast_cmds(
-        query_list, date,
-        output, subject_file=None, logger=None):
+        query_list, output, subject_file=None, logger=None):
     """given a file, make a blast cmd, and return path to output csv
     """
     assert logger is not None, "must use logging"
@@ -424,7 +423,7 @@ def main(args):
                 make_nuc_nuc_recip_blast_cmds(
                     query_list=ref_snags,
                     subject_file=combined_full_snags,
-                    output=full_blast_results, date=date,
+                    output=full_blast_results,
                     logger=logger)
         else:
             commands = []
@@ -460,7 +459,7 @@ def main(args):
             make_nuc_nuc_recip_blast_cmds(
                 query_list=ref_snags,
                 subject_file=combined_flanking_snags,
-                output=flanking_blast_results, date=date,
+                output=flanking_blast_results,
                 logger=logger)
         # check for existing blast results
         pool = multiprocessing.Pool()
@@ -525,13 +524,13 @@ def main(args):
         good_hits = 0 + sum([1 for x in flanking_hits if x[1] == "good"])
         ambig_hits = 0 + sum([1 for x in flanking_hits if x[1] == "?"])
         bad_hits = 0 + sum([1 for x in flanking_hits if x[1] == "bad"])
-        report_list.append("{0}\t{1}\t{2}\t{3}".format(
-            os.path.abspath(os.path.expanduser(args.indir)),
-            fasta,
-            len(ref_snags),
-            good_hits,
-            ambig_hits,
-            bad_hits
+        report_list.append("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(
+            os.path.abspath(os.path.expanduser(args.indir)), #0
+            fasta,  # 1
+            len(ref_snags),  # 2
+            good_hits,  # 3
+            ambig_hits,  # 4
+            bad_hits  # 5
         ))
     with open(os.path.join(output_root, "riboScore_report.txt"), "a") as r:
         for line in report_list:

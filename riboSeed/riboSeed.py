@@ -2091,7 +2091,7 @@ def get_final_assemblies_cmds(seedGenome, exes,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
             k=kmers, spades_exe=exes.spades, logger=logger)
         modest_spades_cmd = make_modest_spades_cmd(
-            cmd=spades_cmd, cores=cores, memory=memory,
+            cmd=spades_cmd, cores=cores, memory=memory, split=2,
             serialize=serialize, logger=logger)
         ref = str("-R %s" % seedGenome.ref_fasta)
         quast_cmd = str("{0} {1} {2} {3} -o {4}").format(
@@ -2339,32 +2339,41 @@ def reportRegionDepths(inp, logger):
     return(report_list)
 
 
-def make_modest_spades_cmd(cmd, cores, memory, serialize=False, logger=None):
+def make_modest_spades_cmd(cmd, cores, memory, split=0,
+                           serialize=False, logger=None):
     """ adjust spades commands to use set amounts of cores and memory
     returns the command, split on "--careful", cause why would you run
     SPAdes with "--reckless"?
+    if you need to split resouces between, say, two commands, use split 2
     """
     assert logger is not None, "Must use logging"
+    cmdA, cmdB = cmd.split("--careful")
     if serialize:
-        cmdA, cmdB = cmd.split("--careful")
         logger.info("Allocating SPAdes %dgb of memory", memory)
-        return "{0}-t {1} -m {2} --careful{3}".format(
-            cmdA,
-            cores,
-            memory,
-            cmdB)
+        mem_each = memory
+        cores_each = cores
     else:
-        # make sure spades doesnt hog processors or ram
-        mem_each = int(memory / cores)  # should be floor
-        logger.info(
-            "Allocating SPAdes %dgb of memory for each of %d cores",
-            memory, cores)
-        cmdA, cmdB = cmd.split("--careful")
-        return "{0}-t {1} -m {2} --careful{3}".format(
-            cmdA,
-            1,
-            mem_each,
-            cmdB)
+        if split:
+            if split > cores or split > memory:
+                logger.error("cannot split cores or memory resources into " +
+                             "values less than 1!")
+                sys.exit(1)
+            mem_each = int(memory / split)
+            cores_each = int(cores / split)
+            logger.info("Running spades with %d cores and %d gb memory",
+                        cores_each, mem_each)
+        else:
+            # make sure spades doesnt hog processors or ram
+            mem_each = int(memory / cores)  # should be floor
+            cores_each = 1
+            logger.info(
+                "Allocating SPAdes %dgb of memory for each of %d cores",
+                memory, cores)
+    return "{0}-t {1} -m {2} --careful{3}".format(
+        cmdA,
+        cores_each,
+        mem_each,
+        cmdB)
 
 
 if __name__ == "__main__":

@@ -64,6 +64,8 @@ class riboSeedShallow(unittest.TestCase):
         self.ref_dir = os.path.join(os.path.dirname(__file__), "references")
         self.ref_gb = os.path.join(self.ref_dir,
                                    'NC_011751.1.gb')
+        self.ref_tiny_gb = os.path.join(self.ref_dir,
+                                        'scannedScaffolds.gb')
         self.ref_fasta = os.path.join(self.test_dir,
                                       'cluster1.fasta')
         self.good_contig = os.path.join(self.ref_dir,
@@ -263,16 +265,16 @@ class riboSeedShallow(unittest.TestCase):
     def test_SeedGenome(self):
         """ Can we create a seedGenome object
         """
-        with open(self.ref_gb, "r") as gbf:
+        with open(self.ref_tiny_gb, "r") as gbf:
             rec = next(SeqIO.parse(gbf, "genbank"))
         gen = SeedGenome(
             max_iterations=2,
             clustered_loci_txt=self.test_loci_file,
-            genbank_path=self.ref_gb,
+            genbank_path=self.ref_tiny_gb,
             loci_clusters=None,
             output_root=self.test_dir)
         self.assertTrue(os.path.exists(os.path.join(self.test_dir,
-                                                    "NC_011751.1.fasta")))
+                                                    "scannedScaffolds.fasta")))
         self.assertTrue(os.path.exists(self.test_dir))
         self.assertEqual(tuple(gen.seq_records)[0].id, rec.id)
 
@@ -421,6 +423,8 @@ class riboSeedShallow(unittest.TestCase):
             gen.loci_clusters[0].loci_list[0].end_coord, 4657586)
 
     def test_convert_bam_to_fastqs_cmd(self):
+        """ can we construct proper samtools fast cmds
+        """
         testmapping = LociMapping(
             name="test",
             iteration=1,
@@ -442,7 +446,7 @@ class riboSeedShallow(unittest.TestCase):
         self.assertEqual(cmd, cmd_ref)
 
     def test_generate_spades_cmds(self):
-        """
+        """ can we make spades commands of various complexities
         """
         testmapping = LociMapping(
             name="test",
@@ -528,6 +532,8 @@ class riboSeedShallow(unittest.TestCase):
         self.assertEqual(cmd4, cmd4_ref)
 
     def test_lib_check(self):
+        """ does the NgsLib identify empty libraries
+        """
         empty_file = os.path.join(self.test_dir, "test_not_real_file")
         # make an empty file
         with open(empty_file, 'w') as ef:
@@ -1038,6 +1044,14 @@ class riboSeedShallow(unittest.TestCase):
             make_modest_spades_cmd(cmd=cmd, cores=4, memory=8,
                                    serialize=False, logger=logger))
 
+    def test_make_modest_spades_cmd_split(self):
+        """ test parallel allocation"""
+        cmd = "spades.py --careful some args and stuff"
+        self.assertEqual(
+            "spades.py -t 2 -m 4 --careful some args and stuff",
+            make_modest_spades_cmd(cmd=cmd, cores=4, memory=8, split=2,
+                                   serialize=False, logger=logger))
+
     def test_make_modest_spades_cmd_odd(self):
         """ test parallel allocation, odd values"""
         cmd = "spades.py --careful some args and stuff"
@@ -1052,7 +1066,6 @@ class riboSeedShallow(unittest.TestCase):
         for filename in self.to_be_removed:
             os.unlink(filename)
         pass
-
 
 
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),

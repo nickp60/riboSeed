@@ -329,7 +329,7 @@ if __name__ == "__main__":
     assembly_list = []
     backbone_list = []
     for d in best_aln_dirs:
-        assembly_list.append(glob.glob(d + "*.fas")[0])
+        assembly_list.append(glob.glob(d + "*.fasta")[0])
         backbone_list.append(glob.glob(d + "*.backbone")[0])
 
 
