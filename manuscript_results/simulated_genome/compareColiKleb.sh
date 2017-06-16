@@ -75,7 +75,7 @@ python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ./${ref}.fasta -o ${OUTDIR}${i}
 # cluster
 python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${OUTDIR}${i}_ref/scan/scannedScaffolds.gb  -o ${OUTDIR}${i}_ref/select/
 # run riboSeed
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ${OUTDIR}${i}_ref/scan/scannedScaffolds.gb  -o ${OUTDIR}${i}_ref/seed/ ${OUTDIR}${i}_ref/select/riboSelect_grouped_loci.txt -F ${OUTDIR}toyGenome/reads_100_300_1.fq.gz -R ${OUTDIR}toyGenome/reads_100_300_2.fq.gz -i 3 -z -v 1 -l ${FLANK} --clean_temps
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ${OUTDIR}${i}_ref/scan/scannedScaffolds.gb  -o ${OUTDIR}${i}_ref/seed/ ${OUTDIR}${i}_ref/select/riboSelect_grouped_loci.txt -F ${OUTDIR}toyGenome/reads_100_300_1.fq.gz -R ${OUTDIR}toyGenome/reads_100_300_2.fq.gz -i 3 -c 2 -v 1 -l ${FLANK} --clean_temps
 done
 
 # make copy of contigs renamed for mauve

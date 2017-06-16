@@ -16,7 +16,7 @@ else
 fi
 
 OUTDIRBASE="./"
-OUTDIR="${OUTDIRBASE}`date +%F`_degenerate_output_${SEED}"
+OUTDIR="${OUTDIRBASE}`date +%F`_degenerate_output_ALL_${SEED}"
 
 mkdir ${OUTDIR}
 mkdir ${OUTDIR}/toyGenome/
@@ -48,8 +48,7 @@ echo "combine the extracted regions into a toy genome"
 python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ${OUTDIR}/toyGenome/snag/ \*_riboSnag.fasta -o ${OUTDIR}/toyGenome/coli_genome/ &>> ${LOGFILE}
 echo " generate reads from the toy genome"
 # ~/bin/art_bin_MountRainier/art_illumina -ss MSv3 -i ${OUTDIR}/toyGenome/coli_genome/concatenated_seq.fasta -p -l 250 -f 20 -m 300 -s 10 -rs ${SEED} -o ${OUTDIR}/toyGenome/reads_ &>> ${LOGFILE}
-
-# ~/bin/pIRS_111/pirs simulate -i ${OUTDIR}/toyGenome/coli_genome/concatenated_seq.fasta -m 300 -l 100 -x 30 -v 10 -o ${OUTDIR}/toyGenome/reads &>> ${LOGFILE}
+echo "running:"
 ~/bin/pirs-2.0.2/pirs simulate -m 300 -l 100 -x 30 -v 10 -o ${OUTDIR}/toyGenome/reads -B ~/bin/pirs-2.0.2/Profiles/Base-Calling_Profiles/humNew.PE100.matrix.gz --compress -I ~/bin/pirs-2.0.2/Profiles/InDel_Profiles/phixv2.InDel.matrix -G ~/bin/pirs-2.0.2/Profiles/GC-depth_Profiles/humNew.gcdep_100.dat ${OUTDIR}/toyGenome/coli_genome/concatenated_seq.fasta &>> ${LOGFILE}
 
 
@@ -65,8 +64,9 @@ cp ${OUTDIR}/ref_scan/scannedScaffolds.gb ${OUTDIR}/mauve/reference.gb
 # cluster regions in toy genome
 python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${OUTDIR}/ref_scan/scannedScaffolds.gb  -o ${OUTDIR}/ref_select/ -v 1  &>> ${LOGFILE}
 
-# for i in 0.0 0.0001 0.00025 0.0005 0.00075 0.001 0.0025 0.005 0.0075 0.01 0.05
-for i in 0.0 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1
+for i in 0.0 0.0001 0.00025 0.0005 0.00075 0.001 0.0025 0.005 0.0075 0.01 0.05
+	 # for i in  0.00075
+	 # for i in 0.0 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1
 do
     echo "Processing mutation frequency of ${i}"
     ###################################################################
@@ -80,7 +80,7 @@ do
 	fname=${fname_ext%.*}
 	# echo $fname
 	# echo $fname_ext
-	python3.5  ~/GitHub/riboSeed/riboSeed/riboSim.py ${region} -e 5000  -f ${i} -o ${OUTDIR}/degenerate_${i}_${fname}/ -v 1 --seed ${SEED} &>> ${LOGFILE}
+	python3.5  ~/GitHub/riboSeed/riboSeed/riboSim.py ${region}  -f ${i} -o ${OUTDIR}/degenerate_${i}_${fname}/ -v 1 --seed ${SEED} &>> ${LOGFILE}
 	# copy results to a directory
 	cp ${OUTDIR}/degenerate_${i}_${fname}/${fname_ext} ${OUTDIR}/mutated_regions_${i}/
     done
@@ -97,8 +97,16 @@ do
     # run riboSeed
     python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ${OUTDIR}/scan_${i}/scannedScaffolds.gb  -o ${OUTDIR}/seed_${i}/ ${OUTDIR}/ref_select/riboSelect_grouped_loci.txt -F ${OUTDIR}/toyGenome/reads_100_300_1.fq.gz -R ${OUTDIR}/toyGenome/reads_100_300_2.fq.gz -i 3  -v 1 -l 1000 --clean_temps  &>> ${LOGFILE}
     # move a copy of the annotated genome to the "mauve" directory for convenience
-    cp ${OUTDIR}/seed_${i}/final_de_fere_novo_assembly/contigs.fasta ${OUTDIR}/mauve/de_fere_novo_${i}.fasta
 
-    python3.5 ~/GitHub/riboSeed/riboSeed/riboScore.py ${OUTDIR}/seed_${i}/mauve/
 
+    if [ -e ${OUTDIR}/seed_${i}/final_de_fere_novo_assembly/contigs.fasta ]
+    then
+	cp ${OUTDIR}/seed_${i}/final_de_fere_novo_assembly/contigs.fasta ${OUTDIR}/mauve/de_fere_novo_${i}.fasta
+    fi
+    
+    if [ -e ${OUTDIR}/seed_${i}/final_de_novo_assembly/contigs.fasta ]
+    then
+	cp ${OUTDIR}/seed_${i}/final_de_novo_assembly/contigs.fasta ${OUTDIR}/mauve/de_novo_${i}.fasta
+    fi
+    
 done
