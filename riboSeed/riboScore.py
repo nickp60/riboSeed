@@ -344,7 +344,6 @@ def main(args):
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
         logger.debug("{0}: {1}".format(k, v))
-    date = str(datetime.datetime.now().strftime('%Y%m%d'))
     if not os.path.isdir(os.path.join(args.indir, "")) or len(
             os.listdir(os.path.join(args.indir, ""))) == 0:
         logger.error("input directory doesnt exist or is empty! Exiting...")

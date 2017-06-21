@@ -121,3 +121,8 @@ tests/manuscript_*/
 manuscript_*/
 docs/.sass-cache/
 docs/_site/
+*aux
+*ind
+*ilg
+*bbl
+*blg

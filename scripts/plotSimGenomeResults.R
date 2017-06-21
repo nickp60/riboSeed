@@ -10,16 +10,16 @@ require(msa)
 library(seqinr)
 require(phytools)
 require(ggstance)
-analysis_date = "2017-06-15"
+analysis_date = "2017-06-21"
 src_folders <-"~/GitHub/riboSeed/manuscript_results/simulated_genome/"
 
-names = c("sourcepath", "assembly", "total", "good",  "ambiguous", "bad")
+names = c("sourcepath", "assembly", "total", "Success",  "Ambiguous", "Missassembly")
 dir(src_folders)
 folders<- dir(src_folders, pattern = "simulatedGenomeResults_",full.names = T)
 folders
 folders = folders[1:8]
 
-out_folder <- paste0("~/GitHub/riboSeed/", analysis_date, "-simulated-genome/")
+out_folder <- paste0("~/GitHub/riboSeed/", analysis_date, "-simulated-genome-replot/")
 dir.create(out_folder)
 results_table <- as.data.frame(setNames(replicate(6,numeric(0), simplify = F), names))
 for (folder in folders){
