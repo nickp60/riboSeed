@@ -126,3 +126,5 @@ docs/_site/
 *ilg
 *bbl
 *blg
+.out
+*.out
