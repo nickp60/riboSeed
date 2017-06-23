@@ -19,11 +19,12 @@ OPTIONAL ARGUMENTS:
 require(dplyr)
 require(reshape2)
 require(ggplot2)
-this_version<-'0.1'
+this_version<-'0.2'
 test_args<-c(
-  "-r", "~/GitHub/riboSeed/sakai_snag_2/BLAST_results/20170103_results_merged.csv",
+#  "-r", "~/GitHub/riboSeed/sakai_snag_2/BLAST_results/20170103_results_merged.csv",
+  "-r", "~/GitHub/riboSeed/manuscript_results/simulated_genome/toyGenome/snag/BLAST_results/20170623_results_merged.csv",
   "-t","75", # threshold percentage
-  "-o","~/GitHub/riboSeed/sakai_snag_2/",  # output directory for figs etc
+  "-o","~/GitHub/riboSeed/BLAST_results/",  # output directory for figs etc
   "-verb", "T") #Verbose Bool
 if (DEBUG | length(commandArgs(T))==0){
   print("Caution! Using with debug dataset")
@@ -62,7 +63,7 @@ data<-read.csv2(blast_results, header=F, stringsAsFactors = F, sep="\t",
                 #                "integer", "numeric", "integer"))
 data[,3:ncol(data)] = apply(data[,3:ncol(data)], 2, function(x) as.numeric(as.character(x)))
 data$flank <-as.numeric(gsub("(.*)_(\\d*)-bp_flanks", "\\2", data$query_id))
-data$region <-(gsub("(.*?)_(.*?)_.*", "\\2", data$query_id))
+data$region <-(gsub("(.*?)_(.*?)_(.*?)_.*", "\\3", data$query_id))
 
 # make column for ifelse  value/maxvalue>threshold, or if it is threshold or greater than the max bit score per gene.
 # data2<-data %>%
@@ -80,18 +81,28 @@ data2<-data %>%
   filter(!duplicated(count))
   
 lineplot <- ggplot(data2, aes(x=flank, y=count, color=region))+
-  # geom_point(position='jitter')+
   facet_wrap(~region,ncol = 4, drop = TRUE, scales = "free_x")+
   geom_point()+ scale_x_continuous(breaks=seq(0, 1000, 100))+
   scale_y_continuous(breaks=seq(0, 7, 1))+
   geom_line()+
+  theme_bw() +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color="black", size = .1),
+    strip.background = element_rect(colour = NA),
+    axis.text.x = element_text(angle=45, hjust=1),
+    axis.line = element_line(color = 'black', size = .1),
+    legend.position=c(0.9, .2)) +
+    coord_cartesian(ylim=c(0,7))+
+  
   labs(color="rDNA Region", x="Length of Flanking Region (bp)",
        y="Number of BLAST hits", 
        title="BLAST Results for BA000007.2 rDNA",
-       subtitle="(Filtered to exclude matches less than 90% of \n query length and hits with E-value >10e-6)")+
-  theme_bw()+coord_cartesian(ylim=c(0,7))+
-  theme(legend.position=c(0.9, .2),
-        axis.text.x = element_text(angle=45, hjust=1))
+       subtitle="(Filtered to exclude matches less than 90% of \n query length and hits with E-value >10e-6)")
+
 pdf(file="./sakai_BLAST_results.pdf", width = 8, height = 6)
 lineplot
 dev.off()
