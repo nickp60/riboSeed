@@ -39,7 +39,7 @@
   \renewcommand{\thefigure}{S\arabic{figure}}%
 }
 
-\usepackage{graphicx}
+% \usepackage{graphicx}
 \graphicspath{ {riboFigs/} }  %  set the path to the figures
 
 \usepackage{titlesec} % for adjusting spacing after the section headers
@@ -77,6 +77,8 @@
 %%%%
 
 \def \coli#1 {\textit{E.~coli~#1~}} %  #lazy
+% fix for ugly cmodern tilde 20160829
+\def \ttilde {\raisebox{-.5ex}\textasciitilde}
 
 %  format captions
 \usepackage[%
@@ -85,16 +87,14 @@
     format=hang,
     format=plain,
     margin=0pt,
-    width=0.9\textwidth,]{caption}
+    width=0.9\textwidth]{caption}
 \usepackage[list=true]{subcaption}  % allow for subfigures with captions
 \usepackage{amssymb}  % for checkmark symbols
+\usepackage{graphicx}  % trim figures
 \usepackage{colortbl}  % adjust table colors
 \definecolor{lgray}{gray}{.90}  % line grey
 \definecolor{tgray}{gray}{.40}  % text grey
 \definecolor{egray}{gray}{.01}  % emphasis grey
-
-
-
 
 
 
@@ -128,19 +128,19 @@ Keywords: genome assembly, ribosome, benchmarking, scaffolding, \textit{de fere 
 \section*{Background}
 
 \begin{table}[!h]
-\centering
-\ra{1.3}
-\caption{NCBI Genome Assemblies of Bacteria}
-\label{table:completions}
-\begin{tabular}{lrrrrr}
-  \toprule
-  Date & Total & Complete & Chromosome & Scaffold & Contig \\
-  \cmidrules{6}
-  January 4th, 2017 & 85799 & 6255 & 1143 & 39972 & 38429  \\
-  May 17th, 2017 & 96849 & 7212 & 1254 & 42839 & 43899\\
-  \bottomrule
-
-\end{tabular}
+  \centering
+  \ra{1.3}
+  \caption{NCBI Genome Assemblies of Bacteria}
+  \label{table:completions}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Date & Total & Complete & Chromosome & Scaffold & Contig \\
+    \cmidrules{6}
+    January 4\textsuperscript{th}, 2017 & 85799 & 6255 & 1143 & 39972 & 38429  \\
+    May 17\textsuperscript{th}, 2017 & 96849 & 7212 & 1254 & 42839 & 43899\\
+    \bottomrule
+    {\tiny Source: \url{https://www.ncbi.nlm.nih.gov/genome/browse/}}
+  \end{tabular}
 \end{table}
 
 Sequencing bacterial genomes has become much more cost effective and convenient, but the number of complete, closed bacterial genomes remains a small fraction of the total number sequenced (Table \ref{table:completions}). The length of short reads is increasing, but even with the advent of new long-read technologies, bacterial assembly remains a major bottleneck\cite{Nagarajan2010,Brouwer2016}. Although draft genomes are often of very high quality and suited for many types of analysis, researchers are forced to choose between working with these draft genomes (and the inherent potential loss of data), or spending time and resources polishing the genome with some combination of \textit{in silico} tools, PCR, optical mapping, re-sequencing, or hybrid sequencing\cite{Nagarajan2010,Utturkar2014}. Many \textit{in silico} genome finishing tools are available, and we summarise several of these in Table \ref{table:tools}.
@@ -148,7 +148,7 @@ Sequencing bacterial genomes has become much more cost effective and convenient,
 
 \begin{table}[!h]
 \centering
-\ra{1.2}
+\ra{1.3}
 \caption{Alternative \textit{\textit{in silico}} genome polishing tools}
 \label{table:tools}
 % \resizebox{\textwidth}{!}{
@@ -174,7 +174,7 @@ Sequencing bacterial genomes has become much more cost effective and convenient,
 
 
 
-The Illumina entries in NCBI’s Sequence Read Archive (SRA) \cite{Kodama2012} outnumber all other technologies combined by about an order of magnitude (S. Table \ref{table:searchterms}). Draft assemblies from these datasets have systematic problems common to short read datasets, namely gaps in the sequences due to the difficulty of resolving assemblies of repeated regions\cite{Whiteford2005,Treangen 2013}. By improving the ability to resolve assemblies through repeated regions  it may be possible to improve on current assemblies, and therefore obtain additional sequence information from existing short read datasets in the SRA.
+The Illumina entries in NCBI's Sequence Read Archive (SRA) \cite{Kodama2012} outnumber all other technologies combined by about an order of magnitude (Table \ref{table:searchterms}). Draft assemblies from these datasets have systematic problems common to short read datasets, namely gaps in the sequences due to the difficulty of resolving assemblies of repeated regions\cite{Whiteford2005,Treangen 2013}. By improving the ability to resolve assemblies through repeated regions  it may be possible to improve on current assemblies, and therefore obtain additional sequence information from existing short read datasets in the SRA.
 
 
 
@@ -193,7 +193,7 @@ Briefly, riboSeed uses rDNA regions from the closest completely sequenced refere
 \begin{figure}[!h]
   \centering
   \includegraphics[width=.8\textwidth]{riboSeed_v11}
-  \caption{Reads are mapped to a reference genome and those reads that align to rDNA and flanking regions are extracted. A subassembly for each group of reads that maps to an rDNA region is constructed to produce a ``pseudocontig'' for each region. These pseudocontigs are then concatenated together separated by 5kb of N’s as a buffer. Reads are then iteratively mapped to the concatenated pseudocontigs, extracted, and again subassembled to each region. After the final iteration, the pseudocontigs are included with raw reads in a standard \textit{de novo} assembly. The complete process is referred to as \textit{de fere novo} assembly. The subassemblies attempt to bridge proper rDNA regions by ensuring that flanking regions (represented here by colors) remain correctly paired.
+  \caption{Reads are mapped to a reference genome and those reads that align to rDNA and flanking regions are extracted. A subassembly for each group of reads that maps to an rDNA region is constructed to produce a ``pseudocontig'' for each region. These pseudocontigs are then concatenated together separated by 5kb of Ns as a buffer. Reads are then iteratively mapped to the concatenated pseudocontigs, extracted, and again subassembled to each region. After the final iteration, the pseudocontigs are included with raw reads in a standard \textit{de novo} assembly. The complete process is referred to as \textit{de fere novo} assembly. The subassemblies attempt to bridge proper rDNA regions by ensuring that flanking regions (represented here by colors) remain correctly paired.
   }
   \label{fig:overview}
 \end{figure}
@@ -210,7 +210,7 @@ riboSeed relies on a closed reference genome assembly that is sufficiently close
 riboSeed proceeds in three stages: preprocessing, \textit{de fere novo} assembly, and assessment/visualization.
 \subsection*{1. Preprocessing}
 \subsubsection*{riboScan.py}
-riboScan.py uses Barrnap\cite{Seemann2014} to annotate rDNAs in the reference genome, and EMBOSS’s seqret\cite{Rice2000} to create GenBank, FASTA, and GFF formatted versions of the reference genome. This preprocessing step unifies the annotation vocabulary for downstream processes.
+riboScan.py uses Barrnap\cite{Seemann2014} to annotate rDNAs in the reference genome, and EMBOSS's seqret\cite{Rice2000} to create GenBank, FASTA, and GFF formatted versions of the reference genome. This preprocessing step unifies the annotation vocabulary for downstream processes.
 
 \subsubsection*{riboSelect.py}
 riboSelect.py attempts to infer rDNA operon structure from the genomic location of constituent 16S, 23S and 5S sequences. The number of 16S sequences is identified from the riboScan.py annotation, and Jenks natural breaks algorithm (using the 16S count to set the number of breaks) then employed to group rRNA annotations into likely operons on the basis of  their genomic coordinates. The output identifies individual rDNA clusters and describes their component elements in a plain text file. This output can be easily adjusted by hand before assembly if the clustering does not appear to accurately reflect the arrangement of the operons (for example, based on visualization of the annotations in a genome browser).
@@ -220,7 +220,7 @@ riboSelect.py attempts to infer rDNA operon structure from the genomic location 
 riboSeed.py implements the algorithm described in Figure \ref{fig:algo}. Short reads for the sequenced isolate are mapped to the reference genome using BWA\cite{Li 2009}. Reads that map to each annotated rDNA cluster and its flanking regions (default size 1kbp) are extracted into subsets (one per cluster). Each subset of extracted reads (one per cluster) is assembled into a representative pseudocontig with SPAdes\cite{Bankevich2012}, using the reference rDNA regions as a trusted contig. The resulting pseudocontigs are evaluated for inclusion in future mapping/subassembly iterations based on their length (as discussed below), and concatenated into a pseudogenome, in which pseudocontigs are separated by 5kb of Ns as a buffer. This process is repeated in each subsequent iteration, using the pseudogenome as the reference, and the pseudocontig as a trusted contig.
 
 
-After a specified number of iterations (3 by default), SPAdes is used to assemble all short reads in a hybrid assembly that includes the pseudocontigs from the final iteration as trusted contigs (or as ‘untrusted contigs’ if the mapping quality of reads to that pseudocontig falls below a threshold). As a control, the short reads are also \textit{de novo} assembled without the pseudocontigs.
+After a specified number of iterations (3 by default), SPAdes is used to assemble all short reads in a hybrid assembly that includes the pseudocontigs from the final iteration as ``trusted contigs'' (or as ``untrusted contigs'' if the mapping quality of reads to that pseudocontig falls below a threshold). As a control, the short reads are also \textit{de novo} assembled without the pseudocontigs.
 
 
 Although riboSeed uses SPAdes to perform both the subassemblies and the final \textit{de fere novo} assembly, the pseudocontigs could be submitted to any hybrid assembler that accepts short read libraries and contigs. After assembly, the \textit{de fere novo} and \textit{de novo} assemblies are assessed with QUAST\cite{Gurevich2013}.
@@ -320,19 +320,19 @@ riboStack.py uses bedtools\cite{Quinlan2010} and samtools\cite{Li2009} to compar
 \subsection{Characteristics of rDNA flanking regions}
 The ability to use rDNA flanking sequences to uniquely identify and place rDNA regions in their genomic context requires the flanking sequences to be distinct within the genome for each region. This is expected to be the case for most, if not all, prokaryotic genomes. To demonstrate this, rDNA and 1kb flanking regions were extracted from \coli{Sakai} \cite{Hayashi2001} (BA000007.2), in which the rDNA operons have been well characterized\cite{Ohnishi2000}. These regions were aligned with MAFFT\cite{Katoh2002}, and their consensus depth and Shannon entropy calculated for each position in the alignment\cite{Schmitt1997}.
 
-
-In MG1655, the first rDNA operon is located 363 bases downstream of \textit{gmhB} (locus tag b0200). Homologous rDNA regions were extracted from 25 randomly selected complete \coli{} chromosomes(S.Table \ref{table:accessions})  We identified the 20kb region surrounding \textit{gmhB} in each of these genomes, then annotated and extracted the corresponding rDNA operon and flanking sequences. These sequences were aligned with MAFFT, and the Shannon entropies and consensus coverage plotted.
+h
+In \coli{MG1655}, the first rDNA operon is located 363 bases downstream of \textit{gmhB} (locus tag b0200). Homologous rDNA regions were extracted from 25 randomly selected complete \coli{} chromosomes(S.Table \ref{table:accessions})  We identified the 20kb region surrounding \textit{gmhB} in each of these genomes, then annotated and extracted the corresponding rDNA operon and flanking sequences. These sequences were aligned with MAFFT, and the Shannon entropies and consensus coverage plotted.
 
 
 \begin{figure}[!h]
     \centering
-    \begin{subfigure}[b]{.9\textwidth}
-      \includegraphics[width=0.7\textwidth]{entropy_plot}
+    \begin{subfigure}[b]{.99\textwidth}
+      \includegraphics[width=0.9\textwidth]{entropy_plot}
       \caption{}
       \label{fig:entropyA}
     \end{subfigure}
-    \begin{subfigure}[b]{.9\textwidth}
-      \includegraphics[width=0.75\textwidth]{entropy_plot_gmbH}
+    \begin{subfigure}[b]{.99\textwidth}
+      \includegraphics[width=0.9\textwidth]{entropy_plot_gmbH}
       \caption{}
       \label{fig:entropyB}
     \end{subfigure}
@@ -341,13 +341,13 @@ In MG1655, the first rDNA operon is located 363 bases downstream of \textit{gmhB
     \label{fig:entropy}
 \end{figure}
 
-Figure \ref{fig:entropyA} ( and Figure \ref{fig:ent_gage}) shows that within a single genome the regions flanking rDNA operons are variable between operons. This enables unique placement of reads at the edges of rDNA coding sequences in their genomic context (i.e. there is not likely to be confusion between the placements of rDNA operon edges within a single genome).
+Figure \ref{fig:entropyA} (and Figure \ref{fig:ent_gage}) shows that within a single genome the regions flanking rDNA operons are variable between operons. This enables unique placement of reads at the edges of rDNA coding sequences in their genomic context (i.e. there is not likely to be confusion between the placements of rDNA operon edges within a single genome).
 
 
 Figure \ref{fig:entropyB} shows that homologous rDNA regions, plus their flanking regions, are well-conserved across several related genomes. Assuming that individual rDNA operons are monophyletic within a taxonomic group, short reads that can be uniquely placed on a related genome's rDNA as a reference template are also likely able to be uniquely-placed in the appropriate homologous rDNA operon of the genome to be assembled.
 
 
-Taken together, these two properties allow for unique placement of reads from homologous rDNA regions in the appropriate genomic context. These 'anchor points' then reduce the number of branching possibilities in de Bruijn graph assembly for each individual rDNA operon, and thereby permit complete assembly through the full rDNA region.
+Taken together, these two properties allow for unique placement of reads from homologous rDNA regions in the appropriate genomic context. These ``anchor points'' then reduce the number of branching possibilities in de Bruijn graph assembly for each individual rDNA operon, and thereby permit complete assembly through the full rDNA region.
 
 
 \subsection*{Validating Assembly across rDNA regions}
@@ -365,14 +365,14 @@ In all cases, SPAdes was used with the same parameters for both \textit{de fere 
 
 \subsection*{Performance on Simulated Reads}
 \subsubsection*{Simulated Reads with Artificial Genome}
-To create a small dataset for testing, we extracted 7 distinct rDNA regions from the E. coli sp. Sakai genome BA000007.2, including 5kb upstream and downstream flanking sequence, using the tools riboScan.py, riboSelect.py and riboSnag.py. Those regions were combined to produce a ~100kb artificial test chromosome. pIRS\cite{Hu2012} was used to generate simulated reads (100bp, 300bp inserts, stdev 10, 30-fold coverage, built-in error profile) from this test chromosome. These reads were assembled using riboSeed, with the \coli{MG1655} genome (NC\_000913.3) as a reference.  Because of the random nature of read simulation, this was repeated 8 times.
+To create a small dataset for testing, we extracted 7 distinct rDNA regions from the E. coli sp. Sakai genome BA000007.2, including 5kb upstream and downstream flanking sequence, using the tools riboScan.py, riboSelect.py and riboSnag.py. Those regions were combined to produce a \ttilde100kb artificial test chromosome. pIRS\cite{Hu2012} was used to generate simulated reads (100bp, 300bp inserts, stdev 10, 30-fold coverage, built-in error profile) from this test chromosome. These reads were assembled using riboSeed, with the \coli{MG1655} genome (NC\_000913.3) as a reference.  Because of the random nature of read simulation, this was repeated 8 times.
 
 
-The \textit{de fere novo} assembly bridged an average of 4 of the 7 rDNA regions in the artificial genome, while the \textit{de novo} assembly method failed to bridge any. To demonstrate that the choice of reference sequence determines the ability to assemble correctly through rDNA contigs, we ran riboSeed with the same \coli{} reads using \textit{Klebsiella pneumoniae} reference pseudocontigs derived from the HS11286 (CP003200.1) genome\cite{Liu2012}. The \textit{de fere novo} assembly with pseudocontigs from \textit{K. pneumoniae} bridged between 0 and 3 rDNAs, but also misassembled  several rDNA gaps (Figure \ref{fig:artificial}, SFIGURE X).
+The \textit{de fere novo} assembly bridged an average of 4 of the 7 rDNA regions in the artificial genome, while the \textit{de novo} assembly method failed to bridge any. To demonstrate that the choice of reference sequence determines the ability to assemble correctly through rDNA contigs, we ran riboSeed with the same \coli{} reads using  pseudocontigs derived from the \textit{Klebsiella pneumoniae HS11286} (CP003200.1) genome\cite{Liu2012}. The \textit{de fere novo} assembly with pseudocontigs from \textit{K. pneumoniae} bridged between 0 and 3 rDNAs, but also misassembled  several rDNA gaps (Figure \ref{fig:artificial}).
 
 \begin{figure}[!h]
     \centering
-    \hspace*{-2cm}\includegraphics[width=1\textwidth]{PrettyMauve}
+    \hspace*{-2cm}\includegraphics[width=.99\textwidth]{PrettyMauve}
     \caption{Representative Mauve output describing the results of riboSeed assemblies of simulated reads generated by ART from the concatenated E. coli Sakai artificial genome. From top to bottom: artificial reference chromosome; rDNA clusters (red bars); \textit{de fere novo} assembly (\coli reference), \textit{de novo} assembly (\coli reference), and \textit{de fere novo} assembly (K. pneumoniae reference). riboSeed with \coli reference assembles 4 of 7 rDNA regions, but the \textit{de novo} assembly recovers no rDNA regions correctly. riboSeed using a K. pneumoniae reference resolves a single rDNA region, but misassembles clusters.
 }
     \label{fig:artificial}
@@ -384,18 +384,18 @@ To investigate how riboSeed assembly is affected by choice of reference strain, 
 
 \begin{figure}[!h]
   \centering
-  \begin{subfigure}[b]{0.9\textwidth}
-    \includegraphics[width=0.7\textwidth]{all_degen}
-    \caption{}
+  \begin{subfigure}[b]{0.99\textwidth}
+    \includegraphics[width=0.9\textwidth]{all_degen}
+    \caption{Mutations Throughout}
     \label{fig:degen_all}
   \end{subfigure}
-  \begin{subfigure}[b]{0.9\textwidth}
-    \includegraphics[width=0.75\textwidth]{flanking_degen}
-    \caption{}
+  \begin{subfigure}[b]{0.99\textwidth}
+    \includegraphics[width=0.9\textwidth]{flanking_degen}
+    \caption{Mutations in Flanking Regions Only}
     \label{fig:degen_flank}
   \end{subfigure}
 
-  \caption{Variants of the artificial genome with mutation frequencies between 0 and 0.1 (ie, 100 substitutions per kbp). Neighbor-joining trees are shown, rooted by the original sequence. Correctly-assembled rDNAs were counted, and the distribution of results shown against the appropriate mutation frequency. Results are shown for models where substitutions are permitted (A) throughout the chromosome, and (B) only the flanking regions, the latter emulating the relative rate of substitution in rDNA and flanking regions. N=8}
+  \caption{Variants of the artificial genome with mutation frequencies between 0 and 0.1 (ie, 100 substitutions per kbp). Neighbor-joining trees are shown, rooted by the original sequence. Correctly-assembled rDNAs were counted, and the distribution of results shown against the appropriate mutation frequency. Results are shown for models where substitutions are permitted (A) throughout the chromosome, and (B) only the flanking regions, the latter emulating the relative rate of substitution in rDNA and flanking regions. N=8.}
   \label{fig:degen}
 \end{figure}
 
@@ -412,22 +412,22 @@ To investigate the effect of short read length on riboSeed assembly, pIRS\cite{H
   \centering
   \begin{subfigure}[b]{0.45\textwidth}
     \includegraphics[width=0.9\textwidth]{coli}
-    \caption{E. coli}
+    \caption{\textit{E. coli}}
     \label{fig:sim_coli}
   \end{subfigure}
   \begin{subfigure}[b]{0.45\textwidth}
     \includegraphics[width=0.9\textwidth]{kleb}
-    \caption{K. pneumoneae}
+    \caption{\textit{K. pneumoneae}}
     \label{fig:sim_kleb}
   \end{subfigure}
 
-  \caption{Comparison of \textit{de fere novo} assemblies of simulated reads generated by pIRS. In most cases, increasing coverage depth and read length resulted in fewer missassemblies. Assemblies were scored using riboScore.py. N=5}
+  \caption{Comparison of \textit{de fere novo} assemblies of simulated reads generated by pIRS. In most cases, increasing coverage depth and read length resulted in fewer misassemblies. Assemblies were scored using riboScore.py. N=5.}
   \label{fig:simreads}
 \end{figure}
 
 
 
-At either 20X or 50X coverage, \textit{de novo} assembly was unable to resolve a single rDNA cluster with any of the simulated read sets. \textit{de fere novo} assembly with riboSeed showed modest improvement to both the \coli{} assemblies. Currently, we are unaware as to why the simulated reads proves to be more of a challenge than real data.
+At either 20x or 50x coverage, \textit{de novo} assembly was unable to resolve a single rDNA cluster with any of the simulated read sets. \textit{de fere novo} assembly with riboSeed showed modest improvement to both the \coli{} assemblies. Increasing depth of coverage and read length improves assemblies.
 
 \subsubsection*{Benchmarking against Hybrid Sequencing and Assembly}
 
@@ -445,37 +445,46 @@ NZ\_CP017149.1
   \begin{tabular}{p{4.9cm}p{.95cm}p{.75cm}p{.75cm}p{2.43cm}p{.6cm}>{\color{black}}>{\hfill}p{.4cm}p{.2cm}p{.1cm}>{\color{black}}>{\hfill}p{.4cm}p{.2cm}p{.1cm}}
     % \arrayrulecolor{black}
     \toprule
-    \multirow{2}{*}{Strain} & \multirow{2}{*}{Platform}  & \multirow{2}{*}{Length} & \multirow{2}{*}{Depth}  &  \multicolumn{2}{c}{Reference} &  \multicolumn{3}{c}{de novo} & \multicolumn{3}{c}{de fere novo} \\
+    \multirow{2}{*}{Sequenced Strain Name} & \multirow{2}{*}{Platform}  & \multirow{2}{*}{Length} & \multirow{2}{*}{Depth}  &  \multicolumn{2}{c}{Reference Strain} &  \multicolumn{3}{c}{\textit{de novo}} & \multicolumn{3}{c}{\textit{de fere novo}} \\
                             &   &   &   & Name & rDNAs  &  $\checkmark$ & skip & $\times$ &  $\checkmark$ & skip & $\times$  \\
     \cmidrule{1-1}\cmidrule(l){2-2}\cmidrule(l){3-3}\cmidrule(l){4-4}\cmidrule(l){5-6}\cmidrule(l){7-9}\cmidrule(l){10-12}
     \textit{P. aeruginosa BAMCPA07-48} & HiSeq & 100 & 200x & ATCC 15692  & 4 & 1 & 3 & 0 & 4 & 0 & 0 \\
     \bottomrule
+    \begin{minipage}[t]{.5\textwidth}
+      {\tiny
+        $\checkmark$ = correct assembly \\ skip = skipped assembly \\ $\times$ = incorrect assembly
+      }
+    \end{minipage}
   \end{tabular}
   }
 \end{table}
 
 
 
-\textit{de fere novo} assembly correctly assembled across all 4 rDNA regions, whereas \textit{de novo} assembly assembled only a single rDNA region (Table \ref{table:paohybrid}). The single rDNA region solved by \textit{de novo} assembly included misassembly of a ~33bp insertion 50bp upstream of the 5S subunit (A6R75\_01945) that was not present in the hybrid assembly, the reference, or the \textit{de fere novo} assembly. Thus, we find that the \textit{de novo} fere assembly using only short reads performs better than \textit{de novo} assembly of short reads alone, validated against a complete hybrid assembly using the same data. Supplementary Table 4 describes SNPs present in the single rDNA region that is resolved by \textit{de novo} assembly, allowing comparison between the hybrid, \textit{de novo}, and \textit{de fere novo} assemblies. This region exhibits four SNPs between the hybrid assembly and the \textit{de fere novo} assembly using only short reads, establishing that the \textit{de fere novo} assembly was of high quality and able to assemble rDNA sequence accurately, even in the absence of long reads.
+\textit{de fere novo} assembly correctly assembled across all 4 rDNA regions, whereas \textit{de novo} assembly assembled only a single rDNA region (Table \ref{table:paohybrid}). The single rDNA region solved by \textit{de novo} assembly included misassembly of a \ttilde33bp insertion 50bp upstream of the 5S subunit (A6R75\_01945) that was not present in the hybrid assembly, the reference, or the \textit{de fere novo} assembly. Thus, we find that the \textit{de novo} fere assembly using only short reads performs better than \textit{de novo} assembly of short reads alone, validated against a complete hybrid assembly using the same data. Supplementary Table 4 describes SNPs present in the single rDNA region that is resolved by \textit{de novo} assembly, allowing comparison between the hybrid, \textit{de novo}, and \textit{de fere novo} assemblies. This region exhibits four SNPs between the hybrid assembly and the \textit{de fere novo} assembly using only short reads, establishing that the \textit{de fere novo} assembly was of high quality and able to assemble rDNA sequence accurately, even in the absence of long reads.
 
 
 \subsubsection*{Case Study: Closing the assembly of S. aureus UAMS-1}
 Staphylococcus aureus UAMS-1 is a well-characterized, USA200, MSSA strain isolated from an osteomyelitis patient. The corresponding published genome was sequenced using Illumina MiSeq generating 300bp reads, and the assembly refined with GapFiller as part of the BugBuilder pipeline \cite{Abbott2017}. Currently, the genome assembly is represented by two scaffolds (JTJK00000000), with several repeated regions acknowledged in the annotations\cite{Sassi2015}. As the rDNA regions were not fully characterized in the annotations, we proposed that \textit{de fere novo} assembly could resolve some of the problematic regions.
 
-\begin{table}[~h]
+\begin{table}[!h]
   {\color{tgray}
   \centering
-  \ra{1.3}
-  \caption{Assembly of the \textit{S.aureus UAMS-1} genome}
+  \caption{Assembly of the \textit{S.aureus UAMS-1}}
   \label{table:U1}
   \begin{tabular}{p{4.9cm}p{.95cm}p{.75cm}p{.75cm}p{2.43cm}p{.6cm}>{\color{black}}>{\hfill}p{.4cm}p{.2cm}p{.1cm}>{\color{black}}>{\hfill}p{.4cm}p{.2cm}p{.1cm}}
     % \arrayrulecolor{black}
     \toprule
-    \multirow{2}{*}{Strain} & \multirow{2}{*}{Platform}  & \multirow{2}{*}{Length} & \multirow{2}{*}{Depth}  &  \multicolumn{2}{c}{Reference} &  \multicolumn{3}{c}{de novo} & \multicolumn{3}{c}{de fere novo} \\
+    \multirow{2}{*}{Sequenced Strain Name} & \multirow{2}{*}{Platform}  & \multirow{2}{*}{Length} & \multirow{2}{*}{Depth}  &  \multicolumn{2}{c}{Reference Strain} &  \multicolumn{3}{c}{\textit{de novo}} & \multicolumn{3}{c}{\textit{de fere novo}} \\
                             &   &   &   & Name & rDNAs  &  $\checkmark$ & skip & $\times$ &  $\checkmark$ & skip & $\times$  \\
     \cmidrule{1-1}\cmidrule(l){2-2}\cmidrule(l){3-3}\cmidrule(l){4-4}\cmidrule(l){5-6}\cmidrule(l){7-9}\cmidrule(l){10-12}
     \textit{S.aureus UAMS-1} & MiSeq & 300 & 110x & MRSA252  & 5 &  0 & 5 & 0   & 2 & 3 & 0 \\
     \bottomrule
+    \begin{minipage}[t]{.5\textwidth}
+      {\tiny
+        $\checkmark$ = correct assembly \\ skip = skipped assembly \\ $\times$ = incorrect assembly
+      }
+    \end{minipage}
   \end{tabular}
 }
 \end{table}
@@ -485,22 +494,22 @@ Using the same reference \textit{S. aureus MRSA252}\cite{Holden2004} (BX571856.1
 We modified the BugBuilder pipeline (\url{https://github.com/nickp60/BugBuilder}) used in the published assembly to incorporate pseudocontigs from riboSeed, resulting in a single scaffold of 7 contigs. In this case, riboSeed was able to bring an existing high-quality scaffold to completion.
 
 \subsubsection*{Benchmarking against GAGE-B Datasets}
-We used the Genome Assembly Gold-standard Evaluation for Bacteria (GAGE-B) datasets \cite{Magoc2013} to assess the performance of riboSeed against a set of well-characterized assemblies. These datasets represent a broad range of challenges; low GC content and tandem rDNA repeats prove challenging to the riboSeed procedure. \textit{Mycobacterium abscessus}, having only a single rDNA operon, doesn’t suffer from the issue of rDNA repeats, and was excluded from this analysis.
+We used the Genome Assembly Gold-standard Evaluation for Bacteria (GAGE-B) datasets \cite{Magoc2013} to assess the performance of riboSeed against a set of well-characterized assemblies. These datasets represent a broad range of challenges; low GC content and tandem rDNA repeats prove challenging to the riboSeed procedure. \textit{Mycobacterium abscessus}, having only a single rDNA operon, does not suffer from the issue of rDNA repeats, and was excluded from this analysis.
 
 
-When a reference used in the GAGE-B study came from the sequenced strain we chose an alternate reference, as using the true reference sequence would provide an unfair advantage to riboSeed. The GAGE-B datasets include both raw and trimmed reads; in all cases, the trimmed reads were used. Results are shown in Table 6.
+When a reference used in the GAGE-B study came from the sequenced strain we chose an alternate reference, as using the true reference sequence would provide an unfair advantage to riboSeed. The GAGE-B datasets include both raw and trimmed reads; in all cases, the trimmed reads were used. Results are shown in Table \ref{table:gageb}.
 
 \begin{table}[]
   {\color{tgray}
   \centering
-  \ra{1.3}
+  \ra{1.2}
   \caption{Assembly of GAGE-B datasets}
   \label{table:gageb}
   \begin{tabular}{p{4.9cm}p{.95cm}p{.75cm}p{.75cm}p{2.43cm}p{.6cm}>{\color{black}}>{\hfill}p{.4cm}p{.2cm}p{.1cm}>{\color{black}}>{\hfill}p{.4cm}p{.2cm}p{.1cm}}
     % \arrayrulecolor{black}
     \toprule
-    \multirow{2}{*}{Strain} & \multirow{2}{*}{Platform}  & \multirow{2}{*}{Length} & \multirow{2}{*}{Depth}  &  \multicolumn{2}{c}{Reference} &  \multicolumn{3}{c}{de novo} & \multicolumn{3}{c}{de fere novo} \\
-                                &   &   &   & Name & rDNAs  &  $\checkmark$ & skip & $\times$ &  $\checkmark$\footnote{test1} & skip\footnote{another test} & $\times$  \\
+    \multirow{2}{*}{Sequenced Strain Name} & \multirow{2}{*}{Platform}  & \multirow{2}{*}{Length} & \multirow{2}{*}{Depth}  &  \multicolumn{2}{c}{Reference Strain} &  \multicolumn{3}{c}{\textit{de novo}} & \multicolumn{3}{c}{\textit{de fere novo}} \\
+   & & & & Name & rDNAs & $\checkmark$ & skip & $\times$ & $\checkmark$ & skip & $\times$  \\
     \cmidrule{1-1}\cmidrule(l){2-2}\cmidrule(l){3-3}\cmidrule(l){4-4}\cmidrule(l){5-6}\cmidrule(l){7-9}\cmidrule(l){10-12}
     A. hydrophila SSU   & HiSeq   & 101   & 250   & ATCC 7966 & 10 & 0 & 10 & 0  & 4 & 6 & 0  \\
     \arrayrulecolor{lgray}\hline
@@ -524,25 +533,30 @@ When a reference used in the GAGE-B study came from the sequenced strain we chos
     % \arrayrulecolor{black}
 
     \bottomrule
+    \begin{minipage}[t]{.5\textwidth}
+      {\tiny
+        $\checkmark$ = correct assembly \\ skip = skipped assembly \\ $\times$ = incorrect assembly
+      }
+    \end{minipage}
   \end{tabular}
   }
 \end{table}
 
-Compared to the \textit{de novo} assembly, \textit{de fere novo} assembly improved the majority of assemblies. In the case of the \textit{S. aureus} and \textit{Rhodobacter} datasets, particular difficulty was encountered for all of the references tried. In the case of \textit{B. fragilis}, the entropy plot (SFIGURE X) shows that the variability on the 5’ end of the operon is much lower than the other strains, likely leading to the missassemblies.
+Compared to the \textit{de novo} assembly, \textit{de fere novo} assembly improved the majority of assemblies. In the case of the \textit{S. aureus} and \textit{Rhodobacter} datasets, particular difficulty was encountered for all of the references tried. In the case of \textit{B. fragilis}, the entropy plot (Figure \ref{fig:ent_frag}) shows that the variability on the 5' end of the operon is much lower than the other strains, likely leading to the misassemblies.
 
 
 \section*{Discussion}
 We show that the regions flanking rDNAs from related strains show a high degree of conservation. This homology allows us to infer the location of rDNAs within a newly sequenced isolate, even in absence of the resolution that would be provided by long read sequencing. Comparing the regions flanking rDNAs within a single genome, we observed that with sufficient flanking length, flanking regions show enough variability to differentiate each instance of the rDNAs. Taken together, the cross-taxon homology allows inference of the location (ie the flanking regions) of rDNAs, and the variability of these flanking regions within a genome enables identification of reads likely belonging to each cluster.
 
 
-The similarity between the sequenced isolate and the reference influences the resulting \textit{de fere novo} assembly; distance can be estimated using an alignment-free approach such as the KGCAK database\cite{Wang2015b}. To prevent spurious joining of contigs, if less than 80\% of the reads map to the reference, the resulting pseudocontigs will be treated as ``untrusted'' contigs by SPAdes. However, performance of riboSeed using degenerate artificial genomes shows that although one should use the best reference available for optimal results, the subassembly method is robust against moderate discrepancies between the reference and sequenced isolate’s flanking regions.
+The similarity between the sequenced isolate and the reference influences the resulting \textit{de fere novo} assembly; distance can be estimated using an alignment-free approach such as the KGCAK database\cite{Wang2015b}. To prevent spurious joining of contigs, if less than 80\% of the reads map to the reference, the resulting pseudocontigs will be treated as ``untrusted'' contigs by SPAdes. However, performance of riboSeed using degenerate artificial genomes shows that although one should use the best reference available for optimal results, the subassembly method is robust against moderate discrepancies between the reference and sequenced isolate's flanking regions.
 
 
 
-The method of constructing pseudocontigs implemented by riboSeed relies on having a relevant reference sequence, where the rDNA regions to act as ``bait'', fishing for reads that likely map specifically to that region. Although this has been shown to be an effective way to partition the appropriate reads, perhaps a more robust and supervision-free method would be use a probabilistic representation of equivalent rDNA regions for a particular taxon. By developing a database of hidden Markov Models from each of the rDNAs in a taxon, perhaps the step of choosing an appropriate reference could be circumvented. In the case of datasets where the choice of reference determined riboSeed’s effectiveness (see \textit{S. aureus}, table \ref{table:gageb}), a probabilistic approach may improve performance. FIGURE 3A shows the unique nature of the rDNA flanking regions; however, although FIGURE 3B shows strong conservation of the 16S region, the 23S and 5S regions show some degree of variation. These areas in particular may benefit from a probabilistic representation.
+The method of constructing pseudocontigs implemented by riboSeed relies on having a relevant reference sequence, where the rDNA regions to act as ``bait'', fishing for reads that likely map specifically to that region. Although this has been shown to be an effective way to partition the appropriate reads, perhaps a more robust and supervision-free method would be use a probabilistic representation of equivalent rDNA regions for a particular taxon. By developing a database of hidden Markov Models from each of the rDNAs in a taxon, perhaps the step of choosing an appropriate reference could be circumvented. In the case of datasets where the choice of reference determined riboSeed's effectiveness (see \textit{S. aureus}, table \ref{table:gageb}), a probabilistic approach may improve performance. Figure \ref{table:entropyA} shows the unique nature of the rDNA flanking regions; however, although Figure \ref{table:entropyB} shows strong conservation of the 16S region, the 23S and 5S regions show some degree of variation. These areas in particular may benefit from a probabilistic representation.
 
 
-Several checks are implemented after the subassembly to ensure that the resulting pseudocontig is fit for inclusion. If a subassembly’s longest contig is greater than 3x the particular pseudocontig length or shorter than 6kb (a conservative minimum length of a 16S, 23S, and 5S operon), this is taken to be a sign of poor parameter choice so the user is warned, and by default no further seedings will occur to avoid spurious assembly. Such an outcome can be indicative of any of several factors: improper clustering of operons; insufficient or extraneous flanking sequence; sub-optimal mapping; inappropriate choice of k-mer length for subassembly; inappropriate reference; or other issues. If this occurs, we recommend testing the assembly with different k-mers, changing the flanking length, or trying alternative reference genomes. Mapping depth of the rDNA regions is also reported for each iteration; a marked decrease in mapping depth may also be indicative of problems.
+Several checks are implemented after the subassembly to ensure that the resulting pseudocontig is fit for inclusion. If a subassembly's longest contig is greater than 3x the particular pseudocontig length or shorter than 6kb (a conservative minimum length of a 16S, 23S, and 5S operon), this is taken to be a sign of poor parameter choice so the user is warned, and by default no further seedings will occur to avoid spurious assembly. Such an outcome can be indicative of any of several factors: improper clustering of operons; insufficient or extraneous flanking sequence; sub-optimal mapping; inappropriate choice of k-mer length for subassembly; inappropriate reference; or other issues. If this occurs, we recommend testing the assembly with different k-mers, changing the flanking length, or trying alternative reference genomes. Mapping depth of the rDNA regions is also reported for each iteration; a marked decrease in mapping depth may also be indicative of problems.
 
 
 Many published genome finishing tools and approaches offer improvements when applied to suitable datasets, but none (including the approach presented in this paper) is able in isolation to resolve all bacterial genome assembly issues. One constraint on the performance of riboSeed is the quality of rDNA annotations in reference strains. Although it is impossible to concretely confirm it is the case \textit{in silico}, we (and others \cite{Mariano2016}) have found several reference genomes of the course of this study that we suspect have collapsed rDNA repeats. We recommend using a tool such as 16Stimator\cite{Perisin2016} or rrnDB\cite{Stoddard2014} to estimate number of 16s (and therefore rDNA operons) prior to assembly, or riboStack.py to assess mapping depths after running riboSeed.
@@ -584,16 +598,17 @@ We thank Anton Korobeynikov for his helpful tips on optimizing SPAdes. Yoann Aug
 
 \pagebreak
 \bibliography{riboSeed_refs}
+\pagebreak
 
 \beginsupplement
 \section*{Supplementary Data}
 
 
 \subsection*{Making the artificial test genome}
-The artificial genome used for testing was constructed using the makeToyGenome.sh script included in the GitHub repository under riboseed/scripts. Briefly, the 7 rDNA regions from the \coli{Sakai} genome were extracted with 5kb flanking sequence upstream and downstream; these sequences were then concatenated to form a single, ~100kb sequence containing the 7 rDNAs as well as their flanking context.
+The artificial genome used for testing was constructed using the makeToyGenome.sh script included in the GitHub repository under riboseed/scripts. Briefly, the 7 rDNA regions from the \coli{Sakai} genome were extracted with 5kb flanking sequence upstream and downstream; these sequences were then concatenated to form a single, \ttilde100kb sequence containing the 7 rDNAs as well as their flanking context.
 
 \subsection*{Archaeal Datasets}
-We assessed the effectiveness of riboSeed with assembling archaeal genomes. Most (~55\%) archaeal genomes have only a single rDNA, and none has been observed to have more than four. As riboSeed requires a sequencing dataset and a reference genome, applicability was limited; of the 104 entries in rrndb with multiple rDNAs, only 7 had multiple entries at the species level. Among those, only 2 had publicly available short read data. We used riboSeed to re-assemble \textit{Methanosarcina barkeri Fusaro DSMZ804} (Ion Torrent PGM, 89bp single-end reads) and \textit{Methanobacterium formicicum st. BRM9} (Illumina HiSeq 2000, 100bp paired-end reads). \textit{Methanobacterium formicicum st. JCM10132} (DRR017790 ) and \textit{Methanosarcina barkeri Fusaro DSMZ804} (SRR2064286) were the only ones that were suitable for riboSeed, meaning that there was publicly available short read data and that there is a related genome at the species level which is complete.
+We assessed the effectiveness of riboSeed with assembling archaeal genomes. Most (\ttilde55\%) archaeal genomes have only a single rDNA, and none has been observed to have more than four. As riboSeed requires a sequencing dataset and a reference genome, applicability was limited; of the 104 entries in rrndb with multiple rDNAs, only 7 had multiple entries at the species level. Among those, only 2 had publicly available short read data. We used riboSeed to re-assemble \textit{Methanosarcina barkeri Fusaro DSMZ804} (Ion Torrent PGM, 89bp single-end reads) and \textit{Methanobacterium formicicum st. BRM9} (Illumina HiSeq 2000, 100bp paired-end reads). \textit{Methanobacterium formicicum st. JCM10132} (DRR017790 ) and \textit{Methanosarcina barkeri Fusaro DSMZ804} (SRR2064286) were the only ones that were suitable for riboSeed, meaning that there was publicly available short read data and that there is a related genome at the species level which is complete.
 
 
 \textit{M. formicicum st. JCM10132} was sequenced on an Ion Torrent PGM, generating 106.5Mbp of single-end data. \textit{M formicicum BRM9} (CP006933.1) was used as a reference. The resulting \textit{de fere novo} assembly resulted in assembly of 1 of 2 rDNA gaps. This represents the first application of riboSeed to Ion Torrent data.
@@ -611,8 +626,6 @@ Taken together, we show that given appropriate datasets, we archaeal datasets ca
 \label{table:accessions}
 \begin{tabular}{l}
   \toprule
-  Available at ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/\\
-  \midrule
   GCA\_000021125.1\_ASM2112v1 \\
   GCA\_000023665.1\_ASM2366v1 \\
   GCA\_000026545.1\_ASM2654v1 \\
@@ -637,25 +650,31 @@ Taken together, we show that given appropriate datasets, we archaeal datasets ca
   GCA\_002125925.1\_ASM212592v1 \\
   GCA\_001612475.1\_ASM161247v1 \\
   GCA\_001651965.1\_ASM165196v1 \\
-  GCA\_001721125.1\_ASM172112v1
+  GCA\_001721125.1\_ASM172112v1\\
+  \bottomrule
+  {\tiny   Available at \url{ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/}}
+
 \end{tabular}
 \end{table}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{table}[]
-\centering
-\caption{Hits resulting from searching the SRA database for various sequencing technologies as of January, 2017}
-\label{table:searchterms}
-\begin{tabular}{lll}
-  Search term & Hits & Percentage \\
-  illumina & 2242225 & 94.27 \\
-  pacbio & 21131 & 0.89 \\
-  ion & 30560 & 1.28 \\
-  roche & 42445 & 1.78 \\
-  oxford & 12301 & 0.52 \\
-  solid & 29791 & 1.25 \\
-              & & \\
-  Total & 2378453 & 100
+  \centering
+  \caption{Hits resulting from searching the SRA database for various sequencing technologies as of January, 2017}
+  \label{table:searchterms}
+  \begin{tabular}{lrr}
+    \toprule
+    Search term & Hits & Percentage \\
+    \midrule
+    illumina & 2242225 & 94.27 \\
+    pacbio & 21131 & 0.89 \\
+    ion & 30560 & 1.28 \\
+    roche & 42445 & 1.78 \\
+    oxford & 12301 & 0.52 \\
+    solid & 29791 & 1.25 \\
+    &&\\
+    Total & 2378453 & 100\\
+    \bottomrule
 \end{tabular}
 \end{table}
 
@@ -674,8 +693,8 @@ Taken together, we show that given appropriate datasets, we archaeal datasets ca
   \textit{B. fragilis 638R} & FQ312004.1 \\
   \textit{R. sphaeroides ATCC 17029} & NC\_009049.1, NC\_009050.1 \\
   \textit{S. aureus TCH1516} & NC\_010079.1 \\
-  \textit{S. aureus NCTC 8325} & NC\_007795.1 \\
-  \textit{S. aureus FDA209P} & AP014942.1 \\
+  % \textit{S. aureus NCTC 8325} & NC\_007795.1 \\
+  % \textit{S. aureus FDA209P} & AP014942.1 \\
   \textit{S. aureus MRSA252} & BX571856.1 \\
   \textit{V. cholerae El Tor str. N16961} & NC\_002505.1, NC\_002506.1 \\
   \textit{X. axonopodis pv. Citrumelo} & CP002914.1 \\
@@ -702,7 +721,7 @@ Taken together, we show that given appropriate datasets, we archaeal datasets ca
     QUAST & 4.1 \\
     bedtools & 2.17.0 \\
     EMBOSS & 6.6.0 \\
-    pirs & 2.0.2\\
+    pIRS & 2.0.2\\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -710,73 +729,74 @@ Taken together, we show that given appropriate datasets, we archaeal datasets ca
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagebreak
 % coli
+
 \begin{figure}[h]
   \centering
-  \begin{subfigure}[b]{.48\textwidth}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/NC_000913.3_entropy_plot}
     \caption{\textit{E. coli MG1655} (NC\_000913.3)}
     \label{fig:ent_coli}
   \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/CP003200.1_entropy_plot}
     \caption{\textit{K. pneumoniae subsp. pneumoniae HS11286} (CP003200.1) }
     \label{fig:ent_pneumo}
   \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/NZ_CP017149.1_entropy_plot}
     \caption{\textit{P. aeruginosa strain ATCC 15692} (NZ\_CP017149.1)}
     \label{fig:ent_pao}
   \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/NC_008570.1_entropy_plot}
     \caption{\textit{A. hydrophila ATCC 7966} (NC\_008570.1)}
     \label{fig:ent_aero}
   \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/AE017194.1_entropy_plot}
     \caption{\textit{B. cereus ATCC 10987} (AE017194.1)}
     \label{fig:ent_cereus_atcc}
   \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/NC_016771.1_entropy_plot}
     \caption{\textit{B. cereus NC7401} (NC\_016771.1)}
     \label{fig:ent_cereus_nc}
   \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/FQ312004.1_entropy_plot}
     \caption{\textit{B. fragilis 638R} (FQ312004.1)}
     \label{fig:ent_frag}
   \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/NC_009050.1_entropy_plot}
-    \caption{\textit{R. sphaeroides  ATCC 17029} (NC\_009049.1) (NC\_009050.1)}
+    \caption{\textit{R. sphaeroides  ATCC 17029} (NC\_009049.1, NC\_009050.1)}
     \label{fig:ent_rhodo}
   \end{subfigure}
 \end{figure}
 \begin{figure}
   \centering
   \ContinuedFloat
-  \begin{subfigure}[b]{.48\textwidth}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/NC_010079.1_entropy_plot}
     \caption{\textit{S. aureus TCH1516} (NC\_010079.1)}
     \label{fig:ent_tch}
   \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
-    \includegraphics[width=0.95\textwidth]{gage_entropy_figures/NC_007795.1_entropy_plot}
-    \caption{\textit{S. aureus NCTC 8325} (NC\_007795.1)}
-    \label{fig:ent_nctc}
-  \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
-    \includegraphics[width=0.95\textwidth]{gage_entropy_figures/AP014942.1_entropy_plot}
-  \caption{\textit{S. aureus FDA209P} (AP014942.1)}
-  \label{fig:entfda}
-  \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
+  % \begin{subfigure}[b]{.45\textwidth}
+  %   \includegraphics[width=0.95\textwidth]{gage_entropy_figures/NC_007795.1_entropy_plot}
+  %   \caption{\textit{S. aureus NCTC 8325} (NC\_007795.1)}
+  %   \label{fig:ent_nctc}
+  % \end{subfigure}
+  % \begin{subfigure}[b]{.45\textwidth}
+  %   \includegraphics[width=0.95\textwidth]{gage_entropy_figures/AP014942.1_entropy_plot}
+  % \caption{\textit{S. aureus FDA209P} (AP014942.1)}
+  % \label{fig:entfda}
+  % \end{subfigure}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/NC_002506.1_entropy_plot}
     \caption{\textit{V. cholerae El Tor str. N16961} (NC\_002505.1) (NC\_002506.1)}
     \label{fig:ent_vib}
   \end{subfigure}
-  \begin{subfigure}[b]{.48\textwidth}
+  \begin{subfigure}[b]{.45\textwidth}
     \includegraphics[width=0.95\textwidth]{gage_entropy_figures/CP002914.1_entropy_plot}
     \caption{\textit{X. axonopodis pv. Citrumelo} (CP002914.1)}
   \end{subfigure}
@@ -784,7 +804,5 @@ Taken together, we show that given appropriate datasets, we archaeal datasets ca
   \label{fig:ent_gage}
 
 \end{figure}
-
-
 
 \end{document}
