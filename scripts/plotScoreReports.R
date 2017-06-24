@@ -14,7 +14,7 @@ combined_reports_kleb <-"/home/nicholas/GitHub/riboSeed/manuscript_results/simul
 combined_reports_coli <-"/home/nicholas/GitHub/riboSeed/manuscript_results/simulated_reads_coli/2017-06-23/coli_proper_combined_reports.txt"
 (names <- c("sourcepath", "assembly", "total", "Correct",  "Ambiguous", "Incorrect"))
 
-out_folder <- paste0("~/GitHub/riboSeed/2017-06-23-simReads/")
+out_folder <- paste0("~/GitHub/riboSeed/2017-06-23-simReads_replot/")
 
 dir.create(out_folder)
 results_table <- as.data.frame(

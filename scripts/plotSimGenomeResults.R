@@ -13,7 +13,7 @@ require(ggstance)
 analysis_date = "2017-06-21"
 src_folders <-"~/GitHub/riboSeed/manuscript_results/simulated_genome/"
 
-names = c("sourcepath", "assembly", "total", "Success",  "Ambiguous", "Missassembly")
+names = c("sourcepath", "assembly", "total", "Correct",  "Ambiguous", "Incorrect")
 dir(src_folders)
 folders<- dir(src_folders, pattern = "simulatedGenomeResults_",full.names = T)
 folders
@@ -30,41 +30,91 @@ for (folder in folders){
                              sep="\t", stringsAsFactors = F, header = F, col.names = names))
   )
 }
+#  add in de novo values;  future riboScore will output Null datasets to avoid this
+de_novo <- data.frame("sourcepath"=paste0("manually_added", 1:8),
+                      "assembly"=rep("coli_de_novo.fasta", 8),
+                      "total"=rep(7, 8), 
+                      "Correct"=rep(0, 8),
+                      "Ambiguous"=rep(0, 8),
+                      "Incorrect"=rep(0, 8))
+
+results_table <- rbind(results_table, de_novo)
 str(results_table)
 results_table$name <-gsub("\\.fasta", "", results_table$assembly)
 results_table$assembly <- NULL
-  
 print(results_table)
 
-
-tall <- melt(results_table, id.vars = c("sourcepath", "name", "total"), measure.vars = c("good", "bad", "ambiguous"), factorsAsStrings = T)
+tall <- melt(results_table, id.vars = c("sourcepath", "name", "total"), measure.vars = c("Correct", "Incorrect", "Ambiguous"), factorsAsStrings = T)
 str(tall)
 tall$name <- as.factor(tall$name)
-levels(tall$name) <-c("E. Coli", "K. pneumoneae")
+levels(tall$name) <-c("E. coli (de fere novo)", "E. coli (de novo)", "K. pneumoneae (de fere novo)")
 tall$prettynames <- levels(tall$name) 
-boxy <- ggplot(tall, aes(x=variable, y=value)) + facet_grid(~prettynames) + 
+
+boxy <- ggplot(tall, aes(x=variable, y=value)) + facet_grid(~name) + 
   # geom_vline(0, xintercept = 0, color="grey30") + 
   geom_boxplot(outlier.colour =  NA,color="grey40", fill="grey60",width=.7)+
   geom_point(position=position_jitter(width = .02, height = .12), shape=1)+
   scale_x_discrete(expand=c(.05,.05))+
   scale_y_continuous(expand=c(.01,.01), limits = c(-.2,7.5), breaks = 0:7)+
+  theme_bw() +
+  #eliminates background, gridlines, and chart border
   theme(
-        # axis.title.y = element_blank(),
-        # axis.text.y = element_blank(), 
-        # axis.ticks = element_blank(), 
-        plot.background = element_blank(),
-        panel.background = element_blank(),
-        
-        plot.title = element_text(size =15))+
+    plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color="black", size = .1),
+    strip.background = element_rect(colour = NA),
+    axis.text.x = element_text(angle=45, hjust=1),
+    axis.line = element_line(color = 'black', size = .1)) +
   labs(y="Count", x="rDNA Assembly ",  title="")
 
 boxy
-plot1 <- paste0(out_folder, "plot1")
+boxy_group_strain <- ggplot(tall, aes(x=name, y=value, fill=variable)) +
+  # geom_vline(0, xintercept = 0, color="grey30") + 
+  geom_boxplot(outlier.colour =  NA, width=.5)+
+  geom_point(position=position_jitterdodge(dodge.width = .5, jitter.width=.1, jitter.height=.1 ), shape=1)+
+  scale_x_discrete(expand=c(.05,.05))+
+  scale_y_continuous(expand=c(.01,.01), limits = c(-.2,7.5), breaks = 0:7)+
+  theme_bw() +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color="black", size = .1),
+    strip.background = element_rect(colour = NA),
+    axis.text.x = element_text(angle=45, hjust=1),
+    axis.line = element_line(color = 'black', size = .1)) +
+  labs(y="Count", x="Strain (method)",  title="", fill="rDNA assembly")
 
-pdf(file = paste0(plot1, ".pdf"), width = 4, height = 4)
+boxy_group_strain
+boxy_group_rdna <- ggplot(tall, aes(x=variable, y=value, fill=name)) +
+  # geom_vline(0, xintercept = 0, color="grey30") + 
+  geom_boxplot(outlier.colour =  NA, width=.5)+
+  geom_point(position=position_jitterdodge(dodge.width = .5, jitter.width=.1, jitter.height=.1 ), shape=1)+
+  scale_fill_discrete(position="bottom")+
+  scale_x_discrete(expand=c(.05,.05))+
+  scale_y_continuous(expand=c(.01,.01), limits = c(-.2,7.5), breaks = 0:7)+
+  theme_bw() +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color="black", size = .1),
+    strip.background = element_rect(colour = NA),
+    axis.text.x = element_text(angle=45, hjust=1),
+    axis.line = element_line(color = 'black', size = .1)) +
+  labs(y="Count", x="rDNA Assembly ",  title="", fill="Strain (method)")
+
+boxy_group_rdna
+
+pdf(file = file.path(out_folder, "simulated_genome.pdf"), width = 6, height = 6)
 boxy
+boxy_group_rdna
+boxy_group_strain
 dev.off()
-
+multiplot(plotlist =list(boxy, boxy_group_rdna, boxy_group_strain), widths = c(.4,.3,.3), ncol=3)
 png(filename = paste0(plot1, ".png"), width = 4, height = 4, units = "in", res = 300)
 boxy
 dev.off()
