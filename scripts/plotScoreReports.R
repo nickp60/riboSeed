@@ -44,11 +44,11 @@ tall$coverage<-as.factor(tall$coverage)
 levels(tall$tech)<-c("GenomeAnalyzerII, 50bp", "GenomeAnalyzerII, 75bp", "HiSeq, 100bp")
 levels(tall$coverage)<-c("20x Coverage", "50x Coverage")
 (coliplot<- ggplot(tall[tall$bug=="E. coli",], aes(x=variable, y=val)) + 
-  geom_boxplot(outlier.colour =  NA,color="grey40", fill="grey60",width=.7)+
-  geom_point(position=position_jitter(width=.1, height=.1), shape=1) +
-  facet_grid(coverage~tech)+
-  scale_x_discrete(expand=c(.05,.05))+
-  scale_y_continuous(expand=c(.01,.01), limits = c(-.2,7.5), breaks = 0:7)+
+    geom_boxplot(outlier.colour =  NA,color="grey40", fill="grey60",width=.7)+
+    geom_point(position=position_jitter(width=.1, height=.1), shape=1) +
+    facet_grid(coverage~tech)+
+    scale_x_discrete(expand=c(.05,.05))+
+    scale_y_continuous(expand=c(.01,.01), limits = c(-.2,7.5), breaks = 0:7)+
     theme_bw() +
     #eliminates background, gridlines, and chart border
     theme(
@@ -60,6 +60,25 @@ levels(tall$coverage)<-c("20x Coverage", "50x Coverage")
       axis.text.x = element_text(angle=45, hjust=1),
       axis.line = element_line(color = 'black', size = .1)) +
     labs(y="Count", x="rDNA Assembly ",  title=""))
+set.seed(27)
+(combplot2<- ggplot(tall, aes(x=tech, y=val, fill=variable, color=variable)) + 
+    geom_boxplot(outlier.colour =  NA, width=.7, alpha=0.5)+
+    geom_point(position=position_jitterdodge(jitter.width=.1, jitter.height=.1), shape=1, color="black") +
+    facet_grid(bug~coverage)+
+    scale_x_discrete(expand=c(.05,.05))+
+    scale_color_discrete(guide="none")+
+    scale_y_continuous(expand=c(.01,.01), limits = c(-.2,7.5), breaks = 0:7)+
+    theme_bw() +
+    #eliminates background, gridlines, and chart border
+    theme(
+      plot.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.border = element_rect(color="black", size = .1),
+      strip.background = element_rect(colour = NA),
+      axis.text.x = element_text(angle=45, hjust=1),
+      axis.line = element_line(color = 'black', size = .1)) +
+    labs(y="Count", x="Technology, Read Length ",  title="", fill="rDNA Assembly"))
 
 (klebplot<- ggplot(tall[tall$bug=="K. pneumoneae",], aes(x=variable, y=val)) + 
   geom_boxplot(outlier.colour =  NA,color="grey40", fill="grey60",width=.7)+
@@ -108,7 +127,9 @@ dev.off()
 pdf(file = paste0(out_folder, "kleb.pdf"), width = 5.5, height = 6.5)
 klebplot
 dev.off()
-
+pdf(file = paste0(out_folder, "simulated_reads_combined.pdf"), width = 6, height = 6.5)
+combplot2
+dev.off()
 png(filename = paste0(out_folder, "kleb.png"), width = 5.5, height = 6.5, units = "in", res = 300)
 klebplot
 dev.off()

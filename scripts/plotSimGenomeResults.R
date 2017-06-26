@@ -4,12 +4,7 @@
 # biocLite("ggtree")
 library(ggplot2)
 library(reshape2)
-library(ape)
-library(ggtree)
-require(msa)
-library(seqinr)
-require(phytools)
-require(ggstance)
+
 analysis_date = "2017-06-21"
 src_folders <-"~/GitHub/riboSeed/manuscript_results/simulated_genome/"
 
@@ -69,10 +64,12 @@ boxy <- ggplot(tall, aes(x=variable, y=value)) + facet_grid(~name) +
   labs(y="Count", x="rDNA Assembly ",  title="")
 
 boxy
-boxy_group_strain <- ggplot(tall, aes(x=name, y=value, fill=variable)) +
+
+boxy_group_strain <- ggplot(tall, aes(x=name, y=value, color=variable, fill=variable)) +
   # geom_vline(0, xintercept = 0, color="grey30") + 
-  geom_boxplot(outlier.colour =  NA, width=.5)+
-  geom_point(position=position_jitterdodge(dodge.width = .5, jitter.width=.1, jitter.height=.1 ), shape=1)+
+  geom_boxplot(outlier.colour =  NA, width=.7, alpha=0.5)+
+  geom_point(position=position_jitterdodge(dodge.width = .7, jitter.width=.1, jitter.height=.1 ), shape=1, color="black")+
+  scale_color_discrete(guide="none")+
   scale_x_discrete(expand=c(.05,.05))+
   scale_y_continuous(expand=c(.01,.01), limits = c(-.2,7.5), breaks = 0:7)+
   theme_bw() +
@@ -84,15 +81,17 @@ boxy_group_strain <- ggplot(tall, aes(x=name, y=value, fill=variable)) +
     panel.border = element_rect(color="black", size = .1),
     strip.background = element_rect(colour = NA),
     axis.text.x = element_text(angle=45, hjust=1),
+#    legend.position=c(0.7, .7),
     axis.line = element_line(color = 'black', size = .1)) +
   labs(y="Count", x="Strain (method)",  title="", fill="rDNA assembly")
 
 boxy_group_strain
-boxy_group_rdna <- ggplot(tall, aes(x=variable, y=value, fill=name)) +
+boxy_group_rdna <- ggplot(tall, aes(x=variable, y=value, fill=name, color=name)) +
   # geom_vline(0, xintercept = 0, color="grey30") + 
-  geom_boxplot(outlier.colour =  NA, width=.5)+
-  geom_point(position=position_jitterdodge(dodge.width = .5, jitter.width=.1, jitter.height=.1 ), shape=1)+
+  geom_boxplot(outlier.colour =  NA, width=.7, alpha=0.5)+
+  geom_point(position=position_jitterdodge(dodge.width = .7, jitter.width=.1, jitter.height=.1 ), shape=1, color="black")+
   scale_fill_discrete(position="bottom")+
+  scale_color_discrete(guide="none")+
   scale_x_discrete(expand=c(.05,.05))+
   scale_y_continuous(expand=c(.01,.01), limits = c(-.2,7.5), breaks = 0:7)+
   theme_bw() +
@@ -104,12 +103,13 @@ boxy_group_rdna <- ggplot(tall, aes(x=variable, y=value, fill=name)) +
     panel.border = element_rect(color="black", size = .1),
     strip.background = element_rect(colour = NA),
     axis.text.x = element_text(angle=45, hjust=1),
+#    legend.position=c(0.7, .7),
     axis.line = element_line(color = 'black', size = .1)) +
   labs(y="Count", x="rDNA Assembly ",  title="", fill="Strain (method)")
 
 boxy_group_rdna
 
-pdf(file = file.path(out_folder, "simulated_genome.pdf"), width = 6, height = 6)
+pdf(file = file.path(out_folder, "simulated_genome.pdf"), width = 6, height = 5)
 boxy
 boxy_group_rdna
 boxy_group_strain

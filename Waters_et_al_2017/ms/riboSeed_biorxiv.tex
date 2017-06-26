@@ -214,7 +214,7 @@ Sequencing bacterial genomes has become much more cost effective and convenient,
 
 
 
-The Illumina entries in NCBI's Sequence Read Archive (SRA) \cite{Kodama2012} outnumber all other technologies combined by about an order of magnitude (Table \ref{table:searchterms}). Draft assemblies from these datasets have systematic problems common to short read datasets, namely gaps in the sequences due to the difficulty of resolving assemblies of repeated regions\cite{Whiteford2005,Treangen 2013}. By improving the ability to resolve assemblies through repeated regions  it may be possible to improve on current assemblies, and therefore obtain additional sequence information from existing short read datasets in the SRA.
+The Illumina entries in NCBI's Sequence Read Archive (SRA) \cite{Kodama2012a} outnumber all other technologies combined by about an order of magnitude (Table \ref{table:searchterms}). Draft assemblies from these datasets have systematic problems common to short read datasets, namely gaps in the sequences due to the difficulty of resolving assemblies of repeated regions\cite{Whiteford2005,Treangen2011}. By improving the ability to resolve assemblies through repeated regions  it may be possible to improve on current assemblies, and therefore obtain additional sequence information from existing short read datasets in the SRA.
 
 
 
@@ -250,7 +250,7 @@ riboSeed relies on a closed reference genome assembly that is sufficiently close
 riboSeed proceeds in three stages: preprocessing, \textit{de fere novo} assembly, and assessment/visualization.
 \subsection*{1. Preprocessing}
 \subsubsection*{riboScan.py}
-riboScan.py uses Barrnap\cite{Seemann2014} to annotate rDNAs in the reference genome, and EMBOSS's seqret\cite{Rice2000} to create GenBank, FASTA, and GFF formatted versions of the reference genome. This preprocessing step unifies the annotation vocabulary for downstream processes.
+riboScan.py uses Barrnap (\url{https://github.com/tseemann/barrnap}) to annotate rDNAs in the reference genome, and EMBOSS's seqret\cite{Rice2000a} to create GenBank, FASTA, and GFF formatted versions of the reference genome. This preprocessing step unifies the annotation vocabulary for downstream processes.
 
 \subsubsection*{riboSelect.py}
 riboSelect.py attempts to infer rDNA operon structure from the genomic location of constituent 16S, 23S and 5S sequences. The number of 16S sequences is identified from the riboScan.py annotation, and Jenks natural breaks algorithm (using the 16S count to set the number of breaks) then employed to group rRNA annotations into likely operons on the basis of  their genomic coordinates. The output identifies individual rDNA clusters and describes their component elements in a plain text file. This output can be easily adjusted by hand before assembly if the clustering does not appear to accurately reflect the arrangement of the operons (for example, based on visualization of the annotations in a genome browser).
@@ -498,11 +498,11 @@ Sanjar, et al.published the genome sequence of \textit{Pseudomonas aeruginosa BA
 
 
 
-\textit{de fere novo} assembly correctly assembled across all 4 rDNA regions, whereas \textit{de novo} assembly assembled only a single rDNA region (Table \ref{table:paohybrid}). The single rDNA region solved by \textit{de novo} assembly included misassembly of a \ttilde33bp insertion 50bp upstream of the 5S subunit (A6R75\_01945) that was not present in the hybrid assembly, the reference, or the \textit{de fere novo} assembly. Thus, we find that the \textit{de novo} fere assembly using only short reads performs better than \textit{de novo} assembly of short reads alone, validated against a complete hybrid assembly using the same data. Supplementary Table 4 describes SNPs present in the single rDNA region that is resolved by \textit{de novo} assembly, allowing comparison between the hybrid, \textit{de novo}, and \textit{de fere novo} assemblies. This region exhibits four SNPs between the hybrid assembly and the \textit{de fere novo} assembly using only short reads, establishing that the \textit{de fere novo} assembly was of high quality and able to assemble rDNA sequence accurately, even in the absence of long reads.
+\textit{de fere novo} assembly correctly assembled across all 4 rDNA regions, whereas \textit{de novo} assembly failed to assemble any rDNA regions (Table \ref{table:paohybrid}). Thus, we find that the \textit{de novo} fere assembly using only short reads performs better than \textit{de novo} assembly of short reads alone, validated against a complete hybrid assembly using the same data.
 
 
-\subsubsection*{Case Study: Closing the assembly of S. aureus UAMS-1}
-\textit{Staphylococcus aureus UAMS-1} is a well-characterized, USA200, MSSA strain isolated from an osteomyelitis patient. The corresponding published genome was sequenced using Illumina MiSeq generating 300bp reads, and the assembly refined with GapFiller as part of the BugBuilder pipeline \cite{Abbott2017}. Currently, the genome assembly is represented by two scaffolds (JTJK00000000), with several repeated regions acknowledged in the annotations\cite{Sassi2015}. As the rDNA regions were not fully characterized in the annotations, we proposed that \textit{de fere novo} assembly could resolve some of the problematic regions.
+\subsubsection*{Case Study: Closing the assembly of \textit{S. aureus UAMS-1}}
+\textit{Staphylococcus aureus UAMS-1} is a well-characterized, USA200, methacilin-sensitive strain isolated from an osteomyelitis patient. The corresponding published genome was sequenced using Illumina MiSeq generating 300bp reads, and the assembly refined with GapFiller as part of the BugBuilder pipeline \cite{Abbott2017}. Currently, the genome assembly is represented by two scaffolds (JTJK00000000), with several repeated regions acknowledged in the annotations\cite{Sassi2015}. As the rDNA regions were not fully characterized in the annotations, we proposed that \textit{de fere novo} assembly could resolve some of the problematic regions.
 
 \begin{table}[!h]
   {\color{tgray}
@@ -579,7 +579,7 @@ When a reference used in the GAGE-B study came from the sequenced strain we chos
   }
 \end{table}
 
-Compared to the \textit{de novo} assembly, \textit{de fere novo} assembly improved the majority of assemblies. In the case of the \textit{S. aureus} and \textit{Rhodobacter} datasets, particular difficulty was encountered for all of the references tried. In the case of \textit{B. fragilis}, the entropy plot (Figure \ref{fig:ent_frag}) shows that the variability on the 5' end of the operon is much lower than the other strains, likely leading to the misassemblies.
+Compared to the \textit{de novo} assembly, \textit{de fere novo} assembly improved the majority of assemblies. In the case of the \textit{S. aureus} and \textit{R. sphaeroides} datasets, particular difficulty was encountered for all of the references tried. In the case of \textit{B. fragilis}, the entropy plot (Figure \ref{fig:ent_frag}) shows that the variability on the 5' end of the operon is much lower than the other strains, likely leading to the misassemblies.
 
 
 \section*{Discussion}
@@ -622,13 +622,13 @@ The riboSeed pipeline and the datasets generated during the current study are av
 The authors declare that they have no competing interests.
 
 \section*{Funding}
-The work was funded through as a joint project between The James Hutton Institute, Dundee, Scotland, and the National University of Ireland, Galway, Ireland.
+The work was funded through a joint project between The James Hutton Institute, Dundee, Scotland, and the National University of Ireland, Galway, Ireland.
 
 \section*{Authors' contributions}
 NRW wrote all the bugs.
 
 \section*{Acknowledgements}
-We thank Anton Korobeynikov for his helpful tips on optimizing SPAdes. Yoann Augagneur, Shaun Brinsmade, and Mohamed Sassi graciously provided access to the UAMS-1 genome sequencing data.
+We thank Anton Korobeynikov for his helpful tips on optimizing SPAdes. Yoann Augagneur, Shaun Brinsmade, and Mohamed Sassi graciously provided access to the \textit{S. aureus UAMS-1} genome sequencing data.
 
 
 
