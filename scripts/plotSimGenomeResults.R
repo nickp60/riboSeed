@@ -39,13 +39,13 @@ results_table$name <-gsub("\\.fasta", "", results_table$assembly)
 results_table$assembly <- NULL
 print(results_table)
 
-tall <- melt(results_table, id.vars = c("sourcepath", "name", "total"), measure.vars = c("Correct", "Incorrect", "Ambiguous"), factorsAsStrings = T)
+tall <- melt(results_table, id.vars = c("sourcepath", "name", "total"), measure.vars = c("Correct", "Incorrect", "Ambiguous"), factorsAsStrings = F)
 str(tall)
-tall$name <- as.factor(tall$name)
-levels(tall$name) <-c("E. coli (de fere novo)", "E. coli (de novo)", "K. pneumoneae (de fere novo)")
-tall$prettynames <- levels(tall$name) 
+tall$name <- factor(tall$name,  levels=c("coli_de_fere_novo", "coli_de_novo", "kleb_de_fere_novo"))
+levels(tall$name) <-c("E. coli (de fere novo)", "E. coli (de novo)", "K. pneumoniae (de fere novo)")
+tall$name <- factor(tall$name, levels=levels(tall$name)[c(2,1,3)]) 
 
-boxy <- ggplot(tall, aes(x=variable, y=value)) + facet_grid(~name) + 
+(boxy <- ggplot(tall, aes(x=variable, y=value)) + facet_grid(~name) + 
   # geom_vline(0, xintercept = 0, color="grey30") + 
   geom_boxplot(outlier.colour =  NA,color="grey40", fill="grey60",width=.7)+
   geom_point(position=position_jitter(width = .02, height = .12), shape=1)+
@@ -59,9 +59,10 @@ boxy <- ggplot(tall, aes(x=variable, y=value)) + facet_grid(~name) +
     panel.grid.minor = element_blank(),
     panel.border = element_rect(color="black", size = .1),
     strip.background = element_rect(colour = NA),
+    strip.text.x =element_text(face="italic"),
     axis.text.x = element_text(angle=45, hjust=1),
     axis.line = element_line(color = 'black', size = .1)) +
-  labs(y="Count", x="rDNA Assembly ",  title="")
+  labs(y="Count", x="rDNA Assembly ",  title=""))
 
 boxy
 
@@ -111,10 +112,9 @@ boxy_group_rdna
 
 pdf(file = file.path(out_folder, "simulated_genome.pdf"), width = 6, height = 5)
 boxy
-boxy_group_rdna
-boxy_group_strain
+# boxy_group_rdna
+# boxy_group_strain
 dev.off()
-multiplot(plotlist =list(boxy, boxy_group_rdna, boxy_group_strain), widths = c(.4,.3,.3), ncol=3)
 png(filename = paste0(plot1, ".png"), width = 4, height = 4, units = "in", res = 300)
 boxy
 dev.off()
