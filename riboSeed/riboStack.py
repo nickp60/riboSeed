@@ -36,12 +36,14 @@ import matplotlib.patches as patches
 
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
-        description="This facilitates the mapping of reads to a reference and comparison of coverage depths in rDNA regions to assess disparity in rDNA counts between the reference and your reads",
-        add_help=False)  # to allow for custom help
+        description="This facilitates the mapping of reads to a reference " +
+        "and comparison of coverage depths in rDNA regions to assess " +
+        "disparity in rDNA counts between the reference and your reads",
+        add_help=False)
     parser.add_argument("riboScan_dir", action="store",
-                        help="We need the gff and fasta files from your riboScan run.")
+                        help="We need the gff and fasta files from your " +
+                        "riboScan run.")
 
-    # taking a hint from http://stackoverflow.com/questions/24180527
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument("-b", "--bam", dest='bam', action="store",
                                help="BAM file; tested with BWA output; " +
@@ -117,24 +119,23 @@ def makeRegions(outdir, gff, dest, name="", logger=None):
     #                stderr=subprocess.PIPE,
     #                check=True)
 
-def bedtoolsShuffle(region, destdir, genome, bedtools_exe, n=10, logger=None):
+def makeBedtoolsShuffleCmd(region, destdir, genome, bedtools_exe, n=10):
+    cmd_list = []
+    results_list = []
     for i in range(0, n):
         bedcmd = "{0} shuffle -i {1} -g {2} > {3}_{4}".format(
             bedtools_exe, region, genome,
-            os.path.join(destdir, "sample_region"), i)
-        if logger:
-            logger.debug("cmd to shuffle regions: %s", bedcmd)
-        subprocess.run(bedcmd,
-                       shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       check=True)
+            os.path.join(destdir, "sample_region"), i + 1)
+        cmd_list.append(bedcmd)
+        results_list.append(
+            os.path.join(destdir, "sample_region_" + str(i + 1)))
+    return(cmd_list, results_list)
 
-def samtoolsGetDepths(samtools_exe, ref, bam, ref_reg_file, sample_reg_dir, outdir ):
+
+def samtoolsGetDepths(samtools_exe, bam, ref_reg_file,
+                      sample_file_list, outdir):
     """ return list [ref_file, [list, of, sample, files]]
     """
-
-    sample_files = glob.glob(os.path.join(sample_reg_dir, "*"))
     ref_out = os.path.join(outdir, "ref_out_depth")
     cmds = []
     ref_cmd = "{0} view -b -F 256 {1} | {0} depth -b {2} - > {3}".format(
@@ -144,8 +145,8 @@ def samtoolsGetDepths(samtools_exe, ref, bam, ref_reg_file, sample_reg_dir, outd
         ref_out)
     cmds.append(ref_cmd)
     sample_outs = []
-    for idx, f in enumerate(sample_files):
-        sample_out = os.path.join(outdir, "sample_out_depth_" + str(idx))
+    for idx, f in enumerate(sample_file_list):
+        sample_out = os.path.join(outdir, "sample_out_depth_" + str(idx + 1))
         cmd = "{0} view -b -F 256 {1} | {0} depth -b {2} - > {3}".format(
             samtools_exe,
             bam,
@@ -153,15 +154,7 @@ def samtoolsGetDepths(samtools_exe, ref, bam, ref_reg_file, sample_reg_dir, outd
             sample_out)
         cmds.append(cmd)
         sample_outs.append(sample_out)
-    for cmd in cmds:
-        if logger:
-            logger.debug("cmd to get depths regions: %s", cmd)
-        subprocess.run(cmd,
-                       shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       check=True)
-    return [ref_out, sample_outs]
+    return [ref_out, sample_outs, cmds]
 
 
 def getRecLengths(fasta, name=""):
@@ -187,7 +180,7 @@ def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
     # ylab = str(max(data))
     ylab = str(len(data))
     sli = math.ceil(len(data) / ymax)
-    if sli == 0 or len(data) == 0 :
+    if sli == 0 or len(data) == 0:
         return 1
     #  get rough averages for a window
     for i in range(0, ymax + 1):
@@ -236,9 +229,8 @@ if __name__ == "__main__":
         print("Output directory already exists; exiting...")
         sys.exit(1)
     t0 = time.time()
-    log_path = os.path.join(output_root,
-                            str("riboStack_log_{0}.txt".format(
-                                time.strftime("%Y%m%d%H%M"))))
+    log_path = os.path.join(output_root, "riboStack.log")
+
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
@@ -247,7 +239,7 @@ if __name__ == "__main__":
     for k, v in sorted(vars(args).items()):
         logger.debug("{0}: {1}".format(k, v))
 
-    # check exes
+    # check executables
     bedtools_exe = shutil.which("bedtools")
     samtools_exe = shutil.which("samtools")
     for exe in [samtools_exe, bedtools_exe]:
@@ -282,7 +274,6 @@ if __name__ == "__main__":
 
     makeRegions(outdir=output_root, gff=gff, name=name,
                 dest=rDNA_regions, logger=logger)
-    logger.info("Shuffling with bedtools")
     os.makedirs(os.path.join(output_root, "shuffleRegions"))
     flist = getRecLengths(fasta, name=name)
     logger.info("genome coords")
@@ -292,21 +283,28 @@ if __name__ == "__main__":
             line = "\t".join([str(x) for x in entry]) + "\n"
             logger.info(line)
             bg.write(line)
-    bedtoolsShuffle(region=rDNA_regions,
-                    bedtools_exe=bedtools_exe,
-                    destdir=os.path.join(output_root, "shuffleRegions"),
-                    n=10, genome=os.path.join(output_root, "bedtools_genome"),
-                    logger=logger)
+    bedtools_cmds, bed_results_list = makeBedtoolsShuffleCmd(
+        region=rDNA_regions,
+        bedtools_exe=bedtools_exe,
+        destdir=os.path.join(output_root, "shuffleRegions"),
+        n=10, genome=os.path.join(output_root, "bedtools_genome"))
 
-
-
-    ref_depth_path, sample_depths_paths = samtoolsGetDepths(
+    ref_depth_path, sample_depths_paths, samtools_cmds = samtoolsGetDepths(
         samtools_exe=samtools_exe,
-        ref=fasta,
+        sample_file_list=bed_results_list,
         bam=args.bam,
         ref_reg_file=rDNA_regions,
-        sample_reg_dir=os.path.join(output_root, "shuffleRegions"),
         outdir=output_root )
+
+    for cmd_list in [bedtools_cmds, samtools_cmds]:
+        for cmd in cmd_list:
+            logger.debug(cmd)
+            subprocess.run(
+                cmd,
+                shell=sys.platform != "win32",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True)
 
     ref_depths = []
     with open(ref_depth_path, "r") as r:
@@ -324,17 +322,21 @@ if __name__ == "__main__":
                     logger.warning(line)
                     depths.append(0)
         sample_depths_list.append(depths)
-    logger.debug("regerence depths")
-    logger.debug(ref_depths)
-    printPlot(data=ref_depths, line=mean(ref_depths), ymax=10, xmax=60, tick=.2,
-              title="reference", fill=False, logger=logger)
+    logger.debug("first 100 reference depths")
+    logger.debug(ref_depths[0:100])
+    printPlot(
+        data=ref_depths, line=round(mean(ref_depths), 2), ymax=10, xmax=60,
+        tick=.2, title="reference", fill=False, logger=logger)
     sample_means = []
-    logger.debug("sample depths")
+    logger.debug("first 100 sample depths")
     for sample in sample_depths_list:
-        logger.debug(sample)
-        sample_means.append(mean(sample))
-    printPlot(data=sample_means, line=round(mean(sample_means), 2), ymax=10, xmax=60, tick=.2,
-              title="samples 1-10", fill=False, logger=logger)
+        logger.debug(sample[1:100])
+        if len(sample) != 0:  # dont average in zeros
+            sample_means.append(mean(sample))
+    printPlot(
+        data=sample_means, line=round(mean(sample_means), 2), ymax=10,
+        xmax=60, tick=.2, title="samples 1-10", fill=False, logger=logger)
 
     print("Average depth in rDNA regions:\t%d" % mean(ref_depths))
-    print("Average depth in 10 sets of randomly sampled non-rDNA regions:\t%d" % mean(sample_means))
+    print("Average depth in 10 sets of randomly sampled " +
+          "non-rDNA regions:\t%d" % mean(sample_means))

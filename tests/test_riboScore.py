@@ -24,7 +24,8 @@ sys.path.append(os.path.join(
 
 from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboScore import getSnagCmd, getSelectCmd, getScanCmd, \
-    parseDirContents, make_nuc_nuc_recip_blast_cmds
+    parseDirContents, make_nuc_nuc_recip_blast_cmds, merge_outfiles, \
+    BLAST_tab_to_df, filter_recip_BLAST_df, checkBlastForMisjoin
 sys.dont_write_bytecode = True
 
 logger = logging
@@ -41,9 +42,26 @@ class riboScoreTestCase(unittest.TestCase):
                                      "output_riboScore_tests")
         self.ref_dir = os.path.join(
             os.path.dirname(__file__), "references", "")
-        self.scan_ref_dir = os.path.join(os.path.dirname(__file__),
-                                         "references",
-                                         "riboScan_references")
+        self.score_ref_dir = os.path.join(
+            os.path.dirname(__file__),
+            "references",
+            "riboScore_references", "")
+        self.test_combine = os.path.join(
+            os.path.dirname(__file__),
+            "references",
+            "riboScore_references",
+            "test_combineA.tab")
+        self.test_forward = os.path.join(
+            os.path.dirname(__file__),
+            "references",
+            "riboScore_references",
+            "forward.tab")
+        self.test_reverse = os.path.join(
+            os.path.dirname(__file__),
+            "references",
+            "riboScore_references",
+            "reverse.tab")
+
         self.to_be_removed = []
 
     def test_parseDirContents(self):
@@ -106,6 +124,62 @@ class riboScoreTestCase(unittest.TestCase):
             "-query assembly1.fasta -subject reference -num_threads 1 " +
             "-num_alignments 50")
 
+    def test_merge_outfiles(self):
+        """
+        """
+        merged_tab = merge_outfiles(
+            filelist=[self.test_combine, self.test_combine],
+            outfile=os.path.join(self.score_ref_dir, "temp_combined.tab"))
+        self.assertEqual(
+            md5(os.path.join(self.score_ref_dir, "test_combined.tab")),
+            md5(merged_tab))
+        self.to_be_removed.append(merged_tab)
+
+    def test_single_merge_outfiles(self):
+        """
+        """
+        merged_tab = merge_outfiles(
+            filelist=[self.test_combine],
+            outfile=os.path.join(self.score_ref_dir, "temp_combined.tab"))
+        self.assertEqual(merged_tab, [self.test_combine])
+
+    def test_BLAST_tab_to_df(self):
+        colnames = [
+            "query_id", "subject_id", "identity_perc", "alignment_length",
+            "mismatches", "gap_opens", "q_start", "q_end", "s_start",
+            "s_end", "evalue", "bit_score"]
+
+        resultsdf = BLAST_tab_to_df(self.test_combine)
+        self.assertEqual(resultsdf.columns.values.tolist(), colnames)
+
+    def test_recip_blast(self):
+        """ reciprocal blast testing.
+        It doesnt really test much efficiently
+        """
+        df1 = BLAST_tab_to_df(self.test_forward)
+        df2 = BLAST_tab_to_df(self.test_reverse)
+        filtered_hits = filter_recip_BLAST_df(
+            df1=df1,
+            df2=df2,
+            min_lens={"concatenated_genome_4001..10887": 500},
+            min_percent=99.5,
+            logger=logger)
+        self.assertEqual(filtered_hits.shape, (2, 13))
+
+    def test_checkBlastForMisjoin(self):
+        df2 = BLAST_tab_to_df(self.test_reverse)
+        flanking_hits = checkBlastForMisjoin(
+            fasta="mock.fasta",
+            df=df2,
+            ref_lens={"concatenated_genome_4001..10887": 500},
+            flanking=1000,
+            BUF=50, logger=logger)
+        self.assertEqual(
+            flanking_hits[0],
+            ["mock.fasta", "?", "NODE_1_length_105529_cov_19.8862_0_94652..101540_RC_", "concatenated_genome_4001..10887", "?"]
+            )
+
+
     def tearDown(self):
         """ delete temp files if no errors
         """
@@ -114,7 +188,7 @@ class riboScoreTestCase(unittest.TestCase):
                 os.unlink(filename)
             except IsADirectoryError:
                 shutil.rmtree(filename)
-        pass
+
 
 if __name__ == '__main__':
     unittest.main()

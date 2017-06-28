@@ -18,7 +18,7 @@ from Bio.Blast.Applications import NcbiblastnCommandline
 from pyutilsnrw.utils3_5 import set_up_logging, combine_contigs
 
 
-def get_args():
+def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
         description="This does some simple blasting to detect correctness " +
         "of riboSeed results")
@@ -165,9 +165,7 @@ def filter_recip_BLAST_df(df1, df2, min_percent, min_lens, logger=None):
             else:
                 subset1 = tempdf1.loc[
                     (tempdf1["identity_perc"] > min_percent)
-                    # (tempdf1["bit_score"] == tempdf1["bit_score"].max())
                 ]
-                # (tempdf1["alignement_l"] == tempdf1["bit_score"].max())]
                 subset2 = tempdf2.loc[
                     (tempdf2["identity_perc"] > min_percent)
                 ]
@@ -269,7 +267,7 @@ def checkBlastForMisjoin(df, fasta, ref_lens, BUF, flanking, logger=None):
 def write_results(df, fasta_name, outfile, logger=None):
     #% parse output
     assert logger is not None, "must use a logger"
-    logger.debug("cleaning up the csv output")
+    logger.debug("writing out the results")
     with open(outfile, "a") as outf:
         outf.write("# {0} \n".format(fasta_name))
         df.to_csv(outf)

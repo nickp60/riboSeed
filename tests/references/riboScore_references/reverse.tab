@@ -1,0 +1,15 @@
+NODE_1_length_105529_cov_19.8862_0_4187..10983_RC_upstream_flanking_0:1000	concatenated_genome_4001..10887	99.03	310	2	1	692	1000	691	1000	5e-161	 555
+NODE_1_length_105529_cov_19.8862_0_4187..10983_RC_downstream_flanking_5797:6797	concatenated_genome_4001..10887	99.55	223	1	0	1	223	5888	6110	2e-116	 407
+NODE_1_length_105529_cov_19.8862_0_19192..25988_RC_upstream_flanking_0:1000	concatenated_genome_4001..10887	98.14	215	4	0	786	1000	786	1000	4e-107	 375
+NODE_1_length_105529_cov_19.8862_0_19192..25988_RC_downstream_flanking_5797:6797	concatenated_genome_4001..10887	98.73	236	2	1	1	236	5888	6122	7e-120	 418
+NODE_1_length_105529_cov_19.8862_0_34197..41085_RC_upstream_flanking_0:1000	concatenated_genome_4001..10887	98.14	215	4	0	786	1000	786	1000	4e-107	 375
+NODE_1_length_105529_cov_19.8862_0_34197..41085_RC_downstream_flanking_5889:6889	concatenated_genome_4001..10887	99.55	223	1	0	1	223	5888	6110	2e-116	 407
+NODE_1_length_105529_cov_19.8862_0_49294..56090_RC_upstream_flanking_0:1000	concatenated_genome_4001..10887	97.67	215	5	0	786	1000	786	1000	2e-105	 370
+NODE_1_length_105529_cov_19.8862_0_49294..56090_RC_downstream_flanking_5797:6797	concatenated_genome_4001..10887	99.71	343	0	1	1	342	5888	6230	0.0	 627
+NODE_1_length_105529_cov_19.8862_0_64547..71435_RC_upstream_flanking_0:1000	concatenated_genome_4001..10887	93.51	308	17	3	696	1000	693	1000	6e-131	 455
+NODE_1_length_105529_cov_19.8862_0_64547..71435_RC_downstream_flanking_5889:6889	concatenated_genome_4001..10887	99.55	223	1	0	1	223	5888	6110	2e-116	 407
+NODE_1_length_105529_cov_19.8862_0_64547..71435_RC_downstream_flanking_5889:6889	concatenated_genome_4001..10887	95.56	135	5	1	330	463	5971	6105	1e-58	 215
+NODE_1_length_105529_cov_19.8862_0_79644..86440_RC_upstream_flanking_0:1000	concatenated_genome_4001..10887	98.14	215	4	0	786	1000	786	1000	4e-107	 375
+NODE_1_length_105529_cov_19.8862_0_79644..86440_RC_downstream_flanking_5797:6797	concatenated_genome_4001..10887	100.00	223	0	0	1	223	5888	6110	3e-118	 412
+NODE_1_length_105529_cov_19.8862_0_94652..101540_RC_upstream_flanking_0:1000	concatenated_genome_4001..10887	100.00	1000	0	0	1	1000	1	1000	0.0	1847
+NODE_1_length_105529_cov_19.8862_0_94652..101540_RC_downstream_flanking_5889:6889	concatenated_genome_4001..10887	100.00	1000	0	0	1	1000	5888	6887	0.0	1847

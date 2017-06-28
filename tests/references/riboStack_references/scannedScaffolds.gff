@@ -1,0 +1,23 @@
+##gff-version 3
+NC_000913.3_0	barrnap:0.7	rRNA	223774	225311	0	+	.	locus_tag=NC_000913.3_0_0;Name=16S_rRNA;product=16S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	225761	228661	0	+	.	locus_tag=NC_000913.3_0_1;Name=23S_rRNA;product=23S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	228760	228870	1.9e-11	+	.	locus_tag=NC_000913.3_0_2;Name=5S_rRNA;product=5S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	2726074	2726184	1.9e-11	-	.	locus_tag=NC_000913.3_0_3;Name=5S_rRNA;product=5S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	2726282	2729182	0	-	.	locus_tag=NC_000913.3_0_4;Name=23S_rRNA;product=23S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	2729617	2731155	0	-	.	locus_tag=NC_000913.3_0_5;Name=16S_rRNA;product=16S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	3423428	3423538	4.3e-11	-	.	locus_tag=NC_000913.3_0_6;Name=5S_rRNA;product=5S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	3423673	3423783	1.9e-11	-	.	locus_tag=NC_000913.3_0_7;Name=5S_rRNA;product=5S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	3423881	3426781	0	-	.	locus_tag=NC_000913.3_0_8;Name=23S_rRNA;product=23S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	3427222	3428760	0	-	.	locus_tag=NC_000913.3_0_9;Name=16S_rRNA;product=16S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	3941811	3943348	0	+	.	locus_tag=NC_000913.3_0_10;Name=16S_rRNA;product=16S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	3943706	3946606	0	+	.	locus_tag=NC_000913.3_0_11;Name=23S_rRNA;product=23S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	3946704	3946814	1.9e-11	+	.	locus_tag=NC_000913.3_0_12;Name=5S_rRNA;product=5S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	4035534	4037071	0	+	.	locus_tag=NC_000913.3_0_13;Name=16S_rRNA;product=16S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	4037521	4040422	0	+	.	locus_tag=NC_000913.3_0_14;Name=23S_rRNA;product=23S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	4040521	4040631	2.5e-11	+	.	locus_tag=NC_000913.3_0_15;Name=5S_rRNA;product=5S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	4166662	4168199	0	+	.	locus_tag=NC_000913.3_0_16;Name=16S_rRNA;product=16S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	4168643	4171543	0	+	.	locus_tag=NC_000913.3_0_17;Name=23S_rRNA;product=23S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	4171641	4171751	6.3e-11	+	.	locus_tag=NC_000913.3_0_18;Name=5S_rRNA;product=5S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	4208150	4209687	0	+	.	locus_tag=NC_000913.3_0_19;Name=16S_rRNA;product=16S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	4210045	4212945	0	+	.	locus_tag=NC_000913.3_0_20;Name=23S_rRNA;product=23S ribosomal RNA
+NC_000913.3_0	barrnap:0.7	rRNA	4213044	4213154	6.3e-11	+	.	locus_tag=NC_000913.3_0_21;Name=5S_rRNA;product=5S ribosomal RNA
