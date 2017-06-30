@@ -138,7 +138,7 @@ def ageSequence(rec, outfile, freq, end_length, logger=None):
     assert len(newseqlist) == len(rec.seq), "something bad happened!"
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":
     args = get_args()
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))

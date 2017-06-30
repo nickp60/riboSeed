@@ -20,7 +20,7 @@ Here, we have extracted all 7 of the rDNA and 1kb flanking regions from the *E. 
 
 ## *De Fere Novo* Assembly
 
-We call our method a *de fere novo* assembly, as we use a subassembly technique to minimize the bias caused by reference choice.  We map the short reads to the reference genome, extract the reads mapping to rDNA (with flanking) regions, and perform subassemblies with [SPAdes](http://bioinf.spbau.ru/spades) to reassemble the rDNA and flanking regions from the reads.  These "long reads" are concatenated together separated with 5kb of N's. The reads not mapping to the original rDNA regions are then mapped to the concatenated sequence and and subassembled for several additional iterations.
+We call our method a *de fere novo* assembly, as we use a subassembly technique to minimize the bias caused by reference choice.  We map the short reads to the reference genome, extract the reads mapping to rDNA (with flanking) regions, and perform subassemblies with [SPAdes](http://bioinf.spbau.ru/spades) to reassemble the rDNA and flanking regions from the reads.  These "long reads" are concatenated together separated with 5kb of N's. The reads are then mapped to the concatenated sequence and and subassembled for several additional iterations.
 
 
 ## Sample Dataset
@@ -36,6 +36,7 @@ In this [Mauve](http://darlinglab.org/mauve/mauve.html) visualization, we show (
 
 So what does this mean? We conclude that given short read sequencing data of sufficient (<10x) depth and a taxonomically close reference genome possessing sufficiently unique rDNA flanking regions, riboSeed's *de fere novo* assembly can bridge across gaps in a *de novo* assembly caused by repeated rDNAs.  Its not a silver bullet solving all short read assembly problems, but it reliably addresses a single issue affecting nearly all bacterial genome assemblies.
 
+Futher, when used in conjunction with the other genome finishing tools (namely, in a pipeline such as BugBuilder), riboSeed can result in closed genomes.
 
 
 ## Next Steps

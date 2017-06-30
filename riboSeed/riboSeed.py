@@ -34,11 +34,18 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 
-import numpy as np
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+try:
+    import numpy as np
+    import matplotlib as mpl
+    mpl.use('Agg')
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+    PLOT = True
+except Exception as e:  # most likely an ImportError, but Im not taking chances
+    print(e)
+    print("\nlooks like you have some issue with matplotlib.  " +
+          "Classic matplotlib, amirite? Plotting is disabled\n")
+    PLOT = False
 
 
 # need this line for unittesting
@@ -226,7 +233,10 @@ class SeedGenome(object):
             target_iters = range(0, self.max_iterations)
         else:
             target_iters = [self.this_iteration - 2]
-            assert target_iters[0] < seedGenome.this_iteration - 1, \
+            # ensure that you are deleting files from not the previous, but the
+            # TWICE previous iterations's files, (which cant be less than 0)
+            assert target_iters[0] < self.this_iteration - 1 and \
+                target_iters[0] >= 0, \
                 "previous mapping is required, can only purge 2nd previous"
         logger.debug("Looking for temp files to remove. " +
                      "To keep all temp files, use the --keep_temps flag")
@@ -844,7 +854,8 @@ def get_smalt_full_install_cmds(smalt_exe, logger=None):
     return([testindexcmd, testmapcmd])
 
 
-def test_smalt_bam_install(cmds, logger=None):
+def test_smalt_bam_install(
+        cmds, logger=None):  # pragma: no cover, cause pragma, no care
     """ using test data tha tcomes with package, ensure that
     the bambamc library was properly installed with SMALT instaltation
     """
@@ -1088,7 +1099,10 @@ def get_bam_AS(inbam, logger=None):
     assert logger is not None, "must use logging"
     score_list = []
     count = 0
-    pysam.index(inbam)
+    try:
+        pysam.index(inbam)
+    except pysam.utils.SamtoolsError:
+        raise ValueError("It looks like your bam file is unsorted! No good")
     bam = pysam.AlignmentFile(inbam, "rb")
     for read in bam.fetch():
         count = count + 1
@@ -2314,10 +2328,10 @@ def plotAsScores(score_list, score_min, outdir, logger=None):
     fig.savefig(str(basename + '.png'), dpi=(200))
     fig.savefig(str(basename + '.pdf'), dpi=(200))
     logger.info("Plotting alignment score of mapping:")
-    printPlot(data=score_list, line=score_min, ymax=30, xmax=60, tick=.2,
-              fill=True,
-              title="Average alignment Scores (y) by sorted read index (x)",
-              logger=logger)
+    # printPlot(data=score_list, line=score_min, ymax=30, xmax=60, tick=.2,
+    #           fill=True,
+    #           title="Average alignment Scores (y) by sorted read index (x)",
+    #           logger=logger)
     logger.info("Filled area represents the reads retained after filtering. " +
                 "If it looks like " +
                 "this filtering threshold is inapporpriate, consider " +
@@ -2602,8 +2616,7 @@ if __name__ == "__main__":
                     logger.info("Downsampling our pltting data to 20k points")
                     mapped_scores = random.sample(mapped_scores, 200000)
                 printPlot(data=mapped_scores, line=score_minimum,
-                          ymax=18,
-                          xmax=60, tick=.2, fill=True,
+                          ymax=18, xmax=60, tick=.2, fill=True,
                           title=str("Average alignment Scores for cluster " +
                                     "%i\n " % clu.index),
                           logger=logger)
@@ -2728,11 +2741,17 @@ if __name__ == "__main__":
                 fig_dir = os.path.join(output_root, "figs")
                 os.makedirs(fig_dir)
                 # either use defined min or use the smae heuristic as mapping
-                plotAsScores(
-                    score_list,
-                    score_min=score_minimum if score_minimum is not None else
-                    int(round(float(seedGenome.master_ngs_ob.readlen) / 2.0)),
-                    outdir=fig_dir, logger=logger)
+                if PLOT:
+                    plotAsScores(
+                        score_list,
+                        score_min=score_minimum if score_minimum is not None else
+                        int(round(float(seedGenome.master_ngs_ob.readlen) / 2.0)),
+                        outdir=fig_dir, logger=logger)
+                printPlot(data=score_list, line=score_minimum, ymax=30, xmax=60,
+                          tick=.2, fill=True,
+                          title="Average alignment Scores (y) by sorted " +
+                          "read index (x)",
+                          logger=logger)
 
                 if args.ref_as_contig is None:
                     if map_percent > 80:

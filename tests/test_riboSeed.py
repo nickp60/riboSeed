@@ -35,7 +35,8 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     make_spades_empty_check, get_samtools_depths, \
     decide_proceed_to_target, get_rec_from_generator, \
     check_kmer_vs_reads, make_samtools_depth_cmds, \
-    parse_samtools_depth_results, make_modest_spades_cmd
+    parse_samtools_depth_results, make_modest_spades_cmd, get_bam_AS, \
+    pysam_extract_reads
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, stitch_together_target_regions, \
@@ -150,144 +151,6 @@ class riboSeedShallow(unittest.TestCase):
                 "fi").format(lib1, lib2, lib3, cmd),
             fullcmd)
 
-    def test_Exes_bad_method(self):
-        """check bad method arg given to Exes object"""
-        with self.assertRaises(ValueError):
-            Exes(samtools=self.samtools_exe,
-                 quast=self.quast_exe,
-                 smalt=self.smalt_exe,
-                 python2_7=self.python2_7_exe,
-                 spades=self.spades_exe,
-                 bwa=self.bwa_exe,
-                 method="bowtie")
-
-    def test_Exes_bad_attribute(self):
-        """ check bad instantiation of Exes object"""
-        with self.assertRaises(AssertionError):
-            Exes(samtools=None,
-                 quast=self.quast_exe,
-                 spades=self.spades_exe,
-                 python2_7=self.python2_7_exe,
-                 smalt=self.smalt_exe,
-                 bwa=self.bwa_exe,
-                 method="bwa")
-
-    def test_Exes_bad_exe(self):
-        """check Exes with nonexistant executable
-        """
-        with self.assertRaises(ValueError):
-            Exes(samtools="nottheactualsamtools_exe",
-                 quast=self.quast_exe,
-                 python2_7=self.python2_7_exe,
-                 smalt=self.smalt_exe,
-                 spades=self.spades_exe,
-                 bwa=self.bwa_exe,
-                 method="bwa")
-
-    def test_NgsLib(self):
-        """ Can we create an NgsLib object correctly
-        """
-        # make a non-master object
-        testlib_pe_s = NgsLib(
-            name="test",
-            master=False,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            readS0="dummy",
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe)
-        testlib_s = NgsLib(
-            name="test",
-            master=True,
-            readF=None,
-            readR=None,
-            readS0=self.ref_Ffastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe)
-        self.assertEqual(testlib_s.libtype, "s_1")
-        self.assertEqual(testlib_s.readlen, 145.0)
-        self.assertEqual(testlib_s.liblist, [self.ref_Ffastq])
-        # test unnamed fails
-        with self.assertRaises(ValueError):
-            NgsLib(
-                name=None,
-                master=False,
-                readF=self.ref_Ffastq,
-                readR=self.ref_Rfastq,
-                readS0="dummy",
-                ref_fasta=self.ref_fasta,
-                mapper_exe=self.smalt_exe)
-        self.assertEqual(testlib_pe_s.libtype, "pe_s")
-        self.assertEqual(testlib_pe_s.readlen, None)
-        # test fails with singe PE file
-        with self.assertRaises(ValueError):
-            NgsLib(
-                name=None,
-                master=False,
-                readF=self.ref_Ffastq,
-                readR=None,
-                readS0="dummy",
-                ref_fasta=self.ref_fasta,
-                mapper_exe=self.smalt_exe)
-
-        # check master files cannot bge deleted
-        testlib_pe = NgsLib(
-            name="test",
-            master=True,
-            make_dist=False,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe,
-            logger=logger)
-        self.assertEqual(
-            1,  # return code for no deleting tool place
-            testlib_pe.purge_old_files(master=testlib_pe_s, logger=logger))
-        self.assertTrue(os.path.isfile(self.ref_Ffastq))
-        self.assertTrue(os.path.isfile(self.ref_Rfastq))
-
-        # test killer lib that tries to purge files that are in a master ob
-        testlib_killer = NgsLib(
-            name="test",
-            master=False,
-            make_dist=False,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe,
-            logger=logger)
-        self.assertEqual(
-            1,  # return code for no deleting tool place
-            testlib_killer.purge_old_files(master=testlib_pe_s, logger=logger))
-        self.assertTrue(os.path.isfile(self.ref_Ffastq))
-        self.assertTrue(os.path.isfile(self.ref_Rfastq))
-
-    def test_SeedGenome(self):
-        """ Can we create a seedGenome object
-        """
-        with open(self.ref_tiny_gb, "r") as gbf:
-            rec = next(SeqIO.parse(gbf, "genbank"))
-        gen = SeedGenome(
-            max_iterations=2,
-            clustered_loci_txt=self.test_loci_file,
-            genbank_path=self.ref_tiny_gb,
-            loci_clusters=None,
-            output_root=self.test_dir)
-        self.assertTrue(os.path.exists(os.path.join(self.test_dir,
-                                                    "scannedScaffolds.fasta")))
-        self.assertTrue(os.path.exists(self.test_dir))
-        self.assertEqual(tuple(gen.seq_records)[0].id, rec.id)
-
-    def test_SeedGenome_bad_instatiation(self):
-        """ Does SeedGenome fail when missing attributes """
-        with self.assertRaises(ValueError):
-            SeedGenome(
-                max_iterations=2,
-                genbank_path=self.ref_gb,
-                clustered_loci_txt=self.test_loci_file,
-                loci_clusters=None,
-                output_root=None)
-
     def test_LociMapping(self):
         """ Does LociMapping instatiate correctly
         """
@@ -400,28 +263,6 @@ class riboSeedShallow(unittest.TestCase):
                                    method=refreshGen,
                                    gen=recsgen)
 
-    def test_add_coords_to_SeedGenome(self):
-        """ can we parse a loci_coords file and add to seedGenome
-        """
-        gen = SeedGenome(
-            max_iterations=1,
-            genbank_path=self.ref_gb,
-            clustered_loci_txt=self.test_loci_file,
-            output_root=self.test_dir,
-            logger=logger)
-        gen.loci_clusters = parse_clustered_loci_file(
-            filepath=gen.clustered_loci_txt,
-            gb_filepath=gen.genbank_path,
-            output_root=self.test_dir,
-            padding=100,
-            circular=False,
-            logger=logger)
-        add_coords_to_clusters(seedGenome=gen, logger=logger)
-        self.assertEqual(
-            gen.loci_clusters[0].loci_list[0].start_coord, 4656045)
-        self.assertEqual(
-            gen.loci_clusters[0].loci_list[0].end_coord, 4657586)
-
     def test_convert_bam_to_fastqs_cmd(self):
         """ can we construct proper samtools fast cmds
         """
@@ -531,24 +372,6 @@ class riboSeedShallow(unittest.TestCase):
             self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir)
         self.assertEqual(cmd4, cmd4_ref)
 
-    def test_lib_check(self):
-        """ does the NgsLib identify empty libraries
-        """
-        empty_file = os.path.join(self.test_dir, "test_not_real_file")
-        # make an empty file
-        with open(empty_file, 'w') as ef:
-            pass
-        ngs_ob = NgsLib(
-            name="test",
-            master=False,
-            readF=self.ref_Ffastq,
-            readR=empty_file,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe)
-        nonify_empty_lib_files(ngsLib=ngs_ob, logger=logger)
-        self.assertTrue(ngs_ob.readR is None)
-        self.to_be_removed.append(empty_file)
-
     def test_parse_subassembly_return_code_0(self):
         gen = SeedGenome(
             max_iterations=1,
@@ -648,7 +471,7 @@ class riboSeedShallow(unittest.TestCase):
             check_fastqs_len_equal(self.ref_fasta, self.ref_gb)
 
     def test_evaluate_spades(self):
-        """ Test all the possible combination of return codes givena particular
+        """ Test all possible combination of return codes givena particular
         spades results
         """
         shutil.copyfile(self.good_contig,
@@ -757,7 +580,7 @@ class riboSeedShallow(unittest.TestCase):
                 counter = counter + 1
 
     def test_partition_mapping(self):
-        # this mostly does system calls; cant really test smoothlu
+        # this mostly does system calls; cant really test smoothly
         pass
 
     def test_mapped_partition_cmds(self):
@@ -1081,6 +904,8 @@ class riboSeedDeep(unittest.TestCase):
                                        "output_riboseed_tests",
                                        "SPAdes_results")
         self.ref_dir = os.path.join(os.path.dirname(__file__), "references")
+        self.riboSeed_ref_dir = os.path.join(
+            os.path.dirname(__file__), "references", "riboSeed_references")
         self.ref_gb = os.path.join(self.ref_dir,
                                    'NC_011751.1.gb')
         self.ref_fasta = os.path.join(self.test_dir,
@@ -1095,6 +920,13 @@ class riboSeedDeep(unittest.TestCase):
                                        'toy_reads2.fq')
         self.ref_bam_prefix = os.path.join(self.ref_dir,
                                            'test_bam_to_fastq')
+        self.depthdir = os.path.join(self.ref_dir,
+                                     "samtools_depth_test_files")
+        self.sam = os.path.join(self.riboSeed_ref_dir,
+                                "test_mapping.sam")
+        self.samtxt = os.path.join(self.riboSeed_ref_dir,
+                                   "some_sam_names.txt")
+
         self.smalt_exe = "smalt"
         self.bwa_exe = "bwa"
         self.samtools_exe = "samtools"
@@ -1127,25 +959,6 @@ class riboSeedDeep(unittest.TestCase):
         shutil.copy(os.path.join(self.ref_dir, 'cluster1.fasta'),
                     self.ref_fasta)
         self.to_be_removed.append(self.ref_fasta)
-
-    @unittest.skipIf(shutil.which("bwa") is None or
-                     shutil.which("quast.py") is None or
-                     shutil.which("smalt") is None or
-                     shutil.which("python2.7") is None or
-                     shutil.which("spades.py") is None,
-                     "bwa executable not found, skipping.If this isnt an " +
-                     "error from travis deployment, you probably " +
-                     "should install it")
-    def test_Exes_(self):
-        """check with  executable"""
-        test_exes = Exes(samtools=self.samtools_exe,
-                         quast=self.quast_exe,
-                         python2_7=self.python2_7_exe,
-                         smalt=self.smalt_exe,
-                         spades=self.spades_exe,
-                         bwa=self.bwa_exe,
-                         method="bwa")
-        self.assertEqual(test_exes.mapper, shutil.which(test_exes.bwa))
 
     # @unittest.skipIf(
     #     shutil.which("smalt") is None,
@@ -1295,7 +1108,7 @@ class riboSeedDeep(unittest.TestCase):
             bwa_exe=self.bwa_exe, score_minimum=20,
             logger=logger)
         mapped_str2g = get_number_mapped(testmapping.pe_map_bam,
-                                        samtools_exe=self.samtools_exe)
+                                         samtools_exe=self.samtools_exe)
         mapped_str2 = get_number_mapped(testmapping.s_map_bam,
                                         samtools_exe=self.samtools_exe)
         nmapped2 = int(mapped_str2[0:5])
@@ -1320,9 +1133,7 @@ class riboSeedDeep(unittest.TestCase):
         (e coli genome with simplified chromosome name, gi12345)
         """
         print("starting depth test")
-        depthdir = os.path.join(self.ref_dir, "samtools_depth_test_files")
-        # ref = os.path.join(depthdir, "test_ref.fasta")
-        test_bam = os.path.join(depthdir, "newref.bam")
+        test_bam = os.path.join(self.depthdir, "newref.bam")
         region = (1, 10000000)
         results = []
         for i in [region]:
@@ -1334,11 +1145,52 @@ class riboSeedDeep(unittest.TestCase):
                 region=None,
                 prep=True,
                 logger=logger))
-        # print(results)
         self.assertEqual(round(results[0][1], 4), .9945)
 
-    @unittest.skipIf(shutil.which("smalt") is None, "smalt executable not found, skipping."+
-                     "If this isnt an error from travis deployment, you probably "+
+    @unittest.skipIf(shutil.which("samtools") is None,
+                     "samtools executable not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
+    def test_get_pysam_AS(self):
+        """ test the getting of alignment scores from a sorted bam
+        """
+        test_bam_sorted = os.path.join(self.depthdir, "newref_sorted.bam")
+        self.assertEqual(get_bam_AS(inbam=test_bam_sorted, logger=logger)[0:4],
+                         [80, 57, 23, 89])
+
+    @unittest.skipIf(shutil.which("samtools") is None,
+                     "samtools executable not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
+    def test_get_pysam_AS_unsorted(self):
+        """ fail getting of alignment scores from an unsorted bam
+        """
+        test_bam = os.path.join(self.depthdir, "newref.bam")
+        with self.assertRaises(ValueError):
+            get_bam_AS(inbam=test_bam, logger=logger)
+
+    @unittest.skipIf(shutil.which("samtools") is None,
+                     "samtools executable not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
+    def test_pysam_extract_reads(self):
+        """ test extracting reads from a sam file
+        """
+        tempout = os.path.join(os.path.dirname(self.samtxt),
+                               "temp_unmapped.sam")
+        samref = os.path.join(os.path.dirname(self.samtxt),
+                              "ref_unmapped.sam")
+        pysam_extract_reads(
+            sam=self.sam,
+            textfile=self.samtxt,
+            unmapped_sam=tempout, logger=logger)
+        self.assertEqual(md5(tempout), md5(samref))
+        self.to_be_removed.append(tempout)
+
+    @unittest.skipIf(shutil.which("smalt") is None, \
+                     "smalt executable not found, skipping." +
+                     "If this isnt an error from travis deployment, " +
+                     "you probably " +
                      "should install it")
     def test_prepare_next_mapping(self):
         gen = SeedGenome(
