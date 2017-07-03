@@ -1,21 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Aug 30 08:57:31 2016
 @author: nicholas
 
 """
 import sys
 import logging
 import shutil
-# import subprocess
 import os
 import unittest
-# import multiprocessing
 
 # from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from argparse import Namespace
-from unittest.mock import MagicMock, patch
 
 # I hate this line but it works :(
 sys.path.append(os.path.join(
@@ -176,9 +171,9 @@ class riboScoreTestCase(unittest.TestCase):
             BUF=50, logger=logger)
         self.assertEqual(
             flanking_hits[0],
-            ["mock.fasta", "?", "NODE_1_length_105529_cov_19.8862_0_94652..101540_RC_", "concatenated_genome_4001..10887", "?"]
-            )
-
+            ["mock.fasta", "?",
+             "NODE_1_length_105529_cov_19.8862_0_94652..101540_RC_",
+             "concatenated_genome_4001..10887", "?"])
 
     def tearDown(self):
         """ delete temp files if no errors

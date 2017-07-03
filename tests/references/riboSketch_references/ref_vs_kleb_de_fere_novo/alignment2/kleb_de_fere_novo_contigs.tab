@@ -1,0 +1,23 @@
+Contigs to reverse
+type	label	contig	strand	left_end	right_end
+contig	NODE_2_length_9942_cov_6.89995	chromosome	complement	50326	60267
+contig	NODE_3_length_9942_cov_7.26619	chromosome	complement	60268	70209
+
+
+Ordered Contigs
+type	label	contig	strand	left_end	right_end
+contig	NODE_3_length_9942_cov_7.26619	chromosome	complement	1	9942
+contig	NODE_1_length_50325_cov_18.8517	chromosome	forward	9943	60267
+contig	NODE_4_length_9868_cov_7.29629	chromosome	forward	60268	70135
+contig	NODE_2_length_9942_cov_6.89995	chromosome	complement	70136	80077
+contig	NODE_5_length_5065_cov_6.43284	chromosome	forward	80078	85142
+contig	NODE_6_length_3192_cov_47.0231	chromosome	forward	85143	88334
+contig	NODE_7_length_103_cov_6.34615	chromosome	forward	88335	88437
+
+
+Contigs with conflicting ordering information
+type	label	contig	strand	left_end	right_end
+contig	NODE_1_length_50325_cov_18.8517	chromosome	forward	1	50325
+
+
+

@@ -51,13 +51,16 @@ class RiboSimTest(unittest.TestCase):
         with open(self.temp_fasta, "r") as infa:
             newrec = list(SeqIO.parse(infa, "fasta"))[0]
         self.assertEqual(test_seq, str(newrec.seq))
+        self.to_be_removed.append(self.temp_fasta)
 
     def tearDown(self):
         """
         """
         for filename in self.to_be_removed:
-            os.unlink(filename)
-        pass
+            try:
+                os.unlink(filename)
+            except IsADirectoryError:
+                shutil.rmtree(filename)
 
 
 if __name__ == '__main__':

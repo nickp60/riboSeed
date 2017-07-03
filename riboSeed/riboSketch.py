@@ -9,14 +9,13 @@ import matplotlib.patches as patches
 from matplotlib.patches import FancyBboxPatch
 
 from Bio import SeqIO
-from Bio.SeqFeature import SeqFeature, FeatureLocation
 import os
 import sys
 import argparse
 import glob
 import subprocess
 
-mycolors = {
+mycolors = {  # pragma: no cover
     "pinkish": mpl.colors.ColorConverter().to_rgba(
         "#ff4c05", alpha=1),
     "redish": mpl.colors.ColorConverter().to_rgba(
@@ -34,7 +33,7 @@ mycolors = {
 }
 
 
-bgcols = {
+bgcols = {  # pragma: no cover
     "purle": mpl.colors.ColorConverter().to_rgba(
         "#EB87A3", alpha=0.5),
     "green": mpl.colors.ColorConverter().to_rgba(
@@ -45,7 +44,7 @@ bgcols = {
         "#EB7D7D", alpha=0.5),
     "blue": mpl.colors.ColorConverter().to_rgba(
         "#6795A6", alpha=0.5),
-    }
+}
 
 
 def get_args():  # pragma: no cover
@@ -98,7 +97,7 @@ def parseDirContents(dirname, ref_ext, assembly_ext):
             glob.glob(dirname + "*" + assembly_ext))
 
 
-def makeContigMovercmds(ref, files, outdir, mauve_exe):
+def makeContigMoverCmds(ref, files, outdir, mauve_exe):
     cmds = []
     results = []
     for f in files:
@@ -137,6 +136,15 @@ def parseBackbones(filelist):
                 # temp = [int(x) for x in [y for y in temp[1:len(temp)]]]
         comps_list.append(temp2)  # get rid of header
     return (comps_list)
+
+
+def parseAlignmentDir(dirlist):
+    assembly_list = []
+    backbone_list = []
+    for d in dirlist:
+        assembly_list.append(glob.glob(d + "*.fasta")[0])
+        backbone_list.append(glob.glob(d + "*.backbone")[0])
+    return(assembly_list, backbone_list)
 
 
 def plot_mauve_compare(refgb,
@@ -330,7 +338,7 @@ if __name__ == "__main__":
                                   ref_ext=args.ref_ext,
                                   assembly_ext=args.assembly_ext)
 
-    cmds, result_paths = makeContigMovercmds(
+    cmds, result_paths = makeContigMoverCmds(
         ref=gb, files=fastas,
         outdir=os.path.join(args.outdir, "reordering"),
         mauve_exe=args.mauve_exe)
@@ -348,8 +356,8 @@ if __name__ == "__main__":
                 sys.exit(1)
     # get the path to the dir for the last iteration of the reorderer
     best_aln_dirs = [findBestAlignments(i) for i in result_paths]
-    assembly_list = []
-    backbone_list = []
+    assembly_list, backbone_list = parseAlignmentDir(dirlist=best_aln_dirs)
+
     for d in best_aln_dirs:
         assembly_list.append(glob.glob(d + "*.fasta")[0])
         backbone_list.append(glob.glob(d + "*.backbone")[0])

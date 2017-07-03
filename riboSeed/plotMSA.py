@@ -13,38 +13,16 @@ Output:
 
 """
 import os
-import subprocess
 import datetime
 import time
 import argparse
 import sys
-import math
-import re
 import shutil
-import itertools
-import multiprocessing
-
-import numpy as np
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import pandas as pd
-
-from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord
-from Bio.Alphabet import IUPAC
-from Bio.Blast.Applications import NcbiblastnCommandline
-from Bio.Seq import Seq
-from collections import defaultdict  # for calculating kmer frequency
-from itertools import product  # for getting all possible kmers
-# from heatmapcluster import heatmapcluster
 
 #from pyutilsnrw import utils3_5
 sys.path.append(os.path.join('..', 'riboSeed'))
 
-from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
-    combine_contigs, check_version_from_cmd
+from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools
 
 from riboSnag import calc_entropy_msa, annotate_msa_conensus, \
     plot_scatter_with_anno
@@ -105,7 +83,7 @@ def get_args():  # pragma: no cover
     return args
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     args = get_args()
     output_root = os.path.abspath(os.path.expanduser(args.output))
     # Create output directory only if it does not exist

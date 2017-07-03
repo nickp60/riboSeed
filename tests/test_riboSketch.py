@@ -1,0 +1,112 @@
+# -*- coding: utf-8 -*-
+"""
+@author: nicholas
+
+"""
+import sys
+import shutil
+import os
+import unittest
+
+sys.path.append(os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
+
+from riboSeed.riboSketch import makeContigMoverCmds, findBestAlignments, \
+    parseBackbones, parseDirContents, parseAlignmentDir
+
+
+@unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
+                 "Subprocess.call among other things wont run if tried " +
+                 " with less than python 3.5")
+class riboSketchTestCase(unittest.TestCase):
+    """ Testing all the functions surrounding the actual plotting functions
+    """
+    def setUp(self):
+        self.test_dir = os.path.join(os.path.dirname(__file__),
+                                     "output_riboSketch_tests")
+        self.ref_dir = os.path.join(
+            os.path.dirname(__file__), "references", "")
+        self.sketch_ref_dir = os.path.join(
+            os.path.dirname(__file__),
+            "references",
+            "riboSketch_references", "")
+        self.to_be_removed = []
+
+    def test_parseDirContents(self):
+        lst = parseDirContents(
+            dirname=self.sketch_ref_dir, ref_ext="gb", assembly_ext="fasta")
+        self.assertEqual(
+            lst[0],
+            os.path.join(self.sketch_ref_dir, "scannedScaffolds.gb"))
+        self.assertEqual(
+            lst[1][0],
+            os.path.join(self.sketch_ref_dir, "mafft_msa.fasta"))
+
+    def test_makeContigMoverCmds(self):
+        cmds, results_path = makeContigMoverCmds(
+            ref="test.gb", files=["fasta1.fa", "fasta2.fa"],
+            outdir="reordering",
+            mauve_exe="mauve.exe")
+        cmd1 = "java -Xmx500m -cp mauve.exe org.gel.mauve.contigs.ContigOrderer -output reordering{0}ref_vs_fasta1 -ref test.gb -draft fasta1.fa".format(os.path.sep)
+        cmd2 = "java -Xmx500m -cp mauve.exe org.gel.mauve.contigs.ContigOrderer -output reordering{0}ref_vs_fasta2 -ref test.gb -draft fasta2.fa".format(os.path.sep)
+
+        self.assertEqual(cmds, [cmd1, cmd2])
+
+    def test_findBestAlignments(self):
+        testdir = os.path.join(self.sketch_ref_dir, "ref_vs_kleb_de_fere_novo")
+        best_aln_dirs = findBestAlignments(testdir)
+        self.assertEqual(
+            os.path.join(testdir, "alignment2", ""),
+            best_aln_dirs)
+
+    def test_parseAlignmentDir(self):
+        testdir = os.path.join(
+            self.sketch_ref_dir, "ref_vs_kleb_de_fere_novo", "alignment2", "")
+        assembly_list, backbone_list = parseAlignmentDir(dirlist=[testdir])
+        self.assertEqual(assembly_list,
+                         [os.path.join(testdir, "kleb_de_fere_novo.fasta")])
+        self.assertEqual(backbone_list,
+                         [os.path.join(testdir, "alignment2.backbone")])
+
+    def test_parseBackbone(self):
+        dir = os.path.join(
+            self.sketch_ref_dir,
+            "ref_vs_kleb_de_fere_novo", "alignment2", "alignment2.backbone")
+        backbones = parseBackbones([dir])
+
+        ref = [[25035, 34972, 3, 9940],
+               [1, 21221, 9943, 31167],
+               [36307, 36697, 31250, 31640],
+               [36925, 50602, 31777, 45457],
+               [50977, 52038, 45833, 46892],
+               [52174, 65318, 47121, 60265],
+               [70476, 80341, 60270, 70134],
+               [85483, 95420, 70139, 80075],
+               [100486, 105547, 80080, 85141],
+               [21222, 25034, 0, 0],
+               [34973, 36306, 0, 0],
+               [36698, 36924, 0, 0],
+               [50603, 50976, 0, 0],
+               [52039, 52173, 0, 0],
+               [65319, 70475, 0, 0],
+               [80342, 85482, 0, 0],
+               [95421, 100485, 0, 0],
+               [0, 0, 31168, 31249],
+               [0, 0, 31641, 31776],
+               [0, 0, 45458, 45832],
+               [0, 0, 46893, 47120]]
+
+        self.assertEqual(backbones, [ref])
+
+    def tearDown(self):
+        """ delete temp files if no errors
+        """
+        for filename in self.to_be_removed:
+            try:
+                os.unlink(filename)
+            except IsADirectoryError:
+                shutil.rmtree(filename)
+
+
+if __name__ == '__main__':
+    unittest.main()
