@@ -27,6 +27,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools
 from riboSnag import calc_entropy_msa, annotate_msa_conensus, \
     plot_scatter_with_anno
 
+
 def get_args():  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
