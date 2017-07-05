@@ -38,6 +38,8 @@
   \setcounter{figure}{0}
   \renewcommand{\thefigure}{S\arabic{figure}}%
 }
+% pretty thought break
+\def \thoughtbr {\begin{center}\noindent\rule{.4\textwidth}{0.4pt}  {\raisebox{-.5ex}{$\sim$}}  \rule{.4\textwidth}{0.4pt}\end{center}}
 
 % \usepackage{graphicx}
 \graphicspath{ {riboFigs/} }  %  set the path to the figures
@@ -104,7 +106,7 @@
 \normalsize{\textit {$^{2}$The James Hutton Institute, Dundee, Scotland}}\\
 \normalsize{\textit {$^{3}$Teagasc, Johnstown Castle, Wexford}}\\
 \\
-\footnotesize{$^\ast$To whom correspondence should be addressed; E-mail: n.waters4@nuigalway.ie.}
+\footnotesize{$^\ast$To whom correspondence should be addressed; E-mail: nickp60@gmail.com}
 }
 \date{}
 
@@ -612,7 +614,7 @@ rDNA: DNA region coding for ribosomal RNA operon; rRNA: ribosomal RNA; SRA: Sequ
 
 
 \section*{Availability of data and materials}
-The riboSeed pipeline and the datasets generated during the current study are available in the riboSeed GitHub repository, \url{https://github.com/nickp60/riboSeed}. The software is released under the MIT licence. Supplementary data can be found in the riboSeed repository under \textbf{\texttt{Waters\_et\_al\_2017}}. The modified BugBuilder pipeline can be found at \url{https://github.com/nickp60/BugBuilder}. Reference strains used with for this study can be found in Table \ref{table:strainlist}.
+The riboSeed pipeline and the datasets generated during the current study are available in the riboSeed GitHub repository, \url{https://github.com/nickp60/riboSeed}. The software is released under the MIT licence. Supplementary data can be found in the riboSeed repository under \textbf{\texttt{Waters\_et\_al\_2017}}. The modified BugBuilder pipeline can be found at \url{https://github.com/nickp60/BugBuilder}. Reference strains used for this study can be found in Table \ref{table:strainlist}.
 
 \section*{Competing interests}
 The authors declare that they have no competing interests.
@@ -652,8 +654,10 @@ We assessed the effectiveness of riboSeed with assembling archaeal genomes. Most
 
 Taken together, we show that given appropriate datasets, archaeal datasets can be processed in the same manner used for bacteria.
 
+\thoughtbr
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{table}[]
+\begin{table}[!h]
 \centering
 \caption{Accessions for 25 \textit{E. coli} genomes}
 \label{table:accessions}
