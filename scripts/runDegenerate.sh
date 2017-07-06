@@ -65,40 +65,47 @@ cp ${OUTDIR}/ref_scan/scannedScaffolds.gb ${OUTDIR}/mauve/reference.gb
 # cluster regions in toy genome
 python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${OUTDIR}/ref_scan/scannedScaffolds.gb  -o ${OUTDIR}/ref_select/ -v 1  &>> ${LOGFILE}
 
-# for i in 0.0 0.0001 0.00025 0.0005 0.00075 0.001 0.0025 0.005 0.0075 0.01 0.05
-for i in 0.0 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1
+SUBSEEDS=(`~/GitHub/riboSeed/scripts/seedRand.py $SEED 10`)
+FREQS=( 0.0 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 )
+for ((i=0; i<${#SUBSEEDS[@]}; ++i));
 do
-    echo "Processing mutation frequency of ${i}"
+
+    SUBSEED=${SUBSEEDS[i]}
+    FREQ=${FREQS[i]}
+# do
+#     echo $i
+#     echo "${SUBSEEDS[i]}"
+#     echo "${FREQS[i]}"
+# done
+# exit 0
+# for i in 0.0 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1
+# do
+    echo "Processing mutation frequency of ${FREQ}"
     ###################################################################
     # make a new reference
-    mkdir ${OUTDIR}/mutated_regions_${i}/
+    mkdir ${OUTDIR}/mutated_regions_${FREQ}/
     for region in ${OUTDIR}/toyGenome/snag/*_riboSnag.fasta
     do
 	echo "Mutating ${region}"
 	# intrduce the mutations
 	fname_ext=${region##*/}
 	fname=${fname_ext%.*}
-	# echo $fname
-	# echo $fname_ext
-	python3.5  ~/GitHub/riboSeed/riboSeed/riboSim.py ${region} -e 5000  -f ${i} -o ${OUTDIR}/degenerate_${i}_${fname}/ -v 1 --seed ${SEED} &>> ${LOGFILE}
+	python3.5  ~/GitHub/riboSeed/riboSeed/riboSim.py ${region} -e 5000  -f ${FREQ} -o ${OUTDIR}/degenerate_${FREQ}_${fname}/ -v 1 --seed ${SUBSEED} &>> ${LOGFILE}
 	# copy results to a directory
-	cp ${OUTDIR}/degenerate_${i}_${fname}/${fname_ext} ${OUTDIR}/mutated_regions_${i}/
+	cp ${OUTDIR}/degenerate_${FREQ}_${fname}/${fname_ext} ${OUTDIR}/mutated_regions_${FREQ}/
     done
     # combine the mutated extracted regions into a toy genome
-    python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ${OUTDIR}/mutated_regions_${i}/ \*_riboSnag.fasta -o ${OUTDIR}/toyGenome/mutated_genome_${i}/ &>> ${LOGFILE}
+    python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ${OUTDIR}/mutated_regions_${FREQ}/ \*_riboSnag.fasta -o ${OUTDIR}/toyGenome/mutated_genome_${FREQ}/ &>> ${LOGFILE}
     ###################################################################
     # copy the file
-    cp ${OUTDIR}/toyGenome/mutated_genome_${i}/concatenated_seq.fasta ${OUTDIR}/genomes/${i}_reference.fasta
+    cp ${OUTDIR}/toyGenome/mutated_genome_${FREQ}/concatenated_seq.fasta ${OUTDIR}/genomes/${FREQ}_reference.fasta
     # generate the gb file for the sequence
-    python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ${OUTDIR}/toyGenome/mutated_genome_${i}/ -o ${OUTDIR}/scan_${i}/ -e fasta -v 1  &>> ${LOGFILE}
-    # cluster
-    # python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${OUTDIR}/scan_${i}/scannedScaffolds.gb  -o ${OUTDIR}/select_${i}/ -v 1
-    # head ${OUTDIR}/select_${i}/riboSelect_grouped_loci.txt
+    python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ${OUTDIR}/toyGenome/mutated_genome_${FREQ}/ -o ${OUTDIR}/scan_${FREQ}/ -e fasta -v 1  &>> ${LOGFILE}
     # run riboSeed
-    python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ${OUTDIR}/scan_${i}/scannedScaffolds.gb  -o ${OUTDIR}/seed_${i}/ ${OUTDIR}/ref_select/riboSelect_grouped_loci.txt -F ${OUTDIR}/toyGenome/reads_100_300_1.fq.gz -R ${OUTDIR}/toyGenome/reads_100_300_2.fq.gz -i 3  -v 1 -l 1000 --clean_temps  &>> ${LOGFILE}
+    python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ${OUTDIR}/scan_${FREQ}/scannedScaffolds.gb  -o ${OUTDIR}/seed_${FREQ}/ ${OUTDIR}/ref_select/riboSelect_grouped_loci.txt -F ${OUTDIR}/toyGenome/reads_100_300_1.fq.gz -R ${OUTDIR}/toyGenome/reads_100_300_2.fq.gz -i 3  -v 1 -l 1000 --clean_temps  &>> ${LOGFILE}
     # move a copy of the annotated genome to the "mauve" directory for convenience
-    cp ${OUTDIR}/seed_${i}/final_de_fere_novo_assembly/contigs.fasta ${OUTDIR}/mauve/de_fere_novo_${i}.fasta
+    cp ${OUTDIR}/seed_${FREQ}/final_de_fere_novo_assembly/contigs.fasta ${OUTDIR}/mauve/de_fere_novo_${FREQ}.fasta
 
-    python3.5 ~/GitHub/riboSeed/riboSeed/riboScore.py ${OUTDIR}/seed_${i}/mauve/
+    python3.5 ~/GitHub/riboSeed/riboSeed/riboScore.py ${OUTDIR}/seed_${FREQ}/mauve/
 
 done
