@@ -121,7 +121,7 @@ def ageSequence(rec, outfile, freq, end_length, seed, logger=None):
     seq_len = len(newseqlist)
     random.seed(seed)
     # subst_idxs = random.sample(range(0, seq_len), int(round(seq_len * freq)))
-    idxs = range(0, seq_len)
+    idxs = list(range(0, seq_len))
     random.shuffle(idxs)
     subst_idxs = idxs[0: int(round(seq_len * freq))]
     # ignore the indexes in the regions we are leaving unchanaged
