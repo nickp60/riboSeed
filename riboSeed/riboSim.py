@@ -10,7 +10,7 @@ import time
 import logging
 import os
 import traceback
-import random
+from numpy import random
 
 from Bio import SeqIO
 from Bio.Seq import Seq

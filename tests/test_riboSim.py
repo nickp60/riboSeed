@@ -43,9 +43,9 @@ class RiboSimTest(unittest.TestCase):
     def test_correct_mutations(self):
         """check the aged sequence"""
         test_seq = str(
-            "AAAGAAAAAAAAAAAAAAAAAAAAATGAAAGAAAACGAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAATAACAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAT" +
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-            "AAAACAACATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAAAAAAAAAAAA")
+            "AAAAAGTAAAAAAAAAAAAAAAAAAATAAAGAAAGAAAAAAAAAAAAAAAAAAAACAAGA")
         with open(self.fasta, "r") as infile:
             rec = list(SeqIO.parse(infile, "fasta"))[0]
         ageSequence(rec, freq=.1, end_length=60,
