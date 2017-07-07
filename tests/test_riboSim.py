@@ -43,9 +43,9 @@ class RiboSimTest(unittest.TestCase):
     def test_correct_mutations(self):
         """check the aged sequence"""
         test_seq = str(
-            "AAAAAAAAAAATCACAAAAAAAAAAAAAAAAAACAGAAAAAAAAAAAAAAAAAAAAAAAC" +
+            "AAAGAAAAAAAAAAAAAAAAAAAAATGAAAGAAAACGAAAAAAAAAAAAAAAAAAAAAAA" +
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-            "AAAAAAGAAAAAAAAAAAACAAAAAATAGATAAAAAAAAAAAACAGAAAAAACAAAAAAA")
+            "AAAACAACATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAAAAAAAAAAAA")
         with open(self.fasta, "r") as infile:
             rec = list(SeqIO.parse(infile, "fasta"))[0]
         ageSequence(rec, freq=.1, end_length=60,
@@ -53,7 +53,7 @@ class RiboSimTest(unittest.TestCase):
         with open(self.temp_fasta, "r") as infa:
             newrec = list(SeqIO.parse(infa, "fasta"))[0]
         self.assertEqual(test_seq, str(newrec.seq))
-        # self.to_be_removed.append(self.temp_fasta)
+        self.to_be_removed.append(self.temp_fasta)
 
     def test_correct_mutation_rate(self):
         """check number of substitutions in aged sequence is sensible"""
