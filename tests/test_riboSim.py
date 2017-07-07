@@ -35,15 +35,18 @@ class RiboSimTest(unittest.TestCase):
         self.temp_fasta = os.path.join(
             os.path.dirname(__file__),
             "references", "riboSim_references", "new.fasta")
+        self.temp_fasta2 = os.path.join(
+            os.path.dirname(__file__),
+            "references", "riboSim_references", "new2.fasta")
         self.to_be_removed = []
 
-    def test_Exes_bad_method(self):
-        """check bad method arg given to Exes object"""
+    def test_correct_mutations(self):
+        """check the aged sequence"""
         random.seed(27)
         test_seq = str(
-            "AAATAACAAAGACAAAAGACAAACAAAGAGAAGTAAACAATACATAAACAAAGACAAAAC" +
+            "AAAAAAAAAAATCACAAAAAAAAAAAAAAAAAACAGAAAAAAAAAAAAAAAAAAAAAAAC" +
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-            "AAATAGAGAAACAATAAAATAAACAACACAACAAAAAGAAGAACACAAGAACAAAAAGAA")
+            "AAAAAAGAAAAAAAAAAAACAAAAAATAGATAAAAAAAAAAAACAGAAAAAACAAAAAAA")
         with open(self.fasta, "r") as infile:
             rec = list(SeqIO.parse(infile, "fasta"))[0]
         ageSequence(rec, freq=.1, end_length=60,
@@ -52,6 +55,18 @@ class RiboSimTest(unittest.TestCase):
             newrec = list(SeqIO.parse(infa, "fasta"))[0]
         self.assertEqual(test_seq, str(newrec.seq))
         self.to_be_removed.append(self.temp_fasta)
+
+    def test_correct_mutation_rate(self):
+        """check number of substitutions in aged sequence is sensible"""
+        random.seed(27)
+        with open(self.fasta, "r") as infile:
+            rec = list(SeqIO.parse(infile, "fasta"))[0]
+        ageSequence(rec, freq=.1, end_length=0,
+                    outfile=self.temp_fasta2, logger=logger)
+        with open(self.temp_fasta2, "r") as infa:
+            newrec = list(SeqIO.parse(infa, "fasta"))[0]
+        self.assertEqual(newrec.seq.count("A"), 162)
+        self.to_be_removed.append(self.temp_fasta2)
 
     def tearDown(self):
         """

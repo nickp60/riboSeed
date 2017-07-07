@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
+
 import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')
@@ -14,6 +15,10 @@ import sys
 import argparse
 import glob
 import subprocess
+
+sys.path.append(os.path.join('..', 'riboSeed'))
+from pyutilsnrw.utils3_5 import set_up_logging
+
 
 mycolors = {  # pragma: no cover
     "pinkish": mpl.colors.ColorConverter().to_rgba(
@@ -59,7 +64,6 @@ def get_args():  # pragma: no cover
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument("-o", "--outdir",
                                help="output directory; default: %(default)s",
-                               default=os.getcwd(),
                                type=str, dest="outdir")
 
     optional = parser.add_argument_group('optional arguments')
@@ -82,7 +86,14 @@ def get_args():  # pragma: no cover
                           action="store", default="~/mauve_snapshot_2015-02-13/Mauve.jar",
                           help="path to Mauve.jar; " +
                           "default: %(default)s")
-    # had to make this explicitly to call it a faux optional arg
+    optional.add_argument("-v", "--verbosity", dest='verbosity',
+                          action="store",
+                          default=2, type=int, choices=[1, 2, 3, 4, 5],
+                          help="Logger writes debug to file in output dir; " +
+                          "this sets verbosity level sent to stderr. " +
+                          " 1 = debug(), 2 = info(), 3 = warning(), " +
+                          "4 = error() and 5 = critical(); " +
+                          "default: %(default)s")
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
@@ -315,7 +326,7 @@ def plot_mauve_compare(refgb,
     plt.tight_layout()
     fig.subplots_adjust(hspace=0)
     fig.set_size_inches(12, 12 * aspect)
-    fig.savefig(str(output_prefix + '.png'), dpi=(200))
+    fig.savefig(str(output_prefix + '.png'), dpi=(200), transparent=True)
     fig.savefig(str(output_prefix + '.pdf'), dpi=(200))
     return 0
 
@@ -334,18 +345,27 @@ if __name__ == "__main__":
             os.listdir(os.path.join(args.indir, ""))) == 0:
         print("input directory doesnt exist or is empty! Exiting...")
         sys.exit(1)
+    log_path = os.path.join(args.outdir, "riboSketch.log")
+    logger = set_up_logging(verbosity=args.verbosity,
+                            outfile=log_path,
+                            name=__name__)
+    logger.debug("All settings used:")
+    for k, v in sorted(vars(args).items()):
+        logger.debug("{0}: {1}".format(k, v))
     gb, fastas = parseDirContents(dirname=os.path.join(args.indir, ""),
                                   ref_ext=args.ref_ext,
                                   assembly_ext=args.assembly_ext)
-
+    logger.info("reference: %s", gb)
+    logger.info("fastas: %s", " ".join(fastas))
     cmds, result_paths = makeContigMoverCmds(
         ref=gb, files=fastas,
         outdir=os.path.join(args.outdir, "reordering"),
         mauve_exe=args.mauve_exe)
     if not args.replot:
+        logger.info("Running contig mover commands")
         for i in cmds:
             try:
-                print(i)
+                logger.info(i)
                 subprocess.run([i],
                                shell=sys.platform != "win32",
                                stdout=subprocess.PIPE,
@@ -356,11 +376,9 @@ if __name__ == "__main__":
                 sys.exit(1)
     # get the path to the dir for the last iteration of the reorderer
     best_aln_dirs = [findBestAlignments(i) for i in result_paths]
+    logger.info(best_aln_dirs)
     assembly_list, backbone_list = parseAlignmentDir(dirlist=best_aln_dirs)
-
-    for d in best_aln_dirs:
-        assembly_list.append(glob.glob(d + "*.fasta")[0])
-        backbone_list.append(glob.glob(d + "*.backbone")[0])
+    logger.info(assembly_list)
     if args.names is None:
         names = [os.path.splitext(os.path.basename(x))[0] for
                  x in [gb] + fastas]

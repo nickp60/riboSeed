@@ -87,6 +87,14 @@ def last_exception():
                                               exc_traceback))
 
 
+def substitute_base(strlist, position, alph):
+    """  string should be converted to list prior for mutability"""
+    oldbase = strlist[position]
+    choices = alph[:]
+    choices.remove(oldbase)
+    strlist[position] = random.choice(choices)
+
+
 def ageSequence(rec, outfile, freq, end_length, logger=None):
     assert logger is not None, "must use logging"
     logger.info("frequncy of mutation: %f", freq)
@@ -98,7 +106,7 @@ def ageSequence(rec, outfile, freq, end_length, logger=None):
     # print(newseqlist[1:10])
     alph = ["A", "T", "C", "G"]
     seqlen = len(rec.seq)
-    if end_length is None:
+    if end_length is None or end_length is 0:
         ignore_region = []
     elif not seqlen - (2 * end_length) > 1:
         raise ValueError("Edge width cannot be greater than half the " +
@@ -107,25 +115,19 @@ def ageSequence(rec, outfile, freq, end_length, logger=None):
         ignore_region = set([idx for sublist in
                              [range(end_length, seqlen - end_length)]
                              for idx in sublist])
-    for i, base in enumerate(rec.seq):
-        if i % 5000 == 0:
-            logger.debug("processing base %d of %d", i, seqlen)
+    logger.info("ignored regions:" )
+    logger.info(ignore_region)
+    newseqlist = list(rec.seq)
+    seq_len = len(newseqlist)
+    subst_idxs = random.sample(range(0, seq_len), int(round(seq_len * freq)))
+    # ignore the indexes in the regions we are leaving unchanaged
+    executed_subst_idxs = [x for x in subst_idxs if x not in ignore_region]
+    for i in executed_subst_idxs:
         if i in ignore_region:
-            hist.append(0)
+            pass
         else:
-            distr_counter = distr_counter + 1
-            # this should be the geometric distribution
-            if random.random() < (1 - ((1 - freq) ** distr_counter)):
-                hist.append(1)
-                distr_counter = 0
-                change_counter = change_counter + 1
-                choices = alph[:]
-                choices.remove(base)
-                newseqlist[i] = random.choice(choices)
-            else:
-                hist.append(0)
-    # print(hist[1:20])
-    logger.info("Changed %d of %d bases", change_counter, i)
+            substitute_base(strlist=newseqlist, position=i, alph=alph)
+    logger.info("Changed %d of %d bases", len(executed_subst_idxs), seq_len)
     newrec = SeqRecord(
         id=rec.id,
         # description="riboSim mutation frequency" + str(freq),
@@ -135,7 +137,8 @@ def ageSequence(rec, outfile, freq, end_length, logger=None):
     with open(outfile, "a") as o:
         SeqIO.write(newrec, o, "fasta")
 
-    assert len(newseqlist) == len(rec.seq), "something bad happened!"
+    assert len(newseqlist) == len(rec.seq), \
+        "something bad happened! unequal lengths of input and output sequences"
 
 
 if __name__ == "__main__":
