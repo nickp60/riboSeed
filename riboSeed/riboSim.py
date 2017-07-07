@@ -68,7 +68,7 @@ def get_args():  # pragma: no cover
                           "default: %(default)s")
     optional.add_argument("-s", "--seed", dest='seed',
                           action="store",
-                          default=27, type=int,
+                          default=None, type=int,
                           help="cause reproduciblity; " +
                           "default: %(default)s")
     optional.add_argument("-h", "--help",
@@ -95,7 +95,7 @@ def substitute_base(strlist, position, alph):
     strlist[position] = random.choice(choices)
 
 
-def ageSequence(rec, outfile, freq, end_length, logger=None):
+def ageSequence(rec, outfile, freq, end_length, seed, logger=None):
     assert logger is not None, "must use logging"
     logger.info("frequncy of mutation: %f", freq)
     change_counter = 0
@@ -119,6 +119,7 @@ def ageSequence(rec, outfile, freq, end_length, logger=None):
     logger.info(ignore_region)
     newseqlist = list(rec.seq)
     seq_len = len(newseqlist)
+    random.seed(seed)
     subst_idxs = random.sample(range(0, seq_len), int(round(seq_len * freq)))
     # ignore the indexes in the regions we are leaving unchanaged
     executed_subst_idxs = [x for x in subst_idxs if x not in ignore_region]
@@ -167,11 +168,10 @@ if __name__ == "__main__":
         output_root,
         os.path.basename(args.fasta))
 
-    random.seed(args.seed)
     with open(args.fasta, "r") as infile:
         for rec in SeqIO.parse(infile, "fasta"):
             ageSequence(rec, freq=args.frequency, end_length=args.end_length,
-                        outfile=output_file, logger=logger)
+                        outfile=output_file, seed=args.seed, logger=logger)
     # Report that we've finished
     logger.info("Done: %s", time.asctime())
     logger.info("Time taken: %.3fs" % (time.time() - t0))
