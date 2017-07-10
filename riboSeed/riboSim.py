@@ -98,12 +98,7 @@ def substitute_base(strlist, position, alph):
 def ageSequence(rec, outfile, freq, end_length, seed, logger=None):
     assert logger is not None, "must use logging"
     logger.info("frequncy of mutation: %f", freq)
-    change_counter = 0
-    distr_counter = 0
-    hist = []
     newseqlist = list(rec.seq)
-    # print(rec.seq[1:10])
-    # print(newseqlist[1:10])
     alph = ["A", "T", "C", "G"]
     seqlen = len(rec.seq)
     if end_length is None or end_length is 0:
@@ -115,8 +110,6 @@ def ageSequence(rec, outfile, freq, end_length, seed, logger=None):
         ignore_region = set([idx for sublist in
                              [range(end_length, seqlen - end_length)]
                              for idx in sublist])
-    logger.info("ignored regions:" )
-    logger.info(ignore_region)
     newseqlist = list(rec.seq)
     seq_len = len(newseqlist)
     random.seed(seed)
