@@ -55,10 +55,10 @@ do
     if [ "$WHERE" == "ALL" ]
     then
 	ARG=""
-	FREQS=( 0.0 0.0025 0.0050 0.0075 0.010 0.025 0.050 0.075 0.100 )
+	FREQS=( 0.0 0.0050 0.0075 0.010 0.025 0.050 0.075 0.100 )
     else
 	ARG="-e 5000"
-	FREQS=( 0.0 0.010 0.025 0.050 0.100 0.1250 0.1500 0.1750 0.200 )
+	FREQS=( 0.0 0.025 0.050 0.100 0.1250 0.1500 0.1750 0.200 )
     fi
 
     OUTDIR="${OUTDIRBASE}`date +%F`_degenerate_output_${WHERE}_${SEED}"
@@ -107,13 +107,16 @@ do
 	# copy the file
 	cp ${OUTDIRBASE}/toyGenome_${SEED}/mutated_genome_${FREQ}_${WHERE}/concatenated_seq.fasta ${OUTDIR}/genomes/${FREQ}_reference.fasta
 	# generate the gb file for the sequence
+	echo "running riboScan"
 	python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ${OUTDIRBASE}/toyGenome_${SEED}/mutated_genome_${FREQ}_${WHERE}/ -o ${OUTDIR}/scan_${FREQ}/ -e fasta -v 1  &>> ${LOGFILE}
 	# run riboSeed
+	echo "running riboSeed"
 	python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ${OUTDIR}/scan_${FREQ}/scannedScaffolds.gb  -o ${OUTDIR}/seed_${FREQ}/ ${OUTDIR}/ref_select/riboSelect_grouped_loci.txt -F ${OUTDIRBASE}/toyGenome_${SEED}/reads_100_300_1.fq.gz -R ${OUTDIRBASE}/toyGenome_${SEED}/reads_100_300_2.fq.gz -i 3  -v 1 -l 1000 --clean_temps  &>> ${LOGFILE}
 	# move a copy of the annotated genome to the "mauve" directory for convenience
 	if [ -e ${OUTDIR}/seed_${FREQ}/final_de_fere_novo_assembly/contigs.fasta ]
 	then
 	    cp ${OUTDIR}/seed_${FREQ}/final_de_fere_novo_assembly/contigs.fasta ${OUTDIR}/mauve/de_fere_novo_${FREQ}.fasta
+	    echo "running riboScore"
 
 	    python3.5 ~/GitHub/riboSeed/riboSeed/riboScore.py ${OUTDIR}/seed_${FREQ}/mauve/ &>> ${LOGFILE}
 
