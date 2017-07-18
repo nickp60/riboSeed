@@ -56,10 +56,13 @@ levels(tall$coverage)<-c("20x Coverage", "50x Coverage")
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
       panel.border = element_rect(color="black", size = .1),
-      strip.background = element_rect(colour = NA),
-      axis.text.x = element_text(angle=45, hjust=1),
+      strip.background = element_rect(colour = "grey85", size = 2),
+      strip.text = element_text(size = 9),
+      axis.text.x = element_text(angle=45, hjust=1, size = 12),
+      axis.text.y = element_text(angle=0, size = 12),
+      axis.title  = element_text(angle=0, size = 13),
       axis.line = element_line(color = 'black', size = .1)) +
-    labs(y="Count", x="rDNA Assembly ",  title=""))
+    labs(y="Count", x=" ",  title=""))
 set.seed(27)
 (combplot2<- ggplot(tall, aes(x=tech, y=val, fill=variable, color=variable)) + 
     geom_boxplot(outlier.colour =  NA, width=.7, alpha=0.5)+
@@ -75,8 +78,11 @@ set.seed(27)
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
       panel.border = element_rect(color="black", size = .1),
-      strip.background = element_rect(colour = NA),
-      axis.text.x = element_text(angle=45, hjust=1),
+      strip.background = element_rect(colour = "grey85", size = 2),
+      strip.text = element_text(size = 9),
+      axis.text.x = element_text(angle=45, hjust=1, size = 12),
+      axis.text.y = element_text(angle=0, size = 12),
+      axis.title  = element_text(angle=0, size = 13),
       axis.line = element_line(color = 'black', size = .1)) +
     labs(y="Count", x="Technology, Read Length ",  title="", fill="rDNA Assembly"))
 
@@ -93,10 +99,13 @@ set.seed(27)
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
       panel.border = element_rect(color="black", size = .1),
-      strip.background = element_rect(colour = NA),
-      axis.text.x = element_text(angle=45, hjust=1),
+      strip.background = element_rect(colour = "grey85", size = 2),
+      strip.text = element_text(size = 9),
+      axis.text.x = element_text(angle=45, hjust=1, size = 12),
+      axis.text.y = element_text(angle=0, size = 12),
+      axis.title  = element_text(angle=0, size = 13),
       axis.line = element_line(color = 'black', size = .1)) +
-    labs(y="Count", x="rDNA Assembly ",  title=""))
+    labs(y="Count", x=" ",  title=""))
 
 stattab <- tall %>%
   group_by(coverage, variable, tech, bug) %>%
