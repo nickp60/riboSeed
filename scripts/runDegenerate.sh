@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -eo pipefail
 # version 0.2.0
 IFS=$'\n\t'
 
@@ -20,13 +20,14 @@ if [ -e BA000007.2.fasta ]
 then
 echo "using local copy of reference"
 else
-get_genomes.py -q BA000007.2 -o ./
+~/GitHub/pyutilsnrw/pyutilsnrw/get_genomes.py -q BA000007.2 -o ./
 fi
 
 OUTDIRBASE="./"
 mkdir ${OUTDIRBASE}/toyGenome_${SEED}/
 LOGFILE=${OUTDIRBASE}/degenerate_log_${SEED}.txt
-
+echo "sourcing virtualenv" 
+source ~/Virtualenvs/riboSeed/bin/activate
 
 echo "Running degenerate pipeline with the following settings"
 echo "SEED: ${SEED}"
@@ -46,8 +47,7 @@ echo " generate reads from the toy genome"
 python3.5  ~/GitHub/riboSeed/riboSeed/riboScan.py ${OUTDIRBASE}/toyGenome_${SEED}/coli_genome/ -o  ${OUTDIRBASE}/toyGenome_${SEED}/coli_genome/ref_scan/ -v 1 -e fasta &>> ${LOGFILE}
 
 
-
-
+FREQS=( 0.0 0.0025 0.0050 0.0075 0.0100 0.0150 0.0200 0.0250 0.0500 0.0750 0.1000 0.1250 0.1500 0.1750 0.2000 0.2250 0.2500 0.2750 0.3000 )
 
 for WHERE in FLANK ALL
 do
@@ -55,10 +55,8 @@ do
     if [ "$WHERE" == "ALL" ]
     then
 	ARG=""
-	FREQS=( 0.0 0.0050 0.0075 0.010 0.025 0.050 0.075 0.100 )
     else
 	ARG="-e 5000"
-	FREQS=( 0.0 0.025 0.050 0.100 0.1250 0.1500 0.1750 0.200 )
     fi
 
     OUTDIR="${OUTDIRBASE}`date +%F`_degenerate_output_${WHERE}_${SEED}"
@@ -111,7 +109,7 @@ do
 	python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ${OUTDIRBASE}/toyGenome_${SEED}/mutated_genome_${FREQ}_${WHERE}/ -o ${OUTDIR}/scan_${FREQ}/ -e fasta -v 1  &>> ${LOGFILE}
 	# run riboSeed
 	echo "running riboSeed"
-	python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ${OUTDIR}/scan_${FREQ}/scannedScaffolds.gb  -o ${OUTDIR}/seed_${FREQ}/ ${OUTDIR}/ref_select/riboSelect_grouped_loci.txt -F ${OUTDIRBASE}/toyGenome_${SEED}/reads_100_300_1.fq.gz -R ${OUTDIRBASE}/toyGenome_${SEED}/reads_100_300_2.fq.gz -i 3  -v 1 -l 1000 --clean_temps  &>> ${LOGFILE}
+	python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ${OUTDIR}/scan_${FREQ}/scannedScaffolds.gb  -o ${OUTDIR}/seed_${FREQ}/ ${OUTDIR}/ref_select/riboSelect_grouped_loci.txt -F ${OUTDIRBASE}/toyGenome_${SEED}/reads_100_300_1.fq.gz -R ${OUTDIRBASE}/toyGenome_${SEED}/reads_100_300_2.fq.gz -i 3  -v 1 -l 1000 --clean_temps -c 4 --memory 8  &>> ${LOGFILE}
 	# move a copy of the annotated genome to the "mauve" directory for convenience
 	if [ -e ${OUTDIR}/seed_${FREQ}/final_de_fere_novo_assembly/contigs.fasta ]
 	then
@@ -123,7 +121,7 @@ do
 	    cp ${OUTDIR}/seed_${FREQ}/mauve_riboScored/riboScore_report.txt ${OUTDIR}/score_reports/${SUBSEED}_${FREQ}_riboScore_report.txt
 
 	fi
-
+	rm ${OUTDIR}/seed_${FREQ}/ -rf
     done
 
     cat ${OUTDIR}/score_reports/*_riboScore_report.txt > ${OUTDIR}/score_reports/combined_reports.txt
