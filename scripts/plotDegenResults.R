@@ -132,17 +132,17 @@ for (freq in freqs){
 }
 labelss
 
-(line_lin <- ggplot(tall,#[tall$freq != 0, ],
+line_lin <- ggplot(tall,#[tall$freq != 0, ],
                     aes(x=freq, color=where, y=value))+ 
     annotate("rect", xmin=min(tall$freq), xmax=0.05, ymin=0, ymax=8, 
-             alpha=0.2, fill="grey30", color=NA)+
+             alpha=0.2, fill="grey20", color=NA)+
     annotate("text", x=0.025,  y=7.5, label="Intraspecies", size=5)+
     annotate("text", x=0.090,  y=7.5, label="Interspecies", size=5)+
     geom_smooth(size=0.5,
        # method="loess", 
       formula = y ~ x, span=1)+
-    geom_point(data=tall[tall$out==T, ], shape=3, size=1, alpha=.8, position=position_jitter(width = .001, height = .05))+
-    geom_point(data=tall[tall$out==F, ], shape=1, size=1, alpha=.5, position=position_jitter(width = .003, height = .05))+
+    geom_point(data=tall[tall$out==T, ], shape=3, size=1, alpha=.8, position=position_jitter(width = .0005, height = .05))+
+    geom_point(data=tall[tall$out==F, ], shape=1, size=1, alpha=.5, position=position_jitter(width = .001, height = .05))+
     geom_hline(0, yintercept = 0, color="grey20") + 
     scale_x_continuous(limits = c(0, 0.3), expand=c(0.01, 0), breaks=freqs, labels =labelss)+
     scale_y_continuous(expand=c(0, 0), limits = c(-0.4, 8), breaks = 0:7)+
@@ -159,7 +159,7 @@ labelss
     labs(y="Correctly-assembled rDNAs", x="Substitution Frequency", title="", 
          # color="Permitted Substitutions")
           color="")
-)
+
 
 #  coord_flip()
 writePlot <- function(pl, file, h, w){
@@ -175,4 +175,4 @@ writePlot <- function(pl, file, h, w){
 writePlot(
   pl=line_lin, 
   file=paste0(args$out_folder, "degenerate_lineplot"),
-  w=10, h=5)
+  w=8, h=6)
