@@ -99,13 +99,13 @@
 \title{\fontseries{m}\selectfont riboSeed: leveraging prokaryotic genomic architecture to assemble across ribosomal regions}
 
 \author
-{\small Nicholas R Waters,$^{1,2\ast}$ Florence Abram,$^{1}$  Ashleigh Holmes,$^{2}$ Fiona Brennan,$^{1,3}$ and Leighton Pritchard$^{2}$\\
+{\small Nicholas R Waters,$^{1,2}$ Florence Abram,$^{1}$  Ashleigh Holmes,$^{2}$ Fiona Brennan,$^{1,3}$ and Leighton Pritchard$^{2}$\\
 \\
-\normalsize{\textit {$^{1}$National University of Ireland, Galway}}\\
+\normalsize{\textit {$^{1}$National University of Ireland, Galway, Ireland}}\\
 \normalsize{\textit {$^{2}$The James Hutton Institute, Dundee, Scotland}}\\
-\normalsize{\textit {$^{3}$Teagasc, Johnstown Castle, Wexford}}\\
+\normalsize{\textit {$^{3}$Teagasc, Johnstown Castle, Wexford, Ireland,}}\\
 \\
-\footnotesize{$^\ast$To whom correspondence should be addressed; E-mail: nickp60@gmail.com}
+\footnotesize{$^\ast$To whom correspondence should be addressed; E-mail: leighton.pritchard@hutton.ac.uk}
 }
 \date{}
 
@@ -328,6 +328,9 @@ In addition to riboScore.py, we recommend assessing the performance of the riboS
 riboStack.py uses bedtools\cite{Quinlan2010} and samtools\cite{Li2009} to compare the depths of coverage of reads aligning to the reference genome in the rDNA regions to randomly sampled regions elsewhere in the reference genome. riboStack.py takes output from riboScan.py, and a BAM file of reads that map to the reference. If the number of riboScan.py-annotated rDNAs matches the number of rDNAs in the sequenced isolate, the coverage depths within the rDNAs will be similar to the coverage in other locations in the genome. If the coverage of rDNA regions sufficiently exceeds the average coverage elsewhere in the genome, this may indicate that the reference strain has fewer rDNAs than the sequenced isolate. In this case, using an alternative reference genome may produce improved results.
 
 \section*{Results}
+
+Settings used for analyses in this manuscript are the defaults (except where otherwise noted) as of riboSeed version 0.4.09\cite{nicholas_r_waters_2017_832131}.
+
 \subsection*{Characteristics of rDNA flanking regions}
 The use of rDNA flanking sequences to uniquely identify and place rDNAs in their genomic context requires their flanking sequences to be distinct within the genome for each region. This is expected to be the case for most, if not all, prokaryotic genomes. We determined that using 1kb flanking widths was sufficient to include differentiating sequence (Figure \ref{fig:blast}). To demonstrate this, rDNA and 1kb flanking regions were extracted from \textit{E. coli} Sakai \cite{Hayashi2001} (BA000007.2), in which the rDNAs have been well characterized\cite{Ohnishi2000}. These regions were aligned with MAFFT\cite{Katoh2002}, and their consensus depth and Shannon entropy\cite{Schmitt1997} calculated for each position in the alignment (Figure \ref{fig:entropyA}).
 
@@ -359,9 +362,6 @@ Taken together, when these two properties hold, this allows for unique placement
 
 
 \subsection*{Validating Assembly across rDNA regions}
-
-Settings used for analyses in this manuscript are the defaults as of riboSeed version 0.4.09 (except where otherwise noted).
-
 
 To evaluate the performance of \textit{de fere novo} assembly compared to \textit{de novo} assembly methods, we used Mauve to visualize syntenic regions and contig breaks of each assembly in relation to the reference genome that was used to generate pseudocontigs. We categorized each rDNA in an assembly as either a success, failure, or misassembly, as follows.
 
@@ -470,7 +470,7 @@ Thus, we find that the \textit{de fere novo} assembly using short reads performs
 
 \begin{table}[!h]
 \centering
-\caption{rDNA region SNPs between \textit{de fere novo} assembly and hybrid assembly of \textit{P. aeruginosa} BAMCPA07-48 in rDNA regions, including 1kb upstream and downstream of the rDNA}
+\caption{rDNA region SNPs between hybrid assembly of \textit{P. aeruginosa} BAMCPA07-48 and \textit{de fere novo} assembly in rDNA regions, including 1kb upstream and downstream of the rDNA}
 \label{table:snps}
 \begin{tabular}{lcc}
   \toprule
@@ -530,9 +530,9 @@ We modified the BugBuilder pipeline (\url{https://github.com/nickp60/BugBuilder}
 We used the Genome Assembly Gold-standard Evaluation for Bacteria (GAGE-B) datasets \cite{Magoc2013} to assess the performance of riboSeed against a set of well-characterized assemblies. These datasets represent a broad range of challenges; low GC content and tandem rDNA repeats prove challenging to the riboSeed procedure. \textit{Mycobacterium abscessus} has only a single rDNA operon and does not suffer from the issue of rDNA repeats, so it was excluded from this analysis.
 
 
-When the reference used in the GAGE-B study came from the sequenced strain (as was the case for \textit{R. sphaeroides}  and  the \textit{B. cereus}), we chose an alternate reference, as using the true reference sequence would provide an unfair advantage to riboSeed. The GAGE-B datasets include both raw and trimmed reads; in all cases, the trimmed reads were used. Results are shown in Table \ref{table:gageb}.
+When the reference used in the GAGE-B study came from the sequenced strain (as was the case for \textit{Rhodobacter sphaeroides}  and  the \textit{Bacillus cereus}), we chose an alternate reference, as using the true reference sequence would provide an unfair advantage to riboSeed. The GAGE-B datasets include both raw and trimmed reads; in all cases, the trimmed reads were used. Results are shown in Table \ref{table:gageb}.
 
-Compared to the \textit{de novo} assembly, \textit{de fere novo} assembly improved the majority of assemblies. In the case of the \textit{S. aureus} and \textit{R. sphaeroides} datasets, particular difficulty was encountered for all of the references tested. In the case of \textit{B. fragilis}, the entropy plot (Figure \ref{fig:ent_frag}) shows that the variability on the 5' end of the operon is much lower than the other strains, likely leading to the misassemblies.
+Compared to the \textit{de novo} assembly, \textit{de fere novo} assembly improved the majority of assemblies. In the case of the \textit{S. aureus} and \textit{R. sphaeroides} datasets, particular difficulty was encountered for all of the references tested. In the case of \textit{Bacteroides fragilis}, the entropy plot (Figure \ref{fig:ent_frag}) shows that the variability on the 5' end of the operon is much lower than the other strains, likely leading to the misassemblies.
 
 \begin{table}[!h]
   {\color{tgray}
