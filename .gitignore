@@ -128,3 +128,6 @@ docs/_site/
 *blg
 .out
 *.out
+readthedocs/_build/
+readthedocs/_static/
+readthedocs/_template/

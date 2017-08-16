@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/nickp60/riboSeed.svg?branch=master)](https://travis-ci.org/nickp60/riboSeed)
+[![PyPI version](https://badge.fury.io/py/riboSeed.svg)](https://badge.fury.io/py/riboSeed)
 [![Coverage Status](https://coveralls.io/repos/github/nickp60/riboSeed/badge.svg?branch=master)](https://coveralls.io/github/nickp60/riboSeed?branch=master)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.832131.svg)](https://doi.org/10.5281/zenodo.832131)
 
