@@ -1,13 +1,11 @@
 |Build Status| |PyPI version| |Coverage Status| |DOI|
 
-.. figure:: https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.png
-   :alt: riboSeed
+|ribologo|
 
-   riboSeed
 riboSeed Pipeline
 =================
 
-Impatient? See our `Quickstart Guide <./quickstart.md>`__
+Impatient? See our `Quickstart Guide <https://github.com/nickp60/riboSeed/blob/master/quickstart.md>`__
 
 A brief overview of the theory can be found
 `here <https://nickp60.github.io/riboSeed.html>`__.
@@ -15,29 +13,6 @@ A brief overview of the theory can be found
 Preprint of the riboSeed manuscript can be found
 `here <http://www.biorxiv.org/content/early/2017/07/14/159798>`__;
 comments welcome!
-
-Table of Contents
------------------
-
--  ```Description`` <./README.md#description>`__
--  ```riboScan: Preprocessing`` <./README.md#0-preprocessing>`__
--  ```riboSelect: Determine rDNA Operon Structure`` <./README.md#1-selection-and-extraction>`__
--  ```riboSeed: Seeded Assembly`` <./README.md#2-seeded-assembly>`__
--  ```riboSeed Key Parameters`` <./README.md#key-parameters>`__
--  ```riboSwap: Assembly Refinement`` <./README.md#3-assembly-refinement>`__
--  ```Installation`` <./README.md#installation>`__
--  ```External Requirements`` <./README.md#external-requirements>`__
-
-Before We Start
----------------
-
-This pipeline is still very much in testing. Please back up any and all
-data used, and work within a virtualenv.
-
-Genome assembly gobbles RAM. If you, like me, are working on a 4gb RAM
-lappy, don't run riboSeed in parallel and instead run in series by using
-the ``--serialize`` option. That should prevent you from running out of
-RAM during the final SPAdes calls.
 
 Description
 -----------
@@ -50,16 +25,23 @@ unique, and therefore can potentially be used to seed an assembly in
 such a way that rDNA regions are bridged.
 
 The pipeline consists of 3 main stages: preprocessing, de fere novo
-assembly, and visualization/assessment
+assembly, and visualization/assessment.
+
+
+Before We Start
+---------------
+
+This pipeline is still very much in testing. Please back up any and all
+data used, and work within a virtualenv.
+
+Genome assembly gobbles RAM. If you, like me, are working on a 4gb RAM
+lappy, don't run riboSeed in parallel and instead run in series by using
+the ``--serialize`` option. That should prevent you from running out of
+RAM during the final SPAdes calls.
+
 
 0: Preprocessing
 ----------------
-
-.. raw:: html
-
-   <!-- `splitMultifasta.sh` takes a single argument for the fasta file containing multiple contigs, and output them as individual contigs to the current working directory.  This is not sophisticated, it is essentially one awk call that is already shorter than this description.  `riboScan.py` will only work with single entry fastas. -->
-   <!-- #### usage -->
-   <!-- make a directory for the new files, and `cd` into it.  `splitMultifasta ../contigs.fa` -->
 
 ``riboScan.py``
 ~~~~~~~~~~~~~~~
@@ -595,12 +577,8 @@ In the scripts directory, there is a script called ``runme.py`` which
 run the pipeline on a small sample dataset. it should output a folder to
 your current working dir called ``integration_tests``.
 
-Dependencies
+ Dependencies
 ~~~~~~~~~~~~
-
-.. raw:: html
-
-   <!-- The trickiest part of this whole business is properly installing SMALT. BWA is definitely the easiest option, and the current default mapper, so don't bother with SMALT unless you need to. -->
 
 Python Requirements:
 ~~~~~~~~~~~~~~~~~~~~
@@ -669,3 +647,5 @@ customizing it as needed.
    :target: https://coveralls.io/github/nickp60/riboSeed?branch=master
 .. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.832131.svg
    :target: https://doi.org/10.5281/zenodo.832131
+.. |ribologo| image:: https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.png
+   :target: https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.png
