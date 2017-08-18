@@ -1,22 +1,16 @@
 .. riboSeed documentation master file, created by
-   sphinx-quickstart on Wed Aug 16 23:19:52 2017.
+   sphinx-quickstart on Fri Aug 18 13:46:48 2017.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
 Welcome to riboSeed's documentation!
 ====================================
 
-Contents:
-
 .. toctree::
    :maxdepth: 4
+   :caption: Contents:
 
-   README
-
-.. automodule::
-   :members:
-   :show-inheritance:
-
+   riboSeed
 
 
 Indices and tables

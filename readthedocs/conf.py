@@ -14,7 +14,8 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath('../riboSeed'))
+sys.path.insert(0, os.path.abspath('..'))
+sys.path.append(os.path.join(os.path.dirname(__name__), '..'))
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -72,7 +73,7 @@ release = '0.4.9'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build', "../*/integration_data*"]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.

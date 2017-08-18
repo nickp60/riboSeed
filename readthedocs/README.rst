@@ -1,6 +1,6 @@
 |Build Status| |PyPI version| |Coverage Status| |DOI|
 
-|ribologo|
+                 |ribologo|
 
 riboSeed Pipeline
 =================
@@ -647,5 +647,5 @@ customizing it as needed.
    :target: https://coveralls.io/github/nickp60/riboSeed?branch=master
 .. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.832131.svg
    :target: https://doi.org/10.5281/zenodo.832131
-.. |ribologo| image:: https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.svg
+.. |ribologo| image:: logo_1.svg
    :target: https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.svg
