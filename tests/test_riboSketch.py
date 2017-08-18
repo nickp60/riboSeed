@@ -8,11 +8,14 @@ import shutil
 import os
 import unittest
 
+from pyutilsnrw.utils3_5 import md5
+from argparse import Namespace
+
 sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 from riboSeed.riboSketch import makeContigMoverCmds, findBestAlignments, \
-    parseBackbones, parseDirContents, parseAlignmentDir
+    parseBackbones, parseDirContents, parseAlignmentDir, main
 
 
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
@@ -30,6 +33,19 @@ class riboSketchTestCase(unittest.TestCase):
             os.path.dirname(__file__),
             "references",
             "riboSketch_references", "")
+        self.ref_png = os.path.join(
+            os.path.dirname(__file__),
+            "references",
+            "riboSketch_references",
+            "PrettyMauve.png")
+        self.mauve_jar = os.path.join(
+            "~", "mauve_snapshot_2015-02-13", "Mauve.jar")
+        self.mauve_res_dir = os.path.join(
+            os.path.dirname(__file__),
+            "references",
+            "riboSketch_references",
+            "ref_vs_kleb_de_fere_novo", "alignment2"
+            "")
         self.to_be_removed = []
 
     def test_parseDirContents(self):
@@ -46,7 +62,7 @@ class riboSketchTestCase(unittest.TestCase):
         cmds, results_path = makeContigMoverCmds(
             ref="test.gb", files=["fasta1.fa", "fasta2.fa"],
             outdir="reordering",
-            mauve_exe="mauve.exe")
+            mauve_jar="mauve.exe")
         cmd1 = "java -Xmx500m -cp mauve.exe org.gel.mauve.contigs.ContigOrderer -output reordering{0}ref_vs_fasta1 -ref test.gb -draft fasta1.fa".format(os.path.sep)
         cmd2 = "java -Xmx500m -cp mauve.exe org.gel.mauve.contigs.ContigOrderer -output reordering{0}ref_vs_fasta2 -ref test.gb -draft fasta2.fa".format(os.path.sep)
 
@@ -97,6 +113,26 @@ class riboSketchTestCase(unittest.TestCase):
                [0, 0, 46893, 47120]]
 
         self.assertEqual(backbones, [ref])
+
+    @unittest.skipIf(os.path.exists(
+        os.path.join("~", "mauve_snapshot_2015-02-13", "Mauve.jar")) is None,
+                     "mauve jar not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
+    def test_main(self):
+        tempout = os.path.join(self.test_dir, "main_out")
+        self.args = Namespace(indir=self.mauve_res_dir,
+                              outdir=tempout,
+                              replot=False,
+                              ref_ext="gb",
+                              assembly_ext="fasta",
+                              mauve_jar=self.mauve_jar,
+                              names=None,
+                              verbosity=2)
+        main(self.args)
+        self.assertEqual(md5(self.ref_png),
+                         md5(os.path.join(tempout, "PrettyMauve.png")))
+        self.to_be_removed.append(tempout)
 
     def tearDown(self):
         """ delete temp files if no errors

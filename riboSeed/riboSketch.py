@@ -82,7 +82,7 @@ def get_args():  # pragma: no cover
                           help="replot, using a previous run of analyses",
                           default=False, dest="replot",
                           action="store_true")
-    optional.add_argument("--mauve_exe", dest="mauve_exe",
+    optional.add_argument("--mauve_jar", dest="mauve_jar",
                           action="store", default="~/mauve_snapshot_2015-02-13/Mauve.jar",
                           help="path to Mauve.jar; " +
                           "default: %(default)s")
@@ -108,14 +108,14 @@ def parseDirContents(dirname, ref_ext, assembly_ext):
             glob.glob(dirname + "*" + assembly_ext))
 
 
-def makeContigMoverCmds(ref, files, outdir, mauve_exe):
+def makeContigMoverCmds(ref, files, outdir, mauve_jar):
     cmds = []
     results = []
     for f in files:
         thisdir = os.path.join(outdir, "ref_vs_" +
                                os.path.splitext(os.path.basename(f))[0])
         cmd = "java -Xmx500m -cp {0} org.gel.mauve.contigs.ContigOrderer -output {1} -ref {2} -draft {3}".format(
-            mauve_exe,
+            mauve_jar,
             thisdir,
             ref,
             f)
@@ -330,8 +330,8 @@ def plot_mauve_compare(refgb,
     fig.savefig(str(output_prefix + '.pdf'), dpi=(200))
     return 0
 
-if __name__ == "__main__":
-    args = get_args()
+
+def main(args):
     try:
         os.makedirs(args.outdir)
         os.makedirs(os.path.join(args.outdir, "reordering"))
@@ -360,7 +360,7 @@ if __name__ == "__main__":
     cmds, result_paths = makeContigMoverCmds(
         ref=gb, files=fastas,
         outdir=os.path.join(args.outdir, "reordering"),
-        mauve_exe=args.mauve_exe)
+        mauve_jar=args.mauve_jar)
     if not args.replot:
         logger.info("Running contig mover commands")
         for i in cmds:
@@ -395,3 +395,8 @@ if __name__ == "__main__":
                        aspect=.4,
                        output_prefix=os.path.join(args.outdir,
                                                   "PrettyMauve"))
+
+
+if __name__ == "__main__":
+    args = get_args()
+    main(args)

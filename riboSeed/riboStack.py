@@ -213,6 +213,7 @@ def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
         else:
             plotlines.append(" " * 10 + xaxis + fillchar * j + "O")
     logger.info("\n" + "\n".join(plotlines))
+    return(plotlines)
 
 
 def mean(x):

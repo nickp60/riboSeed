@@ -12,7 +12,6 @@ import unittest
 
 # from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from argparse import Namespace
 
 # I hate this line but it works :(
 sys.path.append(os.path.join(
@@ -21,7 +20,7 @@ sys.path.append(os.path.join(
 
 from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboStack import makeRegions, makeBedtoolsShuffleCmd, \
-    samtoolsGetDepths
+    samtoolsGetDepths, getRecLengths, mean, printPlot
 
 sys.dont_write_bytecode = True
 
@@ -43,6 +42,10 @@ class riboStackTestCase(unittest.TestCase):
             os.path.dirname(__file__),
             "references",
             "riboStack_references", "")
+        self.multifasta = os.path.join(
+            os.path.dirname(__file__),
+            "references",
+            "riboStack_references", "contigs.fasta")
         self.test_combine = os.path.join(
             os.path.dirname(__file__),
             "references",
@@ -102,6 +105,40 @@ class riboStackTestCase(unittest.TestCase):
             ref_reg_file="region_file",
             outdir="" )
         self.assertEqual(samtools_cmds[1], ref_cmd)
+
+    def test_getRecLengths(self):
+        flist = getRecLengths(fasta=self.multifasta)
+        self.assertEqual(flist, [["seq1", 660],
+                                 ["seq2", 660]])
+
+    def test_mean(self):
+        self.assertEqual(mean([4, 5, 7, 8]), 6)
+
+    def test_printPlot(self):
+        refplotlist = [
+       "               reference",
+       "         0                                                          50",
+       "          |____________________________________________________________|",
+       "        48|                                                            O",
+       "          |                                                     O",
+       "        37|                                               O",
+       "          |                                         O",
+       "        28|                                   O",
+       "          |                            O",
+       "        17|                      O",
+       "          |********************************************************  15",
+       "          |                O",
+       "         8|          O",
+       "          |   O",
+       "         0|O"
+       ]
+
+        self.assertEqual(
+            refplotlist,
+            printPlot(
+                data=range(1, 51),
+                line=15, ymax=10, xmax=60,
+                tick=.2, title="reference", fill=False, logger=logger))
 
     def tearDown(self):
         """ delete temp files
