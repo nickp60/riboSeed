@@ -137,9 +137,7 @@ def ageSequence(rec, outfile, freq, end_length, seed, logger=None):
     assert len(newseqlist) == len(rec.seq), \
         "something bad happened! unequal lengths of input and output sequences"
 
-
-if __name__ == "__main__":
-    args = get_args()
+def main(args):
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
@@ -171,3 +169,8 @@ if __name__ == "__main__":
     # Report that we've finished
     logger.info("Done: %s", time.asctime())
     logger.info("Time taken: %.3fs" % (time.time() - t0))
+
+
+if __name__ == "__main__":
+    args = get_args()
+    main(args)

@@ -25,7 +25,7 @@ sys.path.append(os.path.join(
 from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboScan import parse_fasta_header, make_barrnap_cmd, \
     add_locus_tags_to_gff, combine_gbs, append_accession_and_version, \
-    make_seqret_cmd, splitMultifasta, getFastas, checkSingleFasta
+    make_seqret_cmd, splitMultifasta, getFastas, checkSingleFasta, main
 
 sys.dont_write_bytecode = True
 
@@ -69,49 +69,45 @@ class riboSeedTestCase(unittest.TestCase):
         self.cores = 2
         self.maxDiff = 2000
         self.to_be_removed = []
-        # if not os.path.exists(self.test_dir):
-        #     os.makedirs(self.test_dir, exist_ok=True)
-        # self.copy_fasta()
 
     def test_gi_parse_fasta_header(self):
-        """check with nonexistant executable"""
+        """check valid fasta header parsing"""
         header1 = str(">gi|218703261|ref|NC_011751.1| " +
                       "Escherichia coli UMN026 chromosome, complete genome\n")
         self.assertEqual("NC_011751.1", parse_fasta_header(header1))
 
     def test_nongi_parse_fasta_header(self):
-        """check with nonexistant executable"""
+        """check nonstandard fasta header parsing"""
         header2 = str(">testgenome gi|218703261|ref|NC_011751.1| " +
                       "Escherichia coli UMN026 chromosome, complete genome\n")
         self.assertEqual("testgenome", parse_fasta_header(header2))
 
     def test_fail_parse_fasta_header(self):
-        """check with nonexistant executable"""
+        """ensudre bad fastas fail header parsing"""
         header3 = str("testgenome|blabla|")
         with self.assertRaises(ValueError):
             parse_fasta_header(header3)
 
-    @unittest.skipIf(shutil.which("barrnap") is None,
-                     "barrnap executable not found. If this isnt an " +
-                     "error from travis deployment, you probably " +
-                     "should install it")
     def test_make_barrnap_cmd(self):
+        """ check barrnap command construction  """
         cmd1 = make_barrnap_cmd(infasta="test.fasta", outgff="test.gff",
-                                exe="barrnap", thresh=.2, kingdom='euk')
-        ref_cmd1 = "{0} -k euk test.fasta --reject 0.2 --threads 1 > test.gff".format(
-            shutil.which("barrnap"))
+                                exe="barrnap.exe", thresh=.2, kingdom='euk')
+        ref_cmd1 = str("barrnap.exe -k euk test.fasta --reject 0.2 --threads" +
+                       " 1 > test.gff")
         self.assertEqual(cmd1, ref_cmd1)
 
-    def test_fail_exe_make_barrnap_cmd(self):
+    def test_fail_barrnap_exe_main(self):
+        """ fail main with bad barrnap exe"""
         with self.assertRaises(AssertionError):
-            make_barrnap_cmd(infasta="test.fasta", outgff="test.gff",
-                             exe="definitelynotbarrnap", thresh=.2,
-                             kingdom='euk')
+            main(Namespace(contigs="test.fasta",
+                           output="test",
+                           barrnap_exe="definitelynotbarrnap",
+                           cores=2))
 
-    @unittest.skipIf(shutil.which("barrnap") is None,
-                     "barrnap executable not found. If this isnt an " +
-                     "error from travis deployment, you probably " +
-                     "should install it")
+    # @unittest.skipIf(shutil.which("barrnap") is None,
+    #                  "barrnap executable not found. If this isnt an " +
+    #                  "error from travis deployment, you probably " +
+    #                  "should install it")
     def test_fail_thresh_make_barrnap_cmd(self):
         with self.assertRaises(AssertionError):
             make_barrnap_cmd(infasta="test.fasta", outgff="test.gff",
@@ -119,7 +115,7 @@ class riboSeedTestCase(unittest.TestCase):
                              kingdom='euk')
 
     def test_add_locus_tags_to_gff(self):
-        """check with  executable"""
+        """check create proper gff """
         add_locus_tags_to_gff(gff=self.no_locus_gff,
                               acc="BA000007.2")
         new_gff = str(os.path.splitext(self.no_locus_gff)[0] + "_tagged.gff")
@@ -127,6 +123,7 @@ class riboSeedTestCase(unittest.TestCase):
         self.to_be_removed.append(new_gff)
 
     def test_combine_gbs(self):
+        """ make sure we combine genbank files properly"""
         temp_gb = os.path.join(self.scan_ref_dir, "temp_combined.gb")
         combine_gbs(finalgb=temp_gb,
                     gb_list=[self.no_locus_gff,
@@ -158,16 +155,6 @@ class riboSeedTestCase(unittest.TestCase):
             "-outseq dest_file.gb").format(shutil.which("seqret"))
         self.assertEqual(ref_cmd, test_cmd)
 
-    # def test_splitMultifasta(self):
-    #     splitMultifasta(multi=self.multifasta,
-    #                     output=self.test_dir,
-    #                     name="ctg",
-    #                     logger=logger)
-    #     self.assertTrue(os.path.isfile(
-    #         os.path.join(self.test_dir, "contigs", "ctg_1.fa")))
-    #     self.to_be_removed.append(os.path.join(self.test_dir, "contigs"))
-        # shutil.rmtree(
-
     def test_getFastas(self):
         getFastas(inp=self.multifasta, output_root=self.test_dir,
                   ext=".fa", name="snorkel", logger=logger)
@@ -183,12 +170,12 @@ class riboSeedTestCase(unittest.TestCase):
         self.to_be_removed.append(os.path.join(self.test_dir, "contigs"))
 
     def test_checkSingleFasta(self):
+        """  ensure failure if a multifasta snuck through"""
         with self.assertRaises(SystemExit):
             checkSingleFasta(self.multifasta, logger=logger)
 
     def tearDown(self):
-        """ delete temp files if no errors
-        """
+        """ delete temp files if no errors """
         for filename in self.to_be_removed:
             try:
                 os.unlink(filename)

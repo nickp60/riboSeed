@@ -143,7 +143,6 @@ def parse_fasta_header(first_line):
 
 
 def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, threads=1):
-    assert shutil.which(exe) is not None, "barrnap executable not found!"
     assert thresh > 0 and thresh < 1, "Thresh must be between 0 and 1!"
     if exe.endswith("py"):
         # ensure running python barrnap uses >3.5
@@ -152,7 +151,7 @@ def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, threads=1):
         pyexe = ""
     cmd = "{0}{1} -k {2} {3} --reject {4} --threads {5} > {6}".format(
         pyexe,
-        shutil.which(exe),
+        exe,
         kingdom,
         infasta,
         thresh,
@@ -301,10 +300,13 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
     logger.debug("rewrote the following records")
     logger.debug("\n".join(idlist))
 
-if __name__ == "__main__":
-    args = get_args()
+
+def main(args):
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
+    sys_barrnap = shutil.which(args.barrnap_exe)
+    assert sys_barrnap is not None, \
+        "barrnap executable not found!"
     try:
         os.makedirs(output_root, exist_ok=False)
     except OSError:
@@ -349,7 +351,7 @@ if __name__ == "__main__":
         barrnap_cmd = make_barrnap_cmd(
             infasta=fasta,
             outgff=os.path.join(output_root, "{0}.gff".format(accession)),
-            exe=args.barrnap_exe,
+            exe=sys_barrnap,
             threads=args.cores,
             thresh=args.id_thresh,
             kingdom=args.kingdom)
@@ -388,3 +390,8 @@ if __name__ == "__main__":
     logger.info("Done: %s", time.asctime())
     logger.info("combined scaffolds can be found here: %s", output_file)
     logger.info("Time taken: %.3fs" % (time.time() - t0))
+
+
+if __name__ == "__main__":
+    args = get_args()
+    main(args)

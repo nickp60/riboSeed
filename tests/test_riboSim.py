@@ -12,12 +12,14 @@ import os
 import unittest
 import random
 from Bio import SeqIO
+from argparse import Namespace
+from pyutilsnrw.utils3_5 import md5
 # I hate this line but it works :(
 sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
-from riboSeed.riboSim import ageSequence
+from riboSeed.riboSim import ageSequence, main
 
 
 sys.dont_write_bytecode = True
@@ -29,6 +31,8 @@ class RiboSimTest(unittest.TestCase):
     """
     """
     def setUp(self):
+        self.results_dir = os.path.join(os.path.dirname(__file__),
+                                        "output_riboSim_tests")
         self.fasta = os.path.join(
             os.path.dirname(__file__),
             "references", "riboSim_references", "original.fasta")
@@ -38,6 +42,9 @@ class RiboSimTest(unittest.TestCase):
         self.temp_fasta2 = os.path.join(
             os.path.dirname(__file__),
             "references", "riboSim_references", "new2.fasta")
+        self.mut_fasta = os.path.join(
+            os.path.dirname(__file__),
+            "references", "riboSim_references", "mutated_ten_seed_27.fasta")
         self.to_be_removed = []
 
     def test_correct_mutations(self):
@@ -65,6 +72,18 @@ class RiboSimTest(unittest.TestCase):
             newrec = list(SeqIO.parse(infa, "fasta"))[0]
         self.assertEqual(newrec.seq.count("A"), 162)
         self.to_be_removed.append(self.temp_fasta2)
+
+    def test_main_integration(self):
+        args = Namespace(output=self.results_dir,
+                         fasta=self.fasta,
+                         verbosity=2, frequency=.1,
+                         end_length=0, seed=27)
+        main(args)
+        self.assertEqual(
+            md5(self.mut_fasta),
+            md5(os.path.join(self.results_dir, "original.fasta")))
+        self.to_be_removed.append(
+            os.path.join(self.results_dir, "original.fasta"))
 
     def tearDown(self):
         """
