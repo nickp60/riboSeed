@@ -114,8 +114,9 @@ class riboSketchTestCase(unittest.TestCase):
 
         self.assertEqual(backbones, [ref])
 
-    @unittest.skipIf(os.path.exists(
-        os.path.join("~", "mauve_snapshot_2015-02-13", "Mauve.jar")) is None,
+    @unittest.skipIf(not os.path.exists(
+        os.path.join(os.path.abspath("~"),
+                     "mauve_snapshot_2015-02-13", "Mauve.jar")),
                      "mauve jar not found, skipping." +
                      "If this isnt an error from travis deployment, you " +
                      "probably should install it")
