@@ -2,6 +2,7 @@
 [![PyPI version](https://badge.fury.io/py/riboSeed.svg)](https://badge.fury.io/py/riboSeed)
 [![Coverage Status](https://coveralls.io/repos/github/nickp60/riboSeed/badge.svg?branch=master)](https://coveralls.io/github/nickp60/riboSeed?branch=master)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.832131.svg)](https://doi.org/10.5281/zenodo.832131)
+[![Code Health](https://landscape.io/github/nickp60/riboSeed/master/landscape.svg?style=flat)](https://landscape.io/github/nickp60/riboSeed/master)
 [![Documentation Status](https://readthedocs.org/projects/riboseed/badge/?version=latest)](http://riboseed.readthedocs.io/en/latest/?badge=latest)
 
 ![riboSeed](https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.png)

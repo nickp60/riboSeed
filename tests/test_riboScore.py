@@ -8,9 +8,8 @@ import logging
 import shutil
 import os
 import unittest
-
-# from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
+import subprocess
+import mock
 
 # I hate this line but it works :(
 sys.path.append(os.path.join(
@@ -20,7 +19,8 @@ sys.path.append(os.path.join(
 from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboScore import getSnagCmd, getSelectCmd, getScanCmd, \
     parseDirContents, make_nuc_nuc_recip_blast_cmds, merge_outfiles, \
-    BLAST_tab_to_df, filter_recip_BLAST_df, checkBlastForMisjoin
+    BLAST_tab_to_df, filter_recip_BLAST_df, checkBlastForMisjoin, check_scan_select_snag_retruncodes
+
 sys.dont_write_bytecode = True
 
 logger = logging
@@ -174,6 +174,35 @@ class riboScoreTestCase(unittest.TestCase):
             ["mock.fasta", "?",
              "NODE_1_length_105529_cov_19.8862_0_94652..101540_RC_",
              "concatenated_genome_4001..10887", "?"])
+
+    def test_check_scan_select_snag_fail1(self):
+        reslist = []
+        for i in [1, 0, 0]:
+            submock = mock.Mock()
+            submock.returncode = i
+            reslist.append(submock)
+        with self.assertRaises(SystemExit):
+            check_scan_select_snag_retruncodes(
+                subreturns=reslist, logger=logger)
+
+    def test_check_scan_select_snag_fail2(self):
+        reslist = []
+        for i in [0, 1, 0]:
+            submock = mock.Mock()
+            submock.returncode = i
+            reslist.append(submock)
+        with self.assertRaises(SystemExit):
+            check_scan_select_snag_retruncodes(
+                subreturns=reslist, logger=logger)
+
+    def test_check_scan_select_snag_nofail(self):
+        reslist = []
+        for i in [0, 0, 1]:
+            submock = mock.Mock()
+            submock.returncode = i
+            reslist.append(submock)
+        check_scan_select_snag_retruncodes(
+            subreturns=reslist, logger=logger)
 
     def tearDown(self):
         """ delete temp files if no errors

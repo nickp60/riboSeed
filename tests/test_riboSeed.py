@@ -13,7 +13,6 @@ import unittest
 # import multiprocessing
 
 from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord
 from argparse import Namespace
 
 # I hate this line but it works :(
@@ -21,13 +20,13 @@ sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
-from pyutilsnrw.utils3_5 import md5, file_len, get_number_mapped
+from pyutilsnrw.utils3_5 import md5, get_number_mapped
 
 from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     map_to_genome_ref_smalt, map_to_genome_ref_bwa, \
     add_coords_to_clusters, partition_mapping, \
     convert_bam_to_fastqs_cmd, get_smalt_full_install_cmds,\
-    generate_spades_cmd, estimate_distances_smalt, get_final_assemblies_cmds,\
+    generate_spades_cmd, get_final_assemblies_cmds,\
     nonify_empty_lib_files, make_faux_genome, \
     evaluate_spades_success, prepare_next_mapping, make_mapped_partition_cmds,\
     make_unmapped_partition_cmds, make_quick_quast_table, \
@@ -36,13 +35,9 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     decide_proceed_to_target, get_rec_from_generator, \
     check_kmer_vs_reads, make_samtools_depth_cmds, \
     parse_samtools_depth_results, make_modest_spades_cmd, get_bam_AS, \
-    pysam_extract_reads
+    pysam_extract_reads, define_score_minimum
 
-from riboSeed.riboSnag import parse_clustered_loci_file, \
-    extract_coords_from_locus, stitch_together_target_regions, \
-    prepare_prank_cmd, prepare_mafft_cmd, \
-    calc_Shannon_entropy, plot_scatter_with_anno, \
-    profile_kmer_occurances, plot_pairwise_least_squares, make_msa
+from riboSeed.riboSnag import parse_clustered_loci_file
 
 
 sys.dont_write_bytecode = True
@@ -882,6 +877,46 @@ class riboSeedShallow(unittest.TestCase):
             "spades.py -t 1 -m 3 --careful some args and stuff",
             make_modest_spades_cmd(cmd=cmd, cores=3, memory=11,
                                    serialize=False, logger=logger))
+
+    def test_define_score_minimum_smalt(self):
+        testargs = Namespace(method="smalt",
+                             score_min=None)
+        score_minimum = define_score_minimum(
+            args=testargs, iteration=0,
+            readlen=100, logger=logger)
+        self.assertEqual(score_minimum, 50)
+
+    def test_define_score_minimum_bwa(self):
+        testargs = Namespace(method="bwa",
+                             score_min=None)
+        score_minimum = define_score_minimum(
+            args=testargs, iteration=0,
+            readlen=100, logger=logger)
+        self.assertEqual(score_minimum, None)
+
+    def test_define_score_minimum_explicit(self):
+        testargs = Namespace(method="smalt",
+                             score_min=33)
+        score_minimum = define_score_minimum(
+            args=testargs, iteration=0,
+            readlen=100, logger=logger)
+        self.assertEqual(score_minimum, 33)
+
+    def test_define_score_minimum_badmapper(self):
+        testargs = Namespace(method="cartography",
+                             score_min=None)
+        with self.assertRaises(AssertionError):
+            score_minimum = define_score_minimum(
+                args=testargs, iteration=0,
+                readlen=100, logger=logger)
+
+    def test_define_score_minimum_badmin(self):
+        testargs = Namespace(method="bwa",
+                             score_min=101)
+        with self.assertRaises(ValueError):
+            score_minimum = define_score_minimum(
+                args=testargs, iteration=0,
+                readlen=100, logger=logger)
 
     def tearDown(self):
         """ delete temp files if no errors

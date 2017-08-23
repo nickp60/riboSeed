@@ -3,13 +3,9 @@
 """
 import os
 import sys
-import shutil
-import datetime
 import subprocess
 import argparse
 import multiprocessing
-import logging
-import time
 import glob
 
 from Bio import SeqIO
@@ -322,6 +318,20 @@ def getSnagCmd(scangb, cluster, flank, outroot):
     ), os.path.join(outroot, "snag"))
 
 
+def check_scan_select_snag_retruncodes(subreturns, logger):
+
+    if subreturns[0].returncode != 0:
+        logger.error("error with riboScan! Check the riboScan log files")
+        sys.exit(1)
+    if subreturns[1].returncode != 0:
+        logger.error("error with riboSelect! Check the riboSelect log files")
+        sys.exit(1)
+    if subreturns[2].returncode != 0:
+        logger.info("error with riboSnag! This often happens if " +
+                    "the assembly doesnt reconstruct any rDNAs.")
+        pass
+
+
 def main(args):
     if args.output is None:
         args.output = os.path.dirname(
@@ -396,17 +406,12 @@ def main(args):
                 shell=sys.platform != "win32",
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                check=False))  # we check later due to likely failure of de novo
-        if returncodes[0].returncode != 0:
-            logger.error("error with riboScan! Check the riboScan log files")
-            sys.exit(1)
-        if returncodes[1].returncode != 0:
-            logger.error("error with riboSelect! Check the riboSelect log files")
-            sys.exit(1)
-        if returncodes[2].returncode != 0:
-            logger.info("error with riboSnag! This often happens if " +
-                        "the assembly doesnt reconstruct any rDNAs.")
-            continue
+                check=False))  # we check later due to likely de novo failure
+        check_scan_select_snag_retruncodes(
+            subreturns=returncodes, logger=logger)
+
+        ref_snags = sorted(glob.glob(
+            snagdir1 + "/*_riboSnag.fasta"))
 
         if args.blast_full:
             full_blast_results = os.path.join(this_root, "BLAST")
@@ -425,14 +430,13 @@ def main(args):
         else:
             commands = []
 
-        ref_snags = sorted(glob.glob(
-            snagdir1 + "/*_riboSnag.fasta"))
         contig_snags = sorted(glob.glob(
             os.path.join(snagdir2, "") +
             "*_riboSnag.fasta"))
         contig_snags_flanking = sorted(glob.glob(
             os.path.join(snagdir2, "flanking_regions_output", "") +
             "*_riboSnag_flanking_regions.fasta"))
+        logger.debug(contig_snags_flanking)
         # combine the assembly contigs
         combined_flanking_snags = combine_contigs(
             contigs_dir=os.path.join(snagdir2, "flanking_regions_output", ""),

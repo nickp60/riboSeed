@@ -11,7 +11,6 @@ import glob
 import re
 import shutil
 import subprocess
-import logging
 import os
 import traceback
 
@@ -20,7 +19,6 @@ sys.path.append(os.path.join('..', 'riboSeed'))
 from pyutilsnrw.utils3_5 import set_up_logging
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-from Bio.Seq import Seq
 
 # --------------------------- classes --------------------------- #
 
@@ -137,7 +135,7 @@ def parse_fasta_header(first_line):
             accession = first_line.strip().replace(">", "")
     if accession is None:
         raise ValueError(
-            "unable to extract accession from first line in file: \n%s".format(
+            str("unable to extract accession from first line in file: \n" +
                 first_line))
     return accession
 
@@ -190,7 +188,7 @@ def combine_gbs(finalgb, gb_list):
             with open(fname) as infile:
                 for line in infile:
                     if line.startswith("##") and idx != 0:
-                       continue
+                        continue
                     outfile.write(line)
 
 
@@ -273,7 +271,7 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
     """
     idlist = []
     assert logger is not None, "must use logging"
-    os.makedirs(os.path.join(output, "contigs"))
+    os.makedirs(os.path.join(output, dirname))
     with open(os.path.expanduser(multi), "r") as mf:
         for idx, rec in enumerate(SeqIO.parse(mf, "fasta")):
             logger.debug("record %d: %s", idx, rec.id)
@@ -292,7 +290,7 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
                              "later issues. I'm sorry, its a pain...\n" +
                              "Exiting...")
                 sys.exit(1)
-            with open(os.path.join(output, "contigs",
+            with open(os.path.join(output, dirname,
                                    fname + ".fa"), "w") as outf:
                 renamed_rec = SeqRecord(rec.seq, id=fname, description="")
                 SeqIO.write(renamed_rec, outf, "fasta")
@@ -313,16 +311,13 @@ def main(args):
         print("Output directory already exists; exiting...")
         sys.exit(1)
     t0 = time.time()
-    log_path = os.path.join(output_root, "riboScan.log")
     logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=log_path,
+                            outfile=os.path.join(output_root, "riboScan.log"),
                             name=__name__)
-    # # log version of riboSeed, commandline options, and all settings
-
-    logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
+    logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
-        logger.debug("{0}: {1}".format(k, v))
+        logger.debug("%s: %s", k, str(v))
 
     output_file = os.path.join(output_root, "scannedScaffolds.gb")
     output_file_gff = os.path.join(output_root, "scannedScaffolds.gff")

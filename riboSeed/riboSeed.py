@@ -2390,6 +2390,38 @@ def make_modest_spades_cmd(cmd, cores, memory, split=0,
         cmdB)
 
 
+def define_score_minimum(args, readlen, iteration, logger):
+    """ given the args, define your scoring minimum for mapping
+    for smalt, each round of mapping gets more stringent.  For BWA,
+    the mapping minimum is deferred to BWA's default settings.
+
+    This will probably be depreciated soon when we finally get rid of the
+    smalt options
+    """
+    assert logger is not None, "must use logging"
+    if not args.score_min:
+        # This makes it such that score minimum is now more stringent
+        # with each mapping.  Too campy? probably.
+        if args.method == 'smalt':
+            scaling_factor = 1.0 - (
+                1.0 / (2.0 + float(iteration)))
+            score_minimum = int(readlen * scaling_factor)
+            logger.info(
+                "Mapping with min_score of %f2 (%f2 of read length, %f2)",
+                scaling_factor, score_minimum, readlen)
+        else:
+            assert args.method == 'bwa', "must be either smalt or bwa"
+            logger.info("using the default minimum score for BWA")
+            score_minimum = None
+    else:
+        if readlen < args.score_min:
+            raise ValueError(
+                "--min_score must be smaller than read length {0}".format(
+                    readlen))
+        score_minimum = args.score_min
+    return score_minimum
+
+
 if __name__ == "__main__":
     args = get_args()
     # allow user to give relative paths
@@ -2570,6 +2602,8 @@ if __name__ == "__main__":
     # Performance summary lists
     mapping_percentages = []
     region_depths = []
+    # this gets set during the first mapping
+    score_minimum = 0
     # now, we need to assemble each mapping object
     # this should exclude any failures
     while seedGenome.this_iteration < args.iterations:
@@ -2653,26 +2687,33 @@ if __name__ == "__main__":
             # start with whole lib if first time through
             unmapped_ngsLib = seedGenome.master_ngs_ob
         # Run commands to map to the genome
-        if not args.score_min:
-            # This makes it such that score minimum is now more stringent
-            # with each mapping.
-            if args.method == 'smalt':
-                scaling_factor = 1.0 - (
-                    1.0 / (2.0 + float(seedGenome.this_iteration)))
-                score_minimum = int(unmapped_ngsLib.readlen * scaling_factor)
-                logger.info(
-                    "Mapping with min_score of %f2 (%f2 of read length, %f2)",
-                    scaling_factor, score_minimum, unmapped_ngsLib.readlen)
-            else:
-                assert args.method == 'bwa', "must be wither smalt or bwa"
-                # score_minimum = int(.15 * unmapped_ngsLib.readlen)
-                logger.info("using the default minimum score for BWA")
-                score_minimum = None
-        else:
-            score_minimum = args.score_min
-            logger.info(
-                "Mapping with min_score of %f2 (read length: %f2)",
-                score_minimum, unmapped_ngsLib.readlen)
+
+        score_minimum = define_score_minimum(
+            args=args, iteration=seedGenome.this_iteration,
+            readlen=unmapped_ngsLib.readlen, logger=logger)
+        logger.info(
+            "Mapping with min_score of %f2 (read length: %f2)",
+            score_minimum, unmapped_ngsLib.readlen)
+        # if not args.score_min:
+        #     # This makes it such that score minimum is now more stringent
+        #     # with each mapping.
+        #     if args.method == 'smalt':
+        #         scaling_factor = 1.0 - (
+        #             1.0 / (2.0 + float(seedGenome.this_iteration)))
+        #         score_minimum = int(unmapped_ngsLib.readlen * scaling_factor)
+        #         logger.info(
+        #             "Mapping with min_score of %f2 (%f2 of read length, %f2)",
+        #             scaling_factor, score_minimum, unmapped_ngsLib.readlen)
+        #     else:
+        #         assert args.method == 'bwa', "must be wither smalt or bwa"
+        #         # score_minimum = int(.15 * unmapped_ngsLib.readlen)
+        #         logger.info("using the default minimum score for BWA")
+        #         score_minimum = None
+        # else:
+        #     score_minimum = args.score_min
+        #     logger.info(
+        #         "Mapping with min_score of %f2 (read length: %f2)",
+        #         score_minimum, unmapped_ngsLib.readlen)
 
         try:
             nonify_empty_lib_files(unmapped_ngsLib, logger=logger)
