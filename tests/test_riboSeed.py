@@ -7,10 +7,9 @@ Created on Tue Aug 30 08:57:31 2016
 import sys
 import logging
 import shutil
-# import subprocess
+import mock
 import os
 import unittest
-# import multiprocessing
 
 from Bio import SeqIO
 from argparse import Namespace
@@ -35,7 +34,8 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     decide_proceed_to_target, get_rec_from_generator, \
     check_kmer_vs_reads, make_samtools_depth_cmds, \
     parse_samtools_depth_results, make_modest_spades_cmd, get_bam_AS, \
-    pysam_extract_reads, define_score_minimum
+    pysam_extract_reads, define_score_minimum, bool_run_quast, \
+    make_quast_command, main, check_genbank_for_fasta
 
 from riboSeed.riboSnag import parse_clustered_loci_file
 
@@ -79,7 +79,6 @@ class riboSeedShallow(unittest.TestCase):
         self.samtools_exe = "samtools"
         self.spades_exe = "spades.py"
         self.quast_exe = "quast.py"
-        self.python2_7_exe = "python2"
         self.test_estimation_file = os.path.join(self.test_dir,
                                                  "est_distance.sam")
         self.map_results_prefix = os.path.join(self.test_dir,
@@ -91,7 +90,6 @@ class riboSeedShallow(unittest.TestCase):
                                                'grouped_loci_reference.txt'))
         self.args = Namespace(skip_contol=False, kmers="21,33,55,77,99",
                               spades_exe="spades.py",
-                              quast_exe="python2.7 quast.py",
                               cores=2)
         self.cores = 2
         self.maxDiff = 2000
@@ -466,8 +464,7 @@ class riboSeedShallow(unittest.TestCase):
             check_fastqs_len_equal(self.ref_fasta, self.ref_gb)
 
     def test_evaluate_spades(self):
-        """ Test all possible combination of return codes givena particular
-        spades results
+        """ Test all possible combinations of spades return codes
         """
         shutil.copyfile(self.good_contig,
                         os.path.join(self.test_dir,
@@ -730,9 +727,9 @@ class riboSeedShallow(unittest.TestCase):
                 readR=self.ref_Rfastq,
                 ref_fasta=self.ref_fasta,
                 mapper_exe=self.smalt_exe))
-        test_exes = Exes(samtools=self.samtools_exe,
+        test_exes = Exes(python="/bin/python3.5",
+                         samtools=self.samtools_exe,
                          quast=self.quast_exe,
-                         python2_7=self.python2_7_exe,
                          smalt=self.smalt_exe,
                          spades=self.spades_exe,
                          bwa=self.bwa_exe,
@@ -741,16 +738,17 @@ class riboSeedShallow(unittest.TestCase):
         # I want this  generalized, so replace the acual path with spades.py
         test_exes.spades = "spades.py"
         test_exes.quast = "quast.py"
-        test_exes.python2_7 = "python2"
         gen.ref_fasta = self.ref_fasta
-        final_cmds, quast_reports = \
-            get_final_assemblies_cmds(
-                ref_as_contig="trusted",
-                cores=4,
-                serialize=True,
-                memory=8,
-                seedGenome=gen, exes=test_exes,
-                skip_control=False, kmers="33,77,99", logger=logger)
+        with mock.patch.object(sys, 'version_info') as v_info:
+            v_info.minor = 5
+            final_cmds, quast_reports = \
+                get_final_assemblies_cmds(
+                    ref_as_contig="trusted",
+                    cores=4,
+                    serialize=True,
+                    memory=8,
+                    seedGenome=gen, exes=test_exes,
+                    skip_control=False, kmers="33,77,99", logger=logger)
         final_spades_cmds_ref = [
             str(
                 "if [ -s {1} ] && [ -s {2} ] ; then " +
@@ -775,7 +773,7 @@ class riboSeedShallow(unittest.TestCase):
             str(
                 '{0} {1} -R {2} {3} -o {4}'
             ).format(
-                self.python2_7_exe, self.quast_exe,
+                "/bin/python3.5", self.quast_exe,
                 self.ref_fasta,
                 os.path.join(self.test_dir, "final_de_fere_novo_assembly",
                              "contigs.fasta"),
@@ -783,7 +781,7 @@ class riboSeedShallow(unittest.TestCase):
             str(
                 '{0} {1} -R {2} {3} -o {4}'
             ).format(
-                self.python2_7_exe, self.quast_exe,
+                "/bin/python3.5", self.quast_exe,
                 self.ref_fasta,
                 os.path.join(self.test_dir, "final_de_novo_assembly",
                              "contigs.fasta"),
@@ -918,6 +916,40 @@ class riboSeedShallow(unittest.TestCase):
                 args=testargs, iteration=0,
                 readlen=100, logger=logger)
 
+    def test_bool_run_quast_false(self):
+        with mock.patch.object(sys, 'version_info') as v_info:
+            v_info.minor = 6
+            self.assertFalse(
+                bool_run_quast(logger))
+
+    def test_bool_run_quast_true(self):
+        with mock.patch.object(sys, 'version_info') as v_info:
+            v_info.minor = 5
+            self.assertTrue(
+                bool_run_quast(logger))
+
+    def test_make_quast_command(self):
+        test_exes = Exes(python="/bin/python3.5",
+                         samtools=self.samtools_exe,
+                         quast=self.quast_exe,
+                         smalt=self.smalt_exe,
+                         spades=self.spades_exe,
+                         bwa=self.bwa_exe,
+                         check=False,
+                         method="bwa")
+
+        ref_cmd = str(
+            "/bin/python3.5 quast.py ref.fasta /assembly/contigs.fasta -o " +
+            "/here/quast_de_novo")
+        test_cmd = make_quast_command(
+            exes=test_exes, output_root="/here", ref="ref.fasta",
+            assembly_subdir="/assembly/", name="de_novo", logger=logger)
+        self.assertEqual(ref_cmd, test_cmd)
+
+    def test_check_genbank_for_fasta(self):
+        with self.assertRaises(SystemExit):
+            check_genbank_for_fasta(gb=self.ref_fasta, logger=logger)
+
     def tearDown(self):
         """ delete temp files if no errors
         """
@@ -967,7 +999,6 @@ class riboSeedDeep(unittest.TestCase):
         self.samtools_exe = "samtools"
         self.spades_exe = "spades.py"
         self.quast_exe = "quast.py"
-        self.python2_7_exe = "python2"
         self.test_estimation_file = os.path.join(self.test_dir,
                                                  "est_distance.sam")
         self.map_results_prefix = os.path.join(self.test_dir,
@@ -979,7 +1010,6 @@ class riboSeedDeep(unittest.TestCase):
                                                'grouped_loci_reference.txt'))
         self.args = Namespace(skip_contol=False, kmers="21,33,55,77,99",
                               spades_exe="spades.py",
-                              quast_exe="python2.7 quast.py",
                               cores=2)
         self.cores = 2
         self.maxDiff = 2000
@@ -994,102 +1024,6 @@ class riboSeedDeep(unittest.TestCase):
         shutil.copy(os.path.join(self.ref_dir, 'cluster1.fasta'),
                     self.ref_fasta)
         self.to_be_removed.append(self.ref_fasta)
-
-    # @unittest.skipIf(
-    #     shutil.which("smalt") is None,
-    #     "SMALT executable not found, skipping."+
-    #     "If this isnt an error from travis deployment, you probably "+
-    #     "should install it")
-    # def test_estimate_distances_smalt(self):
-    #     """ test estimate insert disances
-    #     """
-    #     if os.path.exists(self.test_estimation_file):
-    #         print("warning! existing distance estimation file!")
-    #     est_file = estimate_distances_smalt(outfile=self.test_estimation_file,
-    #                                         smalt_exe=self.smalt_exe,
-    #                                         ref_genome=self.ref_fasta,
-    #                                         fastq1=self.ref_Ffastq,
-    #                                         fastq2=self.ref_Rfastq,
-    #                                         cores=1,
-    #                                         logger=logger)
-    #     ref_smi_md5 = "a444ccbcb486a8af29736028640e87cf"  # determined manually
-    #     ref_sma_md5 = "4ce0c8b453f2bdabd73eaf8b5ee4f376"  # determined manually
-    #     ref_mapping_len = 9271  # mapping doesnt have exact order, so cant md5
-    #     self.assertEqual(ref_smi_md5, md5(str(est_file + ".smi")))
-    #     self.assertEqual(ref_sma_md5, md5(str(est_file + ".sma")))
-    #     self.assertEqual(ref_mapping_len, file_len(est_file))
-
-    # @unittest.skipIf(
-    #     shutil.which("smalt") is None,
-    #     "smalt executable not found, skipping."+
-    #     "If this isnt an error from travis deployment, you probably "+
-    #     "should install it")
-    # def test_map_with_smalt(self):
-    #     # becasue multiple mapping are assingmed randomly (pseudorandomly?),
-    #     # this accepts a range of expected results
-    #     testmapping = LociMapping(
-    #         name="test",
-    #         iteration=1,
-    #         assembly_subdir=self.test_dir,
-    #         ref_fasta=self.ref_fasta,
-    #         mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-    #     testngs = NgsLib(
-    #         name="test",
-    #         master=True,
-    #         make_dist=True,
-    #         readF=self.ref_Ffastq,
-    #         readR=self.ref_Rfastq,
-    #         ref_fasta=self.ref_fasta,
-    #         mapper_exe=self.smalt_exe,
-    #         logger=logger)
-
-    #     map_to_genome_ref_smalt(
-    #         mapping_ob=testmapping, ngsLib=testngs,
-    #         genome_fasta=self.ref_fasta,
-    #         cores=4, samtools_exe=self.samtools_exe,
-    #         smalt_exe=self.smalt_exe, score_minimum=48,
-    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-    #         step=3, k=5, logger=logger)
-    #     mapped_str = get_number_mapped(testmapping.pe_map_bam,
-    #                                    samtools_exe=self.samtools_exe)
-    #     nmapped = int(mapped_str[0:5])
-    #     nperc = float(mapped_str[-13:-8])
-    #     print("\nSMALT: number of PE reads mapped: %f2" % nmapped)
-    #     print("SMALT: percentage of PE reads mapped: %2f" % nperc)
-    #     ###
-    #     testngs2 = NgsLib(
-    #         name="test",
-    #         master=True,
-    #         make_dist=True,
-    #         readF=self.ref_Ffastq,
-    #         readR=self.ref_Rfastq,
-    #         readS0=self.ref_Rfastq,
-    #         ref_fasta=self.ref_fasta,
-    #         mapper_exe=self.smalt_exe,
-    #         logger=logger)
-
-    #     map_to_genome_ref_smalt(
-    #         mapping_ob=testmapping, ngsLib=testngs2,
-    #         genome_fasta=self.ref_fasta,
-    #         cores=4, samtools_exe=self.samtools_exe,
-    #         smalt_exe=self.smalt_exe, score_minimum=48,
-    #         scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-    #         step=3, k=5, logger=logger)
-    #     mapped_str2 = get_number_mapped(testmapping.pe_map_bam,
-    #                                     samtools_exe=self.samtools_exe)
-    #     mapped_str2 = get_number_mapped(testmapping.s_map_bam,
-    #                                     samtools_exe=self.samtools_exe)
-    #     nmapped2 = int(mapped_str2[0:5])
-    #     nperc2 = float(mapped_str2[-13:-8])
-    #     print("SMALT: number of s reads mapped: %f2" % nmapped2)
-    #     print("SMALT: percentage of s reads mapped: %f2" % nperc2)
-
-    #     ###
-    #     self.assertTrue(12500 < nmapped < 12680)
-    #     self.assertTrue(34.3 < nperc < 34.81)
-    #     ###
-    #     self.assertTrue(6400 < nmapped2 < 6500)
-    #     self.assertTrue(34.3 < nperc2 < 35.8)
 
     @unittest.skipIf(shutil.which("bwa") is None,
                      "bwa executable not found, skipping." +
@@ -1222,7 +1156,7 @@ class riboSeedDeep(unittest.TestCase):
         self.assertEqual(md5(tempout), md5(samref))
         self.to_be_removed.append(tempout)
 
-    @unittest.skipIf(shutil.which("smalt") is None, \
+    @unittest.skipIf(shutil.which("smalt") is None,
                      "smalt executable not found, skipping." +
                      "If this isnt an error from travis deployment, " +
                      "you probably " +
@@ -1279,6 +1213,31 @@ class riboSeedDeep(unittest.TestCase):
             logger=logger)
         new_name = "NC_011751.1_cluster_{0}".format(clu.index)
         self.assertEqual(clu.mappings[-1].name, new_name)
+
+    def tearDown(self):
+        """ delete temp files if no errors
+        """
+        for filename in self.to_be_removed:
+            os.unlink(filename)
+        pass
+
+
+@unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
+                 "Subprocess.call among other things wont run if tried " +
+                 " with less than python 3.5")
+class riboSeedMain(unittest.TestCase):
+    """ tests for riboSeed.py
+    """
+    def setUp(self):
+        self.args = Namespace(skip_contol=False, kmers="21,33,55,77,99",
+                              spades_exe="spades.py",
+                              cores=2)
+        self.cores = 2
+        self.maxDiff = 2000
+        self.to_be_removed = []
+        if not os.path.exists(self.test_dir):
+            os.makedirs(self.test_dir, exist_ok=True)
+        self.copy_fasta()
 
     def tearDown(self):
         """ delete temp files if no errors

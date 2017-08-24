@@ -58,10 +58,10 @@ cmds = [
         os.path.join(root_dir, "select", ""),
         os.path.join(root_dir, "snag", "")),
     # riboSeed
-    "{0} {1} -r {2} {3}riboSelect_grouped_loci.txt -o {4} -F {5} -R {6} --serialize ".format(
+    "{0} {1} -r {2}scannedScaffolds.gb {3}riboSelect_grouped_loci.txt -o {4} -F {5} -R {6} --serialize -v 1 ".format(
         sys.executable,
         shutil.which("riboSeed.py"),
-        reffasta,
+        os.path.join(root_dir, "scan", ""),
         os.path.join(root_dir, "select", ""),
         os.path.join(root_dir, "seed", ""),
         fastq1,

@@ -8,7 +8,6 @@ import logging
 import shutil
 import os
 import unittest
-import subprocess
 import mock
 
 # I hate this line but it works :(

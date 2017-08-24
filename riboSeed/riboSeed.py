@@ -505,8 +505,9 @@ class Exes(object):
 
 
     """
-    def __init__(self, samtools, method, spades, quast, python2_7,
+    def __init__(self, python, samtools, method, spades, quast,
                  smalt, bwa, check=True, mapper=None):
+        self.python = python
         self.samtools = samtools
         self.method = method
         self.mapper = mapper
@@ -514,7 +515,6 @@ class Exes(object):
         self.quast = quast
         self.smalt = smalt
         self.bwa = bwa
-        self.python2_7 = python2_7
         self.check = check
         self.check_mands()
         self.set_mapper()
@@ -523,10 +523,10 @@ class Exes(object):
     def check_mands(self):
         """ checks that all mandatory arguments are not none
         """
-        mandatory = [self.spades, self.quast, self.method,
-                     self.samtools, self.python2_7]
+        mandatory = [self.python, self.spades, self.quast, self.method,
+                     self.samtools]
         assert None not in mandatory, \
-            "must instantiate with samtools, spades, method, python2_7, quast!"
+            "must instantiate with python, samtools, spades, method, quast!"
 
     def set_mapper(self):
         """Exes.mapper attribute is set here to avoid further
@@ -545,7 +545,7 @@ class Exes(object):
         """
         if self.check:
             for exe in ["mapper", "samtools", "spades",
-                        "quast", "python2_7", "mapper"]:
+                        "quast", "mapper"]:
                 exe_groomed = os.path.expanduser(getattr(self, exe))
                 exe_groomed = shutil.which(exe_groomed)
                 if exe_groomed is None:
@@ -601,6 +601,11 @@ def get_args():  # pragma: no cover
     # optional.add_argument("-S2", "--fastq_single2", dest='fastqS2',
     #                       action="store",
     #                       help="single fastq reads", type=str, default=None)
+    optional.add_argument("-j", "--just_seed", dest='just_seed',
+                          action="store_true",
+                          default=False,
+                          help="Don't do an assembly, just generate the long" +
+                          " read 'seeds'; default: %(default)s")
     optional.add_argument("-n", "--experiment_name", dest='exp_name',
                           action="store",
                           help="prefix for results files; " +
@@ -680,12 +685,6 @@ def get_args():  # pragma: no cover
                           "5' end of the pseudocontig. " +
                           "default: %(default)s",
                           default=0, dest="min_flank_depth", type=float)
-    # optional.add_argument("--padding", dest='padding', action="store",
-    #                       default=5000, type=int,
-    #                       help="if treating as circular, this controls the " +
-    #                       "length of sequence added to the 5' and 3' ends " +
-    #                       "to allow for selecting regions that cross the " +
-    #                       "chromosome's origin; default: %(default)s")
     optional.add_argument("--ref_as_contig", dest='ref_as_contig',
                           action="store", type=str,
                           choices=["trusted", "untrusted"],
@@ -789,10 +788,6 @@ def get_args():  # pragma: no cover
                           action="store", default="quast.py",
                           help="Path to quast executable; " +
                           "default: %(default)s")
-    optional.add_argument("--python2_7_exe", dest="python2_7_exe",
-                          action="store", default="python2.7",
-                          help="Path to python2.7 executable, cause " +
-                          "QUAST won't run on python3. default: %(default)s")
     optional.add_argument('--version', action='version',
                           version='%(prog)s {version}'.format(
                               version=__version__))
@@ -2055,6 +2050,26 @@ def add_coords_to_clusters(seedGenome, logger=None):
         logger.debug(str(cluster.__dict__))
 
 
+def bool_run_quast(logger):
+    if sys.version_info.minor == 6:
+        logger.warning("QUAST only supports python3.5 and below. Will " +
+                       "skipping QUAST evalutation")
+        return False
+    return True
+
+
+def make_quast_command(exes, output_root, ref, assembly_subdir, name,
+                       logger=None):
+    assert logger is not None, "must use logging"
+    quast_cmd = str("{0} {1} {2} {3} -o {4}").format(
+        exes.python,
+        exes.quast,
+        ref,
+        os.path.join(assembly_subdir, "contigs.fasta"),
+        os.path.join(output_root, str("quast_" + name)))
+    return quast_cmd
+
+
 def get_final_assemblies_cmds(seedGenome, exes,
                               ref_as_contig,
                               cores,
@@ -2108,15 +2123,18 @@ def get_final_assemblies_cmds(seedGenome, exes,
             cmd=spades_cmd, cores=cores, memory=memory, split=2,
             serialize=serialize, logger=logger)
         ref = str("-R %s" % seedGenome.ref_fasta)
-        quast_cmd = str("{0} {1} {2} {3} -o {4}").format(
-            exes.python2_7,
-            exes.quast,
-            ref,
-            os.path.join(final_mapping.assembly_subdir, "contigs.fasta"),
-            os.path.join(seedGenome.output_root, str("quast_" + j)))
-        quast_reports.append(os.path.join(seedGenome.output_root,
-                                          str("quast_" + j), "report.tsv"))
-        cmd_list.append([modest_spades_cmd, quast_cmd])
+        quast_cmd = make_quast_command(
+            exes=exes, output_root=seedGenome.output_root, ref=ref,
+            assembly_subdir=final_mapping.assembly_subdir, name=j,
+            logger=logger)
+        if bool_run_quast:
+            quast_reports.append(
+                os.path.join(seedGenome.output_root,
+                             str("quast_" + j), "report.tsv"))
+            cmd_list.append([modest_spades_cmd, quast_cmd])
+        else:
+            quast_reports = None
+            cmd_list.append([modest_spades_cmd, None])
     return(cmd_list, quast_reports)
 
 
@@ -2193,19 +2211,20 @@ def subprocess_run_list(cmdlist, hard=False, logger=None):
     if hard == True, quits instead of returning 1
     """
     for cmd in cmdlist:
-        try:
-            subprocess.run([cmd],
-                           shell=sys.platform != "win32",
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE,
-                           check=True)
-        except Exception as e:
-            if logger:
-                logger.error(e)
-            if hard:
-                sys.exit(1)
-            else:
-                return 1
+        if cmd is not None:
+            try:
+                subprocess.run([cmd],
+                               shell=sys.platform != "win32",
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               check=True)
+            except Exception as e:
+                if logger:
+                    logger.error(e)
+                if hard:
+                    sys.exit(1)
+                else:
+                    return 1
     return 0
 
 
@@ -2419,11 +2438,22 @@ def define_score_minimum(args, readlen, iteration, logger):
                 "--min_score must be smaller than read length {0}".format(
                     readlen))
         score_minimum = args.score_min
+        logger.info(
+            "Mapping with min_score of %f2 (read length: %f2)",
+            score_minimum, readlen)
     return score_minimum
 
 
-if __name__ == "__main__":
-    args = get_args()
+def check_genbank_for_fasta(gb, logger=None):
+    assert logger is not None, "must use logging"
+    with open(gb) as ingb:
+        for idx, line in enumerate(ingb):
+            if line.startswith(">"):
+                logger.error("This genbank file looks like a fasta! Exiting")
+                sys.exit(1)
+
+
+def main(args):
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
@@ -2441,10 +2471,10 @@ if __name__ == "__main__":
     logger.info("riboSeed pipeline package version: %s",
                 __version__)
 
-    logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
+    logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
-        logger.debug("{0}: {1}".format(k, v))
+        logger.debug("%s: %s", k, str(v))
     logger.debug("current PATH:")
     try:
         logger.debug(os.environ['PATH'])
@@ -2458,12 +2488,12 @@ if __name__ == "__main__":
     logger.info("checking for installations of all required external tools")
     logger.debug("creating an Exes object")
     try:
-        sys_exes = Exes(samtools=args.samtools_exe,
+        sys_exes = Exes(python=sys.executable,
+                        samtools=args.samtools_exe,
                         spades=args.spades_exe,
                         bwa=args.bwa_exe,
                         smalt=args.smalt_exe,
                         quast=args.quast_exe,
-                        python2_7=args.python2_7_exe,
                         method=args.method)
     except Exception as e:
         logger.error(e)
@@ -2488,6 +2518,7 @@ if __name__ == "__main__":
         test_smalt_bam_install(cmds=test_smalt_cmds, logger=logger)
     else:
         logger.info("BWA is the selected mapper")
+    check_genbank_for_fasta(gb=args.reference_genbank, logger=logger)
 
     # if the target_len is set. set needed params
     try:
@@ -2533,7 +2564,6 @@ if __name__ == "__main__":
         readF=args.fastq1,
         readR=args.fastq2,
         readS0=args.fastqS1,
-        # readS1=args.fastqS2,
         logger=logger,
         mapper_exe=sys_exes.mapper,
         ref_fasta=seedGenome.ref_fasta)
@@ -2686,34 +2716,10 @@ if __name__ == "__main__":
         else:
             # start with whole lib if first time through
             unmapped_ngsLib = seedGenome.master_ngs_ob
-        # Run commands to map to the genome
 
         score_minimum = define_score_minimum(
             args=args, iteration=seedGenome.this_iteration,
             readlen=unmapped_ngsLib.readlen, logger=logger)
-        logger.info(
-            "Mapping with min_score of %f2 (read length: %f2)",
-            score_minimum, unmapped_ngsLib.readlen)
-        # if not args.score_min:
-        #     # This makes it such that score minimum is now more stringent
-        #     # with each mapping.
-        #     if args.method == 'smalt':
-        #         scaling_factor = 1.0 - (
-        #             1.0 / (2.0 + float(seedGenome.this_iteration)))
-        #         score_minimum = int(unmapped_ngsLib.readlen * scaling_factor)
-        #         logger.info(
-        #             "Mapping with min_score of %f2 (%f2 of read length, %f2)",
-        #             scaling_factor, score_minimum, unmapped_ngsLib.readlen)
-        #     else:
-        #         assert args.method == 'bwa', "must be wither smalt or bwa"
-        #         # score_minimum = int(.15 * unmapped_ngsLib.readlen)
-        #         logger.info("using the default minimum score for BWA")
-        #         score_minimum = None
-        # else:
-        #     score_minimum = args.score_min
-        #     logger.info(
-        #         "Mapping with min_score of %f2 (read length: %f2)",
-        #         score_minimum, unmapped_ngsLib.readlen)
 
         try:
             nonify_empty_lib_files(unmapped_ngsLib, logger=logger)
@@ -2727,6 +2733,7 @@ if __name__ == "__main__":
             else:
                 logger.error(" Exiting!")
                 sys.exit(1)
+        # Run commands to map to the genome
         # the exe argument is Exes.mapper because that is what is checked
         # during object instantiation
         if args.method == "smalt":
@@ -2872,7 +2879,6 @@ if __name__ == "__main__":
             logger.warning("running without multiprocessing!")
             for cmd in [j for i in extract_convert_assemble_cmds for j in i]:
                 logger.debug(cmd)
-                # subprocess_run_list(cmdlist=cmds, hard=False, logger=logger)
                 subprocess.run([cmd],
                                shell=sys.platform != "win32",
                                stdout=subprocess.PIPE,
@@ -2978,17 +2984,16 @@ if __name__ == "__main__":
         logger=logger)
     logger.info("Combined Seed Contigs: %s", seedGenome.assembled_seeds)
     logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
-    # Diagnostics
-    # logger.info("Mapping percentages per iteration: \n" +
-    #             "(Iteration 0, which maps to entire reference, should " +
-    #             "have a high value; other iterations are percentage of " +
-    #             "previously unmapped reads which now map to the seeded " +
-    #             "flanking regions, which may be very low)\n" +
-    #             "\n".join(mapping_percentages))
     report = reportRegionDepths(inp=region_depths, logger=logger)
     logger.info("Average depths of mapping for each cluster, by iteration:")
     logger.info("\n" + "\n".join(report))
 
+    if args.just_seed:
+        logger.info("Done: %s", time.asctime())
+        logger.info("Skipping final assembly")
+        logger.info("Combined Contig Seeds (for validation or alternate " +
+                    "assembly): %s", seedGenome.assembled_seeds)
+        logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
     # run final contigs
     spades_quast_cmds, quast_reports = get_final_assemblies_cmds(
         seedGenome=seedGenome, exes=sys_exes,
@@ -3000,8 +3005,9 @@ if __name__ == "__main__":
 
     if args.serialize:
         logger.info("running without multiprocessing!")
-        # unpack nested spades quast list
-        for cmd in [j for i in spades_quast_cmds for j in i]:
+        # unpack nested spades quast list, ignoring Nones
+        # hate me yet?
+        for cmd in [j for i in spades_quast_cmds for j in i if j is not None]:
             logger.debug(cmd)
             subprocess.run([cmd],
                            shell=sys.platform != "win32",
@@ -3028,7 +3034,7 @@ if __name__ == "__main__":
         logger.info("Sum of return codes (should be 0):")
         logger.info(sum([r.get() for r in results]))
 
-    if not args.skip_control:
+    if not args.skip_control and quast_reports is not None:
         logger.debug("writing combined quast reports")
         logger.info("Comparing de novo and de fere novo assemblies:")
         try:
@@ -3053,3 +3059,8 @@ if __name__ == "__main__":
     logger.info("Combined Contig Seeds (for validation or alternate " +
                 "assembly): %s", seedGenome.assembled_seeds)
     logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
+
+
+if __name__ == "__main__":
+    args = get_args()
+    main(args)
