@@ -47,9 +47,8 @@ if sys.version_info <= (3, 0):
     sys.exit(1)
 
 ## parse requirements file
-# install_reqs = parse_requirements(path.join(here, "requirements.txt"),
-#                                  session=False)
-# requirements = [str(ir.req) for ir in install_reqs]
+install_reqs = parse_requirements(path.join("requirements.txt"))
+requirements = [str(ir.req) for ir in install_reqs]
 setup(
     name='riboSeed',
     # dependency_links=['https://github.com/WarrenWeckesser/heatmapcluster.git#egg=heatmapcluster'],
@@ -118,15 +117,15 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    # install_requires=requirements,
-    install_requires=[
-        'Biopython==1.68',
-        'jenkspy==0.1.3',
-        'pysam==0.9.1.4',
-        'pyutilsnrw>=0.0.768',
-        'matplotlib==1.5.3',
-        'pandas==0.18.1'
-    ],
+    install_requires=requirements,
+    # install_requires=[
+    #     'Biopython==1.68',
+    #     'jenkspy==0.1.3',
+    #     'pysam==0.9.1.4',
+    #     'pyutilsnrw>=0.0.768',
+    #     'matplotlib==1.5.3',
+    #     'pandas==0.18.1'
+    # ],
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
