@@ -52,12 +52,12 @@ def get_args():  # pragma: no cover
     # had to make this faux "optional" parse so that the named required ones
     # above get listed first
     optional = parser.add_argument_group('optional arguments')
-    optional.add_argument("-e", "--extension", dest='ext',
-                          action="store",
-                          help="extension of the chromosomal sequences, " +
-                          "usually '.fasta' or similar",
-                          default=".fa",
-                          type=str)
+    # optional.add_argument("-e", "--extension", dest='ext',
+    #                       action="store",
+    #                       help="extension of the chromosomal sequences, " +
+    #                       "usually '.fasta' or similar",
+    #                       default=".fa",
+    #                       type=str)
     optional.add_argument("-k", "--kingdom", dest='kingdom',
                           action="store",
                           choices=["bac", "euk", "arc", "mito"],

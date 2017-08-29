@@ -8,6 +8,7 @@ import sys
 import os
 import shutil
 import subprocess
+import multiprocessing
 from pyutilsnrw.utils3_5 import set_up_logging
 from riboScore import getScanCmd, getSelectCmd
 
@@ -16,6 +17,9 @@ try:  # development mode
 except ImportError:  # ie, if an installed pkg from pip or other using setup.py
     __version__ = pkg_resources.require("riboSeed")[0].version
 
+import riboSeed.riboScan
+import riboSeed.riboSelect
+import riboSeed.riboSeed
 
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
@@ -57,12 +61,6 @@ def get_args():  # pragma: no cover
                           help="colon:separated -- specific features"
                           "; default: %(default)s",
                           default='16S:23S:5S', type=str)
-    # TODO Implement this for work with really fragmented genomes
-    # optional.add_argument("--nocluster",
-    #                       help="do not bother clustering; treat all " +
-    #                       "occurances on a sequence as a cluster" +\
-    #                       "default: %(default)s", action='store_true',
-    #                       default=False, dest="nocluster")
     #riboSelect args
     optional.add_argument("--clusters",
                           help="number of rDNA clusters;"
@@ -214,7 +212,7 @@ def getSeedCmd(
         min_flanking_depth, clean_temps, iterations, outroot, other_args):
     if other_args != "":
         other_args = " " + other_args  # pad with space for easier testing
-    return ("{0} {1} {2} -F {3} -R {4} -S0 {5} --name {6} -l {7} --cores {8} --threads {9} --memory {10}  {11} -k {12} --prek {13} -d {14} {15} -i {16} {17} -o {18}{19}".format(
+    return ("{0} {1} {2} -F {3} -R {4} -S1 {5} --experiment_name {6} -l {7} --cores {8} --threads {9} --memory {10}  {11} --kmers '{12}' --pre_kmers '{13}' -d {14} {15} -i {16} {17} -r {18} -o {19}{20}".format(
         sys.executable,  # 0
         os.path.join(
             os.path.dirname(__file__),
@@ -234,11 +232,11 @@ def getSeedCmd(
         min_flanking_depth,  # 14
         "--clean_temps" if clean_temps else "",  # 15
         iterations,  # 16
-        "--linear" if linear else "",
-        os.path.join(outroot, "seed"),  # 18
-        other_args   # 19
+        "--linear" if linear else "",  # 17
+        refgb,  # 18
+        os.path.join(outroot, "seed"),  # 19
+        other_args   # 20
     ), os.path.join(outroot, "seed"))
-
 
 
 def main(args):
@@ -255,6 +253,9 @@ def main(args):
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
+    if args.cores is None:
+        args.cores = multiprocessing.cpu_count()
+        logger.info("Using %i cores", args.cores)
     conf = parse_config(args.config, output_root, logger=logger)
     other_scan_args = \
         "--id_thresh {0} --min_length {1} --name {2} -v {3}".format(
@@ -269,15 +270,15 @@ def main(args):
             conf.SELECT_VERBOSITY)
 
     other_seed_args = \
-        "--map_method {0} --score_min {1} --min_assembly_len {2} {3} {4} {5} --ref_as_contig {6} --target_len {7} --mapper_args '{8}' --smalt_scoring '{9}' -v {10}".format(
+        "--method_for_map {0} {1}  --min_assembly_len {2} {3} {4} {5} {6} {7} --mapper_args '{8}' --smalt_scoring '{9}' -v {10}".format(
             conf.SEED_MAP_METHOD,  # 0
-            conf.SEED_SCORE_MIN,  # 1
+            "--score_min " + conf.SEED_SCORE_MIN if conf.SEED_SCORE_MIN else "",  # 1
             conf.SEED_MIN_ASSEMBLY_LENGTH,  # 2
             "--include_shorts" if conf.SEED_INCLUDE_SHORTS else "",  # 3
             "--subtract" if conf.SEED_SUBTRACT else "",  # 4
             "--skip_control" if conf.SEED_SKIP_CONTROL else "",  # 5
-            conf.SEED_REF_AS_CONTIG,  # 6
-            conf.SEED_TARGET_LEN,  # 7
+            "--ref_as_contig" + conf.SEED_REF_AS_CONTIG if conf.SEED_REF_AS_CONTIG else "",  # 6
+            "--target_len " + conf.SEED_TARGET_LEN if conf.SEED_TARGET_LEN else "",  # 7
             conf.SEED_MAPPER_ARGS,  # 8
             conf.SEED_SMALT_SCORING,  # 9)
             conf.SEED_VERBOSITY)  # 10
@@ -286,9 +287,10 @@ def main(args):
                                  other_args=other_scan_args)
     selectcmd, cluster = getSelectCmd(gb=scangb, outroot=output_root,
                                       other_args=other_select_args)
+
     seedcmd, scangb1 = getSeedCmd(
-        refgb="test.gb",
-        cluster_file="text.txt",
+        refgb=scangb,
+        cluster_file=cluster,
         readF=args.fastq1,
         readR=args.fastq2,
         readS0=args.fastqS1,
@@ -306,25 +308,15 @@ def main(args):
         iterations=args.iterations,
         outroot=output_root,
         other_args=other_seed_args)
-
-    subprocess.run(
-        scancmd,
-        shell=sys.platform != "win32",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True)
-    subprocess.run(
-        selectcmd,
-        shell=sys.platform != "win32",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True)
-    subprocess.run(
-        seedcmd,
-        shell=sys.platform != "win32",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True)
+    for command in [scancmd, selectcmd, seedcmd]:
+        logger.info("Running the following command")
+        logger.info(command)
+        subprocess.run(
+            command,
+            shell=sys.platform != "win32",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True)
 
 
 if __name__ == "__main__":

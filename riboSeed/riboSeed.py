@@ -2484,7 +2484,7 @@ def main(args):
         sys.exit(1)
     if args.cores is None:
         args.cores = multiprocessing.cpu_count()
-        logger.info("Using %i cores", multiprocessing.cpu_count())
+        logger.info("Using %i cores", args.cores)
 
     logger.info("checking for installations of all required external tools")
     logger.debug("creating an Exes object")
@@ -2519,8 +2519,11 @@ def main(args):
         test_smalt_bam_install(cmds=test_smalt_cmds, logger=logger)
     else:
         logger.info("BWA is the selected mapper")
-    check_genbank_for_fasta(gb=args.reference_genbank, logger=logger)
-
+    try:
+        check_genbank_for_fasta(gb=args.reference_genbank, logger=logger)
+    except:
+        logger.error(last_exception())
+        sys.exit(1)
     # if the target_len is set. set needed params
     try:
         proceed_to_target = decide_proceed_to_target(
