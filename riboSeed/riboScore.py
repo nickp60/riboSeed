@@ -276,45 +276,51 @@ def parseDirContents(dirname, ref_ext, assembly_ext):
             glob.glob(dirname + "*" + assembly_ext))
 
 
-def getScanCmd(ref, outroot):
+def getScanCmd(ref, outroot, other_args):
     """ returns (cmd, path/to/dir/)
     """
+    if other_args != "":
+        other_args = " " + other_args  # pad with space for easier testing
     if ref.endswith(".gb"):
         return (None, ref)
 
     resulting_gb = os.path.join(outroot, "scan", "scannedScaffolds.gb")
-    return ("{0} {1} {2} --min_length 5000 -o {3}".format(
+    return ("{0} {1} {2} --min_length 5000 -o {3}{4}".format(
         sys.executable,
         os.path.join(
             os.path.dirname(__file__),
             "riboScan.py"),
         ref,
-        os.path.join(outroot, "scan")
+        os.path.join(outroot, "scan"), other_args
     ), resulting_gb)
 
 
-def getSelectCmd(gb, outroot):
+def getSelectCmd(gb, outroot, other_args):
     resulting_clusters = os.path.join(outroot, "select",
                                       "riboSelect_grouped_loci.txt")
-    return ("{0} {1} {2} -s 16S:23S -o {3}".format(
+    if other_args != "":
+        other_args = " " + other_args  # pad with space for easier testing
+    return ("{0} {1} {2} -s 16S:23S -o {3}{4}".format(
         sys.executable,
         os.path.join(
             os.path.dirname(__file__),
             "riboSelect.py"),
         gb,
-        os.path.join(outroot, "select")
+        os.path.join(outroot, "select"), other_args
     ), resulting_clusters)
 
 
-def getSnagCmd(scangb, cluster, flank, outroot):
-    return ("{0} {1} {2} {3} -l {4} --just_extract -o {5}".format(
+def getSnagCmd(scangb, cluster, flank, outroot, other_args=""):
+    if other_args != "":
+        other_args = " " + other_args  # pad with space for easier testing
+    return ("{0} {1} {2} {3} -l {4} --just_extract -o {5}{6}".format(
         sys.executable,
         os.path.join(
             os.path.dirname(__file__),
             "riboSnag.py"),
         scangb, cluster,
         flank,
-        os.path.join(outroot, "snag")
+        os.path.join(outroot, "snag"), other_args
     ), os.path.join(outroot, "snag"))
 
 
@@ -362,11 +368,13 @@ def main(args):
 
     # snags from reference
     bs_dir1 = os.path.join(output_root, "bridgeSeeds_ref")
-    scancmd1, scangb1 = getScanCmd(ref=gb, outroot=bs_dir1)
-    selectcmd1, cluster1 = getSelectCmd(gb=scangb1, outroot=bs_dir1)
+    scancmd1, scangb1 = getScanCmd(ref=gb, outroot=bs_dir1, other_args="")
+    selectcmd1, cluster1 = getSelectCmd(gb=scangb1, outroot=bs_dir1,
+                                        other_args="")
     snagcmd1, snagdir1 = getSnagCmd(scangb=scangb1, cluster=cluster1,
                                     flank=args.flanking,
-                                    outroot=bs_dir1)
+                                    outroot=bs_dir1,
+                                    other_args="")
     logger.info(
         "Running riboScan, riboSelect, and riboSnag on reference: %s", gb)
     report_list = []

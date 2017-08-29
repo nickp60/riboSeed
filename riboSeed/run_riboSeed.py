@@ -8,6 +8,8 @@ import os
 import shutil
 import subprocess
 from pyutilsnrw.utils3_5 import set_up_logging
+from riboScore import getScanCmd, getSelectCmd
+
 try:  # development mode
     from _version import __version__
 except ImportError:  # ie, if an installed pkg from pip or other using setup.py
@@ -171,34 +173,35 @@ def run_make_config(output_root, logger=None):
     assert logger is not None, "must use logging"
     cmd = "{0} {1} -o {2}".format(
         sys.executable,
-        "/home/nicholas/GitHub/riboSeed/riboSeed/make_riboSeed_config.py",
+        shutil.which("make_riboSeed_config.py"),
         output_root)
-    logger.debug
+    logger.debug(cmd)
     result = subprocess.run(
         cmd,
         shell=sys.platform != "win32",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=True)
-    logger.warning(result)
+    logger.debug(result)
     conf = result.stdout.decode("utf-8").split("\n")[0].split("\t")
-    assert len(conf) == 1, "make_riboSeed_config writes too much to stdout!"
-
+    assert len(conf) == 1, "make_riboSeed_config.py writes too much to stdout!"
     return(conf[0])
 
 
-def parse_config(args, output_root, logger=None):
+def parse_config(config_file, output_root, logger=None):
     assert logger is not None, "must use logging"
-    if not os.path.isfile(args.config):
-        args.config = run_make_config(output_root, logger)
+    if not os.path.isfile(config_file):
+        config_file = run_make_config(output_root, logger)
     else:
         pass
     import importlib.util
     spec = importlib.util.spec_from_file_location(
-        os.path.splitext(os.path.basename(args.config))[0],
-        args.config)
+        os.path.splitext(os.path.basename(config_file))[0],
+        config_file)
     config = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(config)
+    return(config)
+
 
 
 def main(args):
@@ -211,14 +214,37 @@ def main(args):
         print("#Selected output directory %s exists" %
               output_root)
         sys.exit(1)
-
-    log_path = os.path.join(output_root, "riboSeed.log")
-
+    log_path = os.path.join(output_root, "run_riboSeed.log")
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
+    conf = parse_config(args.config, output_root, logger=logger)
+    other_scan_args = \
+        "--id_thresh {0} --min_length {1} --name {2} -v {3}".format(
+            conf.SCAN_ID_THRESH,
+            conf.SCAN_MIN_LENGTH,
+            conf.SCAN_CONTIG_NAME,
+            conf.SCAN_VERBOSITY)
+    other_select_args = \
+        "--feature {0} --specific_geatures {1} -v {2}".format(
+            conf.SELECT_FEATURE,
+            conf.SELECT_SPECIFIC_FEATURES,
+            conf.SELECT_VERBOSITY)
 
-    conf = parse_config(args, output_root, logger=logger)
+    scancmd, scangb1 = getScanCmd(ref=args.contigs, outroot=output_root,
+                                  other_args=other_scan_args)
+    selectcmd, scangb1 = getSelectCmd(ref=args.contigs, outroot=output_root,
+                                      other_args=other_select_args)
+    subprocess.run(
+    scancmd,
+        shell=sys.platform != "win32",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True)
+    # selectcmd1, cluster1 = getSelectCmd(gb=scangb1, outroot=bs_dir1)
+    # snagcmd1, snagdir1 = getSnagCmd(scangb=scangb1, cluster=cluster1,
+    #                                 flank=args.flanking,
+    #                                 outroot=bs_dir1)
 
 
 if __name__ == "__main__":
@@ -246,10 +272,8 @@ if __name__ == "__main__":
 # min_flanking_depth
 # clean temps
 # iterationso
+
 # # config
-# id_trhesh (scan)
-# contig_name (scan)
-# min_length (scan)
 # feature (select)
 # debug (select)
 # map_method

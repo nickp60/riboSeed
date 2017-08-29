@@ -64,8 +64,8 @@ class riboScoreTestCase(unittest.TestCase):
         print(lst)
 
     def test_getScanCmd(self):
-        res = getScanCmd(ref="test.fa", outroot="outdir")
-        res2 = getScanCmd(ref="test.gb", outroot="outdir")
+        res = getScanCmd(ref="test.fa", outroot="outdir", other_args="")
+        res2 = getScanCmd(ref="test.gb", outroot="outdir", other_args="")
         ref_cmd = "{0} {1} test.fa --min_length 5000 -o outdir{2}scan".format(
             sys.executable,
             os.path.join("..", "..",
@@ -81,7 +81,7 @@ class riboScoreTestCase(unittest.TestCase):
         self.assertEqual(res2[0], None)
 
     def test_getSelectCmd(self):
-        res = getSelectCmd(gb="test.gb", outroot="outdir")
+        res = getSelectCmd(gb="test.gb", outroot="outdir", other_args="")
         ref_cmd = "{0} {1} test.gb -s 16S:23S -o outdir{2}select".format(
             sys.executable,
             os.path.join(
@@ -97,7 +97,7 @@ class riboScoreTestCase(unittest.TestCase):
 
     def test_getSnagCmd(self):
         res = getSnagCmd(scangb="test.gb", cluster="clusters.txt",
-                         flank=20, outroot="outdir")
+                         flank=20, outroot="outdir", other_args="")
         ref_cmd = "{0} {1} test.gb clusters.txt -l 20 --just_extract -o outdir{2}snag".format(
             sys.executable,
             os.path.join(
