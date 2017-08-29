@@ -103,10 +103,10 @@ def config_scan_defaults():
 
 def config_select_defaults():
     select_params = [
-        ("SELECT_FEATURE", "rRNA",
+        ("SELECT_FEATURE", "'rRNA'",
          "--feature: which annotations to pay attention to; \n# " +
          "barrnap uses 'rRNA', but others may use 'RRNA', etc"),
-        ("SELECT_SPECIFIC_FEATURES", "16S:23S:5S",
+        ("SELECT_SPECIFIC_FEATURES", "'16S:23S:5S'",
          "--specific_features: specific features to use; \n#" +
          "if not assembling a prokaryote, or if refernce is \n# " +
          "missing a subunit's annotation, adjust this as needed."),
@@ -114,7 +114,7 @@ def config_select_defaults():
          "-v: verbosity for riboSelect")]
     select_lines = [
         "#------------------------#",
-        "##  riboScan Parameters ##",
+        "##  riboSelect Parameters ##",
         "#------------------------#"]
     for k, v, h in select_params:
         select_lines.append("# " + h)
@@ -124,28 +124,70 @@ def config_select_defaults():
 
 def config_seed_defaults():
     seed_params = [
-        ("SEED_FEATURE", "rRNA",
-         "--feature: which annotations to pay attention to; \n# " +
-         "barrnap uses 'rRNA', but others may use 'RRNA', etc"),
-        ("SEED_SPECIFIC_FEATURES", "16S:23S:5S",
-         "--specific_features: specific features to use; \n#" +
-         "if not assembling a prokaryote, or if refernce is \n# " +
-         "missing a subunit's annotation, adjust this as needed."),
+        ("SEED_MAP_METHOD", "'bwa'",
+         "--method_for_map: which mapper to use, (default bwa)"),
+        ("SEED_SCORE_MIN", "None",
+         "--score_min: If using smalt, this sets the '-m' param; \n\n#" +
+         "default with smalt is inferred from \n\n#" +
+         "read length. If using BWA, reads mapping with AS\n\n#" +
+         "score lower than this will be rejected\n\n#" +
+         "; default with BWA is half of read length\n"),
+        ("SEED_MIN_ASSEMBLY_LENGTH", "6000",
+         "if initial SPAdes assembly largest contig \n#" +
+         "is not at least as long as --min_assembly_len, \n#" +
+         "reject. Set this to the length of the seed \n#" +
+         "sequence; if it is not achieved, seeding across \n#" +
+         "regions will likely fail; default: %(default)s"),
+        ("SEED_INCLUDE_SHORTS", "False",
+         "if assembled contig is smaller than --min_assembly_len, contig\n#" +
+         "will still be included in assembly; default: inferred"),
+        ("SEED_SUBTRACT", "False",
+         "if --subtract reads already used in previous\n#" +
+         "round of subassembly will not be included in \n#" +
+         "subsequent rounds.  This can lead to problems \n#" +
+         "with multiple mapping and inflated coverage."),
+        ("SEED_SKIP_CONTROL", "False",
+         "if --skip_control, no de novo \n#" +
+         "assembly will be done; default: %(default)s"),
+        ("SEED_REF_AS_CONTIG", "None",
+         "if 'trusted', SPAdes will  use the seed \n#" +
+         "sequences as a --trusted-contig; if 'untrusted', \n#" +
+         "SPAdes will treat as --untrusted-contig. if '', \n#" +
+         "seeds will not be used during assembly. \n#" +
+         "See SPAdes docs; default: if mapping \n#" +
+         "percentage over 80%%: 'trusted', else 'untrusted'"),
+        ("SEED_TARGET_LEN", "None",
+         "if set, iterations will continue until \n#" +
+         "contigs reach this length, or max iterations (\n#" +
+         "set by --iterations) have been completed. Set as \n#" +
+         "fraction of original seed length by giving a \n#" +
+         "decimal between 0 and 5, or set as an absolute \n#" +
+         "number of base pairs by giving an integer greater\n#" +
+         " than 50. Not used by default"),
+        ("SEED_MAPPER_ARGS", "'-L 0,0 -U 0 -a'",
+         "submit custom parameters to mapper. \n#" +
+         "And by mapper, I mean bwa, cause we dont support \n#" +
+         "this option for SMALT, sorry. \n#" +
+         "This requires knowledge of your chosen mapper's \n#" +
+         "optional arguments. Proceed with caution!"),
+        ("SEED_SMALT_SCORING", "'match=1,subst=-4,gapopen=-4,gapext=-3'",
+         "if mapping with SMALT, \n#" +
+         "submit custom smalt scoring via smalt -S \n#" +
+         "scorespec option"),
         ("SEED_VERBOSITY", "2",
          "-v: verbosity for riboSeed")]
     seed_lines = [
         "#------------------------#",
-        "##  riboScan Parameters ##",
+        "##  riboSeed Parameters ##",
         "#------------------------#"]
     for k, v, h in seed_params:
-        seed_lines.append("# " + h)
+        seed_lines.append("# \n#" + h)
         seed_lines.append(k + " = " + v + "\n")
     return seed_lines
 
+
 def config_bug():
     pass
-
-
 
 
 def write_config(header, outfile):

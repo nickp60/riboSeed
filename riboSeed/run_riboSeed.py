@@ -2,6 +2,7 @@
 #-*- coding: utf-8 -*-
 
 import argparse
+import pkg_resources
 import time
 import sys
 import os
@@ -26,8 +27,6 @@ def get_args():  # pragma: no cover
                         help="either a (multi)fasta or a directory " +
                         "containing one or more chromosomal " +
                         "sequences in fasta format")
-
-    requiredNamed = parser.add_argument_group('required named arguments')
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("-c", "--config", dest='config', action="store",
                           help="config file; if none given, create one; " +
@@ -82,7 +81,14 @@ def get_args():  # pragma: no cover
     optional.add_argument("-S1", "--fastq_single1", dest='fastqS1',
                           action="store",
                           help="single fastq reads", type=str, default=None)
-
+    optional.add_argument("--linear",
+                          help="if genome is known to not be circular and " +
+                          "a region of interest (including flanking bits) " +
+                          "extends past chromosome end, this extends the " +
+                          "seqence past chromosome origin forward by " +
+                          "--padding; " +
+                          "default: %(default)s",
+                          default=False, dest="linear", action="store_true")
     optional.add_argument("-j", "--just_seed", dest='just_seed',
                           action="store_true",
                           default=False,
@@ -168,7 +174,6 @@ def get_args():  # pragma: no cover
     return args
 
 
-
 def run_make_config(output_root, logger=None):
     assert logger is not None, "must use logging"
     cmd = "{0} {1} -o {2}".format(
@@ -203,6 +208,38 @@ def parse_config(config_file, output_root, logger=None):
     return(config)
 
 
+def getSeedCmd(
+        refgb, cluster_file, readF, readR, readS0, name, flanking_length,
+        cores, threads, memory, serialize, kmers, prekmers, linear,
+        min_flanking_depth, clean_temps, iterations, outroot, other_args):
+    if other_args != "":
+        other_args = " " + other_args  # pad with space for easier testing
+    return ("{0} {1} {2} -F {3} -R {4} -S0 {5} --name {6} -l {7} --cores {8} --threads {9} --memory {10}  {11} -k {12} --prek {13} -d {14} {15} -i {16} {17} -o {18}{19}".format(
+        sys.executable,  # 0
+        os.path.join(
+            os.path.dirname(__file__),
+            "riboSeed.py"),  # 1
+        cluster_file,  # 2
+        readF,  # 3
+        readR,  # 4
+        readS0,  # 5
+        name,  # 6
+        flanking_length,  # 7
+        cores,  # 8
+        threads,  # 9
+        memory,  # 10
+        "-z" if serialize else "",  # 11
+        kmers,  # 12
+        prekmers,  # 13
+        min_flanking_depth,  # 14
+        "--clean_temps" if clean_temps else "",  # 15
+        iterations,  # 16
+        "--linear" if linear else "",
+        os.path.join(outroot, "seed"),  # 18
+        other_args   # 19
+    ), os.path.join(outroot, "seed"))
+
+
 
 def main(args):
     output_root = os.path.abspath(os.path.expanduser(args.output))
@@ -226,64 +263,70 @@ def main(args):
             conf.SCAN_CONTIG_NAME,
             conf.SCAN_VERBOSITY)
     other_select_args = \
-        "--feature {0} --specific_geatures {1} -v {2}".format(
+        "--feature '{0}' --specific_features '{1}' -v {2}".format(
             conf.SELECT_FEATURE,
             conf.SELECT_SPECIFIC_FEATURES,
             conf.SELECT_VERBOSITY)
 
-    scancmd, scangb1 = getScanCmd(ref=args.contigs, outroot=output_root,
-                                  other_args=other_scan_args)
-    selectcmd, scangb1 = getSelectCmd(ref=args.contigs, outroot=output_root,
+    other_seed_args = \
+        "--map_method {0} --score_min {1} --min_assembly_len {2} {3} {4} {5} --ref_as_contig {6} --target_len {7} --mapper_args '{8}' --smalt_scoring '{9}' -v {10}".format(
+            conf.SEED_MAP_METHOD,  # 0
+            conf.SEED_SCORE_MIN,  # 1
+            conf.SEED_MIN_ASSEMBLY_LENGTH,  # 2
+            "--include_shorts" if conf.SEED_INCLUDE_SHORTS else "",  # 3
+            "--subtract" if conf.SEED_SUBTRACT else "",  # 4
+            "--skip_control" if conf.SEED_SKIP_CONTROL else "",  # 5
+            conf.SEED_REF_AS_CONTIG,  # 6
+            conf.SEED_TARGET_LEN,  # 7
+            conf.SEED_MAPPER_ARGS,  # 8
+            conf.SEED_SMALT_SCORING,  # 9)
+            conf.SEED_VERBOSITY)  # 10
+
+    scancmd, scangb = getScanCmd(ref=args.contigs, outroot=output_root,
+                                 other_args=other_scan_args)
+    selectcmd, cluster = getSelectCmd(gb=scangb, outroot=output_root,
                                       other_args=other_select_args)
+    seedcmd, scangb1 = getSeedCmd(
+        refgb="test.gb",
+        cluster_file="text.txt",
+        readF=args.fastq1,
+        readR=args.fastq2,
+        readS0=args.fastqS1,
+        name=args.exp_name,
+        flanking_length=args.flanking,
+        cores=args.cores,
+        threads=args.threads,
+        memory=args.memory,
+        serialize=args.serialize,
+        linear=args.linear,
+        kmers=args.kmers,
+        prekmers=args.pre_kmers,
+        min_flanking_depth=args.min_flank_depth,
+        clean_temps=args.clean_temps,
+        iterations=args.iterations,
+        outroot=output_root,
+        other_args=other_seed_args)
+
     subprocess.run(
-    scancmd,
+        scancmd,
         shell=sys.platform != "win32",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=True)
-    # selectcmd1, cluster1 = getSelectCmd(gb=scangb1, outroot=bs_dir1)
-    # snagcmd1, snagdir1 = getSnagCmd(scangb=scangb1, cluster=cluster1,
-    #                                 flank=args.flanking,
-    #                                 outroot=bs_dir1)
+    subprocess.run(
+        selectcmd,
+        shell=sys.platform != "win32",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True)
+    subprocess.run(
+        seedcmd,
+        shell=sys.platform != "win32",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True)
 
 
 if __name__ == "__main__":
     args = get_args()
     main(args)
-
-
-# #  needed args
-# config_file
-# contigs (scan)
-# outdir (none)
-# kingdom (scan)
-# specific_features (select)
-# clusters (select)
-# reads (seed)
-# just_seed (seed)
-# name (seed)
-# flanking_length
-# cores
-# threads
-# memory
-# serialize
-# kmers
-# prekemers
-# min_flanking_depth
-# clean temps
-# iterationso
-
-# # config
-# feature (select)
-# debug (select)
-# map_method
-# score_min
-# min_assembly_length
-# include_shorts
-# subtract
-# clean temps
-# skip_control
-# ref_as_contig
-# target_len
-# mapper_args
-# smalt_scoring

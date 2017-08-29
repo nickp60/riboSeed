@@ -300,7 +300,7 @@ def getSelectCmd(gb, outroot, other_args):
                                       "riboSelect_grouped_loci.txt")
     if other_args != "":
         other_args = " " + other_args  # pad with space for easier testing
-    return ("{0} {1} {2} -s 16S:23S -o {3}{4}".format(
+    return ("{0} {1} {2} -o {3}{4}".format(
         sys.executable,
         os.path.join(
             os.path.dirname(__file__),
@@ -370,7 +370,7 @@ def main(args):
     bs_dir1 = os.path.join(output_root, "bridgeSeeds_ref")
     scancmd1, scangb1 = getScanCmd(ref=gb, outroot=bs_dir1, other_args="")
     selectcmd1, cluster1 = getSelectCmd(gb=scangb1, outroot=bs_dir1,
-                                        other_args="")
+                                        other_args="-s '16S:23S'")
     snagcmd1, snagdir1 = getSnagCmd(scangb=scangb1, cluster=cluster1,
                                     flank=args.flanking,
                                     outroot=bs_dir1,

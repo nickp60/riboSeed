@@ -82,7 +82,7 @@ class riboScoreTestCase(unittest.TestCase):
 
     def test_getSelectCmd(self):
         res = getSelectCmd(gb="test.gb", outroot="outdir", other_args="")
-        ref_cmd = "{0} {1} test.gb -s 16S:23S -o outdir{2}select".format(
+        ref_cmd = "{0} {1} test.gb -o outdir{2}select -s 16S:23S".format(
             sys.executable,
             os.path.join(
                 "..", "..",
