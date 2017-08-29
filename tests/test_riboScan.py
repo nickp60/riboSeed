@@ -163,10 +163,6 @@ class riboSeedTestCase(unittest.TestCase):
         with self.assertRaises(SystemExit):
             getFastas(inp="notanactualfile", output_root=self.test_dir,
                       ext=".fa", name="snorkel", logger=logger)
-        # dir with no contigs
-        with self.assertRaises(SystemExit):
-            getFastas(inp=self.test_dir, output_root=self.test_dir,
-                      ext=".notarealext", name="snorkel", logger=logger)
         self.to_be_removed.append(os.path.join(self.test_dir, "contigs"))
 
     def test_checkSingleFasta(self):
