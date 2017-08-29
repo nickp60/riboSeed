@@ -76,9 +76,18 @@ def config_exes():
             config_lines.append(k + " = None\n" )
 
     # # find all optional sys requirements
-    # opt_programs = ["quast.py", "smalt"]
-    # # set options based on system requirements
-    # pass
+    opt_programs = [("QUAST_EXE", "quast.py"),
+                    ("SMALT_EXE", "smalt")]
+    config_lines.extend([
+        "#------------------------#",
+        "##  Optional programs   ##",
+        "#------------------------#"])
+    for k, v in opt_programs:
+        config_lines.append("# executable for " + v)
+        if shutil.which(v):
+            config_lines.append(k + " = '" + shutil.which(v) + "'\n")
+        else:
+            config_lines.append(k + " = None\n" )
     return config_lines
 
 

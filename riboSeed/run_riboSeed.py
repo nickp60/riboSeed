@@ -11,15 +11,18 @@ import subprocess
 import multiprocessing
 from pyutilsnrw.utils3_5 import set_up_logging
 from riboScore import getScanCmd, getSelectCmd
+from argparse import Namespace
 
 try:  # development mode
     from _version import __version__
 except ImportError:  # ie, if an installed pkg from pip or other using setup.py
     __version__ = pkg_resources.require("riboSeed")[0].version
 
-import riboSeed.riboScan
-import riboSeed.riboSelect
-import riboSeed.riboSeed
+sys.path.append(os.path.join('..', 'riboSeed'))
+
+import riboScan as rscan
+import riboSelect as rsel
+import riboSeed as rseed
 
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
@@ -257,67 +260,121 @@ def main(args):
         args.cores = multiprocessing.cpu_count()
         logger.info("Using %i cores", args.cores)
     conf = parse_config(args.config, output_root, logger=logger)
-    other_scan_args = \
-        "--id_thresh {0} --min_length {1} --name {2} -v {3}".format(
-            conf.SCAN_ID_THRESH,
-            conf.SCAN_MIN_LENGTH,
-            conf.SCAN_CONTIG_NAME,
-            conf.SCAN_VERBOSITY)
-    other_select_args = \
-        "--feature '{0}' --specific_features '{1}' -v {2}".format(
-            conf.SELECT_FEATURE,
-            conf.SELECT_SPECIFIC_FEATURES,
-            conf.SELECT_VERBOSITY)
+    # other_scan_args = \
+    #     "--id_thresh {0} --min_length {1} --name {2} -v {3}".format(
+    #         conf.SCAN_ID_THRESH,
+    #         conf.SCAN_MIN_LENGTH,
+    #         conf.SCAN_CONTIG_NAME,
+    #         conf.SCAN_VERBOSITY)
+    # other_select_args = \
+    #     "--feature '{0}' --specific_features '{1}' -v {2}".format(
+    #         conf.SELECT_FEATURE,
+    #         conf.SELECT_SPECIFIC_FEATURES,
+    #         conf.SELECT_VERBOSITY)
 
-    other_seed_args = \
-        "--method_for_map {0} {1}  --min_assembly_len {2} {3} {4} {5} {6} {7} --mapper_args '{8}' --smalt_scoring '{9}' -v {10}".format(
-            conf.SEED_MAP_METHOD,  # 0
-            "--score_min " + conf.SEED_SCORE_MIN if conf.SEED_SCORE_MIN else "",  # 1
-            conf.SEED_MIN_ASSEMBLY_LENGTH,  # 2
-            "--include_shorts" if conf.SEED_INCLUDE_SHORTS else "",  # 3
-            "--subtract" if conf.SEED_SUBTRACT else "",  # 4
-            "--skip_control" if conf.SEED_SKIP_CONTROL else "",  # 5
-            "--ref_as_contig" + conf.SEED_REF_AS_CONTIG if conf.SEED_REF_AS_CONTIG else "",  # 6
-            "--target_len " + conf.SEED_TARGET_LEN if conf.SEED_TARGET_LEN else "",  # 7
-            conf.SEED_MAPPER_ARGS,  # 8
-            conf.SEED_SMALT_SCORING,  # 9)
-            conf.SEED_VERBOSITY)  # 10
+    # other_seed_args = \
+    #     "--method_for_map {0} {1}  --min_assembly_len {2} {3} {4} {5} {6} {7} --mapper_args '{8}' --smalt_scoring '{9}' -v {10}".format(
+    #         conf.SEED_MAP_METHOD,  # 0
+    #         "--score_min " + conf.SEED_SCORE_MIN if conf.SEED_SCORE_MIN else "",  # 1
+    #         conf.SEED_MIN_ASSEMBLY_LENGTH,  # 2
+    #         "--include_shorts" if conf.SEED_INCLUDE_SHORTS else "",  # 3
+    #         "--subtract" if conf.SEED_SUBTRACT else "",  # 4
+    #         "--skip_control" if conf.SEED_SKIP_CONTROL else "",  # 5
+    #         "--ref_as_contig" + conf.SEED_REF_AS_CONTIG if conf.SEED_REF_AS_CONTIG else "",  # 6
+    #         "--target_len " + conf.SEED_TARGET_LEN if conf.SEED_TARGET_LEN else "",  # 7
+    #         conf.SEED_MAPPER_ARGS,  # 8
+    #         conf.SEED_SMALT_SCORING,  # 9)
+    #         conf.SEED_VERBOSITY)  # 10
 
-    scancmd, scangb = getScanCmd(ref=args.contigs, outroot=output_root,
-                                 other_args=other_scan_args)
-    selectcmd, cluster = getSelectCmd(gb=scangb, outroot=output_root,
-                                      other_args=other_select_args)
-
-    seedcmd, scangb1 = getSeedCmd(
-        refgb=scangb,
-        cluster_file=cluster,
-        readF=args.fastq1,
-        readR=args.fastq2,
-        readS0=args.fastqS1,
-        name=args.exp_name,
+    # scancmd, scangb = getScanCmd(ref=args.contigs, outroot=output_root,
+    #                              other_args=other_scan_args)
+    # selectcmd, cluster = getSelectCmd(gb=scangb, outroot=output_root,
+    #                                   other_args=other_select_args)
+    scan_args = Namespace(
+        contigs=args.contigs,
+        output=os.path.join(output_root, "scan"),
+        kingdom=args.kingdom,
+        id_thresh=conf.SCAN_ID_THRESH,
+        name=conf.SCAN_CONTIG_NAME,
+        cores=args.cores,
+        barrnap_exe=conf.BARRNAP_EXE,
+        seqret_exe=conf.SEQRET_EXE,
+        min_length=conf.SCAN_MIN_LENGTH,
+        verbosity=conf.SCAN_VERBOSITY)
+    select_args = Namespace(
+        output=os.path.join(output_root, "scan"),
+        feature=conf.SELECT_FEATURE,
+        specific_features=conf.SELECT_SPECIFIC_FEATURES,
+        clobber=False,
+        clusters=args.clusters,
+        verbosity=conf.SELECT_VERBOSITY)
+    seed_args = Namespace(
+        clustered_loci_txt=os.path.join(
+            output_root, "select", "riboSelectClusteredLoci.txt"),
+        reference_genbank=os.path.join(
+            output_root, "scan", "scannedScaffols.gb"),
+        output=os.path.join(output_root, "seed"),
+        fastq1=args.fastq1,
+        fastq2=args.fastq2,
+        fastqS1=args.fastqS1,
+        just_seed=args.just_seed,
+        exp_name=args.exp_name,
+        clean_temps=args.clean_temps,
         flanking_length=args.flanking,
+        method=conf.SEED_MAP_METHOD,
         cores=args.cores,
         threads=args.threads,
         memory=args.memory,
-        serialize=args.serialize,
-        linear=args.linear,
         kmers=args.kmers,
-        prekmers=args.pre_kmers,
-        min_flanking_depth=args.min_flank_depth,
-        clean_temps=args.clean_temps,
-        iterations=args.iterations,
-        outroot=output_root,
-        other_args=other_seed_args)
-    for command in [scancmd, selectcmd, seedcmd]:
-        logger.info("Running the following command")
-        logger.info(command)
-        subprocess.run(
-            command,
-            shell=sys.platform != "win32",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True)
-
+        pre_kmers=args.pre_kmers,
+        score_min=conf.SEED_SCORE_MIN,
+        min_assembly_len=conf.SEED_MIN_ASSEMBLY_LENGTH,
+        include_short_contigs=conf.SEED_INCLUDE_SHORTS,
+        subtract=conf.SEED_SUBTRACT,
+        linear=args.linear,
+        skip_control=conf.SEED_SKIP_CONTROL,
+        target_len=conf.SEED_TARGET_LEN,
+        smalt_scoring=conf.SEED_SMALT_SCORING,
+        serialize=args.serialize,
+        mapper_args=conf.SEED_MAPPER_ARGS,
+        spades_exe=conf.SPADES_EXE,
+        samtools_exe=conf.SAMTOOLS_EXE,
+        smalt_exe=conf.SMALT_EXE,
+        bwa_exe=conf.BWA_EXE,
+        quast_exe=conf.QUAST_EXE,
+        verbosity=conf.SEED_VERBOSITY)
+    # seedcmd, scangb1 = getSeedCmd(
+    #     refgb=scangb,
+    #     cluster_file=cluster,
+    #     readF=args.fastq1,
+    #     readR=args.fastq2,
+    #     readS0=args.fastqS1,
+    #     name=args.exp_name,
+    #     flanking_length=args.flanking,
+    #     cores=args.cores,
+    #     threads=args.threads,
+    #     memory=args.memory,
+    #     serialize=args.serialize,
+    #     linear=args.linear,
+    #     kmers=args.kmers,
+    #     prekmers=args.pre_kmers,
+    #     min_flanking_depth=args.min_flank_depth,
+    #     clean_temps=args.clean_temps,
+    #     iterations=args.iterations,
+    #     outroot=output_root,
+    #     other_args=other_seed_args)
+    # for command in [scancmd, selectcmd, seedcmd]:
+    #     logger.info("Running the following command")
+    #     logger.info(command)
+    #     subprocess.run(
+    #         command,
+    #         shell=sys.platform != "win32",
+    #         stdout=subprocess.PIPE,
+    #         stderr=subprocess.PIPE,
+    #         check=True)
+    rscan.main(scan_args)
+    rsel.main(select_args)
+    rseed.main(seed_args)
 
 if __name__ == "__main__":
     args = get_args()
