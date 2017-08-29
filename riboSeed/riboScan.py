@@ -251,13 +251,18 @@ def getFastas(inp, output_root, ext, name, logger):
                             logger=logger)
 
             fastas = glob.glob(os.path.join(output_root, "contigs",
-                                            "*" + ext))
+                                            "*.fa"))
     else:
         fastas = glob.glob(os.path.join(os.path.expanduser(inp),
-                                        "*" + ext))
+                                        "*.fa"))
     if len(fastas) == 0:
-        logger.error("No fasta files in %s with extention %s! Exiting",
-                     inp, ext)
+        logger.warning("No fasta files found with extention '.fa'. searching" +
+                       "searching for '*.fasta' files...")
+        fastas = glob.glob(os.path.join(os.path.expanduser(inp),
+                                        "*.fasta"))
+        if len(fastas) == 0:
+            logger.error("No files in %s with extention '*fasta'! Exiting",
+                         inp, ext)
         sys.exit(1)
     # unify the output of multifasta
     combine_gbs(finalgb=os.path.join(output_root, "scannedScaffolds.fa"),
@@ -272,6 +277,7 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
     idlist = []
     assert logger is not None, "must use logging"
     os.makedirs(os.path.join(output, dirname))
+    source_fname = os.path.splitext(os.path.basename(multi))[0]
     with open(os.path.expanduser(multi), "r") as mf:
         for idx, rec in enumerate(SeqIO.parse(mf, "fasta")):
             logger.debug("record %d: %s", idx, rec.id)
@@ -283,13 +289,13 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
             # if fname in idlist:
             fname = fname + "_" + str(idx)
             if not re.match("^[a-zA-Z0-9_\.]*$", fname):
-                logger.error("Problem with header %s", fname)
-                logger.error("file header contains special characters! " +
-                             "Valid characters are in set [a-zA-Z0-9_]; " +
-                             "rename with the --name option to prevent " +
-                             "later issues. I'm sorry, its a pain...\n" +
-                             "Exiting...")
-                sys.exit(1)
+                logger.warning("Problem with header %s", fname)
+                logger.warning("file header contains special characters! " +
+                               "Valid characters are in set [a-zA-Z0-9_]; " +
+                               "rename with the --name option to prevent " +
+                               "later issues. Renaming as source filename " +
+                               "with index, sorr..." )
+                fname = source_fname + "_" + str(idx)
             with open(os.path.join(output, dirname,
                                    fname + ".fa"), "w") as outf:
                 renamed_rec = SeqRecord(rec.seq, id=fname, description="")

@@ -11,8 +11,6 @@ before install:
 install:
 - pip install coveralls
 - pip install -r requirements.txt
-#- "./install_tools.sh"
-#- "./debug_travis.sh"
 script:
 - python setup.py install
 - nosetests --with-coverage --cover-package=riboSeed tests/ -v

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.5
+!/usr/bin/env python3.5
 """
 Input:
 - genbank file
@@ -49,11 +49,11 @@ def get_args():  # pragma: no cover
                           help="colon:separated -- specific features"
                           "; default: %(default)s",
                           default='16S:23S:5S', type=str)
-    optional.add_argument("--keep_temps",
-                          help="view intermediate clustering files"
-                          "default: %(default)s",
-                          action='store_true',
-                          default=False, dest="keep_temps")
+    # optional.add_argument("--keep_temps",
+    #                       help="view intermediate clustering files"
+    #                       "default: %(default)s",
+    #                       action='store_true',
+    #                       default=False, dest="keep_temps")
     optional.add_argument("--clobber",
                           help="overwrite previous output files: "
                           "default: %(default)s", action='store_true',

@@ -687,6 +687,7 @@ def get_args():  # pragma: no cover
                           default=0, dest="min_flank_depth", type=float)
     optional.add_argument("--ref_as_contig", dest='ref_as_contig',
                           action="store", type=str,
+                          default=None,
                           choices=["trusted", "untrusted"],
                           help="if 'trusted', SPAdes will  use the seed " +
                           "sequences as a --trusted-contig; if 'untrusted', " +
