@@ -81,7 +81,8 @@ class riboScoreTestCase(unittest.TestCase):
         self.assertEqual(res2[0], None)
 
     def test_getSelectCmd(self):
-        res = getSelectCmd(gb="test.gb", outroot="outdir", other_args="")
+        res = getSelectCmd(gb="test.gb", outroot="outdir",
+                           other_args="-s 16S:23S")
         ref_cmd = "{0} {1} test.gb -o outdir{2}select -s 16S:23S".format(
             sys.executable,
             os.path.join(
