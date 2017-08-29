@@ -14,8 +14,6 @@ USAGE:
  $ python3.5 riboSelect.py genome.gbk --output /path/to/output
 """
 import os
-import csv
-import subprocess
 import datetime
 import argparse
 import sys

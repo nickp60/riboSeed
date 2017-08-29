@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-import pkg_resources
+import argparse
+import time
 import sys
 import os
 import shutil
 import subprocess
+from pyutilsnrw.utils3_5 import set_up_logging
+try:  # development mode
+    from _version import __version__
+except ImportError:  # ie, if an installed pkg from pip or other using setup.py
+    __version__ = pkg_resources.require("riboSeed")[0].version
+
+
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
         description="Given a directory of one or more chromosomes as fasta " +
@@ -22,7 +30,7 @@ def get_args():  # pragma: no cover
     optional.add_argument("-c", "--config", dest='config', action="store",
                           help="config file; if none given, create one; " +
                           "default: %(default)s", default=os.getcwd(),
-                          type=str, required=True)
+                          type=str, required=False)
     optional.add_argument("-o", "--output", dest='output', action="store",
                           help="output directory; " +
                           "default: %(default)s",
@@ -31,25 +39,18 @@ def get_args():  # pragma: no cover
                               str(time.strftime("%Y-%m-%dT%H:%M") +
                                   "_riboSeed_pipeline_results"), ""),
                           type=str)
-
-    optional.add_argument("-k", "--kingdom", dest='kingdom',
+    optional.add_argument("-n", "--experiment_name", dest='exp_name',
+                          action="store",
+                          help="prefix for results files; " +
+                          "default: %(default)s",
+                          default="riboSeed", type=str)
+    # riboScan args
+    optional.add_argument("-K", "--Kingdom", dest='kingdom',
                           action="store",
                           choices=["bac", "euk", "arc", "mito"],
                           help="whether to look for eukaryotic, archaeal, or" +
                           " bacterial rDNA; " +
                           "default: %(default)s", default="bac",
-                          type=str)
-    optional.add_argument("-t", "--id_thresh", dest='id_thresh',
-                          action="store", type=float,
-                          help="partial rRNA hits below this threshold will " +
-                          "be ignored. " +
-                          "default: %(default)s", default=0.5,
-                          )
-    optional.add_argument("-n", "--name", dest='name',
-                          action="store",
-                          # default="contig",
-                          help="name to give the contig files; "
-                          "default: infered from file",
                           type=str)
     optional.add_argument("-s", "--specific_features",
                           help="colon:separated -- specific features"
@@ -61,17 +62,15 @@ def get_args():  # pragma: no cover
     #                       "occurances on a sequence as a cluster" +\
     #                       "default: %(default)s", action='store_true',
     #                       default=False, dest="nocluster")
-    optional.add_argument("-c", "--clusters",
+    #riboSelect args
+    optional.add_argument("--clusters",
                           help="number of rDNA clusters;"
                           "if submitting multiple records, must be a "
                           "colon:separated list whose length matches number "
                           "of genbank records.  Default is inferred from "
                           "specific feature with fewest hits", default='',
                           type=str, dest="clusters")
-    optional.add_argument("-c", "--config", dest='config', action="store",
-                          help="config file; if none given, use the default; " +
-                          "default: %(default)s", default=os.getcwd(),
-                          type=str, required=True)
+    # riboSeed args
     optional.add_argument("-F", "--fastq1", dest='fastq1', action="store",
                           help="forward fastq reads, can be compressed",
                           type=str, default=None)
@@ -87,23 +86,10 @@ def get_args():  # pragma: no cover
                           default=False,
                           help="Don't do an assembly, just generate the long" +
                           " read 'seeds'; default: %(default)s")
-    optional.add_argument("-n", "--experiment_name", dest='exp_name',
-                          action="store",
-                          help="prefix for results files; " +
-                          "default: %(default)s",
-                          default="riboSeed", type=str)
     optional.add_argument("-l", "--flanking_length",
                           help="length of flanking regions, in bp; " +
                           "default: %(default)s",
                           default=1000, type=int, dest="flanking")
-    optional.add_argument("-c", "--cores", dest='cores', action="store",
-                          default=None, type=int,
-                          help="cores used" +
-                          "; default: %(default)s")
-    optional.add_argument("--memory", dest='memory', action="store",
-                          default=8, type=int,
-                          help="cores for multiprocessing" +
-                          "; default: %(default)s")
     optional.add_argument("-k", "--kmers", dest='kmers', action="store",
                           default="21,33,55,77,99,127", type=str,
                           help="kmers used for final assembly" +
@@ -147,6 +133,14 @@ def get_args():  # pragma: no cover
                           " 1 = debug(), 2 = info(), 3 = warning(), " +
                           "4 = error() and 5 = critical(); " +
                           "default: %(default)s")
+    optional.add_argument("--cores", dest='cores', action="store",
+                          default=None, type=int,
+                          help="cores used" +
+                          "; default: %(default)s")
+    optional.add_argument("--memory", dest='memory', action="store",
+                          default=8, type=int,
+                          help="cores for multiprocessing" +
+                          "; default: %(default)s")
     optional.add_argument("-t", "--threads", dest='threads',
                           action="store",
                           default=1, type=int,
@@ -165,96 +159,107 @@ def get_args():  # pragma: no cover
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
+    optional.add_argument('--version', action='version',
+                          version='%(prog)s {version}'.format(
+                              version=__version__))
+    args = parser.parse_args()
+    return args
 
 
-def main():
-    root_dir = os.path.join(os.getcwd(), "integration_test_results")
-    os.makedirs(root_dir, exist_ok=True)
-    cmds = [
-        # riboScan
-        "{0} {1} {2}{3} -o {4} -k bac".format(
-            sys.executable,
-            shutil.which("riboScan.py"),
-            os.path.join(os.path.dirname(fasta), ""),
-            os.path.basename(fasta), os.path.join(root_dir, "scan", "")),
-        # riboSelect
-        "{0} {1} {2}scannedScaffolds.gb -o {3}".format(
+
+def run_make_config(output_root, logger=None):
+    assert logger is not None, "must use logging"
+    cmd = "{0} {1} -o {2}".format(
         sys.executable,
-        shutil.which("riboSelect.py"),
-        os.path.join(root_dir, "scan", ""),
-        os.path.join(root_dir, "select","")),
-        # riboSnag
-        "{0} {1} {2}scannedScaffolds.gb {3}riboSelect_grouped_loci.txt -o {4} ".format(
-            sys.executable,
-            shutil.which("riboSnag.py"),
-            os.path.join(root_dir, "scan", ""),
-            os.path.join(root_dir, "select", ""),
-            os.path.join(root_dir, "snag", "")),
-        # riboSeed
-        "{0} {1} -r {2}scannedScaffolds.gb {3}riboSelect_grouped_loci.txt -o {4} -F {5} -R {6} --serialize -v 1 ".format(
-            sys.executable,
-            shutil.which("riboSeed.py"),
-            os.path.join(root_dir, "scan", ""),
-            os.path.join(root_dir, "select", ""),
-            os.path.join(root_dir, "seed", ""),
-            fastq1,
-            fastq2)
-    ]
-    for i in cmds:
-        print(i)
-        subprocess.run([i],
-                       shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       check=True)
-    print("finished running integration test!")
+        "/home/nicholas/GitHub/riboSeed/riboSeed/make_riboSeed_config.py",
+        output_root)
+    logger.debug
+    result = subprocess.run(
+        cmd,
+        shell=sys.platform != "win32",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True)
+    logger.warning(result)
+    conf = result.stdout.decode("utf-8").split("\n")[0].split("\t")
+    assert len(conf) == 1, "make_riboSeed_config writes too much to stdout!"
+
+    return(conf[0])
 
 
-
-
-
+def parse_config(args, output_root, logger=None):
+    assert logger is not None, "must use logging"
+    if not os.path.isfile(args.config):
+        args.config = run_make_config(output_root, logger)
+    else:
+        pass
     import importlib.util
-    spec = importlib.util.spec_from_file_location("test", "./test.py")
+    spec = importlib.util.spec_from_file_location(
+        os.path.splitext(os.path.basename(args.config))[0],
+        args.config)
     config = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(config)
-    print(config.BARRNAP_EXE)
 
 
+def main(args):
+    output_root = os.path.abspath(os.path.expanduser(args.output))
+    # Create output directory only if it does not exist
+    try:
+        os.makedirs(output_root)
+    except FileExistsError:
+         # leading comment char'#' added for stream output usage
+        print("#Selected output directory %s exists" %
+              output_root)
+        sys.exit(1)
 
-#  needed args
-config_file
-contigs (scan)
-outdir (none)
-kingdom (scan)
-specific_features (select)
-clusters (select)
-reads (seed)
-just_seed (seed)
-name (seed)
-flanking_length
-cores
-threads
-memory
-serialize
-kmers
-prekemers
-min_flanking_depth
-clean temps
-iterationso
-# config
-id_trhesh (scan)
-contig_name (scan)
-min_length (scan)
-feature (select)
-debug (select)
-map_method
-score_min
-min_assembly_length
-include_shorts
-subtract
-clean temps
-skip_control
-ref_as_contig
-target_len
-mapper_args
-smalt_scoring
+    log_path = os.path.join(output_root, "riboSeed.log")
+
+    logger = set_up_logging(verbosity=args.verbosity,
+                            outfile=log_path,
+                            name=__name__)
+
+    conf = parse_config(args, output_root, logger=logger)
+
+
+if __name__ == "__main__":
+    args = get_args()
+    main(args)
+
+
+# #  needed args
+# config_file
+# contigs (scan)
+# outdir (none)
+# kingdom (scan)
+# specific_features (select)
+# clusters (select)
+# reads (seed)
+# just_seed (seed)
+# name (seed)
+# flanking_length
+# cores
+# threads
+# memory
+# serialize
+# kmers
+# prekemers
+# min_flanking_depth
+# clean temps
+# iterationso
+# # config
+# id_trhesh (scan)
+# contig_name (scan)
+# min_length (scan)
+# feature (select)
+# debug (select)
+# map_method
+# score_min
+# min_assembly_length
+# include_shorts
+# subtract
+# clean temps
+# skip_control
+# ref_as_contig
+# target_len
+# mapper_args
+# smalt_scoring

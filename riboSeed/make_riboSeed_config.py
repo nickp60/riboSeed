@@ -27,9 +27,9 @@ def get_args():  # pragma: no cover
         "de fere novo and de novo assembly with SPAdes",
         add_help=True)
     parser.add_argument("-o", "--outdir", dest='outdir', action="store",
-                               help="output directory; " +
-                               "default: %(default)s", default=os.getcwd(),
-                               type=str, required=False)
+                        help="output directory; " +
+                        "default: %(default)s", default=os.getcwd(),
+                        type=str, required=False)
     args = parser.parse_args()
     return args
 
@@ -57,10 +57,12 @@ def config_exes():
     # pass
     return config_lines
 
+
 def config_run():
     # set library type
     # se
     pass
+
 
 def config_bug():
     pass
@@ -77,7 +79,7 @@ def make_config_header():
         "# Please see the LICENSE file that should have been included as part of",
         "# this package.\n\n"]
     t0 = time.asctime()
-    timestamp = "this config file was generated " + str(t0) + "\n\n"
+    timestamp = "# this config file was generated " + str(t0) + "\n\n"
     hashbang.extend(copy_header)
     hashbang.append(timestamp)
     return(hashbang)
@@ -103,9 +105,9 @@ def main(args):
     outfile = os.path.join(os.path.abspath(os.path.expanduser(args.outdir)),
                            str(time.strftime("%Y-%m-%dT%H:%M") +
                                "_riboSeed_config.py"))
-
     write_config(header=header, outfile=outfile)
     append_config(lines=lines, outfile=outfile)
+    sys.stdout.write(outfile)
 
 if __name__ == "__main__":
     args = get_args()
