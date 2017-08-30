@@ -15,12 +15,13 @@ sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 from riboSeed.riboSketch import makeContigMoverCmds, findBestAlignments, \
-    parseBackbones, parseDirContents, parseAlignmentDir, main
+    parseBackbones, parseDirContents, parseAlignmentDir, main, \
+    plot_mauve_compare
 
 
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among other things wont run if tried " +
-                 " with less than python 3.5")
+                 "with less than python 3.5")
 class riboSketchTestCase(unittest.TestCase):
     """ Testing all the functions surrounding the actual plotting functions
     """
@@ -46,6 +47,7 @@ class riboSketchTestCase(unittest.TestCase):
             "riboSketch_references",
             "ref_vs_kleb_de_fere_novo", "alignment2"
             "")
+        os.makedirs(self.test_dir, exist_ok=True)
         self.to_be_removed = []
 
     def test_parseDirContents(self):
@@ -85,10 +87,10 @@ class riboSketchTestCase(unittest.TestCase):
                          [os.path.join(testdir, "alignment2.backbone")])
 
     def test_parseBackbone(self):
-        dir = os.path.join(
+        thisdir = os.path.join(
             self.sketch_ref_dir,
             "ref_vs_kleb_de_fere_novo", "alignment2", "alignment2.backbone")
-        backbones = parseBackbones([dir])
+        backbones = parseBackbones([thisdir])
 
         ref = [[25035, 34972, 3, 9940],
                [1, 21221, 9943, 31167],
@@ -111,14 +113,35 @@ class riboSketchTestCase(unittest.TestCase):
                [0, 0, 31641, 31776],
                [0, 0, 45458, 45832],
                [0, 0, 46893, 47120]]
-
         self.assertEqual(backbones, [ref])
 
+    def test_plot_mauve_compare(self):
+        backbone = os.path.join(
+            self.mauve_res_dir, "alignment2.backbone")
+        assembly_list = [
+            os.path.join(self.mauve_res_dir, "kleb_de_fere_novo.fasta")]
+        tempout = os.path.join(self.test_dir, "plot_out")
+        os.makedirs(tempout, exist_ok=True)
+        plot_mauve_compare(
+            refgb=os.path.join(self.mauve_res_dir, "reference.gb"),
+            assembly_list=assembly_list,
+            backbones_list=[backbone],
+            bufferlen=1000,
+            breakwidth=100,
+            aspect=.4,
+            names=["reference.gb", "kleb_de_fere_novo.fasta"],
+            #names=["scannedScaffold.gb", "kleb_de_fere_novo.fasta"],
+            title="Shannon Entropy by Position",
+            output_prefix=os.path.join(tempout, "PrettyMauve"))
+        self.assertEqual(md5(self.ref_png),
+                         md5(os.path.join(tempout, "PrettyMauve.png")))
+
     @unittest.skipIf(not os.path.exists(
-        os.path.join(os.path.abspath("~"),  # os.environ['HOME'],
-                     "mauve_snapshot_2015-02-13", "Mauve.jar")),
+        os.path.join("..",
+                     os.path.dirname(shutil.which("mauveAligner")),
+                     "Mauve.jar")),
                      "mauve jar not found, skipping." +
-                     "If this isnt an error from travis deployment, you " +
+                     "If this isnt an error from travis, you " +
                      "probably should install it")
     def test_main(self):
         tempout = os.path.join(self.test_dir, "main_out")
