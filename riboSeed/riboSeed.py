@@ -11,7 +11,6 @@ import argparse
 import sys
 import time
 import random
-import logging
 import os
 import shutil
 import multiprocessing
@@ -2454,7 +2453,7 @@ def check_genbank_for_fasta(gb, logger=None):
                 sys.exit(1)
 
 
-def main(args):
+def main(args, logger=None):
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
@@ -2464,10 +2463,10 @@ def main(args):
         sys.exit(1)
     t0 = time.time()
     log_path = os.path.join(output_root, "riboSeed.log")
-
-    logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=log_path,
-                            name=__name__)
+    if logger is None:
+        logger = set_up_logging(verbosity=args.verbosity,
+                                outfile=log_path,
+                                name=__name__)
     # # log version of riboSeed, commandline options, and all settings
     logger.info("riboSeed pipeline package version: %s",
                 __version__)

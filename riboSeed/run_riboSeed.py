@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import multiprocessing
 from pyutilsnrw.utils3_5 import set_up_logging
-from riboScore import getScanCmd, getSelectCmd
+
 from argparse import Namespace
 
 try:  # development mode
@@ -23,6 +23,7 @@ sys.path.append(os.path.join('..', 'riboSeed'))
 import riboScan as rscan
 import riboSelect as rsel
 import riboSeed as rseed
+
 
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
@@ -209,39 +210,6 @@ def parse_config(config_file, output_root, logger=None):
     return(config)
 
 
-def getSeedCmd(
-        refgb, cluster_file, readF, readR, readS0, name, flanking_length,
-        cores, threads, memory, serialize, kmers, prekmers, linear,
-        min_flanking_depth, clean_temps, iterations, outroot, other_args):
-    if other_args != "":
-        other_args = " " + other_args  # pad with space for easier testing
-    return ("{0} {1} {2} -F {3} -R {4} -S1 {5} --experiment_name {6} -l {7} --cores {8} --threads {9} --memory {10}  {11} --kmers '{12}' --pre_kmers '{13}' -d {14} {15} -i {16} {17} -r {18} -o {19}{20}".format(
-        sys.executable,  # 0
-        os.path.join(
-            os.path.dirname(__file__),
-            "riboSeed.py"),  # 1
-        cluster_file,  # 2
-        readF,  # 3
-        readR,  # 4
-        readS0,  # 5
-        name,  # 6
-        flanking_length,  # 7
-        cores,  # 8
-        threads,  # 9
-        memory,  # 10
-        "-z" if serialize else "",  # 11
-        kmers,  # 12
-        prekmers,  # 13
-        min_flanking_depth,  # 14
-        "--clean_temps" if clean_temps else "",  # 15
-        iterations,  # 16
-        "--linear" if linear else "",  # 17
-        refgb,  # 18
-        os.path.join(outroot, "seed"),  # 19
-        other_args   # 20
-    ), os.path.join(outroot, "seed"))
-
-
 def main(args):
     output_root = os.path.abspath(os.path.expanduser(args.output))
     # Create output directory only if it does not exist
@@ -260,36 +228,6 @@ def main(args):
         args.cores = multiprocessing.cpu_count()
         logger.info("Using %i cores", args.cores)
     conf = parse_config(args.config, output_root, logger=logger)
-    # other_scan_args = \
-    #     "--id_thresh {0} --min_length {1} --name {2} -v {3}".format(
-    #         conf.SCAN_ID_THRESH,
-    #         conf.SCAN_MIN_LENGTH,
-    #         conf.SCAN_CONTIG_NAME,
-    #         conf.SCAN_VERBOSITY)
-    # other_select_args = \
-    #     "--feature '{0}' --specific_features '{1}' -v {2}".format(
-    #         conf.SELECT_FEATURE,
-    #         conf.SELECT_SPECIFIC_FEATURES,
-    #         conf.SELECT_VERBOSITY)
-
-    # other_seed_args = \
-    #     "--method_for_map {0} {1}  --min_assembly_len {2} {3} {4} {5} {6} {7} --mapper_args '{8}' --smalt_scoring '{9}' -v {10}".format(
-    #         conf.SEED_MAP_METHOD,  # 0
-    #         "--score_min " + conf.SEED_SCORE_MIN if conf.SEED_SCORE_MIN else "",  # 1
-    #         conf.SEED_MIN_ASSEMBLY_LENGTH,  # 2
-    #         "--include_shorts" if conf.SEED_INCLUDE_SHORTS else "",  # 3
-    #         "--subtract" if conf.SEED_SUBTRACT else "",  # 4
-    #         "--skip_control" if conf.SEED_SKIP_CONTROL else "",  # 5
-    #         "--ref_as_contig" + conf.SEED_REF_AS_CONTIG if conf.SEED_REF_AS_CONTIG else "",  # 6
-    #         "--target_len " + conf.SEED_TARGET_LEN if conf.SEED_TARGET_LEN else "",  # 7
-    #         conf.SEED_MAPPER_ARGS,  # 8
-    #         conf.SEED_SMALT_SCORING,  # 9)
-    #         conf.SEED_VERBOSITY)  # 10
-
-    # scancmd, scangb = getScanCmd(ref=args.contigs, outroot=output_root,
-    #                              other_args=other_scan_args)
-    # selectcmd, cluster = getSelectCmd(gb=scangb, outroot=output_root,
-    #                                   other_args=other_select_args)
     scan_args = Namespace(
         contigs=args.contigs,
         output=os.path.join(output_root, "scan"),
@@ -302,26 +240,31 @@ def main(args):
         min_length=conf.SCAN_MIN_LENGTH,
         verbosity=conf.SCAN_VERBOSITY)
     select_args = Namespace(
-        output=os.path.join(output_root, "scan"),
+        genbank_genome=os.path.join(
+            output_root, "scan", "scannedScaffolds.gb"),
+        output=os.path.join(output_root, "select"),
         feature=conf.SELECT_FEATURE,
         specific_features=conf.SELECT_SPECIFIC_FEATURES,
         clobber=False,
         clusters=args.clusters,
-        verbosity=conf.SELECT_VERBOSITY)
+        verbosity=conf.SELECT_VERBOSITY,
+        debug=False)
     seed_args = Namespace(
         clustered_loci_txt=os.path.join(
-            output_root, "select", "riboSelectClusteredLoci.txt"),
+            output_root, "select", "riboSelect_grouped_loci.txt"),
         reference_genbank=os.path.join(
-            output_root, "scan", "scannedScaffols.gb"),
+            output_root, "scan", "scannedScaffolds.gb"),
         output=os.path.join(output_root, "seed"),
         fastq1=args.fastq1,
         fastq2=args.fastq2,
         fastqS1=args.fastqS1,
         just_seed=args.just_seed,
+        min_flank_depth=args.min_flank_depth,
         exp_name=args.exp_name,
         clean_temps=args.clean_temps,
-        flanking_length=args.flanking,
+        flanking=args.flanking,
         method=conf.SEED_MAP_METHOD,
+        iterations=args.iterations,
         cores=args.cores,
         threads=args.threads,
         memory=args.memory,
@@ -336,6 +279,7 @@ def main(args):
         target_len=conf.SEED_TARGET_LEN,
         smalt_scoring=conf.SEED_SMALT_SCORING,
         serialize=args.serialize,
+        ref_as_contig=conf.SEED_REF_AS_CONTIG,
         mapper_args=conf.SEED_MAPPER_ARGS,
         spades_exe=conf.SPADES_EXE,
         samtools_exe=conf.SAMTOOLS_EXE,
@@ -343,38 +287,12 @@ def main(args):
         bwa_exe=conf.BWA_EXE,
         quast_exe=conf.QUAST_EXE,
         verbosity=conf.SEED_VERBOSITY)
-    # seedcmd, scangb1 = getSeedCmd(
-    #     refgb=scangb,
-    #     cluster_file=cluster,
-    #     readF=args.fastq1,
-    #     readR=args.fastq2,
-    #     readS0=args.fastqS1,
-    #     name=args.exp_name,
-    #     flanking_length=args.flanking,
-    #     cores=args.cores,
-    #     threads=args.threads,
-    #     memory=args.memory,
-    #     serialize=args.serialize,
-    #     linear=args.linear,
-    #     kmers=args.kmers,
-    #     prekmers=args.pre_kmers,
-    #     min_flanking_depth=args.min_flank_depth,
-    #     clean_temps=args.clean_temps,
-    #     iterations=args.iterations,
-    #     outroot=output_root,
-    #     other_args=other_seed_args)
-    # for command in [scancmd, selectcmd, seedcmd]:
-    #     logger.info("Running the following command")
-    #     logger.info(command)
-    #     subprocess.run(
-    #         command,
-    #         shell=sys.platform != "win32",
-    #         stdout=subprocess.PIPE,
-    #         stderr=subprocess.PIPE,
-    #         check=True)
-    rscan.main(scan_args)
-    rsel.main(select_args)
-    rseed.main(seed_args)
+    logger.info("\nrunning riboScan\n")
+    rscan.main(scan_args, logger)
+    logger.info("\nrunning riboSelect\n")
+    rsel.main(select_args, logger)
+    logger.info("\nrunning riboSeed\n")
+    rseed.main(seed_args, logger)
 
 if __name__ == "__main__":
     args = get_args()

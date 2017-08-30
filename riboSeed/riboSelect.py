@@ -17,7 +17,6 @@ import os
 import datetime
 import argparse
 import sys
-import time
 import jenkspy
 from Bio import SeqIO
 
@@ -270,8 +269,7 @@ def dict_from_jenks(data, centers, logger=None):
     return(final_dict)
 
 
-if __name__ == "__main__":
-    args = get_args()
+def main(args, logger=None):
     output_root = os.path.abspath(os.path.expanduser(args.output))
     # Create output directory only if it does not exist
     try:
@@ -281,10 +279,11 @@ if __name__ == "__main__":
         print("#Selected output directory %s exists" %
               output_root)
         sys.exit(1)
-    logger = set_up_logging(
-        verbosity=args.verbosity,
-        outfile=os.path.join(output_root, "riboSelect.log"),
-        name=__name__)
+    if logger is None:
+        logger = set_up_logging(
+            verbosity=args.verbosity,
+            outfile=os.path.join(output_root, "riboSelect.log"),
+            name=__name__)
 
     # log = sys.stderr.write  # to keep streaming clean if this goes that route
     logger.info("Current usage:\n{0}\n".format(" ".join(sys.argv[1:])))
@@ -433,3 +432,8 @@ if __name__ == "__main__":
         for i in outlines:
             sys.stdout.write(i)
             outfile.write(i)
+
+
+if __name__ == "__main__":
+    args = get_args()
+    main(args)

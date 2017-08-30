@@ -157,12 +157,12 @@ class riboSeedTestCase(unittest.TestCase):
 
     def test_getFastas(self):
         getFastas(inp=self.multifasta, output_root=self.test_dir,
-                  ext=".fa", name="snorkel", logger=logger)
+                  name="snorkel", logger=logger)
         self.assertTrue(os.path.isfile(
             os.path.join(self.test_dir, "contigs", "snorkel_1.fa")))
         with self.assertRaises(SystemExit):
             getFastas(inp="notanactualfile", output_root=self.test_dir,
-                      ext=".fa", name="snorkel", logger=logger)
+                      name="snorkel", logger=logger)
         self.to_be_removed.append(os.path.join(self.test_dir, "contigs"))
 
     def test_checkSingleFasta(self):

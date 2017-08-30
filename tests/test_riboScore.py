@@ -8,7 +8,7 @@ import logging
 import shutil
 import os
 import unittest
-import mock
+from unittest.mock import Mock
 
 # I hate this line but it works :(
 sys.path.append(os.path.join(
@@ -178,7 +178,7 @@ class riboScoreTestCase(unittest.TestCase):
     def test_check_scan_select_snag_fail1(self):
         reslist = []
         for i in [1, 0, 0]:
-            submock = mock.Mock()
+            submock = Mock()
             submock.returncode = i
             reslist.append(submock)
         with self.assertRaises(SystemExit):
@@ -188,7 +188,7 @@ class riboScoreTestCase(unittest.TestCase):
     def test_check_scan_select_snag_fail2(self):
         reslist = []
         for i in [0, 1, 0]:
-            submock = mock.Mock()
+            submock = Mock()
             submock.returncode = i
             reslist.append(submock)
         with self.assertRaises(SystemExit):
@@ -198,7 +198,7 @@ class riboScoreTestCase(unittest.TestCase):
     def test_check_scan_select_snag_nofail(self):
         reslist = []
         for i in [0, 0, 1]:
-            submock = mock.Mock()
+            submock = Mock()
             submock.returncode = i
             reslist.append(submock)
         check_scan_select_snag_retruncodes(

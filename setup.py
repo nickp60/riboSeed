@@ -166,6 +166,8 @@ setup(
              'riboSeed/riboSketch.py',
              'riboSeed/riboScore.py',
              'riboSeed/riboStack.py',
+             'riboSeed/run_riboSeed.py',
+             'riboSeed/make_riboSeed_config.py',
              "scripts/OSX_INSTALL_DEPS.sh",
              'scripts/riboBatch.sh',
              'scripts/concatToyGenome.py'],

@@ -108,14 +108,14 @@ def merge_outfiles(filelist, outfile):
         nfiles = len(filelist)
         fout = open(outfile, "a")
         # first file:
-        for line in open(filelist[0]):
-            fout.write(line)
+        with open(filelist[0]) as firstf:
+            for line in firstf:
+                fout.write(line)
         #  now the rest:
         for num in range(1, nfiles):
-            f = open(filelist[num])
-            for line in f:
-                fout.write(line)
-            f.close()  # not really needed
+            with open(filelist[num]) as otherf:
+                for line in otherf:
+                    fout.write(line)
         fout.close()
     return(outfile)
 
@@ -124,8 +124,9 @@ def BLAST_tab_to_df(path):
     colnames = ["query_id", "subject_id", "identity_perc", "alignment_length",
                 "mismatches", "gap_opens", "q_start", "q_end", "s_start",
                 "s_end", "evalue", "bit_score"]
-    raw_csv_results = pd.read_csv(
-        open(path), comment="#", sep="\t", names=colnames)
+    with open(path) as tab:
+        raw_csv_results = pd.read_csv(
+            tab, comment="#", sep="\t", names=colnames)
     return raw_csv_results
 
 
