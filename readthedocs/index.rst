@@ -32,8 +32,11 @@ Contents:
 .. toctree::
    :maxdepth: 4
 
-   README
-
+   OVERVIEW
+   INSTALLATION
+   USAGE
+   PIPELINE
+   ACCESSORY
 
 
 .. automodule::

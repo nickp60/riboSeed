@@ -35,7 +35,8 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     check_kmer_vs_reads, make_samtools_depth_cmds, \
     parse_samtools_depth_results, make_modest_spades_cmd, get_bam_AS, \
     pysam_extract_reads, define_score_minimum, bool_run_quast, \
-    make_quast_command, main, check_genbank_for_fasta
+    make_quast_command, main, check_genbank_for_fasta, \
+    filter_bam_AS
 
 from riboSeed.riboSnag import parse_clustered_loci_file
 
@@ -950,6 +951,20 @@ class riboSeedShallow(unittest.TestCase):
         with self.assertRaises(SystemExit):
             check_genbank_for_fasta(gb=self.ref_fasta, logger=logger)
 
+    @unittest.skipIf(shutil.which("samtools") is None,
+                     "samtools executable not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
+    def test_filter_bam_AS(self):
+        sourcebam = self.ref_bam_prefix + "_mapped.bam"
+        filter_bam_AS(inbam=sourcebam,
+                      outsam=os.path.join(self.test_dir, "filtered.sam"),
+                      score=130, logger=logger)
+        self.assertEqual(
+            md5(os.path.join(self.test_dir, "filtered.sam")),
+            md5(os.path.join(self.ref_dir, "test_bam_filtered_as130.sam")))
+        self.to_be_removed.append(os.path.join(self.test_dir, "filtered.sam"))
+
     def tearDown(self):
         """ delete temp files if no errors
         """
@@ -966,9 +981,9 @@ class riboSeedDeep(unittest.TestCase):
     """
     def setUp(self):
         self.test_dir = os.path.join(os.path.dirname(__file__),
-                                     "output_riboseed_tests")
+                                     "output_riboSeed_tests")
         self.spades_dir = os.path.join(os.path.dirname(__file__),
-                                       "output_riboseed_tests",
+                                       "output_riboSeed_tests",
                                        "SPAdes_results")
         self.ref_dir = os.path.join(os.path.dirname(__file__), "references")
         self.riboSeed_ref_dir = os.path.join(

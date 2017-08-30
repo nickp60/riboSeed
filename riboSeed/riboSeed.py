@@ -1067,7 +1067,16 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
     notag = 0
     written = 0
     score_list = []
-    pysam.index(inbam)
+    try:
+        pysam.index(inbam)
+    except pysam.utils.SamtoolsError:
+        sorted_bam = os.path.join(os.path.dirname(inbam), "temp_sorted.bam")
+        pysam.sort("-o", sorted_bam, inbam)
+        inbam = sorted_bam
+        try:
+            pysam.index(inbam)
+        except pysam.utils.SamtoolsError:
+            raise ValueError("Your bam file is corrupted! No good")
     bam = pysam.AlignmentFile(inbam, "rb")
     osam = pysam.Samfile(outsam, 'wh', template=bam)
     for read in bam.fetch():
