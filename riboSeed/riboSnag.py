@@ -31,6 +31,7 @@ try:
     mpl.use('Agg')
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
+    mpl.rc('font', family='sans-serif')
     PLOT = True
 except Exception as e:  # most likely an ImportError, but Im not taking chances
     print(e)
@@ -180,6 +181,15 @@ def get_args():  # pragma: no cover
                           help="1 = debug(), 2 = info(), 3 = warning(), " +
                           "4 = error() and 5 = critical(); " +
                           "default: %(default)s")
+    optional.add_argument("--title",
+                          help="String for plot title;" +
+                          " uses matplotlib math processing for italics: " +
+                          "https://matplotlib.org/users/mathtext.html " +
+                          "default: %(default)s",
+                          action='store',
+                          default=str(
+                              "'Shannon Entropy by Position\\n<--seq_name>'"),
+                          dest="title")
     optional.add_argument("--clobber",
                           help="overwrite previous output files" +
                           "default: %(default)s", action='store_true',
@@ -1005,10 +1015,16 @@ def get_rec_from_generator(recordID, gen, method=None):
 
 
 def main(clusters, gb_path, logger, verbose, no_revcomp,
-         output, circular, flanking, prefix_name):
+         output, circular, flanking, prefix_name, args):
     get_rev_comp = no_revcomp is False  # kinda clunky
     flanking_regions_output = os.path.join(output, "flanking_regions_output")
-    os.makedirs(flanking_regions_output)
+    try:
+        os.makedirs(flanking_regions_output)
+    except FileExistsError:
+        if args.clobber:
+            pass
+        else:
+            sys.exit(1)
     extracted_regions = []
     logger.debug(clusters)
     for cluster in clusters:  # for each cluster of loci
@@ -1077,7 +1093,13 @@ def main(clusters, gb_path, logger, verbose, no_revcomp,
         ####  make this a cmdline option, maybe
         do_blast = True
         if do_blast:
-            os.makedirs(graded_output)
+            try:
+                os.makedirs(graded_output)
+            except FileExistsError:
+                if args.clobber:
+                    pass
+                else:
+                    sys.exit(1)
             for i in range(0, flanking + 100, 100):
                 short_rec = SeqRecord(
                     #  needs the -1 to avoid the  index-by-negative-zero-error
@@ -1343,13 +1365,14 @@ if __name__ == "__main__":
         circular=args.circular,
         prefix_name=args.name,
         no_revcomp=args.no_revcomp,
+        args=args
     )
 
     # make MSA and calculate entropy
     # reminder, PLOT is set by matplotlib avail
     if not args.just_extract and PLOT:
         if args.clobber:
-            logger.error("Cannot safely check SMA when --clobber is used!")
+            logger.error("Cannot safely check MSA when --clobber is used!")
             sys.exit(1)
 
         unaligned_seqs = combine_contigs(contigs_dir=output_root,
@@ -1404,14 +1427,13 @@ if __name__ == "__main__":
             os.path.basename(
                 os.path.splitext(
                     args.genbank_genome)[0])
-        title = str("Shannon Entropy by Position\n" +
-                    label_name)
-
+        # title = str("Shannon Entropy by Position\n" +
+        #             label_name)
         return_code = plot_scatter_with_anno(
             data=seq_entropy,
             consensus_cov=consensus_cov,
             names=["Position", "Entropy"],
-            title=title,
+            title=args.title,
             anno_list=annos,
             output_prefix=os.path.join(
                 output_root,
