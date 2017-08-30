@@ -820,7 +820,7 @@ def get_rec_from_generator(recordID, gen, method=None):
     raise ValueError("no record found matching record id %s!" % recordID)
 
 
-def get_smalt_full_install_cmds(smalt_exe, logger=None):
+def get_smalt_full_install_cmds(smalt_exe, logger=None):  # pragma: no cover
     """ TODO replace this with swg tests for bambamc installation
     In the meantime, this looks for the files included with riboSeed
     (a bam file, reference, index, and fastq file), and generates the cmds
@@ -884,8 +884,8 @@ def test_smalt_bam_install(
     os.remove(str(test_index + ".smi"))
 
 
-def estimate_distances_smalt(outfile, smalt_exe, ref_genome,
-                             fastq1, fastq2, cores=None, logger=None):
+def estimate_distances_smalt(outfile, smalt_exe, ref_genome, fastq1, fastq2,
+                             cores=None, logger=None):  # pragma: no cover
     """Given fastq pair and a reference, returns path to distance estimations
     used by smalt to help later with mapping. if one already exists,
     return path to it.
@@ -975,7 +975,7 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
                             genome_fasta,
                             score_minimum=None,
                             scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
-                            step=3, k=5, logger=None):
+                            step=3, k=5, logger=None):  # pragma: no cover
     """run smalt based on pased args
     #TODO rework this to read libtype of ngslib object
     requires at least paired end input, but can handle an additional library
@@ -1136,27 +1136,13 @@ def sam_to_bam(samtools_exe, bam, sam, logger=None):
                    check=True)
 
 
-def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
-                          samtools_exe, bwa_exe, genome_fasta,
-                          score_minimum=None,
-                          add_args='-L 0,0 -U 0 -a', logger=None):
-    """ Map to bam.  maps PE and S reads separately,
+def make_bwa_map_cmds(mapping_ob, ngsLib, cores,
+                      samtools_exe, bwa_exe, genome_fasta,
+                      add_args='-L 0,0 -U 0 -a', logger=None):
+    """ make bwa sys commands. maps PE and S reads separately,
     then combines them into a X_mapped.bam file
-    TODO:: break up into execution and comamnd generation
+    return a list of commands to run.
     """
-
-    logger.info("Mapping reads to reference genome with BWA")
-    # check min score
-    if score_minimum is not None:
-        score_min = score_minimum
-    else:
-        logger.debug(
-            "no bwa mapping score minprovided; default is 1/2 read " +
-            "length or 50, whichever is greater.")
-        # hard minimum of 50
-        score_min = max(int(round(float(ngsLib.readlen) / 2.0)),
-                        50)
-    logger.debug("using a score minimum of %i", score_min)
     # index the reference
     cmdindex = str("{0} index {1}").format(
         bwa_exe, genome_fasta)
@@ -1193,11 +1179,12 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                          samtools_exe,  # 5
                                          mapping_ob.s_map_bam)  # 5)
         # merge together the singleton and pe reads, if there are any
-        if "s" in ngsLib.libtype:
+        if "s_1" == ngsLib.libtype:
             cmdmergeS = str(
                 "{0} view -bh {1} > {2}"
             ).format(samtools_exe, mapping_ob.s_map_bam, mapping_ob.mapped_bam_unfiltered)
         else:
+            assert ngsLib.libtype == "pe_s", "error parsing libtype"
             cmdmergeS = '{0} merge -f {3} {1} {2}'.format(
                 samtools_exe, mapping_ob.pe_map_bam,
                 mapping_ob.s_map_bam, mapping_ob.mapped_bam_unfiltered)
@@ -1209,8 +1196,24 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                        "{2}").format(samtools_exe, mapping_ob.pe_map_bam,
                                      mapping_ob.mapped_bam_unfiltered)
         bwacommands.extend([cmdmerge])
+    return bwacommands
+
+
+def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
+                          samtools_exe, bwa_exe, genome_fasta,
+                          score_minimum=None,
+                          add_args='-L 0,0 -U 0 -a', logger=None):
+    """ Map to bam.  maps PE and S reads separately,
+    then combines them into a X_mapped.bam file
+    TODO:: break up into execution and comamnd generation
+    """
+    logger.info("Mapping reads to reference genome with BWA")
+    bwacommands = make_bwa_map_cmds(mapping_ob, ngsLib, cores,
+                                    samtools_exe, bwa_exe, genome_fasta,
+                                    add_args='-L 0,0 -U 0 -a', logger=None)
     logger.info("running BWA:")
     logger.debug("with the following BWA commands:")
+
     for i in bwacommands:
         logger.debug(i)
         subprocess.run(i, shell=sys.platform != "win32",
@@ -1232,6 +1235,18 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     logger.info(str("Combined mapped reads: " + combined_map_string))
     # extract overall percentage as a float
     map_percentage = float(combined_map_string.split("(")[1].split("%")[0])
+
+    # check min score
+    if score_minimum is not None:
+        score_min = score_minimum
+    else:
+        logger.debug(
+            "no bwa mapping score minprovided; default is 1/2 read " +
+            "length or 50, whichever is greater.")
+        # hard minimum of 50
+        score_min = max(int(round(float(ngsLib.readlen) / 2.0)), 50)
+    logger.debug("using a score minimum of %i", score_min)
+
     logger.debug("filtering mapped reads with an AS score minimum of %i",
                  score_min)
     score_list = filter_bam_AS(inbam=mapping_ob.mapped_bam_unfiltered,

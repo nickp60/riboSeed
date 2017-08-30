@@ -35,8 +35,8 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     check_kmer_vs_reads, make_samtools_depth_cmds, \
     parse_samtools_depth_results, make_modest_spades_cmd, get_bam_AS, \
     pysam_extract_reads, define_score_minimum, bool_run_quast, \
-    make_quast_command, main, check_genbank_for_fasta, \
-    filter_bam_AS
+    make_quast_command, check_genbank_for_fasta, \
+    filter_bam_AS, make_bwa_map_cmds
 
 from riboSeed.riboSnag import parse_clustered_loci_file
 
@@ -964,6 +964,113 @@ class riboSeedShallow(unittest.TestCase):
             md5(os.path.join(self.test_dir, "filtered.sam")),
             md5(os.path.join(self.ref_dir, "test_bam_filtered_as130.sam")))
         self.to_be_removed.append(os.path.join(self.test_dir, "filtered.sam"))
+
+    def test_make_bwa_map_cmds_pe(self):
+        ngs_ob = NgsLib(
+            name="test",
+            master=False,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.smalt_exe)
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        test_command_list = make_bwa_map_cmds(
+            mapping_ob=testmapping, ngsLib=ngs_ob, cores=4,
+            samtools_exe="samtools", bwa_exe="bwa",
+            genome_fasta=self.ref_fasta,
+            add_args='-L 0,0 -U 0 -a', logger=logger)
+        ref_cmds = [
+            "bwa index " + self.ref_fasta,  # index
+            "bwa mem -t 4 -L 0,0 -U 0 -a -k 15 {0} {1} {2} | samtools view -bh - | samtools sort -o {3} - ".format(
+                self.ref_fasta,  # 0
+                self.ref_Ffastq,  # 1
+                self.ref_Rfastq,  # 2
+                testmapping.pe_map_bam),  # map
+            "samtools view -bh {0} > {1}".format(
+                testmapping.pe_map_bam,
+                testmapping.mapped_bam_unfiltered)  # copy/merge
+        ]
+
+        for i, cmd in enumerate(test_command_list):
+            self.assertEqual(cmd, ref_cmds[i])
+
+    def test_make_bwa_map_cmds_s(self):
+        ngs_ob = NgsLib(
+            name="test",
+            master=False,
+            readS0=self.ref_Ffastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.smalt_exe)
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        test_command_list = make_bwa_map_cmds(
+            mapping_ob=testmapping, ngsLib=ngs_ob, cores=4,
+            samtools_exe="samtools", bwa_exe="bwa",
+            genome_fasta=self.ref_fasta,
+            add_args='-L 0,0 -U 0 -a', logger=logger)
+        ref_cmds = [
+            "bwa index " + self.ref_fasta,  # index
+            "bwa mem -t 4 -L 0,0 -U 0 -a -k 15 {0} {1} | samtools view -bh - | samtools sort -o {2} - ".format(
+                self.ref_fasta,  # 0
+                self.ref_Ffastq,  # 1
+                testmapping.s_map_bam),  # map
+            "samtools view -bh {0} > {1}".format(
+                testmapping.s_map_bam,
+                testmapping.mapped_bam_unfiltered)  # copy/merge
+        ]
+
+        for i, cmd in enumerate(test_command_list):
+            self.assertEqual(cmd, ref_cmds[i])
+
+    def test_make_bwa_map_cmds_pes(self):
+        ngs_ob = NgsLib(
+            name="test",
+            master=False,
+            readS0=self.ref_Ffastq,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.smalt_exe)
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        test_command_list = make_bwa_map_cmds(
+            mapping_ob=testmapping, ngsLib=ngs_ob, cores=4,
+            samtools_exe="samtools", bwa_exe="bwa",
+            genome_fasta=self.ref_fasta,
+            add_args='-L 0,0 -U 0 -a', logger=logger)
+        ref_cmds = [
+            "bwa index " + self.ref_fasta,  # index
+            "bwa mem -t 4 -L 0,0 -U 0 -a -k 15 {0} {1} {2} | samtools view -bh - | samtools sort -o {3} - ".format(
+                self.ref_fasta,  # 0
+                self.ref_Ffastq,  # 1
+                self.ref_Rfastq,  # 2
+                testmapping.pe_map_bam),  # map
+            "bwa mem -t 4 -L 0,0 -U 0 -a -k 15 {0} {1} | samtools view -bh - | samtools sort -o {2} - ".format(
+                self.ref_fasta,  # 0
+                self.ref_Ffastq,  # 1
+                testmapping.s_map_bam),  # map
+            "samtools merge -f {0} {1} {2}".format(
+                testmapping.mapped_bam_unfiltered,
+                testmapping.pe_map_bam,
+                testmapping.s_map_bam)  # copy/merge
+        ]
+
+        for i, cmd in enumerate(test_command_list):
+            self.assertEqual(cmd, ref_cmds[i])
+
 
     def tearDown(self):
         """ delete temp files if no errors
