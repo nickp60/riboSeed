@@ -1,27 +1,15 @@
-# RiboSeed Pipeline - especially quickstart
+# riboSeed - especially quickstart
 Sheesh, too impatient for the quickstart?
 
 ## Overview
 No time, on to the examples!  *Schnell!*
 
 ## Minimal example
-The pseudogenome was constructed from the 7 rDNAs separated by several kb of flanking DNA.  If can be found under ```./manuscript_results/simulated_genome/concatenated_seq.fasta```
-Annotate rDNA regions with riboScan.py
-```
-riboScan.py ./riboSeed/integration_test/concatenated_seq.fasta -o ./scanned_output/ -k bac -t .5
-```
-Then, using riboSelect:
+The pseudogenome was constructed from the 7 rDNAs separated by several kb of flanking DNA.  If can be found under `./riboSeed/integration_test/concatenated_seq.fasta`.  If you have installed using setuptools, the `integration_test` folder will be installed in the site-packages dir, such as `/venv-riboSeed/lib/python3.5/site-packages/riboSeed/integration_data/`.
+
+Two read files can be found in the same directory.
+
 
 ```
-riboSelect.py ./scanned_output/scannedScaffolds.gb -o ./select_output/
-```
-
-No errors? riboSeed time!
-```
-riboSeed.py ./select_output/riboSelect_grouped_loci.txt \
-            -F ./riboSeed/integration_test/concatenated_seq1.fq \
-            -R ./riboSeed/integration_test/concatenated_seq2.fq \
-            -r ./scanned_output/scannedScaffolds.gb \
-            -o ./test_toy_reads/ -v 1  \
-            --python2_7_exe /usr/bin/python2.7
+python3.5 ./riboSeed/run_riboSeed.py ./riboSeed/integration_data/concatenated_seq.fasta -F ./riboSeed/integration_data/test_reads1.fq -R ./riboSeed/integration_data/test_reads2.fq -o ./test1/ -v 1
 ```

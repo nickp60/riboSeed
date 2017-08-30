@@ -2228,7 +2228,7 @@ def subprocess_run_list(cmdlist, hard=False, logger=None):
     return 0
 
 
-def copyToHandyDir(outdir, pre, seedGenome, hard=False, logger=None):
+def copyToHandyDir(outdir, pre, ref_gb, seedGenome, hard=False, logger=None):
     """ copy the resulting contigs
     """
     assert logger is not None, "Must use logging"
@@ -2238,7 +2238,7 @@ def copyToHandyDir(outdir, pre, seedGenome, hard=False, logger=None):
                      "final_de_fere_novo_assembly", "contigs.fasta"),
         os.path.join(seedGenome.output_root,
                      "final_de_novo_assembly", "contigs.fasta"),
-        args.reference_genbank]
+        ref_gb]
     new_names = [pre + "_de_fere_novo_contigs.fasta",
                  pre + "_de_novo_contigs.fasta",
                  pre + ".gb"]
@@ -3054,6 +3054,7 @@ def main(args, logger=None):
     # make dir for easy downloading from cluster
     copyToHandyDir(outdir=os.path.join(output_root, "mauve"),
                    pre=args.exp_name,
+                   ref_gb=args.reference_genbank,
                    seedGenome=seedGenome,
                    hard=False, logger=logger)
     # Report that we've finished

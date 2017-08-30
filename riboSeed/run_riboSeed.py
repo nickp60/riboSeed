@@ -9,9 +9,11 @@ import os
 import shutil
 import subprocess
 import multiprocessing
-from pyutilsnrw.utils3_5 import set_up_logging
 
+from pyutilsnrw.utils3_5 import set_up_logging
 from argparse import Namespace
+# from make_riboSeed_config import make_config_header, write_config, \
+#     append_config
 
 try:  # development mode
     from _version import __version__
@@ -104,7 +106,7 @@ def get_args():  # pragma: no cover
                           default="21,33,55,77,99,127", type=str,
                           help="kmers used for final assembly" +
                           ", separated by commas such as" +
-                          "21,33,55,77,99,127 . Can be set to 'auto', where " +
+                          "21,33,55,77,99,127. Can be set to 'auto', where " +
                           "SPAdes chooses.  We ensure kmers are not " +
                           "too big or too close to read length" +
                           "; default: %(default)s")
@@ -115,7 +117,7 @@ def get_args():  # pragma: no cover
                           "separated bt commas" +
                           "; default: %(default)s")
     optional.add_argument("-d", "--min_flank_depth",
-                          help="a subassembly will not be performed if this " +
+                          help="a subassembly won't be performed if this " +
                           "minimum depth is not achieved on both the 3' and" +
                           "5' end of the pseudocontig. " +
                           "default: %(default)s",
@@ -123,8 +125,8 @@ def get_args():  # pragma: no cover
     optional.add_argument("--clean_temps", dest='clean_temps',
                           default=False, action="store_true",
                           help="if --clean_temps, mapping files will be " +
-                          "removed once they are no no longer needed during " +
-                          "the mapping iterations to save space; " +
+                          "removed once they are no no longer needed during" +
+                          " the mapping iterations to save space; " +
                           "default: %(default)s")
     optional.add_argument("-i", "--iterations", dest='iterations',
                           action="store",
@@ -155,8 +157,8 @@ def get_args():  # pragma: no cover
                           action="store",
                           default=1, type=int,
                           choices=[1, 2, 4],
-                          help="if your cores are hyperthreaded, set number " +
-                          "threads to the number of threads per processer." +
+                          help="if your cores are hyperthreaded, set number" +
+                          " threads to the number of threads per processer." +
                           "If unsure, see 'cat /proc/cpuinfo' under 'cpu " +
                           "cores', or 'lscpu' under 'Thread(s) per core'." +
                           ": %(default)s")
@@ -164,7 +166,7 @@ def get_args():  # pragma: no cover
                           action="store_true",
                           default=False,
                           help="if --serialize, runs seeding and assembly " +
-                          "without multiprocessing. This is recommended for " +
+                          "without multiprocessing. We recommend this for " +
                           "machines with less than 8GB RAM: %(default)s")
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,

@@ -5,6 +5,27 @@
 
 Welcome to riboSeed's documentation!
 ====================================
+                 |ribologo|
+
+Impatient? See our `Quickstart Guide <https://github.com/nickp60/riboSeed/blob/master/quickstart.md>`__
+
+A brief overview of the theory can be found
+`here <https://nickp60.github.io/riboSeed.html>`__.
+
+Preprint of the riboSeed manuscript can be found
+`here <http://www.biorxiv.org/content/early/2017/07/14/159798>`__;
+comments welcome!
+
+Description
+-----------
+
+riboSeed is an supplemental assembly refinement method to try to address
+the issue of multiple ribosomal regions in a genome, as these create
+repeates unresolvable by short read sequencing. It takes advantage of
+the fact that while each region is identical, the regions flanking are
+unique, and therefore can potentially be used to seed an assembly in
+such a way that rDNA regions are bridged.
+
 
 Contents:
 
@@ -12,6 +33,8 @@ Contents:
    :maxdepth: 4
 
    README
+
+
 
 .. automodule::
    :members:
@@ -25,3 +48,7 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+.. |ribologo| image:: logo_1.svg
+   :target: https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.svg
