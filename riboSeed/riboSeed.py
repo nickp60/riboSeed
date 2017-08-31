@@ -2371,10 +2371,6 @@ def plotAsScores(score_list, score_min, outdir, logger=None):
     fig.savefig(str(basename + '.png'), dpi=(200))
     fig.savefig(str(basename + '.pdf'), dpi=(200))
     logger.info("Plotting alignment score of mapping:")
-    # printPlot(data=score_list, line=score_min, ymax=30, xmax=60, tick=.2,
-    #           fill=True,
-    #           title="Average alignment Scores (y) by sorted read index (x)",
-    #           logger=logger)
     logger.info("Filled area represents the reads retained after filtering. " +
                 "If it looks like " +
                 "this filtering threshold is inapporpriate, consider " +
@@ -2469,6 +2465,11 @@ def define_score_minimum(args, readlen, iteration, logger):
 
 
 def check_genbank_for_fasta(gb, logger=None):
+    """ Ensure user has not provided a fasta by accident
+    Yes, its a dumb function, but it was neccsary, given the amount of times
+    I would get partway through debugging some error only to realize I
+    used a genbank that was actually a fasta
+    """
     assert logger is not None, "must use logging"
     with open(gb) as ingb:
         for idx, line in enumerate(ingb):

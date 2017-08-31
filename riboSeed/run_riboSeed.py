@@ -178,31 +178,47 @@ def get_args():  # pragma: no cover
     return args
 
 
-def run_make_config(output_root, logger=None):
+def make_make_config_cmd(output_root, make_config_exe, logger=None):
+    """ make system command to call the make_riboSeed_config.py script"
+    """
     assert logger is not None, "must use logging"
     cmd = "{0} {1} -o {2}".format(
         sys.executable,
-        shutil.which("make_riboSeed_config.py"),
+        make_config_exe,
         output_root)
     logger.debug(cmd)
-    result = subprocess.run(
-        cmd,
-        shell=sys.platform != "win32",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True)
+    return cmd
+
+
+def parse_make_config_result(result, logger=None):
+    """ gets path to the newly-created config file
+    """
     logger.debug(result)
     conf = result.stdout.decode("utf-8").split("\n")[0].split("\t")
     assert len(conf) == 1, "make_riboSeed_config.py writes too much to stdout!"
     return(conf[0])
 
 
-def parse_config(config_file, output_root, logger=None):
+def detect_or_create_config(config_file, output_root, logger=None):
     assert logger is not None, "must use logging"
     if not os.path.isfile(config_file):
-        config_file = run_make_config(output_root, logger)
+        config_cmd = make_make_config_cmd(
+            output_root,
+            make_config_exe=shutil.which("make_riboSeed_config.py"),
+            logger=logger)
+        result = subprocess.run(
+            config_cmd,
+            shell=sys.platform != "win32",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True)
+        config_file = parse_make_config_result(result, logger=logger)
     else:
         pass
+    return config_file
+
+
+def parse_config(config_file, logger=None):
     import importlib.util
     spec = importlib.util.spec_from_file_location(
         os.path.splitext(os.path.basename(config_file))[0],
@@ -218,8 +234,7 @@ def main(args):
     try:
         os.makedirs(output_root)
     except FileExistsError:
-         # leading comment char'#' added for stream output usage
-        print("#Selected output directory %s exists" %
+        print("Selected output directory %s exists" %
               output_root)
         sys.exit(1)
     log_path = os.path.join(output_root, "run_riboSeed.log")
@@ -229,7 +244,11 @@ def main(args):
     if args.cores is None:
         args.cores = multiprocessing.cpu_count()
         logger.info("Using %i cores", args.cores)
-    conf = parse_config(args.config, output_root, logger=logger)
+
+    args.config = detect_or_create_config(
+        config_file=args.config,
+        output_root=output_root, logger=logger)
+    conf = parse_config(args.config, logger=logger)
     scan_args = Namespace(
         contigs=args.contigs,
         output=os.path.join(output_root, "scan"),
