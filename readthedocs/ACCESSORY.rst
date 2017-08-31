@@ -13,6 +13,7 @@ easy for humans to read, and the other that can be easily combined with
 hundreds like it to make various types of graphs etc.
 
 ::
+
    usage: riboScore.py [-h] [-o OUTPUT] [-l FLANKING] [-p MIN_PERCENT]
                     [-f ASSEMBLY_EXT] [-g REF_EXT] [-F] [-v {1,2,3,4,5}]
                     indir

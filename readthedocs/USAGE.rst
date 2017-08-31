@@ -8,6 +8,7 @@ The pseudogenome was constructed from the 7 rDNAs separated by several kb of fla
 
 Two read files can be found in the same directory.
 
+To run the whole riboSeed pipline, use the following command:
 
 ::
 
