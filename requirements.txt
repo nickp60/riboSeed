@@ -6,5 +6,5 @@ coverage==4.4.1
 jenkspy==0.1.4
 pyutilsnrw==0.1.0
 matplotlib==1.5.3
-pandas==0.20.0
+pandas==0.20.1
 #heatmapcluster>=0.1.2
