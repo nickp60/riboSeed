@@ -8,8 +8,6 @@ python:
 - '3.6'
 before install:
 - echo "$PATH"
-- wget http://darlinglab.org/mauve/snapshots/2015/2015-02-13/linux-x64/mauve_linux_snapshot_2015-02-13.tar.gz
-- tar xf mauve_linux_snapshot_2015-02-13.tar.gz
 install:
 - pip install coveralls
 - pip install -r requirements.txt

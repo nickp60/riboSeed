@@ -129,16 +129,17 @@ class riboSketchTestCase(unittest.TestCase):
             bufferlen=1000,
             breakwidth=100,
             aspect=.4,
-            names=["reference.gb", "kleb_de_fere_novo.fasta"],
-            #names=["scannedScaffold.gb", "kleb_de_fere_novo.fasta"],
-            title="Shannon Entropy by Position",
+            names=["reference", "kleb_de_fere_novo"],
+            title="",
             output_prefix=os.path.join(tempout, "PrettyMauve"))
         self.assertEqual(md5(self.ref_png),
                          md5(os.path.join(tempout, "PrettyMauve.png")))
 
     @unittest.skipIf(not os.path.exists(
-        os.path.join("..",
-                     os.path.dirname(shutil.which("mauveAligner")),
+        os.path.join(
+            os.path.dirname(
+                os.path.dirname(
+                    shutil.which("mauveAligner"))),
                      "Mauve.jar")),
                      "mauve jar not found, skipping." +
                      "If this isnt an error from travis, you " +
