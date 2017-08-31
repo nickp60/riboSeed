@@ -135,15 +135,17 @@ class riboSketchTestCase(unittest.TestCase):
         self.assertEqual(md5(self.ref_png),
                          md5(os.path.join(tempout, "PrettyMauve.png")))
 
-    @unittest.skipIf(not os.path.exists(
-        os.path.join(
-            os.path.dirname(
-                os.path.dirname(
-                    shutil.which("mauveAligner"))),
-                     "Mauve.jar")),
-                     "mauve jar not found, skipping." +
-                     "If this isnt an error from travis, you " +
-                     "probably should install it")
+    # @unittest.skipIf(not os.path.exists(
+    #     os.path.join(
+    #         os.path.dirname(
+    #             os.path.dirname(
+    #                 shutil.which("mauveAligner"))),
+    #                  "Mauve.jar")),
+    #                  "mauve jar not found, skipping." +
+    #                  "If this isnt an error from travis, you " +
+    #                  "probably should install it")
+    @unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+                     "Skipping this test on Travis CI.")
     def test_main(self):
         tempout = os.path.join(self.test_dir, "main_out")
         self.args = Namespace(indir=self.mauve_res_dir,
