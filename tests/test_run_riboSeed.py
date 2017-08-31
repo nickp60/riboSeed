@@ -55,6 +55,8 @@ class riboSketchTestCase(unittest.TestCase):
             sys.executable,
             shutil.which("make_riboSeed_config.py"),
             self.test_dir)
+        ref_cmd = 'echo "{0}"'.format(
+            os.path.join(self.test_dir, "test_config.py"))
         result = subprocess.run(
             ref_cmd,
             shell=sys.platform != "win32",
@@ -63,8 +65,8 @@ class riboSketchTestCase(unittest.TestCase):
             check=True)
         path = parse_make_config_result(result, logger)
         self.assertEqual(path, os.path.join(self.test_dir, "test_config.py"))
-        self.to_be_removed.append(
-            os.path.join(self.test_dir, "test_config.py"))
+        # self.to_be_removed.append(
+        #     os.path.join(self.test_dir, "test_config.py"))
 
     def test_detect_or_create_config(self):
         """ can we get the path to our config file back if it exists
