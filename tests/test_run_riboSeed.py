@@ -13,8 +13,7 @@ import subprocess
 sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
-from riboSeed.run_riboSeed import make_make_config_cmd, \
-    detect_or_create_config, parse_config, parse_make_config_result
+from riboSeed.run_riboSeed import detect_or_create_config, parse_config
 
 logger = logging
 
@@ -37,38 +36,7 @@ class riboSketchTestCase(unittest.TestCase):
         os.makedirs(self.test_dir, exist_ok=True)
         self.to_be_removed = []
 
-    def test_make_make_config_cmd(self):
-        """ can we construct a basic make_riboSeed_config cmd
-        """
-        test_cmd = make_make_config_cmd(
-            output_root="~/here/",
-            make_config_exe="make_me_a_config_pronto.py",
-            logger=logger)
-        ref_cmd = "{0} make_me_a_config_pronto.py -o ~/here/".format(
-            sys.executable)
-        self.assertEqual(ref_cmd, test_cmd)
-
-    def test_parse_make_config_result(self):
-        """ can we correctly read the stdout from make_riboSeed_config
-        """
-        ref_cmd = "{0} {1} -n test_config -o {2}".format(
-            sys.executable,
-            shutil.which("make_riboSeed_config.py"),
-            self.test_dir)
-        ref_cmd = 'echo "{0}"'.format(
-            os.path.join(self.test_dir, "test_config.py"))
-        result = subprocess.run(
-            ref_cmd,
-            shell=sys.platform != "win32",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True)
-        path = parse_make_config_result(result, logger)
-        self.assertEqual(path, os.path.join(self.test_dir, "test_config.py"))
-        # self.to_be_removed.append(
-        #     os.path.join(self.test_dir, "test_config.py"))
-
-    def test_detect_or_create_config(self):
+    def test_detect_or_create_config_exist(self):
         """ can we get the path to our config file back if it exists
         """
         path = detect_or_create_config(
@@ -77,6 +45,18 @@ class riboSketchTestCase(unittest.TestCase):
             output_root="test", logger=logger)
         self.assertEqual(
             path, os.path.join(self.run_ref_dir, "sample_config.py"))
+
+    def test_detect_or_create_config_noexist(self):
+        """ can we get the path to our config file back if it exists
+        """
+        path = detect_or_create_config(
+            config_file=os.path.join(
+                self.run_ref_dir, "not_an_existing_sample_config.py"),
+            output_root=self.test_dir,
+            newname="lookanewconfig",
+            logger=logger)
+        self.assertEqual(
+            path, os.path.join(self.test_dir, "lookanewconfig.py"))
 
     def test_parse_config(self):
         """ can we read in values from our sample config file

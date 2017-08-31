@@ -567,8 +567,7 @@ def calc_Shannon_entropy(matrix):
 
 def calc_entropy_msa(msa_path):
     """givn a path to an MSA in FASTA format, this gets the
-    $j$ has entropy $H(j)$ such that
-    $H(j) = -sum_{i=(A,C,T,G)} p_i(j) log p_i(j)$
+    entropy of each position in batches, so as to not gobble memory
     return list
     """
     batch_size = 1000  # read seequences in chunks this long

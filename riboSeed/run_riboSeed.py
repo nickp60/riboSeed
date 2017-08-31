@@ -25,6 +25,7 @@ sys.path.append(os.path.join('..', 'riboSeed'))
 import riboScan as rscan
 import riboSelect as rsel
 import riboSeed as rseed
+import make_riboSeed_config as mrc
 
 
 def get_args():  # pragma: no cover
@@ -53,8 +54,8 @@ def get_args():  # pragma: no cover
     optional.add_argument("-n", "--experiment_name", dest='exp_name',
                           action="store",
                           help="prefix for results files; " +
-                          "default: %(default)s",
-                          default="riboSeed", type=str)
+                          "default: inferred",
+                          default=None, type=str)
     # riboScan args
     optional.add_argument("-K", "--Kingdom", dest='kingdom',
                           action="store",
@@ -76,6 +77,15 @@ def get_args():  # pragma: no cover
                           "specific feature with fewest hits", default='',
                           type=str, dest="clusters")
     # riboSeed args
+    optional.add_argument("-C", "--cluster_file",
+                          help="clustered_loci file output from riboSelect;"
+                          "this is created by default from run_riboSeed, "
+                          "but if you don't agree with the operon structure "
+                          "predicted by riboSelect, you can use your " +
+                          "alternate clustered_loci file. " +
+                          "default: %(default)s",
+                          default=None,
+                          type=str, dest="cluster_file")
     optional.add_argument("-F", "--fastq1", dest='fastq1', action="store",
                           help="forward fastq reads, can be compressed",
                           type=str, default=None)
@@ -178,41 +188,18 @@ def get_args():  # pragma: no cover
     return args
 
 
-def make_make_config_cmd(output_root, make_config_exe, logger=None):
-    """ make system command to call the make_riboSeed_config.py script"
+def detect_or_create_config(config_file, output_root,
+                            newname=None, logger=None):
+    """ return path to config file, or die trying.
+    if a config file exists, just return the path.  If not,
+    create it using "make_riboSeed_config.py"
     """
-    assert logger is not None, "must use logging"
-    cmd = "{0} {1} -o {2}".format(
-        sys.executable,
-        make_config_exe,
-        output_root)
-    logger.debug(cmd)
-    return cmd
-
-
-def parse_make_config_result(result, logger=None):
-    """ gets path to the newly-created config file
-    """
-    logger.debug(result)
-    conf = result.stdout.decode("utf-8").split("\n")[0].split("\t")
-    assert len(conf) == 1, "make_riboSeed_config.py writes too much to stdout!"
-    return(conf[0])
-
-
-def detect_or_create_config(config_file, output_root, logger=None):
     assert logger is not None, "must use logging"
     if not os.path.isfile(config_file):
-        config_cmd = make_make_config_cmd(
-            output_root,
-            make_config_exe=shutil.which("make_riboSeed_config.py"),
-            logger=logger)
-        result = subprocess.run(
-            config_cmd,
-            shell=sys.platform != "win32",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True)
-        config_file = parse_make_config_result(result, logger=logger)
+        make_config_args = Namespace(
+            outdir=output_root,
+            name=newname)
+        config_file = mrc.main(make_config_args)
     else:
         pass
     return config_file
@@ -249,6 +236,17 @@ def main(args):
         config_file=args.config,
         output_root=output_root, logger=logger)
     conf = parse_config(args.config, logger=logger)
+
+    # if no name given, infer from the name of the contigs file
+    experiment_name = args.exp_name if args.exp_name is not None else \
+        os.path.basename(os.path.splitext(args.contigs)[0])
+
+    if args.cluster_file is None:
+        cluster_txt_file = os.path.join(
+            output_root, "select", "riboSelect_grouped_loci.txt")
+    else:
+        cluster_txt_file = args.cluster_file
+
     scan_args = Namespace(
         contigs=args.contigs,
         output=os.path.join(output_root, "scan"),
@@ -271,8 +269,7 @@ def main(args):
         verbosity=conf.SELECT_VERBOSITY,
         debug=False)
     seed_args = Namespace(
-        clustered_loci_txt=os.path.join(
-            output_root, "select", "riboSelect_grouped_loci.txt"),
+        clustered_loci_txt=cluster_txt_file,
         reference_genbank=os.path.join(
             output_root, "scan", "scannedScaffolds.gb"),
         output=os.path.join(output_root, "seed"),
@@ -281,7 +278,7 @@ def main(args):
         fastqS1=args.fastqS1,
         just_seed=args.just_seed,
         min_flank_depth=args.min_flank_depth,
-        exp_name=args.exp_name,
+        exp_name=experiment_name,
         clean_temps=args.clean_temps,
         flanking=args.flanking,
         method=conf.SEED_MAP_METHOD,
@@ -310,8 +307,13 @@ def main(args):
         verbosity=conf.SEED_VERBOSITY)
     logger.info("\nrunning riboScan\n")
     rscan.main(scan_args, logger)
-    logger.info("\nrunning riboSelect\n")
-    rsel.main(select_args, logger)
+    if args.cluster_file is not None:
+        logger.info(
+            "Skipping riboSelect, using user-supplied cluster file: %s",
+            args.cluster_file)
+    else:
+        logger.info("\nrunning riboSelect\n")
+        rsel.main(select_args, logger)
     logger.info("\nrunning riboSeed\n")
     rseed.main(seed_args, logger)
 

@@ -8,11 +8,44 @@ Assessment
 ~~~
 Suppose you have a whole bunch of assemblies to assess. The most rigorous way of checking the assemblies would be to use Mauve (or a similar whole genome alignment visualizer tool) for the job, and manually check the quality of each assembly, listening to the ends of the contigs, seeking one-ness with the data.  Thats all well and good if you are (a) independantly wealthy and enjoy doing this sort of thing, (b) seeking a meditative state through mindless clicking, or (c) an undergrad assistant, but for the rest of us, we are willing to sacrifice a bit of accuracy for throughput.  This is, after all, why we aren't sequencing on gels anymore.
 
-``riboScore.py``
+``riboScore.py`` outputs two types of score repors as text files: one which is
+easy for humans to read, and the other that can be easily combined with
+hundreds like it to make various types of graphs etc.
+
+::
+   usage: riboScore.py [-h] [-o OUTPUT] [-l FLANKING] [-p MIN_PERCENT]
+                    [-f ASSEMBLY_EXT] [-g REF_EXT] [-F] [-v {1,2,3,4,5}]
+                    indir
+
+   This does some simple blasting to detect correctness of riboSeed results
+
+   positional arguments:
+     indir                 dir containing a genbank file and other file
+
+   optional arguments:
+     -h, --help            show this help message and exit
+     -o OUTPUT, --output OUTPUT
+                           directory in which to place the output files
+     -l FLANKING, --flanking_length FLANKING
+                        length of flanking regions, in bp; default: 1000
+     -p MIN_PERCENT, --min_percent MIN_PERCENT
+                        minimum percent identity
+     -f ASSEMBLY_EXT, --assembly_ext ASSEMBLY_EXT
+                        extenssion of reference, usually fasta
+     -g REF_EXT, --ref_ext REF_EXT
+                        extension of reference, usually .gb
+     -F, --blast_Full      if true, blast full sequences along with just the
+                        flanking. Interpretation is not implemented currently
+                        as false positives cant be detected this way
+     -v {1,2,3,4,5}, --verbosity {1,2,3,4,5}
+                        Logger writes debug to file in output dir; this sets
+                        verbosity level sent to stderr. 1 = debug(), 2 =
+                        info(), 3 = warning(), 4 = error() and 5 = critical();
+                        default: 2
 
 
-Visualization/Assessment
----------------------------
+Visualization
+-------------
 
 ``riboSnag.py``
 ~~~~~~~~~~~~~~~
@@ -108,6 +141,10 @@ is something to be aware of.
 It requires a mapping BAM file and the riboScan output directory as
 input.
 
+
+Utilities
+-------------
+
 ``riboSwap.py``
 ~~~~~~~~~~~~~~~
 
@@ -143,3 +180,29 @@ more syntenic contigs from the *de novo* assembly. #### USAGE
                             info(), 3 = warning(), 4 = error() and 5 = critical();
                             default: 2
       -h, --help            Displays this help message
+
+
+``seedRand.py``
+~~~~~
+
+There is no convenient unix command to generate seeded random numbers from the
+command line.  This script uses numpy (if availible) or the built-in random
+module to generate *n* random numbers given a seed.
+
+Note:  numpy *should* give you the same random numbers given the same seed
+across platforms:  this is *not* the case with python's build-in random module.
+
+::
+
+   usage: seedRand.py [-h] seed n
+
+   Given a seed, return a pseudrando integer between 1 and 9999, separated by
+   newlines, to stdout. usage : `seedRand.py 27 10` would return 10 random
+   numbers seeded with 27
+
+   positional arguments:
+     seed        seed
+     n           number of random numbers to return, must be > 0
+
+   optional arguments:
+     -h, --help  show this help message and exit

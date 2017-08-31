@@ -235,6 +235,8 @@ def main(args):
     append_config(lines=config_seed_defaults(), outfile=outfile)
     # this lines allows run_riboseed to find the path to the new config
     sys.stdout.write(outfile)
+    # this line allows us to just grab the main function in run_riboSeed
+    return outfile
 
 if __name__ == "__main__":
     args = get_args()
