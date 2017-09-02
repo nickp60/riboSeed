@@ -1,7 +1,29 @@
 Installation
 ============
 
-From Pypi (recommended)
+From conda (new and recommended!)
+---
+
+Conda is a cross-platform, cross-language package management system.  If you haven't already installed conda, follow `these instructions here <https://bioconda.github.io/index.html>`__, and install the python3.6 version.  Once you have that done, add the appropriate channels.
+
+::
+
+   conda config --add channels defaults
+   conda config --add channels conda-forge
+   conda config --add channels bioconda
+
+
+and then install riboSeed and all of its dependencies with one command:
+
+::
+
+   conda install riboseed
+
+
+(Note the lowercase "s")
+
+
+From Pypi
 -----------
 
 riboSeed is on Pypi, so you can install with pip, preferably within a
@@ -36,16 +58,6 @@ your current working dir called ``integration_tests``.
 
 Dependencies
 -----------
-
-Python Requirements:
-~~~~~~~~~~~~~~~~~~~~
-
--  Python >= v3.5
--  Biopython v1.68
--  pysam v0.9.1.4,
--  pyutilsnrw >= 0.0.768
--  matplotlib v1.5.3
--  pandas v0.18.1
 
 External Requirements
 ~~~~~~~~~~~~~~~~~~~~~
