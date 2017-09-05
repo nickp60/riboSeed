@@ -36,7 +36,7 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     parse_samtools_depth_results, make_modest_spades_cmd, get_bam_AS, \
     pysam_extract_reads, define_score_minimum, bool_run_quast, \
     make_quast_command, check_genbank_for_fasta, \
-    filter_bam_AS, make_bwa_map_cmds
+    filter_bam_AS, make_bwa_map_cmds, set_ref_as_contig
 
 from riboSeed.riboSnag import parse_clustered_loci_file
 
@@ -1071,6 +1071,32 @@ class riboSeedShallow(unittest.TestCase):
         for i, cmd in enumerate(test_command_list):
             self.assertEqual(cmd, ref_cmds[i])
 
+    def test_set_ref_as_contig_trust(self):
+        self.assertEqual(
+            set_ref_as_contig(ref_arg="trusted", map_percentage=90,
+                              logger=logger),
+            "trusted")
+        self.assertEqual(
+            set_ref_as_contig(ref_arg="infer", map_percentage=90,
+                              logger=logger),
+
+            "trusted")
+
+    def test_set_ref_as_contig_untrust(self):
+        self.assertEqual(
+            set_ref_as_contig(ref_arg="untrusted", map_percentage=90,
+                              logger=logger),
+            "untrusted")
+        self.assertEqual(
+            set_ref_as_contig(ref_arg="infer", map_percentage=70,
+                              logger=logger),
+            "untrusted")
+
+    def test_set_ref_as_contig_ignore(self):
+        self.assertEqual(
+            set_ref_as_contig(ref_arg="ignore", map_percentage=90,
+                              logger=logger),
+            None)
 
     def tearDown(self):
         """ delete temp files if no errors

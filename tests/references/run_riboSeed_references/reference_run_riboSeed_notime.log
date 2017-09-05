@@ -1,0 +1,1674 @@
+ - INFO - Initializing logger
+ - DEBUG - logging at level 2
+ - INFO - Usage:
+../riboSeed/run_riboSeed.py -o default -n default -F ../riboSeed/integration_data/test_reads1.fq -R ../riboSeed/integration_data/test_reads2.fq ../riboSeed/integration_data/concatenated_seq.fasta
+
+ - DEBUG - All settings used:
+ - DEBUG - clean_temps: False
+ - DEBUG - cluster_file: None
+ - DEBUG - clusters: 
+ - DEBUG - config: /home/nicholas/GitHub/riboSeed/trust
+ - DEBUG - contigs: ../riboSeed/integration_data/concatenated_seq.fasta
+ - DEBUG - cores: None
+ - DEBUG - exp_name: default
+ - DEBUG - fastq1: ../riboSeed/integration_data/test_reads1.fq
+ - DEBUG - fastq2: ../riboSeed/integration_data/test_reads2.fq
+ - DEBUG - fastqS1: None
+ - DEBUG - flanking: 1000
+ - DEBUG - iterations: 3
+ - DEBUG - just_seed: False
+ - DEBUG - kingdom: bac
+ - DEBUG - kmers: 21,33,55,77,99,127
+ - DEBUG - linear: False
+ - DEBUG - memory: 8
+ - DEBUG - min_flank_depth: 0
+ - DEBUG - output: default
+ - DEBUG - pre_kmers: 21,33,55,77,99
+ - DEBUG - serialize: False
+ - DEBUG - specific_features: 16S:23S:5S
+ - DEBUG - threads: 1
+ - DEBUG - verbosity: 2
+ - INFO - Using 4 cores
+ - INFO - 
+running riboScan
+
+ - INFO - Usage:
+../riboSeed/run_riboSeed.py -o default -n default -F ../riboSeed/integration_data/test_reads1.fq -R ../riboSeed/integration_data/test_reads2.fq ../riboSeed/integration_data/concatenated_seq.fasta
+
+ - DEBUG - All settings used:
+ - DEBUG - barrnap_exe: /home/nicholas/barrnap/bin/barrnap
+ - DEBUG - contigs: ../riboSeed/integration_data/concatenated_seq.fasta
+ - DEBUG - cores: 4
+ - DEBUG - id_thresh: 0.5
+ - DEBUG - kingdom: bac
+ - DEBUG - min_length: 0
+ - DEBUG - name: None
+ - DEBUG - output: /home/nicholas/GitHub/riboSeed/trust/default/scan
+ - DEBUG - seqret_exe: /home/nicholas/bin/seqret
+ - DEBUG - verbosity: 2
+ - INFO - spliting multifasta into multiple fastas for easier processing
+ - DEBUG - record 0: concatenated_genome_0
+ - DEBUG - rewrote the following records
+ - DEBUG - concatenated_genome_0_0
+ - INFO - Accession for /home/nicholas/GitHub/riboSeed/trust/default/scan/contigs/concatenated_genome_0_0.fa: concatenated_genome_0_0
+ - INFO - running barrnap cmd: /home/nicholas/barrnap/bin/barrnap -k bac /home/nicholas/GitHub/riboSeed/trust/default/scan/contigs/concatenated_genome_0_0.fa --reject 0.5 --threads 4 > /home/nicholas/GitHub/riboSeed/trust/default/scan/concatenated_genome_0_0.gff
+ - INFO - grooming gff
+ - INFO - Done: Tue Sep  5 17:12:36 2017
+ - INFO - combined scaffolds can be found here: /home/nicholas/GitHub/riboSeed/trust/default/scan/scannedScaffolds.gb
+ - INFO - Time taken: 2.877s
+ - INFO - 
+running riboSelect
+
+ - INFO - Current usage:
+-o default -n default -F ../riboSeed/integration_data/test_reads1.fq -R ../riboSeed/integration_data/test_reads2.fq ../riboSeed/integration_data/concatenated_seq.fasta
+
+ - DEBUG - All settings used:
+ - DEBUG - clobber: False
+ - DEBUG - clusters: 
+ - DEBUG - debug: False
+ - DEBUG - feature: rRNA
+ - DEBUG - genbank_genome: /home/nicholas/GitHub/riboSeed/trust/default/scan/scannedScaffolds.gb
+ - DEBUG - output: /home/nicholas/GitHub/riboSeed/trust/default/select
+ - DEBUG - specific_features: 16S:23S:5S
+ - DEBUG - verbosity: 2
+ - INFO - Getting number of genbank entries
+ - INFO - Input has 1 records
+ - DEBUG - searching for rRNA features containing ['16S', '23S', '5S'] in the product annotation
+ - DEBUG - scanning concatenated_genome_0_0
+ - INFO - counting occurances of 23S 16S 5S
+ - INFO - counting features
+ - DEBUG - counting hits in concatenated_genome_0_0
+ - DEBUG - {('concatenated_genome_0_0', 50439): [10, 'concatenated_genome_0_0', 'concatenated_genome_0_0_10', 'rRNA', ['16S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 65444): [13, 'concatenated_genome_0_0', 'concatenated_genome_0_0_13', 'rRNA', ['16S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 21991): [4, 'concatenated_genome_0_0', 'concatenated_genome_0_0_4', 'rRNA', ['23S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 40328): [9, 'concatenated_genome_0_0', 'concatenated_genome_0_0_9', 'rRNA', ['5S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 80541): [16, 'concatenated_genome_0_0', 'concatenated_genome_0_0_16', 'rRNA', ['16S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 95546): [19, 'concatenated_genome_0_0', 'concatenated_genome_0_0_19', 'rRNA', ['16S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 9985): [2, 'concatenated_genome_0_0', 'concatenated_genome_0_0_2', 'rRNA', ['5S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 35099): [6, 'concatenated_genome_0_0', 'concatenated_genome_0_0_6', 'rRNA', ['16S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 52334): [11, 'concatenated_genome_0_0', 'concatenated_genome_0_0_11', 'rRNA', ['23S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 67431): [14, 'concatenated_genome_0_0', 'concatenated_genome_0_0_14', 'rRNA', ['23S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 82436): [17, 'concatenated_genome_0_0', 'concatenated_genome_0_0_17', 'rRNA', ['23S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 70430): [15, 'concatenated_genome_0_0', 'concatenated_genome_0_0_15', 'rRNA', ['5S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 37086): [7, 'concatenated_genome_0_0', 'concatenated_genome_0_0_7', 'rRNA', ['23S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 55333): [12, 'concatenated_genome_0_0', 'concatenated_genome_0_0_12', 'rRNA', ['5S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 5001): [0, 'concatenated_genome_0_0', 'concatenated_genome_0_0_0', 'rRNA', ['16S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 24988): [5, 'concatenated_genome_0_0', 'concatenated_genome_0_0_5', 'rRNA', ['5S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 20096): [3, 'concatenated_genome_0_0', 'concatenated_genome_0_0_3', 'rRNA', ['16S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 97441): [20, 'concatenated_genome_0_0', 'concatenated_genome_0_0_20', 'rRNA', ['23S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 85435): [18, 'concatenated_genome_0_0', 'concatenated_genome_0_0_18', 'rRNA', ['5S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 100440): [21, 'concatenated_genome_0_0', 'concatenated_genome_0_0_21', 'rRNA', ['5S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 6988): [1, 'concatenated_genome_0_0', 'concatenated_genome_0_0_1', 'rRNA', ['23S', 'ribosomal', 'RNA']], ('concatenated_genome_0_0', 40083): [8, 'concatenated_genome_0_0', 'concatenated_genome_0_0_8', 'rRNA', ['5S', 'ribosomal', 'RNA']]}
+ - INFO - parsing --clusters args
+ - DEBUG - All loci:
+ - DEBUG - ('concatenated_genome_0_0', 50439)	[10, 'concatenated_genome_0_0', 'concatenated_genome_0_0_10', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 65444)	[13, 'concatenated_genome_0_0', 'concatenated_genome_0_0_13', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 21991)	[4, 'concatenated_genome_0_0', 'concatenated_genome_0_0_4', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 40328)	[9, 'concatenated_genome_0_0', 'concatenated_genome_0_0_9', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 80541)	[16, 'concatenated_genome_0_0', 'concatenated_genome_0_0_16', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 95546)	[19, 'concatenated_genome_0_0', 'concatenated_genome_0_0_19', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 9985)	[2, 'concatenated_genome_0_0', 'concatenated_genome_0_0_2', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 35099)	[6, 'concatenated_genome_0_0', 'concatenated_genome_0_0_6', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 52334)	[11, 'concatenated_genome_0_0', 'concatenated_genome_0_0_11', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 67431)	[14, 'concatenated_genome_0_0', 'concatenated_genome_0_0_14', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 82436)	[17, 'concatenated_genome_0_0', 'concatenated_genome_0_0_17', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 37086)	[7, 'concatenated_genome_0_0', 'concatenated_genome_0_0_7', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 70430)	[15, 'concatenated_genome_0_0', 'concatenated_genome_0_0_15', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 55333)	[12, 'concatenated_genome_0_0', 'concatenated_genome_0_0_12', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 5001)	[0, 'concatenated_genome_0_0', 'concatenated_genome_0_0_0', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 24988)	[5, 'concatenated_genome_0_0', 'concatenated_genome_0_0_5', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 20096)	[3, 'concatenated_genome_0_0', 'concatenated_genome_0_0_3', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 97441)	[20, 'concatenated_genome_0_0', 'concatenated_genome_0_0_20', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 85435)	[18, 'concatenated_genome_0_0', 'concatenated_genome_0_0_18', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 100440)	[21, 'concatenated_genome_0_0', 'concatenated_genome_0_0_21', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 6988)	[1, 'concatenated_genome_0_0', 'concatenated_genome_0_0_1', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 40083)	[8, 'concatenated_genome_0_0', 'concatenated_genome_0_0_8', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - INFO - Processing concatenated_genome_0_0
+
+ - DEBUG - Subset loci:
+ - DEBUG - ('concatenated_genome_0_0', 50439)	[10, 'concatenated_genome_0_0', 'concatenated_genome_0_0_10', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 65444)	[13, 'concatenated_genome_0_0', 'concatenated_genome_0_0_13', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 21991)	[4, 'concatenated_genome_0_0', 'concatenated_genome_0_0_4', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 40328)	[9, 'concatenated_genome_0_0', 'concatenated_genome_0_0_9', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 80541)	[16, 'concatenated_genome_0_0', 'concatenated_genome_0_0_16', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 95546)	[19, 'concatenated_genome_0_0', 'concatenated_genome_0_0_19', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 9985)	[2, 'concatenated_genome_0_0', 'concatenated_genome_0_0_2', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 35099)	[6, 'concatenated_genome_0_0', 'concatenated_genome_0_0_6', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 52334)	[11, 'concatenated_genome_0_0', 'concatenated_genome_0_0_11', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 67431)	[14, 'concatenated_genome_0_0', 'concatenated_genome_0_0_14', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 82436)	[17, 'concatenated_genome_0_0', 'concatenated_genome_0_0_17', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 70430)	[15, 'concatenated_genome_0_0', 'concatenated_genome_0_0_15', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 37086)	[7, 'concatenated_genome_0_0', 'concatenated_genome_0_0_7', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 55333)	[12, 'concatenated_genome_0_0', 'concatenated_genome_0_0_12', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 5001)	[0, 'concatenated_genome_0_0', 'concatenated_genome_0_0_0', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 24988)	[5, 'concatenated_genome_0_0', 'concatenated_genome_0_0_5', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 20096)	[3, 'concatenated_genome_0_0', 'concatenated_genome_0_0_3', 'rRNA', ['16S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 97441)	[20, 'concatenated_genome_0_0', 'concatenated_genome_0_0_20', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 85435)	[18, 'concatenated_genome_0_0', 'concatenated_genome_0_0_18', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 100440)	[21, 'concatenated_genome_0_0', 'concatenated_genome_0_0_21', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 6988)	[1, 'concatenated_genome_0_0', 'concatenated_genome_0_0_1', 'rRNA', ['23S', 'ribosomal', 'RNA']]
+ - DEBUG - ('concatenated_genome_0_0', 40083)	[8, 'concatenated_genome_0_0', 'concatenated_genome_0_0_8', 'rRNA', ['5S', 'ribosomal', 'RNA']]
+ - INFO - hits in concatenated_genome_0_0
+
+ - DEBUG - nfeat_simple
+ - DEBUG - rec_nfeat: [7, 7, 8]
+ - DEBUG - grouping indexes with jenks natural breaks assuming 7 classes
+ - DEBUG - [50439, 65444, 21991, 40328, 80541, 95546, 9985, 35099, 52334, 67431, 82436, 70430, 37086, 55333, 5001, 24988, 20096, 97441, 85435, 100440, 6988, 40083]
+ - DEBUG - Jenks breaks:
+ - DEBUG - [5001.0, 9985.0, 24988.0, 40328.0, 55333.0, 70430.0, 85435.0, 100440.0]
+ - DEBUG - grouping indexes with jenks natural breaks assuming 7 classes
+ - DEBUG - [50439, 65444, 21991, 40328, 80541, 95546, 9985, 35099, 52334, 67431, 82436, 70430, 37086, 55333, 5001, 24988, 20096, 97441, 85435, 100440, 6988, 40083]
+ - DEBUG - Jenks breaks:
+ - DEBUG - [5001.0, 9985.0, 24988.0, 40328.0, 55333.0, 70430.0, 85435.0, 100440.0]
+ - DEBUG - indexClusters:
+ - DEBUG - {'6': [80541, 82436, 85435], '4': [50439, 52334, 55333], '1': [5001, 6988, 9985], '2': [20096, 21991, 24988], '5': [65444, 67431, 70430], '7': [95546, 97441, 100440], '3': [35099, 37086, 40083, 40328]}
+ - INFO - 
+running riboSeed
+
+ - INFO - riboSeed pipeline package version: 0.4.16
+ - INFO - Usage:
+../riboSeed/run_riboSeed.py -o default -n default -F ../riboSeed/integration_data/test_reads1.fq -R ../riboSeed/integration_data/test_reads2.fq ../riboSeed/integration_data/concatenated_seq.fasta
+
+ - DEBUG - All settings used:
+ - DEBUG - bwa_exe: /usr/bin/bwa
+ - DEBUG - clean_temps: False
+ - DEBUG - clustered_loci_txt: /home/nicholas/GitHub/riboSeed/trust/default/select/riboSelect_grouped_loci.txt
+ - DEBUG - cores: 4
+ - DEBUG - exp_name: default
+ - DEBUG - fastq1: ../riboSeed/integration_data/test_reads1.fq
+ - DEBUG - fastq2: ../riboSeed/integration_data/test_reads2.fq
+ - DEBUG - fastqS1: None
+ - DEBUG - flanking: 1000
+ - DEBUG - include_short_contigs: False
+ - DEBUG - iterations: 3
+ - DEBUG - just_seed: False
+ - DEBUG - kmers: 21,33,55,77,99,127
+ - DEBUG - linear: False
+ - DEBUG - mapper_args: -L 0,0 -U 0 -a
+ - DEBUG - memory: 8
+ - DEBUG - method: bwa
+ - DEBUG - min_assembly_len: 6000
+ - DEBUG - min_flank_depth: 0
+ - DEBUG - output: /home/nicholas/GitHub/riboSeed/trust/default/seed
+ - DEBUG - pre_kmers: 21,33,55,77,99
+ - DEBUG - quast_exe: /home/nicholas/bin/quast-4.5/quast.py
+ - DEBUG - ref_as_contig: infer
+ - DEBUG - reference_genbank: /home/nicholas/GitHub/riboSeed/trust/default/scan/scannedScaffolds.gb
+ - DEBUG - samtools_exe: /usr/bin/samtools
+ - DEBUG - score_min: None
+ - DEBUG - serialize: False
+ - DEBUG - skip_control: False
+ - DEBUG - smalt_exe: /usr/local/bin/smalt
+ - DEBUG - smalt_scoring: match=1,subst=-4,gapopen=-4,gapext=-3
+ - DEBUG - spades_exe: /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py
+ - DEBUG - subtract: False
+ - DEBUG - target_len: None
+ - DEBUG - threads: 1
+ - DEBUG - verbosity: 2
+ - DEBUG - current PATH:
+ - DEBUG - /home/nicholas/mauve_snapshot_2015-02-13/linux-x64:/home/nicholas/FigTree_v1.4.3/bin:/usr/lib/cd-hit:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/home/nicholas/Git/usr/local/sbin:/home/nicholas/.rvm/bin:/home/nicholas/.rvm/rubies/ruby-2.3.0/bin:/home/nicholas/.rvm/gems/ruby-2.3.0/bin:/home/nicholas/.rvm/gems/ruby-2.3.0@global/bin:/home/nicholas/htslib:/home/nicholas/bcftools:/home/nicholas/barrnap/bin:/home/nicholas/bin:/home/nicholas/kSNP3.021_Linux_package/kSNP3:/home/nicholas/node-v6.9.1-linux-x64/bin:/home/nicholas/bin:/home/nicholas/htslib:/home/nicholas/bcftools:/home/nicholas/GitHub/barrnap/bin:/home/nicholas/bin/sis:/opt/python3.5/bin/:/home/nicholas/SPAdes-3.9.0-Linux/bin:/home/nicholas/bin:/home/nicholas/ncbi-magicblast-1.0.0/bin:/home/nicholas/EdenaV3.131028/bin:/home/nicholas/Git/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/cd-hit:/home/nicholas/.rvm/bin:/usr/lib/cd-hit:/home/nicholas/bin/quast-4.5:/home/nicholas/SPAdes-3.9.0-Linux/bin:/home/nicholas/bin:/home/nicholas/ncbi-magicblast-1.0.0/bin:/home/nicholas/EdenaV3.131028/bin:/home/nicholas/Git/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/cd-hit:/home/nicholas/.rvm/bin:/usr/lib/cd-hit:/home/nicholas/.rvm/bin:/home/nicholas/.rvm/bin:/home/nicholas/bin/SPAdes-3.9.1-Linux/bin
+ - INFO - checking for installations of all required external tools
+ - DEBUG - creating an Exes object
+ - DEBUG - All needed system executables found!
+ - DEBUG - {'spades': '/home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py', 'bwa': '/usr/bin/bwa', 'mapper': '/usr/bin/bwa', 'quast': '/home/nicholas/bin/quast-4.5/quast.py', 'python': '/opt/python3.5/bin/python3.5', 'method': 'bwa', 'samtools': '/usr/bin/samtools', 'check': True, 'smalt': '/usr/local/bin/smalt'}
+ - DEBUG - ['', 'Program: samtools (Tools for alignments in the SAM format)', 'Version: 1.3.1 (using htslib 1.3.1)', '', 'Usage:   samtools <command> [options]', '', 'Commands:', '  -- Indexing', '     dict           create a sequence dictionary file', '     faidx          index/extract FASTA', '     index          index alignment', '', '  -- Editing', "     calmd          recalculate MD/NM tags and '=' bases", '     fixmate        fix mate information', '     reheader       replace BAM header', '     rmdup          remove PCR duplicates', '     targetcut      cut fosmid regions (for fosmid pool only)', '     addreplacerg   adds or replaces RG tags', '', '  -- File operations', '     collate        shuffle and group alignments by name', '     cat            concatenate BAMs', '     merge          merge sorted alignments', '     mpileup        multi-way pileup', '     sort           sort alignment file', '     split          splits a file by read group', '     quickcheck     quickly check if SAM/BAM/CRAM file appears intact', '     fastq          converts a BAM to a FASTQ', '     fasta          converts a BAM to a FASTA', '', '  -- Statistics', '     bedcov         read depth per BED region', '     depth          compute the depth', '     flagstat       simple stats', '     idxstats       BAM index stats', '     phase          phase heterozygotes', '     stats          generate stats (former bamcheck)', '', '  -- Viewing', '     flags          explain BAM flags', '     tview          text alignment viewer', '     view           SAM<->BAM<->CRAM conversion', '     depad          convert padded BAM to unpadded BAM', '', '']
+ - DEBUG - this_version: 1.3.1
+ - DEBUG - samtools version: 1.3.1
+ - INFO - BWA is the selected mapper
+ - WARNING - Danger!  We recommend that you have a minimum of 6GB memory (or 6GB memory per core is using multiprocessing) available. If you have less than that per core, SPAdes may run out of memory.
+ - WARNING - You can continue as configured if needed, and if a SPAdes error occurs, you can still use the long reads generated by riboSeed in a standalone assembly
+ - DEBUG - constructing the seedGenome object
+ - DEBUG - adding the sequencing libraries to the seedGenome
+ - DEBUG - None
+ - INFO - From the first 36 reads in test_reads1.fq, mean length is 250.0
+ - DEBUG - [21, 33, 55, 77, 99, 127]
+ - DEBUG - [21, 33, 55, 77, 99]
+ - DEBUG - Using the following kmer values pre and final assemblies:
+ - DEBUG - 21,33,55,77,99,127
+ - DEBUG - 21,33,55,77,99
+ - DEBUG - Checking that the fastq pair have equal number of reads
+ - DEBUG - Added attributes for concatenated_genome_0_0_16
+ - DEBUG - locus_tag: concatenated_genome_0_0_16; coords: [80541-82078]; sequence_id: concatenated_genome_0_0; product: 16S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_17
+ - DEBUG - locus_tag: concatenated_genome_0_0_17; coords: [82436-85337]; sequence_id: concatenated_genome_0_0; product: 23S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_18
+ - DEBUG - locus_tag: concatenated_genome_0_0_18; coords: [85435-85545]; sequence_id: concatenated_genome_0_0; product: 5S ribosomal RNA
+ - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+ - DEBUG - {'global_end_coord': None, 'padding': 1000, 'final_contig_path': None, 'index': 0, 'mappings': [], 'sequence_id': 'concatenated_genome_0_0', 'output_root': '/home/nicholas/GitHub/riboSeed/trust/default/seed', 'extractedSeqRecord': None, 'circular': True, 'seq_record': SeqRecord(seq=Seq('ATGTTGTTACGGTTCCAGTTGGAAGGTAGAACAGGCTCAAGGCGAGCCTGGGAC...CCG', IUPACAmbiguousDNA()), id='concatenated_genome_0_0', name='concatenated_genome_0_0', description='', dbxrefs=[]), 'coverage_exclusion': None, 'cluster_dir_name': 'concatenated_genome_0_0_cluster_0', 'continue_iterating': True, 'loci_list': [<riboSnag.Locus object at 0x7f16dd2407f0>, <riboSnag.Locus object at 0x7f16dd240710>, <riboSnag.Locus object at 0x7f16dd240d30>], 'feat_of_interest': 'rRNA', 'global_start_coord': None, 'keep_contigs': True}
+ - DEBUG - Added attributes for concatenated_genome_0_0_10
+ - DEBUG - locus_tag: concatenated_genome_0_0_10; coords: [50439-51976]; sequence_id: concatenated_genome_0_0; product: 16S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_11
+ - DEBUG - locus_tag: concatenated_genome_0_0_11; coords: [52334-55235]; sequence_id: concatenated_genome_0_0; product: 23S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_12
+ - DEBUG - locus_tag: concatenated_genome_0_0_12; coords: [55333-55443]; sequence_id: concatenated_genome_0_0; product: 5S ribosomal RNA
+ - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+ - DEBUG - {'global_end_coord': None, 'padding': 1000, 'final_contig_path': None, 'index': 1, 'mappings': [], 'sequence_id': 'concatenated_genome_0_0', 'output_root': '/home/nicholas/GitHub/riboSeed/trust/default/seed', 'extractedSeqRecord': None, 'circular': True, 'seq_record': SeqRecord(seq=Seq('ATGTTGTTACGGTTCCAGTTGGAAGGTAGAACAGGCTCAAGGCGAGCCTGGGAC...CCG', IUPACAmbiguousDNA()), id='concatenated_genome_0_0', name='concatenated_genome_0_0', description='', dbxrefs=[]), 'coverage_exclusion': None, 'cluster_dir_name': 'concatenated_genome_0_0_cluster_1', 'continue_iterating': True, 'loci_list': [<riboSnag.Locus object at 0x7f16dd240fd0>, <riboSnag.Locus object at 0x7f16dd240780>, <riboSnag.Locus object at 0x7f16dd240ef0>], 'feat_of_interest': 'rRNA', 'global_start_coord': None, 'keep_contigs': True}
+ - DEBUG - Added attributes for concatenated_genome_0_0_0
+ - DEBUG - locus_tag: concatenated_genome_0_0_0; coords: [5001-6538]; sequence_id: concatenated_genome_0_0; product: 16S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_1
+ - DEBUG - locus_tag: concatenated_genome_0_0_1; coords: [6988-9887]; sequence_id: concatenated_genome_0_0; product: 23S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_2
+ - DEBUG - locus_tag: concatenated_genome_0_0_2; coords: [9985-10095]; sequence_id: concatenated_genome_0_0; product: 5S ribosomal RNA
+ - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+ - DEBUG - {'global_end_coord': None, 'padding': 1000, 'final_contig_path': None, 'index': 2, 'mappings': [], 'sequence_id': 'concatenated_genome_0_0', 'output_root': '/home/nicholas/GitHub/riboSeed/trust/default/seed', 'extractedSeqRecord': None, 'circular': True, 'seq_record': SeqRecord(seq=Seq('ATGTTGTTACGGTTCCAGTTGGAAGGTAGAACAGGCTCAAGGCGAGCCTGGGAC...CCG', IUPACAmbiguousDNA()), id='concatenated_genome_0_0', name='concatenated_genome_0_0', description='', dbxrefs=[]), 'coverage_exclusion': None, 'cluster_dir_name': 'concatenated_genome_0_0_cluster_2', 'continue_iterating': True, 'loci_list': [<riboSnag.Locus object at 0x7f16dd240eb8>, <riboSnag.Locus object at 0x7f16dd4ea828>, <riboSnag.Locus object at 0x7f16dd4ead30>], 'feat_of_interest': 'rRNA', 'global_start_coord': None, 'keep_contigs': True}
+ - DEBUG - Added attributes for concatenated_genome_0_0_3
+ - DEBUG - locus_tag: concatenated_genome_0_0_3; coords: [20096-21633]; sequence_id: concatenated_genome_0_0; product: 16S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_4
+ - DEBUG - locus_tag: concatenated_genome_0_0_4; coords: [21991-24890]; sequence_id: concatenated_genome_0_0; product: 23S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_5
+ - DEBUG - locus_tag: concatenated_genome_0_0_5; coords: [24988-25098]; sequence_id: concatenated_genome_0_0; product: 5S ribosomal RNA
+ - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+ - DEBUG - {'global_end_coord': None, 'padding': 1000, 'final_contig_path': None, 'index': 3, 'mappings': [], 'sequence_id': 'concatenated_genome_0_0', 'output_root': '/home/nicholas/GitHub/riboSeed/trust/default/seed', 'extractedSeqRecord': None, 'circular': True, 'seq_record': SeqRecord(seq=Seq('ATGTTGTTACGGTTCCAGTTGGAAGGTAGAACAGGCTCAAGGCGAGCCTGGGAC...CCG', IUPACAmbiguousDNA()), id='concatenated_genome_0_0', name='concatenated_genome_0_0', description='', dbxrefs=[]), 'coverage_exclusion': None, 'cluster_dir_name': 'concatenated_genome_0_0_cluster_3', 'continue_iterating': True, 'loci_list': [<riboSnag.Locus object at 0x7f16dd4ea780>, <riboSnag.Locus object at 0x7f16dd4ea7b8>, <riboSnag.Locus object at 0x7f16dd4eae48>], 'feat_of_interest': 'rRNA', 'global_start_coord': None, 'keep_contigs': True}
+ - DEBUG - Added attributes for concatenated_genome_0_0_13
+ - DEBUG - locus_tag: concatenated_genome_0_0_13; coords: [65444-66981]; sequence_id: concatenated_genome_0_0; product: 16S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_14
+ - DEBUG - locus_tag: concatenated_genome_0_0_14; coords: [67431-70332]; sequence_id: concatenated_genome_0_0; product: 23S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_15
+ - DEBUG - locus_tag: concatenated_genome_0_0_15; coords: [70430-70540]; sequence_id: concatenated_genome_0_0; product: 5S ribosomal RNA
+ - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+ - DEBUG - {'global_end_coord': None, 'padding': 1000, 'final_contig_path': None, 'index': 4, 'mappings': [], 'sequence_id': 'concatenated_genome_0_0', 'output_root': '/home/nicholas/GitHub/riboSeed/trust/default/seed', 'extractedSeqRecord': None, 'circular': True, 'seq_record': SeqRecord(seq=Seq('ATGTTGTTACGGTTCCAGTTGGAAGGTAGAACAGGCTCAAGGCGAGCCTGGGAC...CCG', IUPACAmbiguousDNA()), id='concatenated_genome_0_0', name='concatenated_genome_0_0', description='', dbxrefs=[]), 'coverage_exclusion': None, 'cluster_dir_name': 'concatenated_genome_0_0_cluster_4', 'continue_iterating': True, 'loci_list': [<riboSnag.Locus object at 0x7f16dd4eadd8>, <riboSnag.Locus object at 0x7f16dd4ea4e0>, <riboSnag.Locus object at 0x7f16dd4ea6a0>], 'feat_of_interest': 'rRNA', 'global_start_coord': None, 'keep_contigs': True}
+ - DEBUG - Added attributes for concatenated_genome_0_0_19
+ - DEBUG - locus_tag: concatenated_genome_0_0_19; coords: [95546-97083]; sequence_id: concatenated_genome_0_0; product: 16S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_20
+ - DEBUG - locus_tag: concatenated_genome_0_0_20; coords: [97441-100342]; sequence_id: concatenated_genome_0_0; product: 23S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_21
+ - DEBUG - locus_tag: concatenated_genome_0_0_21; coords: [100440-100550]; sequence_id: concatenated_genome_0_0; product: 5S ribosomal RNA
+ - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+ - DEBUG - {'global_end_coord': None, 'padding': 1000, 'final_contig_path': None, 'index': 5, 'mappings': [], 'sequence_id': 'concatenated_genome_0_0', 'output_root': '/home/nicholas/GitHub/riboSeed/trust/default/seed', 'extractedSeqRecord': None, 'circular': True, 'seq_record': SeqRecord(seq=Seq('ATGTTGTTACGGTTCCAGTTGGAAGGTAGAACAGGCTCAAGGCGAGCCTGGGAC...CCG', IUPACAmbiguousDNA()), id='concatenated_genome_0_0', name='concatenated_genome_0_0', description='', dbxrefs=[]), 'coverage_exclusion': None, 'cluster_dir_name': 'concatenated_genome_0_0_cluster_5', 'continue_iterating': True, 'loci_list': [<riboSnag.Locus object at 0x7f16dd4ea748>, <riboSnag.Locus object at 0x7f16dd1e2048>, <riboSnag.Locus object at 0x7f16dd1e2080>], 'feat_of_interest': 'rRNA', 'global_start_coord': None, 'keep_contigs': True}
+ - DEBUG - Added attributes for concatenated_genome_0_0_6
+ - DEBUG - locus_tag: concatenated_genome_0_0_6; coords: [35099-36636]; sequence_id: concatenated_genome_0_0; product: 16S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_7
+ - DEBUG - locus_tag: concatenated_genome_0_0_7; coords: [37086-39985]; sequence_id: concatenated_genome_0_0; product: 23S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_8
+ - DEBUG - locus_tag: concatenated_genome_0_0_8; coords: [40083-40193]; sequence_id: concatenated_genome_0_0; product: 5S ribosomal RNA
+ - DEBUG - Added attributes for concatenated_genome_0_0_9
+ - DEBUG - locus_tag: concatenated_genome_0_0_9; coords: [40328-40438]; sequence_id: concatenated_genome_0_0; product: 5S ribosomal RNA
+ - DEBUG - Here are the detected region,coords, strand, product, locus tag, subfeatures and sequence id of the results:
+ - DEBUG - {'global_end_coord': None, 'padding': 1000, 'final_contig_path': None, 'index': 6, 'mappings': [], 'sequence_id': 'concatenated_genome_0_0', 'output_root': '/home/nicholas/GitHub/riboSeed/trust/default/seed', 'extractedSeqRecord': None, 'circular': True, 'seq_record': SeqRecord(seq=Seq('ATGTTGTTACGGTTCCAGTTGGAAGGTAGAACAGGCTCAAGGCGAGCCTGGGAC...CCG', IUPACAmbiguousDNA()), id='concatenated_genome_0_0', name='concatenated_genome_0_0', description='', dbxrefs=[]), 'coverage_exclusion': None, 'cluster_dir_name': 'concatenated_genome_0_0_cluster_6', 'continue_iterating': True, 'loci_list': [<riboSnag.Locus object at 0x7f16dd1e20f0>, <riboSnag.Locus object at 0x7f16dd1e2128>, <riboSnag.Locus object at 0x7f16dd1e2160>, <riboSnag.Locus object at 0x7f16dd1e2198>], 'feat_of_interest': 'rRNA', 'global_start_coord': None, 'keep_contigs': True}
+ - INFO - padding genbank by 3000
+ - DEBUG - old ref_fasta: /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds.fasta
+ - INFO - adjusting coordinates by 3000 to account for padding
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_16', 'end_coord': 82078, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 80541}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_16', 'end_coord': 85078, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 83541}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_17', 'end_coord': 85337, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 82436}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_17', 'end_coord': 88337, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 85436}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_18', 'end_coord': 85545, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 85435}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_18', 'end_coord': 88545, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 88435}
+ - INFO - adjusting coordinates by 3000 to account for padding
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_10', 'end_coord': 51976, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 50439}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_10', 'end_coord': 54976, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 53439}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_11', 'end_coord': 55235, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 52334}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_11', 'end_coord': 58235, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 55334}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_12', 'end_coord': 55443, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 55333}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_12', 'end_coord': 58443, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 58333}
+ - INFO - adjusting coordinates by 3000 to account for padding
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_0', 'end_coord': 6538, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 5001}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_0', 'end_coord': 9538, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 8001}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_1', 'end_coord': 9887, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 6988}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_1', 'end_coord': 12887, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 9988}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_2', 'end_coord': 10095, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 9985}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_2', 'end_coord': 13095, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 12985}
+ - INFO - adjusting coordinates by 3000 to account for padding
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_3', 'end_coord': 21633, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 20096}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_3', 'end_coord': 24633, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 23096}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_4', 'end_coord': 24890, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 21991}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_4', 'end_coord': 27890, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 24991}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_5', 'end_coord': 25098, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 24988}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_5', 'end_coord': 28098, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 27988}
+ - INFO - adjusting coordinates by 3000 to account for padding
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_13', 'end_coord': 66981, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 65444}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_13', 'end_coord': 69981, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 68444}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_14', 'end_coord': 70332, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 67431}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_14', 'end_coord': 73332, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 70431}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_15', 'end_coord': 70540, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 70430}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_15', 'end_coord': 73540, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 73430}
+ - INFO - adjusting coordinates by 3000 to account for padding
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_19', 'end_coord': 97083, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 95546}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_19', 'end_coord': 100083, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 98546}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_20', 'end_coord': 100342, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 97441}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_20', 'end_coord': 103342, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 100441}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_21', 'end_coord': 100550, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 100440}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_21', 'end_coord': 103550, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 103440}
+ - INFO - adjusting coordinates by 3000 to account for padding
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_6', 'end_coord': 36636, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 35099}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 0, 'locus_tag': 'concatenated_genome_0_0_6', 'end_coord': 39636, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['16S ribosomal RNA'], 'start_coord': 38099}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_7', 'end_coord': 39985, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 37086}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 1, 'locus_tag': 'concatenated_genome_0_0_7', 'end_coord': 42985, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['23S ribosomal RNA'], 'start_coord': 40086}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_8', 'end_coord': 40193, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 40083}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 2, 'locus_tag': 'concatenated_genome_0_0_8', 'end_coord': 43193, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 43083}
+ - DEBUG - pre-padded
+ - DEBUG - {'index': 3, 'locus_tag': 'concatenated_genome_0_0_9', 'end_coord': 40438, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 40328}
+ - DEBUG - post-padded
+ - DEBUG - {'index': 3, 'locus_tag': 'concatenated_genome_0_0_9', 'end_coord': 43438, 'sequence_id': 'concatenated_genome_0_0', 'strand': 1, 'product': ['5S ribosomal RNA'], 'start_coord': 43328}
+ - INFO - rewriting fasta-formated genome padded by 3000 bases on each end
+ - DEBUG - new ref_fasta: /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_padded.fasta
+ - INFO - processing iteration 0
+ - DEBUG - with new reference: /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_padded.fasta
+ - INFO - using the default minimum score for BWA
+ - INFO - checking for empty read files
+ - DEBUG - size of ../riboSeed/integration_data/test_reads1.fq: 3368339.000000
+ - DEBUG - size of ../riboSeed/integration_data/test_reads2.fq: 3368339.000000
+ - DEBUG - readS0 is set to None, and will be ignored
+ - INFO - Mapping reads to reference genome with BWA
+ - INFO - running BWA:
+ - DEBUG - with the following BWA commands:
+ - DEBUG - /usr/bin/bwa index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_padded.fasta
+ - DEBUG - /usr/bin/bwa mem -t 4 -L 0,0 -U 0 -a -k 15 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_padded.fasta ../riboSeed/integration_data/test_reads1.fq ../riboSeed/integration_data/test_reads2.fq | /usr/bin/samtools view -bh - | /usr/bin/samtools sort -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_pe.bam - 
+ - DEBUG - /usr/bin/samtools view -bh /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_pe.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_unfiltered.bam
+ - INFO - PE mapped reads: 12660 + 0 mapped (100.00% : N/A)
+ - INFO - Combined mapped reads: 12660 + 0 mapped (100.00% : N/A)
+ - DEBUG - no bwa mapping score minprovided; default is 1/2 read length or 50, whichever is greater.
+ - DEBUG - using a score minimum of 125
+ - DEBUG - filtering mapped reads with an AS score minimum of 125
+ - DEBUG - Reads after filtering: 12660
+ - DEBUG - Making mapped bam file:
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.bam -h /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.sam
+ - INFO - Mapped reads after filtering: 12660 + 0 mapped (100.00% : N/A)
+ - INFO - score_min, xmax and ymax: 125, 250, 230
+ - INFO - Plotting alignment score of mapping:
+ - INFO - Filled area represents the reads retained after filtering. If it looks like this filtering threshold is inapporpriate, consider adjusting with --score_min
+ - DEBUG - scaling to max of 246
+ - INFO - 
+               Average alignment Scores (y) by sorted read index (x)
+         0                                                          12660
+          |____________________________________________________________|
+       246|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       233|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       229|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       221|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       213|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - processing mapping for iteration 0
+ - DEBUG - Start_list: [83541, 85436, 88435]
+ - DEBUG - Finding coords to gather reads from the following loci:
+ - DEBUG - concatenated_genome_0_0 cluster 0 -- locus 0 -- concatenated_genome_0_0_16 (83541, 85078)(1) ['16S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 0 -- locus 1 -- concatenated_genome_0_0_17 (85436, 88337)(1) ['23S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 0 -- locus 2 -- concatenated_genome_0_0_18 (88435, 88545)(1) ['5S ribosomal RNA']
+ - DEBUG - global start and end: 82541 89545
+ - INFO - Coordinates for <unknown id> cluster 0:  [82541 - 89545]
+ - DEBUG - Start_list: [53439, 55334, 58333]
+ - DEBUG - Finding coords to gather reads from the following loci:
+ - DEBUG - concatenated_genome_0_0 cluster 1 -- locus 0 -- concatenated_genome_0_0_10 (53439, 54976)(1) ['16S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 1 -- locus 1 -- concatenated_genome_0_0_11 (55334, 58235)(1) ['23S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 1 -- locus 2 -- concatenated_genome_0_0_12 (58333, 58443)(1) ['5S ribosomal RNA']
+ - DEBUG - global start and end: 52439 59443
+ - INFO - Coordinates for <unknown id> cluster 1:  [52439 - 59443]
+ - DEBUG - Start_list: [8001, 9988, 12985]
+ - DEBUG - Finding coords to gather reads from the following loci:
+ - DEBUG - concatenated_genome_0_0 cluster 2 -- locus 0 -- concatenated_genome_0_0_0 (8001, 9538)(1) ['16S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 2 -- locus 1 -- concatenated_genome_0_0_1 (9988, 12887)(1) ['23S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 2 -- locus 2 -- concatenated_genome_0_0_2 (12985, 13095)(1) ['5S ribosomal RNA']
+ - DEBUG - global start and end: 7001 14095
+ - INFO - Coordinates for <unknown id> cluster 2:  [7001 - 14095]
+ - DEBUG - Start_list: [23096, 24991, 27988]
+ - DEBUG - Finding coords to gather reads from the following loci:
+ - DEBUG - concatenated_genome_0_0 cluster 3 -- locus 0 -- concatenated_genome_0_0_3 (23096, 24633)(1) ['16S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 3 -- locus 1 -- concatenated_genome_0_0_4 (24991, 27890)(1) ['23S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 3 -- locus 2 -- concatenated_genome_0_0_5 (27988, 28098)(1) ['5S ribosomal RNA']
+ - DEBUG - global start and end: 22096 29098
+ - INFO - Coordinates for <unknown id> cluster 3:  [22096 - 29098]
+ - DEBUG - Start_list: [68444, 70431, 73430]
+ - DEBUG - Finding coords to gather reads from the following loci:
+ - DEBUG - concatenated_genome_0_0 cluster 4 -- locus 0 -- concatenated_genome_0_0_13 (68444, 69981)(1) ['16S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 4 -- locus 1 -- concatenated_genome_0_0_14 (70431, 73332)(1) ['23S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 4 -- locus 2 -- concatenated_genome_0_0_15 (73430, 73540)(1) ['5S ribosomal RNA']
+ - DEBUG - global start and end: 67444 74540
+ - INFO - Coordinates for <unknown id> cluster 4:  [67444 - 74540]
+ - DEBUG - Start_list: [98546, 100441, 103440]
+ - DEBUG - Finding coords to gather reads from the following loci:
+ - DEBUG - concatenated_genome_0_0 cluster 5 -- locus 0 -- concatenated_genome_0_0_19 (98546, 100083)(1) ['16S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 5 -- locus 1 -- concatenated_genome_0_0_20 (100441, 103342)(1) ['23S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 5 -- locus 2 -- concatenated_genome_0_0_21 (103440, 103550)(1) ['5S ribosomal RNA']
+ - DEBUG - global start and end: 97546 104550
+ - INFO - Coordinates for <unknown id> cluster 5:  [97546 - 104550]
+ - DEBUG - Start_list: [38099, 40086, 43083, 43328]
+ - DEBUG - Finding coords to gather reads from the following loci:
+ - DEBUG - concatenated_genome_0_0 cluster 6 -- locus 0 -- concatenated_genome_0_0_6 (38099, 39636)(1) ['16S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 6 -- locus 1 -- concatenated_genome_0_0_7 (40086, 42985)(1) ['23S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 6 -- locus 2 -- concatenated_genome_0_0_8 (43083, 43193)(1) ['5S ribosomal RNA']
+ - DEBUG - concatenated_genome_0_0 cluster 6 -- locus 3 -- concatenated_genome_0_0_9 (43328, 43438)(1) ['5S ribosomal RNA']
+ - DEBUG - global start and end: 37099 44438
+ - INFO - Coordinates for <unknown id> cluster 6:  [37099 - 44438]
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/concatenated_genome_0_0_cluster_0_mapping_iteration_0/concatenated_genome_0_0_cluster_0.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:82541-89545
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:82541-83541 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:88545-89545 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - INFO - Coverage for cluster 0:
+	5' 1000bp-region: 34.31 
+	3' 1000bp-region: 29.27
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/concatenated_genome_0_0_cluster_1_mapping_iteration_0/concatenated_genome_0_0_cluster_1.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:52439-59443
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:52439-53439 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:58443-59443 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - INFO - Coverage for cluster 1:
+	5' 1000bp-region: 29.53 
+	3' 1000bp-region: 28.85
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/concatenated_genome_0_0_cluster_2_mapping_iteration_0/concatenated_genome_0_0_cluster_2.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:7001-14095
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:7001-8001 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:13095-14095 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - INFO - Coverage for cluster 2:
+	5' 1000bp-region: 29.31 
+	3' 1000bp-region: 31.89
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/concatenated_genome_0_0_cluster_3_mapping_iteration_0/concatenated_genome_0_0_cluster_3.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:22096-29098
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:22096-23096 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:28098-29098 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - INFO - Coverage for cluster 3:
+	5' 1000bp-region: 26.08 
+	3' 1000bp-region: 33.73
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/concatenated_genome_0_0_cluster_4_mapping_iteration_0/concatenated_genome_0_0_cluster_4.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:67444-74540
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:67444-68444 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:73540-74540 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - INFO - Coverage for cluster 4:
+	5' 1000bp-region: 23.70 
+	3' 1000bp-region: 25.53
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/concatenated_genome_0_0_cluster_5_mapping_iteration_0/concatenated_genome_0_0_cluster_5.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:97546-104550
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:97546-98546 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:103550-104550 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - INFO - Coverage for cluster 5:
+	5' 1000bp-region: 24.09 
+	3' 1000bp-region: 29.18
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/concatenated_genome_0_0_cluster_6_mapping_iteration_0/concatenated_genome_0_0_cluster_6.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:37099-44438
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:37099-38099 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r concatenated_genome_0_0:43438-44438 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam
+ - INFO - Coverage for cluster 6:
+	5' 1000bp-region: 25.01 
+	3' 1000bp-region: 31.35
+ - INFO - mapped regions for iteration 0:
+concatenated_genome_0_0:82541-89545
+concatenated_genome_0_0:52439-59443
+concatenated_genome_0_0:7001-14095
+concatenated_genome_0_0:22096-29098
+concatenated_genome_0_0:67444-74540
+concatenated_genome_0_0:97546-104550
+concatenated_genome_0_0:37099-44438
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.sam -h /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.bam
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:82541-89545 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:52439-59443 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:7001-14095 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:22096-29098 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:67444-74540 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:97546-104550 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_sorted.bam concatenated_genome_0_0:37099-44438 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_mapped.txt
+ - DEBUG - sort -u /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_mapped.txt -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_mapped.txt
+ - INFO - using pysam to extract a subset of reads 
+ - INFO - Wrote 6560 unmapped reads of the 12660 total from /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.sam to /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_unmapped.sam
+ - INFO - [(0, 34.311688311688314, 29.266733266733265), (1, 29.533466533466534, 28.85214785214785), (2, 29.312687312687313, 31.886113886113886), (3, 26.07792207792208, 33.726273726273725), (4, 23.703296703296704, 25.53046953046953), (5, 24.091908091908092, 29.17782217782218), (6, 25.005994005994005, 31.354645354645356)]
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/concatenated_genome_0_0_cluster_0_mapping_iteration_0/concatenated_genome_0_0_cluster_0_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/concatenated_genome_0_0_cluster_1_mapping_iteration_0/concatenated_genome_0_0_cluster_1_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/concatenated_genome_0_0_cluster_2_mapping_iteration_0/concatenated_genome_0_0_cluster_2_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/concatenated_genome_0_0_cluster_3_mapping_iteration_0/concatenated_genome_0_0_cluster_3_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/concatenated_genome_0_0_cluster_4_mapping_iteration_0/concatenated_genome_0_0_cluster_4_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/concatenated_genome_0_0_cluster_5_mapping_iteration_0/concatenated_genome_0_0_cluster_5_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/concatenated_genome_0_0_cluster_6_mapping_iteration_0/concatenated_genome_0_0_cluster_6_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - 
+ running 14 cmds: 
+ /usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/concatenated_genome_0_0_cluster_0_mapping_iteration_0/concatenated_genome_0_0_cluster_0.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/concatenated_genome_0_0_cluster_0_mapping_iteration_0/concatenated_genome_0_0_cluster_0_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/concatenated_genome_0_0_cluster_0_mapping_iteration_0/concatenated_genome_0_0_cluster_0_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/concatenated_genome_0_0_cluster_0_mapping_iteration_0/concatenated_genome_0_0_cluster_0_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/concatenated_genome_0_0_cluster_0_mapping_iteration_0/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/concatenated_genome_0_0_cluster_0_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/concatenated_genome_0_0_cluster_1_mapping_iteration_0/concatenated_genome_0_0_cluster_1.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/concatenated_genome_0_0_cluster_1_mapping_iteration_0/concatenated_genome_0_0_cluster_1_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/concatenated_genome_0_0_cluster_1_mapping_iteration_0/concatenated_genome_0_0_cluster_1_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/concatenated_genome_0_0_cluster_1_mapping_iteration_0/concatenated_genome_0_0_cluster_1_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/concatenated_genome_0_0_cluster_1_mapping_iteration_0/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/concatenated_genome_0_0_cluster_1_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/concatenated_genome_0_0_cluster_2_mapping_iteration_0/concatenated_genome_0_0_cluster_2.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/concatenated_genome_0_0_cluster_2_mapping_iteration_0/concatenated_genome_0_0_cluster_2_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/concatenated_genome_0_0_cluster_2_mapping_iteration_0/concatenated_genome_0_0_cluster_2_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/concatenated_genome_0_0_cluster_2_mapping_iteration_0/concatenated_genome_0_0_cluster_2_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/concatenated_genome_0_0_cluster_2_mapping_iteration_0/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/concatenated_genome_0_0_cluster_2_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/concatenated_genome_0_0_cluster_3_mapping_iteration_0/concatenated_genome_0_0_cluster_3.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/concatenated_genome_0_0_cluster_3_mapping_iteration_0/concatenated_genome_0_0_cluster_3_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/concatenated_genome_0_0_cluster_3_mapping_iteration_0/concatenated_genome_0_0_cluster_3_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/concatenated_genome_0_0_cluster_3_mapping_iteration_0/concatenated_genome_0_0_cluster_3_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/concatenated_genome_0_0_cluster_3_mapping_iteration_0/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/concatenated_genome_0_0_cluster_3_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/concatenated_genome_0_0_cluster_4_mapping_iteration_0/concatenated_genome_0_0_cluster_4.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/concatenated_genome_0_0_cluster_4_mapping_iteration_0/concatenated_genome_0_0_cluster_4_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/concatenated_genome_0_0_cluster_4_mapping_iteration_0/concatenated_genome_0_0_cluster_4_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/concatenated_genome_0_0_cluster_4_mapping_iteration_0/concatenated_genome_0_0_cluster_4_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/concatenated_genome_0_0_cluster_4_mapping_iteration_0/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/concatenated_genome_0_0_cluster_4_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/concatenated_genome_0_0_cluster_5_mapping_iteration_0/concatenated_genome_0_0_cluster_5.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/concatenated_genome_0_0_cluster_5_mapping_iteration_0/concatenated_genome_0_0_cluster_5_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/concatenated_genome_0_0_cluster_5_mapping_iteration_0/concatenated_genome_0_0_cluster_5_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/concatenated_genome_0_0_cluster_5_mapping_iteration_0/concatenated_genome_0_0_cluster_5_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/concatenated_genome_0_0_cluster_5_mapping_iteration_0/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/concatenated_genome_0_0_cluster_5_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/concatenated_genome_0_0_cluster_6_mapping_iteration_0/concatenated_genome_0_0_cluster_6.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/concatenated_genome_0_0_cluster_6_mapping_iteration_0/concatenated_genome_0_0_cluster_6_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/concatenated_genome_0_0_cluster_6_mapping_iteration_0/concatenated_genome_0_0_cluster_6_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/concatenated_genome_0_0_cluster_6_mapping_iteration_0/concatenated_genome_0_0_cluster_6_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/concatenated_genome_0_0_cluster_6_mapping_iteration_0/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/concatenated_genome_0_0_cluster_6_assembly_iteration_0 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+ - INFO - Sum of return codes (should be 0):
+ - INFO - 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/concatenated_genome_0_0_cluster_0_assembly_iteration_0/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-0-iter-0: analyzing  mapping
+ - INFO - SEED_cluster-0-iter-0: Seed length: 7004
+ - INFO - SEED_cluster-0-iter-0: Length of this iteration's longest contig: 7488
+ - INFO - SEED_cluster-0-iter-0: The new contig differs from the reference seed by 484 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/concatenated_genome_0_0_cluster_1_assembly_iteration_0/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-1-iter-0: analyzing  mapping
+ - INFO - SEED_cluster-1-iter-0: Seed length: 7004
+ - INFO - SEED_cluster-1-iter-0: Length of this iteration's longest contig: 7475
+ - INFO - SEED_cluster-1-iter-0: The new contig differs from the reference seed by 471 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/concatenated_genome_0_0_cluster_2_assembly_iteration_0/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-2-iter-0: analyzing  mapping
+ - INFO - SEED_cluster-2-iter-0: Seed length: 7094
+ - INFO - SEED_cluster-2-iter-0: Length of this iteration's longest contig: 7581
+ - INFO - SEED_cluster-2-iter-0: The new contig differs from the reference seed by 487 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/concatenated_genome_0_0_cluster_3_assembly_iteration_0/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-3-iter-0: analyzing  mapping
+ - INFO - SEED_cluster-3-iter-0: Seed length: 7002
+ - INFO - SEED_cluster-3-iter-0: Length of this iteration's longest contig: 7430
+ - INFO - SEED_cluster-3-iter-0: The new contig differs from the reference seed by 428 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/concatenated_genome_0_0_cluster_4_assembly_iteration_0/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-4-iter-0: analyzing  mapping
+ - INFO - SEED_cluster-4-iter-0: Seed length: 7096
+ - INFO - SEED_cluster-4-iter-0: Length of this iteration's longest contig: 7585
+ - INFO - SEED_cluster-4-iter-0: The new contig differs from the reference seed by 489 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/concatenated_genome_0_0_cluster_5_assembly_iteration_0/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-5-iter-0: analyzing  mapping
+ - INFO - SEED_cluster-5-iter-0: Seed length: 7004
+ - INFO - SEED_cluster-5-iter-0: Length of this iteration's longest contig: 7490
+ - INFO - SEED_cluster-5-iter-0: The new contig differs from the reference seed by 486 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/concatenated_genome_0_0_cluster_6_assembly_iteration_0/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-6-iter-0: analyzing  mapping
+ - INFO - SEED_cluster-6-iter-0: Seed length: 7339
+ - INFO - SEED_cluster-6-iter-0: Length of this iteration's longest contig: 7820
+ - INFO - SEED_cluster-6-iter-0: The new contig differs from the reference seed by 481 bases
+ - DEBUG - return code 0
+ - INFO - preparing extracted region genome for next round of mapping
+ - DEBUG - using 7 sequences
+ - INFO - combined 7 records as genome for next round of mapping
+ - INFO - Length of buffered 'genome' for mapping: 92869
+ - INFO - Moving on to iteration: 1
+ - INFO - processing iteration 1
+ - DEBUG - with new reference: /home/nicholas/GitHub/riboSeed/trust/default/seed/iter_0_buffered_genome.fasta
+ - DEBUG - getting mapping scores for cluster 0 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/concatenated_genome_0_0_cluster_0_mapping_iteration_0/concatenated_genome_0_0_cluster_0.bam
+ - DEBUG - scaling to max of 246
+ - INFO - 
+               Average alignment Scores for cluster 0
+ 
+         0                                                          857
+          |____________________________________________________________|
+       246|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       233|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       229|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       225|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       217|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       213|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 1 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/concatenated_genome_0_0_cluster_1_mapping_iteration_0/concatenated_genome_0_0_cluster_1.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 1
+ 
+         0                                                          871
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       220|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 2 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/concatenated_genome_0_0_cluster_2_mapping_iteration_0/concatenated_genome_0_0_cluster_2.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 2
+ 
+         0                                                          905
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       220|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 3 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/concatenated_genome_0_0_cluster_3_mapping_iteration_0/concatenated_genome_0_0_cluster_3.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 3
+ 
+         0                                                          814
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       220|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 4 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/concatenated_genome_0_0_cluster_4_mapping_iteration_0/concatenated_genome_0_0_cluster_4.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 4
+ 
+         0                                                          853
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       220|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 5 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/concatenated_genome_0_0_cluster_5_mapping_iteration_0/concatenated_genome_0_0_cluster_5.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 5
+ 
+         0                                                          848
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       220|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 6 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/concatenated_genome_0_0_cluster_6_mapping_iteration_0/concatenated_genome_0_0_cluster_6.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 6
+ 
+         0                                                          910
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       220|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0_unmappedreadS.fastq
+ - DEBUG - converting unmapped bam into reads:
+ - INFO - using the default minimum score for BWA
+ - INFO - checking for empty read files
+ - DEBUG - size of ../riboSeed/integration_data/test_reads1.fq: 3368339.000000
+ - DEBUG - size of ../riboSeed/integration_data/test_reads2.fq: 3368339.000000
+ - DEBUG - readS0 is set to None, and will be ignored
+ - INFO - Mapping reads to reference genome with BWA
+ - INFO - running BWA:
+ - DEBUG - with the following BWA commands:
+ - DEBUG - /usr/bin/bwa index /home/nicholas/GitHub/riboSeed/trust/default/seed/iter_0_buffered_genome.fasta
+ - DEBUG - /usr/bin/bwa mem -t 4 -L 0,0 -U 0 -a -k 15 /home/nicholas/GitHub/riboSeed/trust/default/seed/iter_0_buffered_genome.fasta ../riboSeed/integration_data/test_reads1.fq ../riboSeed/integration_data/test_reads2.fq | /usr/bin/samtools view -bh - | /usr/bin/samtools sort -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_pe.bam - 
+ - DEBUG - /usr/bin/samtools view -bh /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_pe.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_unfiltered.bam
+ - INFO - PE mapped reads: 6433 + 0 mapped (50.81% : N/A)
+ - INFO - Combined mapped reads: 6433 + 0 mapped (50.81% : N/A)
+ - DEBUG - no bwa mapping score minprovided; default is 1/2 read length or 50, whichever is greater.
+ - DEBUG - using a score minimum of 125
+ - DEBUG - filtering mapped reads with an AS score minimum of 125
+ - DEBUG - Reads after filtering: 6238
+ - DEBUG - Making mapped bam file:
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.bam -h /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.sam
+ - INFO - Mapped reads after filtering: 6238 + 0 mapped (100.00% : N/A)
+ - INFO - processing mapping for iteration 1
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 0:  [5000 - 12488]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 1:  [17488 - 24963]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 2:  [29963 - 37544]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 3:  [42544 - 49974]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 4:  [54974 - 62559]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 5:  [67559 - 75049]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 6:  [80049 - 87869]
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:5000-12488
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:5000-6000 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:11488-12488 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - INFO - Coverage for cluster 0:
+	5' 1000bp-region: 30.18 
+	3' 1000bp-region: 26.50
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:17488-24963
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:17488-18488 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:23963-24963 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - INFO - Coverage for cluster 1:
+	5' 1000bp-region: 26.89 
+	3' 1000bp-region: 26.80
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:29963-37544
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:29963-30963 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:36544-37544 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - INFO - Coverage for cluster 2:
+	5' 1000bp-region: 30.37 
+	3' 1000bp-region: 26.71
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:42544-49974
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:42544-43544 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:48974-49974 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - INFO - Coverage for cluster 3:
+	5' 1000bp-region: 22.47 
+	3' 1000bp-region: 31.94
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:54974-62559
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:54974-55974 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:61559-62559 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - INFO - Coverage for cluster 4:
+	5' 1000bp-region: 27.28 
+	3' 1000bp-region: 22.03
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_1/scannedScaffolds_cluster_5.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:67559-75049
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:67559-68559 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:74049-75049 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - INFO - Coverage for cluster 5:
+	5' 1000bp-region: 25.14 
+	3' 1000bp-region: 29.16
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_1/scannedScaffolds_cluster_6.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:80049-87869
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:80049-81049 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:86869-87869 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam
+ - INFO - Coverage for cluster 6:
+	5' 1000bp-region: 22.39 
+	3' 1000bp-region: 33.47
+ - INFO - mapped regions for iteration 1:
+scannedScaffolds:5000-12488
+scannedScaffolds:17488-24963
+scannedScaffolds:29963-37544
+scannedScaffolds:42544-49974
+scannedScaffolds:54974-62559
+scannedScaffolds:67559-75049
+scannedScaffolds:80049-87869
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.sam -h /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.bam
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:5000-12488 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:17488-24963 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:29963-37544 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:42544-49974 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:54974-62559 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:67559-75049 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_sorted.bam scannedScaffolds:80049-87869 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_mapped.txt
+ - DEBUG - sort -u /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_mapped.txt -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_mapped.txt
+ - INFO - using pysam to extract a subset of reads 
+ - INFO - Wrote 6392 unmapped reads of the 12660 total from /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_0/scannedScaffolds_mapping_iteration_0.sam to /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_unmapped.sam
+ - INFO - [(0, 30.176, 26.495504495504495), (1, 26.888111888111887, 26.803196803196805), (2, 30.373, 26.708291708291707), (3, 22.465534465534464, 31.935064935064936), (4, 27.281, 22.033966033966035), (5, 25.145, 29.156843156843156), (6, 22.391, 33.46653346653347)]
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_1/scannedScaffolds_cluster_5_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_1/scannedScaffolds_cluster_6_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - 
+ running 14 cmds: 
+ /usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_1/scannedScaffolds_cluster_5.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_1/scannedScaffolds_cluster_5_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_1/scannedScaffolds_cluster_5_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_1/scannedScaffolds_cluster_5_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_1/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_1/scannedScaffolds_cluster_6.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_1/scannedScaffolds_cluster_6_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_1/scannedScaffolds_cluster_6_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_1/scannedScaffolds_cluster_6_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_1/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_assembly_iteration_1 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+ - INFO - Sum of return codes (should be 0):
+ - INFO - 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_1/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-0-iter-1: analyzing  mapping
+ - INFO - SEED_cluster-0-iter-1: Seed length: 7004
+ - INFO - SEED_cluster-0-iter-1: Length of this iteration's longest contig: 7699
+ - INFO - SEED_cluster-0-iter-1: Length of previous longest contig: 7488
+ - INFO - SEED_cluster-0-iter-1: The new contig differs from the previous iteration by 211 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_1/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-1-iter-1: analyzing  mapping
+ - INFO - SEED_cluster-1-iter-1: Seed length: 7004
+ - INFO - SEED_cluster-1-iter-1: Length of this iteration's longest contig: 7695
+ - INFO - SEED_cluster-1-iter-1: Length of previous longest contig: 7475
+ - INFO - SEED_cluster-1-iter-1: The new contig differs from the previous iteration by 220 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_1/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-2-iter-1: analyzing  mapping
+ - INFO - SEED_cluster-2-iter-1: Seed length: 7094
+ - INFO - SEED_cluster-2-iter-1: Length of this iteration's longest contig: 7808
+ - INFO - SEED_cluster-2-iter-1: Length of previous longest contig: 7581
+ - INFO - SEED_cluster-2-iter-1: The new contig differs from the previous iteration by 227 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_1/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-3-iter-1: analyzing  mapping
+ - INFO - SEED_cluster-3-iter-1: Seed length: 7002
+ - INFO - SEED_cluster-3-iter-1: Length of this iteration's longest contig: 7643
+ - INFO - SEED_cluster-3-iter-1: Length of previous longest contig: 7430
+ - INFO - SEED_cluster-3-iter-1: The new contig differs from the previous iteration by 213 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_1/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-4-iter-1: analyzing  mapping
+ - INFO - SEED_cluster-4-iter-1: Seed length: 7096
+ - INFO - SEED_cluster-4-iter-1: Length of this iteration's longest contig: 7788
+ - INFO - SEED_cluster-4-iter-1: Length of previous longest contig: 7585
+ - INFO - SEED_cluster-4-iter-1: The new contig differs from the previous iteration by 203 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_assembly_iteration_1/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-5-iter-1: analyzing  mapping
+ - INFO - SEED_cluster-5-iter-1: Seed length: 7004
+ - INFO - SEED_cluster-5-iter-1: Length of this iteration's longest contig: 7703
+ - INFO - SEED_cluster-5-iter-1: Length of previous longest contig: 7490
+ - INFO - SEED_cluster-5-iter-1: The new contig differs from the previous iteration by 213 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_assembly_iteration_1/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-6-iter-1: analyzing  mapping
+ - INFO - SEED_cluster-6-iter-1: Seed length: 7339
+ - INFO - SEED_cluster-6-iter-1: Length of this iteration's longest contig: 8033
+ - INFO - SEED_cluster-6-iter-1: Length of previous longest contig: 7820
+ - INFO - SEED_cluster-6-iter-1: The new contig differs from the previous iteration by 213 bases
+ - DEBUG - return code 0
+ - INFO - preparing extracted region genome for next round of mapping
+ - DEBUG - using 7 sequences
+ - INFO - combined 7 records as genome for next round of mapping
+ - INFO - Length of buffered 'genome' for mapping: 94369
+ - INFO - Moving on to iteration: 2
+ - INFO - processing iteration 2
+ - DEBUG - with new reference: /home/nicholas/GitHub/riboSeed/trust/default/seed/iter_1_buffered_genome.fasta
+ - DEBUG - getting mapping scores for cluster 0 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_1/scannedScaffolds_cluster_0.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 0
+ 
+         0                                                          855
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       216|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 1 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_1/scannedScaffolds_cluster_1.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 1
+ 
+         0                                                          913
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       220|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 2 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_1/scannedScaffolds_cluster_2.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 2
+ 
+         0                                                          899
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       220|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 3 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_1/scannedScaffolds_cluster_3.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 3
+ 
+         0                                                          846
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       220|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 4 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_1/scannedScaffolds_cluster_4.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 4
+ 
+         0                                                          860
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       220|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 5 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_1/scannedScaffolds_cluster_5.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 5
+ 
+         0                                                          914
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       216|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - getting mapping scores for cluster 6 from /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_1/scannedScaffolds_cluster_6.bam
+ - DEBUG - scaling to max of 245
+ - INFO - 
+               Average alignment Scores for cluster 6
+ 
+         0                                                          951
+          |____________________________________________________________|
+       245|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       232|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       228|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       224|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       216|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+       212|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+          |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXO
+         0|O
+ - INFO - ------------------------------------------------------------------------
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1_unmappedreadS.fastq
+ - DEBUG - converting unmapped bam into reads:
+ - INFO - using the default minimum score for BWA
+ - INFO - checking for empty read files
+ - DEBUG - size of ../riboSeed/integration_data/test_reads1.fq: 3368339.000000
+ - DEBUG - size of ../riboSeed/integration_data/test_reads2.fq: 3368339.000000
+ - DEBUG - readS0 is set to None, and will be ignored
+ - INFO - Mapping reads to reference genome with BWA
+ - INFO - running BWA:
+ - DEBUG - with the following BWA commands:
+ - DEBUG - /usr/bin/bwa index /home/nicholas/GitHub/riboSeed/trust/default/seed/iter_1_buffered_genome.fasta
+ - DEBUG - /usr/bin/bwa mem -t 4 -L 0,0 -U 0 -a -k 15 /home/nicholas/GitHub/riboSeed/trust/default/seed/iter_1_buffered_genome.fasta ../riboSeed/integration_data/test_reads1.fq ../riboSeed/integration_data/test_reads2.fq | /usr/bin/samtools view -bh - | /usr/bin/samtools sort -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_pe.bam - 
+ - DEBUG - /usr/bin/samtools view -bh /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_pe.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_unfiltered.bam
+ - INFO - PE mapped reads: 6627 + 0 mapped (52.35% : N/A)
+ - INFO - Combined mapped reads: 6627 + 0 mapped (52.35% : N/A)
+ - DEBUG - no bwa mapping score minprovided; default is 1/2 read length or 50, whichever is greater.
+ - DEBUG - using a score minimum of 125
+ - DEBUG - filtering mapped reads with an AS score minimum of 125
+ - DEBUG - Reads after filtering: 6415
+ - DEBUG - Making mapped bam file:
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.bam -h /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.sam
+ - INFO - Mapped reads after filtering: 6415 + 0 mapped (100.00% : N/A)
+ - INFO - processing mapping for iteration 2
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 0:  [5000 - 12699]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 1:  [17699 - 25394]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 2:  [30394 - 38202]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 3:  [43202 - 50845]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 4:  [55845 - 63633]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 5:  [68633 - 76336]
+ - INFO - using coords from previous iterations 'genome':
+ - INFO - Coordinates for scannedScaffolds cluster 6:  [81336 - 89369]
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:5000-12699
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:5000-6000 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:11699-12699 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - INFO - Coverage for cluster 0:
+	5' 1000bp-region: 30.96 
+	3' 1000bp-region: 25.03
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:17699-25394
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:17699-18699 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:24394-25394 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - INFO - Coverage for cluster 1:
+	5' 1000bp-region: 26.34 
+	3' 1000bp-region: 25.86
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:30394-38202
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:30394-31394 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:37202-38202 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - INFO - Coverage for cluster 2:
+	5' 1000bp-region: 27.61 
+	3' 1000bp-region: 28.12
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:43202-50845
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:43202-44202 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:49845-50845 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - INFO - Coverage for cluster 3:
+	5' 1000bp-region: 22.92 
+	3' 1000bp-region: 29.85
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:55845-63633
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:55845-56845 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:62633-63633 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - INFO - Coverage for cluster 4:
+	5' 1000bp-region: 27.22 
+	3' 1000bp-region: 23.11
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_2/scannedScaffolds_cluster_5.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:68633-76336
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:68633-69633 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:75336-76336 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - INFO - Coverage for cluster 5:
+	5' 1000bp-region: 30.46 
+	3' 1000bp-region: 24.99
+ - DEBUG - /usr/bin/samtools sort /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools index /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_2/scannedScaffolds_cluster_6.bam /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:81336-89369
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:81336-82336 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - DEBUG - running the following commands to get coverage:
+ - DEBUG - /usr/bin/samtools depth -r scannedScaffolds:88369-89369 /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam
+ - INFO - Coverage for cluster 6:
+	5' 1000bp-region: 22.30 
+	3' 1000bp-region: 35.33
+ - INFO - mapped regions for iteration 2:
+scannedScaffolds:5000-12699
+scannedScaffolds:17699-25394
+scannedScaffolds:30394-38202
+scannedScaffolds:43202-50845
+scannedScaffolds:55845-63633
+scannedScaffolds:68633-76336
+scannedScaffolds:81336-89369
+ - DEBUG - /usr/bin/samtools view -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.sam -h /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2.bam
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:5000-12699 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:17699-25394 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:30394-38202 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:43202-50845 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:55845-63633 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:68633-76336 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_mapped.txt
+ - DEBUG - /usr/bin/samtools view /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_sorted.bam scannedScaffolds:81336-89369 | cut -f1 >> /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_mapped.txt
+ - DEBUG - sort -u /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_mapped.txt -o /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_mapped.txt
+ - INFO - using pysam to extract a subset of reads 
+ - INFO - Wrote 0 unmapped reads of the 6238 total from /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_1/scannedScaffolds_mapping_iteration_1.sam to /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_mapping_for_iteration_2/scannedScaffolds_mapping_iteration_2_unmapped.sam
+ - INFO - [(0, 30.959, 25.025974025974026), (1, 26.343, 25.863136863136862), (2, 27.606, 28.117882117882118), (3, 22.918, 29.85214785214785), (4, 27.223, 23.105894105894105), (5, 30.455544455544455, 24.98901098901099), (6, 22.303, 35.33166833166833)]
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_2/scannedScaffolds_cluster_5_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - generating commands to convert bam to fastqs and assemble long reads
+ - DEBUG - preparing to convert extracted reads to make these files:
+ - DEBUG - /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_2/scannedScaffolds_cluster_6_mappedreadS.fastq
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Allocating SPAdes 8gb of memory for each of 4 cores
+ - DEBUG - 
+ running 14 cmds: 
+ /usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/scannedScaffolds_cluster_0_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_mapping_iteration_2/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/scannedScaffolds_cluster_1_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_mapping_iteration_2/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/scannedScaffolds_cluster_2_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_mapping_iteration_2/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/scannedScaffolds_cluster_3_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_mapping_iteration_2/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/scannedScaffolds_cluster_4_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_mapping_iteration_2/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_2/scannedScaffolds_cluster_5.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_2/scannedScaffolds_cluster_5_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_2/scannedScaffolds_cluster_5_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_2/scannedScaffolds_cluster_5_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_mapping_iteration_2/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/usr/bin/samtools fastq /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_2/scannedScaffolds_cluster_6.bam > /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_2/scannedScaffolds_cluster_6_mappedreadS.fastq 
+if [ -s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_2/scannedScaffolds_cluster_6_mappedreadS.fastq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py --only-assembler --cov-cutoff off --sc -t 1 -m 2 --careful -k 21,33,55,77,99 --pe1-s /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_2/scannedScaffolds_cluster_6_mappedreadS.fastq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_mapping_iteration_2/extracted_seed_sequence.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_assembly_iteration_2 ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+ - INFO - Sum of return codes (should be 0):
+ - INFO - 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_0/scannedScaffolds_cluster_0_assembly_iteration_2/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-0-iter-2: analyzing  mapping
+ - INFO - SEED_cluster-0-iter-2: Seed length: 7004
+ - INFO - SEED_cluster-0-iter-2: Length of this iteration's longest contig: 7928
+ - INFO - SEED_cluster-0-iter-2: Length of previous longest contig: 7699
+ - INFO - SEED_cluster-0-iter-2: The new contig differs from the previous iteration by 229 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_1/scannedScaffolds_cluster_1_assembly_iteration_2/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-1-iter-2: analyzing  mapping
+ - INFO - SEED_cluster-1-iter-2: Seed length: 7004
+ - INFO - SEED_cluster-1-iter-2: Length of this iteration's longest contig: 7884
+ - INFO - SEED_cluster-1-iter-2: Length of previous longest contig: 7695
+ - INFO - SEED_cluster-1-iter-2: The new contig differs from the previous iteration by 189 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_2/scannedScaffolds_cluster_2_assembly_iteration_2/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-2-iter-2: analyzing  mapping
+ - INFO - SEED_cluster-2-iter-2: Seed length: 7094
+ - INFO - SEED_cluster-2-iter-2: Length of this iteration's longest contig: 7946
+ - INFO - SEED_cluster-2-iter-2: Length of previous longest contig: 7808
+ - INFO - SEED_cluster-2-iter-2: The new contig differs from the previous iteration by 138 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_3/scannedScaffolds_cluster_3_assembly_iteration_2/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-3-iter-2: analyzing  mapping
+ - INFO - SEED_cluster-3-iter-2: Seed length: 7002
+ - INFO - SEED_cluster-3-iter-2: Length of this iteration's longest contig: 7849
+ - INFO - SEED_cluster-3-iter-2: Length of previous longest contig: 7643
+ - INFO - SEED_cluster-3-iter-2: The new contig differs from the previous iteration by 206 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_4/scannedScaffolds_cluster_4_assembly_iteration_2/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-4-iter-2: analyzing  mapping
+ - INFO - SEED_cluster-4-iter-2: Seed length: 7096
+ - INFO - SEED_cluster-4-iter-2: Length of this iteration's longest contig: 8031
+ - INFO - SEED_cluster-4-iter-2: Length of previous longest contig: 7788
+ - INFO - SEED_cluster-4-iter-2: The new contig differs from the previous iteration by 243 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_5/scannedScaffolds_cluster_5_assembly_iteration_2/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-5-iter-2: analyzing  mapping
+ - INFO - SEED_cluster-5-iter-2: Seed length: 7004
+ - INFO - SEED_cluster-5-iter-2: Length of this iteration's longest contig: 7891
+ - INFO - SEED_cluster-5-iter-2: Length of previous longest contig: 7703
+ - INFO - SEED_cluster-5-iter-2: The new contig differs from the previous iteration by 188 bases
+ - DEBUG - return code 0
+ - DEBUG - checking for the following file: 
+/home/nicholas/GitHub/riboSeed/trust/default/seed/concatenated_genome_0_0_cluster_6/scannedScaffolds_cluster_6_assembly_iteration_2/contigs.fasta
+ - INFO - reserving first contig
+ - INFO - SEED_cluster-6-iter-2: analyzing  mapping
+ - INFO - SEED_cluster-6-iter-2: Seed length: 7339
+ - INFO - SEED_cluster-6-iter-2: Length of this iteration's longest contig: 8232
+ - INFO - SEED_cluster-6-iter-2: Length of previous longest contig: 8033
+ - INFO - SEED_cluster-6-iter-2: The new contig differs from the previous iteration by 199 bases
+ - DEBUG - return code 0
+ - INFO - preparing extracted region genome for next round of mapping
+ - DEBUG - using 7 sequences
+ - INFO - combined 7 records as genome for next round of mapping
+ - INFO - Length of buffered 'genome' for mapping: 95761
+ - INFO - moving on to final assemblies!
+ - DEBUG - Contigs moved prior to final iteration:
+ - DEBUG - []
+ - INFO - combining contigs from /home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads
+ - INFO - combining the following files matching pattern *:/home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads/scannedScaffolds_cluster_0_iter_2.fasta /home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads/scannedScaffolds_cluster_1_iter_2.fasta /home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads/scannedScaffolds_cluster_2_iter_2.fasta /home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads/scannedScaffolds_cluster_3_iter_2.fasta /home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads/scannedScaffolds_cluster_4_iter_2.fasta /home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads/scannedScaffolds_cluster_5_iter_2.fasta /home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads/scannedScaffolds_cluster_6_iter_2.fasta
+ - INFO - Combined Seed Contigs: /home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads/riboSeedContigs.fasta
+ - INFO - Time taken to run seeding: 1.16m
+ - INFO - Average depths of mapping for each cluster, by iteration:
+ - INFO - 
+Cluster 0:
+	Iter 0 -- 5' coverage: 34.31  3' coverage 29.27
+	Iter 1 -- 5' coverage: 30.18  3' coverage 26.50
+	Iter 2 -- 5' coverage: 30.96  3' coverage 25.03
+Cluster 1:
+	Iter 0 -- 5' coverage: 29.53  3' coverage 28.85
+	Iter 1 -- 5' coverage: 26.89  3' coverage 26.80
+	Iter 2 -- 5' coverage: 26.34  3' coverage 25.86
+Cluster 2:
+	Iter 0 -- 5' coverage: 29.31  3' coverage 31.89
+	Iter 1 -- 5' coverage: 30.37  3' coverage 26.71
+	Iter 2 -- 5' coverage: 27.61  3' coverage 28.12
+Cluster 3:
+	Iter 0 -- 5' coverage: 26.08  3' coverage 33.73
+	Iter 1 -- 5' coverage: 22.47  3' coverage 31.94
+	Iter 2 -- 5' coverage: 22.92  3' coverage 29.85
+Cluster 4:
+	Iter 0 -- 5' coverage: 23.70  3' coverage 25.53
+	Iter 1 -- 5' coverage: 27.28  3' coverage 22.03
+	Iter 2 -- 5' coverage: 27.22  3' coverage 23.11
+Cluster 5:
+	Iter 0 -- 5' coverage: 24.09  3' coverage 29.18
+	Iter 1 -- 5' coverage: 25.14  3' coverage 29.16
+	Iter 2 -- 5' coverage: 30.46  3' coverage 24.99
+Cluster 6:
+	Iter 0 -- 5' coverage: 25.01  3' coverage 31.35
+	Iter 1 -- 5' coverage: 22.39  3' coverage 33.47
+	Iter 2 -- 5' coverage: 22.30  3' coverage 35.33
+ - INFO - 
+
+Starting Final Assemblies
+
+
+ - INFO - Getting commands for de_fere_novo SPAdes
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Running spades with 2 cores and 4 gb memory
+ - INFO - Getting commands for de_novo SPAdes
+ - DEBUG - constructing shell file check for subprocess cmd
+ - INFO - Running spades with 2 cores and 4 gb memory
+ - DEBUG - running the following commands:
+ - DEBUG - if [ -s ../riboSeed/integration_data/test_reads1.fq ] && [ -s ../riboSeed/integration_data/test_reads2.fq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py -t 2 -m 4 --careful -k 21,33,55,77,99,127 --pe1-1 ../riboSeed/integration_data/test_reads1.fq --pe1-2 ../riboSeed/integration_data/test_reads2.fq --trusted-contigs /home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads/riboSeedContigs.fasta  -o /home/nicholas/GitHub/riboSeed/trust/default/seed/final_de_fere_novo_assembly ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/opt/python3.5/bin/python3.5 /home/nicholas/bin/quast-4.5/quast.py -R /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_padded.fasta /home/nicholas/GitHub/riboSeed/trust/default/seed/final_de_fere_novo_assembly/contigs.fasta -o /home/nicholas/GitHub/riboSeed/trust/default/seed/quast_de_fere_novo
+if [ -s ../riboSeed/integration_data/test_reads1.fq ] && [ -s ../riboSeed/integration_data/test_reads2.fq ] ; then /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py -t 2 -m 4 --careful -k 21,33,55,77,99,127 --pe1-1 ../riboSeed/integration_data/test_reads1.fq --pe1-2 ../riboSeed/integration_data/test_reads2.fq   -o /home/nicholas/GitHub/riboSeed/trust/default/seed/final_de_novo_assembly ; else echo 'input lib not found, skipping this SPAdes call' ; fi
+/opt/python3.5/bin/python3.5 /home/nicholas/bin/quast-4.5/quast.py -R /home/nicholas/GitHub/riboSeed/trust/default/seed/scannedScaffolds_padded.fasta /home/nicholas/GitHub/riboSeed/trust/default/seed/final_de_novo_assembly/contigs.fasta -o /home/nicholas/GitHub/riboSeed/trust/default/seed/quast_de_novo
+ - INFO - Sum of return codes (should be 0):
+ - INFO - 0
+ - DEBUG - writing combined quast reports
+ - INFO - Comparing de novo and de fere novo assemblies:
+ - DEBUG - Quast reports to combine: ['/home/nicholas/GitHub/riboSeed/trust/default/seed/quast_de_fere_novo/report.tsv', '/home/nicholas/GitHub/riboSeed/trust/default/seed/quast_de_novo/report.tsv']
+ - INFO - # N's per 100 kbp: 0.00  0.00
+ - INFO - # contigs: 1  11
+ - INFO - # contigs (>= 0 bp): 1  19
+ - INFO - # contigs (>= 1000 bp): 1  10
+ - INFO - # contigs (>= 10000 bp): 1  6
+ - INFO - # contigs (>= 25000 bp): 1  0
+ - INFO - # contigs (>= 5000 bp): 1  7
+ - INFO - # contigs (>= 50000 bp): 1  0
+ - INFO - # indels per 100 kbp: 7.58  0.00
+ - INFO - # local misassemblies: 0  0
+ - INFO - # misassembled contigs: 0  0
+ - INFO - # misassemblies: 0  0
+ - INFO - # mismatches per 100 kbp: 78.64  31.55
+ - INFO - # unaligned contigs: 0 + 0 part  0 + 0 part
+ - INFO - # unaligned mis. contigs: 0  0
+ - INFO - Duplication ratio: 1.000  1.003
+ - INFO - GC (%): 51.08  50.40
+ - INFO - Genome fraction (%): 94.611  68.187
+ - INFO - L50: 1  4
+ - INFO - L75: 1  6
+ - INFO - LA50: 1  4
+ - INFO - LA75: 1  6
+ - INFO - LG50: 1  6
+ - INFO - LG75: 1  XX
+ - INFO - LGA50: 1  6
+ - INFO - LGA75: 1  XX
+ - INFO - Largest alignment: 105545  10340
+ - INFO - Largest contig: 105545  10340
+ - INFO - Misassembled contigs length: 0  0
+ - INFO - N50: 105545  10095
+ - INFO - N75: 105545  10095
+ - INFO - NA50: 105545  10095
+ - INFO - NA75: 105545  10095
+ - INFO - NG50: 105545  10095
+ - INFO - NG75: 105545  XX
+ - INFO - NGA50: 105545  10095
+ - INFO - NGA75: 105545  XX
+ - INFO - Reference GC (%): 51.13  51.13
+ - INFO - Reference length: 111550  111550
+ - INFO - Total aligned length: 105545  76317
+ - INFO - Total length: 105545  76317
+ - INFO - Total length (>= 0 bp): 105545  78293
+ - INFO - Total length (>= 1000 bp): 105545  75788
+ - INFO - Total length (>= 10000 bp): 105545  60815
+ - INFO - Total length (>= 25000 bp): 105545  0
+ - INFO - Total length (>= 5000 bp): 105545  65925
+ - INFO - Total length (>= 50000 bp): 105545  0
+ - INFO - Unaligned length: 0  0
+ - DEBUG - copying /home/nicholas/GitHub/riboSeed/trust/default/seed/final_de_fere_novo_assembly/contigs.fasta to /home/nicholas/GitHub/riboSeed/trust/default/seed/mauve/contigs.fasta as default_de_fere_novo_contigs.fasta
+ - DEBUG - copying /home/nicholas/GitHub/riboSeed/trust/default/seed/final_de_novo_assembly/contigs.fasta to /home/nicholas/GitHub/riboSeed/trust/default/seed/mauve/contigs.fasta as default_de_novo_contigs.fasta
+ - DEBUG - copying /home/nicholas/GitHub/riboSeed/trust/default/scan/scannedScaffolds.gb to /home/nicholas/GitHub/riboSeed/trust/default/seed/mauve/scannedScaffolds.gb as default.gb
+ - INFO - Done with riboSeed: Tue Sep  5 17:15:16 2017
+ - INFO - riboSeed Assembly: /home/nicholas/GitHub/riboSeed/trust/default/seed
+ - INFO - Combined Contig Seeds (for validation or alternate assembly): /home/nicholas/GitHub/riboSeed/trust/default/seed/final_long_reads/riboSeedContigs.fasta
+ - INFO - Time taken: 2.65m

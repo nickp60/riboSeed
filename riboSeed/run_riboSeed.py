@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import multiprocessing
+import re
 
 from pyutilsnrw.utils3_5 import set_up_logging
 from argparse import Namespace
@@ -215,9 +216,22 @@ def parse_config(config_file, logger=None):
     return(config)
 
 
+def new_log_for_diff(logfile_path):
+    """ make new log file without DDDD-MM-DD HH:MM:SS in line
+    sometimes you want timestamps, sometimes you just wanna diff stuff
+    """
+    pattern  = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}")
+    with open(os.path.join(os.path.dirname(logfile_path),
+                           "run_riboSeed_notime.log"), "w") as outlog:
+        with open(logfile_path, "r") as inlog:
+            for line in inlog:
+                splitline = re.sub(pattern, "", line)
+                outlog.write(splitline)
+
+
 def main(args):
+    # set up output directory and logging
     output_root = os.path.abspath(os.path.expanduser(args.output))
-    # Create output directory only if it does not exist
     try:
         os.makedirs(output_root)
     except FileExistsError:
@@ -228,10 +242,17 @@ def main(args):
     logger = set_up_logging(verbosity=args.verbosity,
                             outfile=log_path,
                             name=__name__)
+    logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
+    logger.debug("All settings used:")
+    for k, v in sorted(vars(args).items()):
+        logger.debug("%s: %s", k, str(v))
+
+    # detect system attributes if not given expressly
     if args.cores is None:
         args.cores = multiprocessing.cpu_count()
         logger.info("Using %i cores", args.cores)
 
+    # if starting a fresh run, create a config file.  If not, read it in
     args.config = detect_or_create_config(
         config_file=args.config,
         output_root=output_root, logger=logger)
@@ -316,6 +337,7 @@ def main(args):
         rsel.main(select_args, logger)
     logger.info("\nrunning riboSeed\n")
     rseed.main(seed_args, logger)
+    new_log_for_diff(logfile_path=log_path)
 
 if __name__ == "__main__":
     args = get_args()

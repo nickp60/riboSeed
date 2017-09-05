@@ -130,9 +130,9 @@ class SeedGenome(object):
         self.logger = logger
         self.check_mands()
         # self.attach_genome_seqrecords()  # this method comes first,
-        self.refreshSeqRecGenerator()  # this method comes first,
+        self.refresh_seq_rec_generator()  # this method comes first,
         # sets self.seq_records_count
-        self.countSeqRecords()
+        self.count_seq_records()
         self.write_fasta_genome()  # because this method relies on it
         self.make_map_paths_and_dir()
 
@@ -176,7 +176,7 @@ class SeedGenome(object):
                 sequences = SeqIO.parse(fh, "genbank")
                 count = SeqIO.write(sequences, outfh, "fasta")
         assert count == self.seq_records_count, "Error parsing genbank file!"
-        self.refreshSeqRecGenerator()
+        self.refresh_seq_rec_generator()
 
     def pad_genbank(self, pad=5000, circular=False, logger=None):
         """ if the genome is circular (which it is, by default) adjust the
@@ -210,13 +210,13 @@ class SeedGenome(object):
         else:
             pass
 
-    def countSeqRecords(self):
+    def count_seq_records(self):
         """ Nothing fancy; just a quick way to get the number of records
         """
         self.seq_records_count = sum(1 for x in self.seq_records)
-        self.refreshSeqRecGenerator()
+        self.refresh_seq_rec_generator()
 
-    def refreshSeqRecGenerator(self):
+    def refresh_seq_rec_generator(self):
         """instead of using stored genbank records, this method restarts
         the generator so that each time self.seq_records is accessed
         this method can get things going again
@@ -686,14 +686,15 @@ def get_args():  # pragma: no cover
                           default=0, dest="min_flank_depth", type=float)
     optional.add_argument("--ref_as_contig", dest='ref_as_contig',
                           action="store", type=str,
-                          default=None,
-                          choices=["trusted", "untrusted"],
-                          help="if 'trusted', SPAdes will  use the seed " +
-                          "sequences as a --trusted-contig; if 'untrusted', " +
-                          "SPAdes will treat as --untrusted-contig. if '', " +
-                          "seeds will not be used during assembly. " +
-                          "See SPAdes docs; default: if mapping " +
-                          "percentage over 80%%: 'trusted', else 'untrusted'")
+                          default="infer",
+                          choices=["ignore", "infer", "trusted", "untrusted"],
+                          help="ignore: reference will not be used in " +
+                          "subassembly. trusted: SPAdes will use the seed" +
+                          " sequences as a --trusted-contig; untrusted: " +
+                          "SPAdes will treat as --untrusted-contig. " +
+                          "infer: if mapping " +
+                          "percentage over 80%: 'trusted', else 'untrusted'" +
+                          "See SPAdes docs for details.  default: infer")
     optional.add_argument("--clean_temps", dest='clean_temps',
                           default=False, action="store_true",
                           help="if --clean_temps, mapping files will be " +
@@ -1323,7 +1324,7 @@ def generate_spades_cmd(
         single_lib=False, logger=None, check_libs=False):
     """return spades command so we can multiprocess the assemblies
     wrapper for common spades setting for long illumina reads
-    ref_as_contig should be either blank, 'trusted', or 'untrusted'
+    ref_as_contig should be either None, 'trusted', or 'untrusted'
     prelim flag is True, only assembly is run, and without coverage corrections
     #TODO
     the seqname variable is used only for renaming the resulting contigs
@@ -2060,7 +2061,7 @@ def add_coords_to_clusters(seedGenome, logger=None):
             cluster.seq_record = get_rec_from_generator(
                 recordID=cluster.sequence_id,
                 gen=seedGenome.seq_records,
-                method=seedGenome.refreshSeqRecGenerator)
+                method=seedGenome.refresh_seq_rec_generator)
         except Exception as e:
             raise e
         try:  # make coord list
@@ -2252,8 +2253,9 @@ def subprocess_run_list(cmdlist, hard=False, logger=None):
     return 0
 
 
-def copyToHandyDir(outdir, pre, ref_gb, seedGenome, hard=False, logger=None):
-    """ copy the resulting contigs
+def copy_to_handy_dir(outdir, pre, ref_gb, seedGenome,
+                      hard=False, logger=None):
+    """ copy the resulting contigs and reference to dir for mauving
     """
     assert logger is not None, "Must use logging"
     os.makedirs(outdir)
@@ -2377,7 +2379,40 @@ def plotAsScores(score_list, score_min, outdir, logger=None):
                 "adjusting with --score_min")
 
 
-def reportRegionDepths(inp, logger):
+def set_ref_as_contig(ref_arg, map_percentage, final=False, logger=None):
+    """ sets the ref_as_contig arg for spades.
+    # DEPRECIATED COMMENT
+    # Note this is used to set initial subassembly and final spades assembly.
+    # Intermediate runs will always use seeds as "trusted", becasue we do not
+    # reuse reads
+    this allows the user to submit one of 4 options:
+    ignore: do not use regions from reference in initial subassembly
+    """
+    assert logger is not None, "must use logging"
+    if ref_arg == "infer":
+        if map_percentage > 80:
+            ref_as_contig = "trusted"
+        else:
+            ref_as_contig = "untrusted"
+            logger.info(
+                str("unfiltered mapping percentage is %f2 so " +
+                    "'ref_as_contigs' is set to %s"),
+                map_percentage, ref_as_contig)
+    elif ref_arg == "ignore":
+        ref_as_contig = None
+    else:
+        assert ref_arg in ["trusted", "untrusted"], \
+            "error parsing ref_As_contig"
+        ref_as_contig = ref_arg
+    # if final assembly, --ref-as-contig cannot be none, so we infer
+    if ref_as_contig is None and final:
+        return set_ref_as_contig(ref_arg="infer",
+                                 map_percentage=map_percentage,
+                                 final=final, logger=logger)
+    return ref_as_contig
+
+
+def report_region_depths(inp, logger):
     assert logger is not None, "must use logging"
     report_list = []
     nclusters = len(inp[0])
@@ -2816,7 +2851,7 @@ def main(args, logger=None):
             if args.method == "bwa":
                 fig_dir = os.path.join(output_root, "figs")
                 os.makedirs(fig_dir)
-                # either use defined min or use the smae heuristic as mapping
+                # either use defined min or use the same heuristic as mapping
                 if PLOT:
                     plotAsScores(
                         score_list,
@@ -2828,20 +2863,24 @@ def main(args, logger=None):
                           title="Average alignment Scores (y) by sorted " +
                           "read index (x)",
                           logger=logger)
-
-                if args.ref_as_contig is None:
-                    if map_percent > 80:
-                        ref_as_contig = "trusted"
-                    else:
-                        ref_as_contig = "untrusted"
-                        logger.info(
-                            str("unfiltered mapping percentage is %f2 so " +
-                                "'ref_as_contigs' is set to %s"),
-                            map_percent, ref_as_contig)
-                else:
-                    ref_as_contig = args.ref_as_contig
+                subassembly_ref_as_contig = set_ref_as_contig(
+                    ref_arg=args.ref_as_contig,
+                    map_percentage=map_percent, logger=logger)
+                # if args.ref_as_contig == "infer":
+                #     if map_percent > 80:
+                #         ref_as_contig = "trusted"
+                #     else:
+                #         ref_as_contig = "untrusted"
+                #         logger.info(
+                #             str("unfiltered mapping percentage is %f2 so " +
+                #                 "'ref_as_contigs' is set to %s"),
+                #             map_percent, ref_as_contig)
+                # elif args.ref_as_contig == "ignore":
+                #     ref_as_contig = None
+                # else:
+                #     ref_as_contig = args.ref_as_contig
             else:
-                ref_as_contig = args.ref_as_contig
+                subassembly_ref_as_contig = args.ref_as_contig
         else:
             pass
 
@@ -2869,7 +2908,7 @@ def main(args, logger=None):
         extract_convert_assemble_cmds = []
         # generate spades cmds (cannot be multiprocessed becuase of python's
         #  inability to pass objects to multiprocessing)
-        # ref_as_contig must be 'trusted' here because of the multimapping/
+        # subassembly_ref_as_contig must be 'trusted' here because of the multimapping/
         #  coverage issues
         for cluster in clusters_to_subassemble:
             cmdlist = []
@@ -2884,7 +2923,7 @@ def main(args, logger=None):
             spades_cmd = generate_spades_cmd(
                 mapping_ob=cluster.mappings[-1],
                 ngs_ob=new_ngslib, single_lib=True,
-                ref_as_contig="trusted",
+                ref_as_contig=subassembly_ref_as_contig,
                 check_libs=True,
                 as_paired=False, prelim=True,
                 k=checked_prek,
@@ -3012,25 +3051,30 @@ def main(args, logger=None):
         logger=logger)
     logger.info("Combined Seed Contigs: %s", seedGenome.assembled_seeds)
     logger.info("Time taken to run seeding: %.2fm" % ((time.time() - t0) / 60))
-    report = reportRegionDepths(inp=region_depths, logger=logger)
+    report = report_region_depths(inp=region_depths, logger=logger)
     logger.info("Average depths of mapping for each cluster, by iteration:")
     logger.info("\n" + "\n".join(report))
 
     if args.just_seed:
-        logger.info("Done: %s", time.asctime())
+        logger.info("Done with riboSeed: %s", time.asctime())
         logger.info("Skipping final assembly")
         logger.info("Combined Contig Seeds (for validation or alternate " +
                     "assembly): %s", seedGenome.assembled_seeds)
         logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
-    # run final contigs
+
+    final_ref_as_contig = set_ref_as_contig(
+        ref_arg=subassembly_ref_as_contig,
+        map_percentage=map_percent, logger=logger)
+
     spades_quast_cmds, quast_reports = get_final_assemblies_cmds(
         seedGenome=seedGenome, exes=sys_exes,
         cores=args.cores,
         memory=args.memory,
         serialize=args.serialize,
-        ref_as_contig=ref_as_contig,
+        ref_as_contig=final_ref_as_contig,
         skip_control=args.skip_control, kmers=checked_k, logger=logger)
 
+    # run final assembly(-ies)
     if args.serialize:
         logger.info("running without multiprocessing!")
         # unpack nested spades quast list, ignoring Nones
@@ -3077,13 +3121,13 @@ def main(args, logger=None):
             logger.error("Error writing out combined quast report")
             logger.error(e)
     # make dir for easy downloading from cluster
-    copyToHandyDir(outdir=os.path.join(output_root, "mauve"),
+    copy_to_handy_dir(outdir=os.path.join(output_root, "mauve"),
                    pre=args.exp_name,
                    ref_gb=args.reference_genbank,
                    seedGenome=seedGenome,
                    hard=False, logger=logger)
     # Report that we've finished
-    logger.info("Done: %s", time.asctime())
+    logger.info("Done with riboSeed: %s", time.asctime())
     logger.info("riboSeed Assembly: %s", seedGenome.output_root)
     logger.info("Combined Contig Seeds (for validation or alternate " +
                 "assembly): %s", seedGenome.assembled_seeds)

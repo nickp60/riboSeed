@@ -13,7 +13,10 @@ import subprocess
 sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
-from riboSeed.run_riboSeed import detect_or_create_config, parse_config
+from pyutilsnrw.utils3_5 import md5
+
+from riboSeed.run_riboSeed import detect_or_create_config, parse_config, \
+    new_log_for_diff
 
 logger = logging
 
@@ -21,7 +24,7 @@ logger = logging
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
                  "Subprocess.call among other things wont run if tried " +
                  "with less than python 3.5")
-class riboSketchTestCase(unittest.TestCase):
+class runRiboSeedTestCase(unittest.TestCase):
     """ Testing all the functions surrounding the actual plotting functions
     """
     def setUp(self):
@@ -68,6 +71,16 @@ class riboSketchTestCase(unittest.TestCase):
         self.assertEqual(
             conf.MAUVE_ALIGNER,
             '/home/nicholas/mauve_snapshot_2015-02-13/linux-x64/mauveAligner')
+
+    def test_new_log_for_diff(self):
+        test_log = os.path.join(self.run_ref_dir, "run_riboSeed_notime.log")
+        ref_timed_log = os.path.join(self.run_ref_dir, "sample_log.txt")
+        ref_notime_log = os.path.join(self.run_ref_dir,
+                                    "reference_run_riboSeed_notime.log")
+        new_log_for_diff(ref_timed_log)
+        self.assertEqual(
+            md5(ref_notime_log), md5(test_log))
+        self.to_be_removed.append(test_log)
 
     def tearDown(self):
         """ delete temp files if no errors
