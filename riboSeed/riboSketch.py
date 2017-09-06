@@ -76,10 +76,10 @@ def get_args():  # pragma: no cover
 
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("-f", "--assembly_ext", dest="assembly_ext",
-                          help="extenssion of reference, usually fasta",
+                          help="extension of assemblies, usually fasta",
                           default="fasta", type=str)
     optional.add_argument("-g", "--ref_ext", dest="ref_ext",
-                          help="extension of reference, usually .gb",
+                          help="extension of reference, usually gb",
                           default="gb", type=str)
     optional.add_argument("-n", "--names",
                           help="name the resulting plot and output " +
