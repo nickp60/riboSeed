@@ -119,7 +119,8 @@ class Locus(object):
     """
     def __init__(self, index, sequence_id, locus_tag, strand=None,
                  start_coord=None, end_coord=None, rel_start_coord=None,
-                 rel_end_coord=None, product=None):
+                 rel_end_coord=None, product=None, product_list=None,
+                 feature_type=None):
         # int: unique identifier for cluster
         self.index = index
         # str: sequence name, usually looks like 'NC_17777373.1' or similar
@@ -133,6 +134,8 @@ class Locus(object):
         self.end_coord = end_coord
         # str: from \product= of gb file
         self.product = product
+        # str "feature" genbank identifier
+        self.feature_type = feature_type
 
 
 def get_args():  # pragma: no cover

@@ -13,8 +13,9 @@ import unittest
 sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
-from riboSeed.riboSelect import get_filtered_locus_tag_dict, \
-    dict_from_jenks, count_feature_hits, parse_args_clusters
+from riboSeed.riboSelect import get_loci_list_for_features, \
+    dict_from_jenks, count_feature_hits_per_sequence, parse_args_clusters
+from riboSeed.riboSnag import Locus
 from pyutilsnrw.utils3_5 import get_genbank_record, check_installed_tools
 
 logger = logging
@@ -25,7 +26,7 @@ sys.dont_write_bytecode = True
                  "Subprocess.call among otherthings wont run if you try this" +
                  " with less than python 3.5")
 class riboSelect_TestCase(unittest.TestCase):
-    """ still need to write tests for  count_feature_hits
+    """ still need to write tests for  count_feature_hits_per_sequence
     """
     def setUp(self):
         self.curdir = os.getcwd()
@@ -43,79 +44,49 @@ class riboSelect_TestCase(unittest.TestCase):
         if not os.path.exists(self.testdirname):
             os.makedirs(self.testdirname, exist_ok=True)
 
-    def test_count_feature_hits_all_features(self):
-        nfeatoccur, nfeat_simple = count_feature_hits(
+    def test_count_feature_hits_per_sequence_all_features(self):
+        nfeat_simple = count_feature_hits_per_sequence(
             all_feature=True,
             gb_path=self.test_gb_file,
-            # genome_seq_records=[],
             specific_features=[],
-            locus_tag_dict={},
+            rec_id_list=[],
+            loci_list=[],
             logger=logger)
-        self.assertEqual(nfeatoccur, None)
         self.assertEqual(nfeat_simple, None)
 
-    def test_count_feature_hits(self):
-        record = get_genbank_record(self.test_gb_file)[0]
-        filtered, nfeat, nfeat_simple = \
-            get_filtered_locus_tag_dict(gb_path=self.test_gb_file,
-                                        feature="rRNA",
-                                        nrecs=1,
-                                        specific_features="16S:23S",
-                                        verbose=False,
-                                        logger=logger)
-        filtered = {
-            ('NC_011751.1', 4430571): [
-                8618, 'NC_011751.1', 'ECUMN_23S_4', 'rRNA',
-                ['ribosomal', 'RNA', '23S']],
-            ('NC_011751.1', 4524177): [
-                8804, 'NC_011751.1', 'ECUMN_23S_5', 'rRNA',
-                ['ribosomal', 'RNA', '23S']],
-            ('NC_011751.1', 3873482): [
-                7560, 'NC_011751.1', 'ECUMN_16S_1', 'rRNA',
-                ['ribosomal', 'RNA', '16S']],
-            ('NC_011751.1', 3022526): [
-                5883, 'NC_011751.1', 'ECUMN_16S_2', 'rRNA',
-                ['ribosomal', 'RNA', '16S']],
-            ('NC_011751.1', 3870131): [
-                7554, 'NC_011751.1', 'ECUMN_23S_1', 'rRNA',
-                ['ribosomal', 'RNA', '23S']],
-            ('NC_011751.1', 4522189): [
-                8798, 'NC_011751.1', 'ECUMN_16S_5', 'rRNA',
-                ['ribosomal', 'RNA', '16S']],
-            ('NC_011751.1', 4699035): [
-                9127, 'NC_011751.1', 'ECUMN_23S_7', 'rRNA',
-                ['ribosomal', 'RNA', '23S']],
-            ('NC_011751.1', 3019276): [
-                5879, 'NC_011751.1', 'ECUMN_23S_2', 'rRNA',
-                ['ribosomal', 'RNA', '23S']],
-            ('NC_011751.1', 228609): [
-                406, 'NC_011751.1', 'ECUMN_23S_3', 'rRNA',
-                ['ribosomal', 'RNA', '23S']],
-            ('NC_011751.1', 4697139): [
-                9123, 'NC_011751.1', 'ECUMN_16S_7', 'rRNA',
-                ['ribosomal', 'RNA', '16S']],
-            ('NC_011751.1', 4656045): [
-                9043, 'NC_011751.1', 'ECUMN_16S_6', 'rRNA',
-                ['ribosomal', 'RNA', '16S']],
-            ('NC_011751.1', 4657941): [
-                9047, 'NC_011751.1', 'ECUMN_23S_6', 'rRNA',
-                ['ribosomal', 'RNA', '23S']],
-            ('NC_011751.1', 4428675): [
-                8614, 'NC_011751.1', 'ECUMN_16S_4', 'rRNA',
-                ['ribosomal', 'RNA', '16S']],
-            ('NC_011751.1', 226621): [
-                400, 'NC_011751.1', 'ECUMN_16S_3', 'rRNA',
-                ['ribosomal', 'RNA', '16S']]
-        }
-        nfeatoccur2, nfeat_simple2 = count_feature_hits(
+    def test_count_feature_hits_per_sequence(self):
+        filtered_loci_list = [
+            Locus(end_coord=228162,
+                  strand= None,
+                  product= '16S',
+                  index= 0,
+                  start_coord= 226621,
+                  sequence_id='NC_011751.1',
+                  locus_tag='ECUMN_16S_3',
+                  feature_type='rRNA'),
+            Locus(end_coord= 231513, strand= None, product= '23S', index= 1, start_coord= 228609, sequence_id='NC_011751.1', locus_tag='ECUMN_23S_3', feature_type='rRNA'),
+            Locus(end_coord= 3022180, strand= None, product= '23S', index= 2, start_coord= 3019276, sequence_id='NC_011751.1', locus_tag='ECUMN_23S_2', feature_type='rRNA'),
+            Locus(end_coord= 3024067, strand= None, product= '16S', index= 3, start_coord= 3022526, sequence_id='NC_011751.1', locus_tag='ECUMN_16S_2', feature_type='rRNA'),
+            Locus(end_coord= 3873035, strand= None, product= '23S', index= 4, start_coord= 3870131, sequence_id='NC_011751.1', locus_tag='ECUMN_23S_1', feature_type='rRNA'),
+            Locus(end_coord= 3875023, strand= None, product= '16S', index= 5, start_coord= 3873482, sequence_id='NC_011751.1', locus_tag='ECUMN_16S_1', feature_type='rRNA'),
+            Locus(end_coord= 4430216, strand= None, product= '16S', index= 6, start_coord= 4428675, sequence_id='NC_011751.1', locus_tag='ECUMN_16S_4', feature_type='rRNA'),
+            Locus(end_coord= 4433474, strand= None, product= '23S', index= 7, start_coord= 4430571, sequence_id='NC_011751.1', locus_tag='ECUMN_23S_4', feature_type='rRNA'),
+            Locus(end_coord= 4523730, strand= None, product= '16S', index= 8, start_coord= 4522189, sequence_id='NC_011751.1', locus_tag='ECUMN_16S_5', feature_type='rRNA'),
+            # Locus(end_coord= 4527078, strand= None, product= '23S', index= 9, start_coord= 4524177, sequence_id='NC_011751.1', locus_tag='ECUMN_23S_5', feature_type='rRNA'),
+            Locus(end_coord= 4657586, strand= None, product= '16S', index= 10, start_coord= 4656045, sequence_id='NC_011751.1', locus_tag='ECUMN_16S_6', feature_type='rRNA'),
+            Locus(end_coord= 4660845, strand= None, product= '23S', index= 11, start_coord= 4657941, sequence_id='NC_011751.1', locus_tag='ECUMN_23S_6', feature_type='rRNA'),
+            Locus(end_coord= 4698680, strand= None, product= '16S', index= 12, start_coord= 4697139, sequence_id='NC_011751.1', locus_tag='ECUMN_16S_7', feature_type='rRNA'),
+            Locus(end_coord= 4701939, strand= None, product= '23S', index= 13, start_coord= 4699035, sequence_id='NC_011751.1', locus_tag='ECUMN_23S_7', feature_type='rRNA')]
+
+
+        nfeat_simple2 = count_feature_hits_per_sequence(
             all_feature=False,
             gb_path=self.test_gb_file,
-            # genome_seq_records=[record],
             specific_features=["16S", "23S"],
-            locus_tag_dict=filtered,
+            loci_list=filtered_loci_list,
+            rec_id_list = ['NC_011751.1'],
             logger=logger)
-        self.assertEqual(nfeat_simple2['NC_011751.1'], [7, 7])
-        self.assertEqual(nfeatoccur2['NC_011751.1'], [['16S', 7], ['23S', 7]])
+        self.assertEqual(nfeat_simple2['NC_011751.1'], [7, 6])
 
     def test_dict_from_jenks(self):
         res_dict = {
@@ -168,55 +139,51 @@ class riboSelect_TestCase(unittest.TestCase):
 
     def test_locus_tag_dict(self):
         """test different scenarios of trying to get features
-        from a gb file with get_filtered_locus_tag_dict
+        from a gb file with get_loci_list_for_features
         """
-        # test single genbank record
-        record = get_genbank_record(self.test_gb_file)[0]
         # with self.assertRaises(SystemExit):
         # test that when given a bad feature empty results are returned
-        bum_coords, bum_nfeat, bum_nfeat_simple = \
-            get_filtered_locus_tag_dict(gb_path=self.test_gb_file,
+        bum_coords, bum_nfeat_simple = \
+            get_loci_list_for_features(gb_path=self.test_gb_file,
                                         feature="RRNA",
                                         specific_features="16S",
                                         nrecs=1,
                                         verbose=False,
                                         logger=logger)
         self.assertTrue([len(x) == 0 for x in
-                         [bum_nfeat, bum_nfeat_simple, bum_coords]])
-        bum_coords2, bum_nfeat2, bum_nfeat_simple2 = \
-            get_filtered_locus_tag_dict(gb_path=self.test_gb_file,
+                         [bum_nfeat_simple, bum_coords]])
+        bum_coords2,  bum_nfeat_simple2 = \
+            get_loci_list_for_features(gb_path=self.test_gb_file,
                                         feature="rRNA",
                                         nrecs=1,
                                         specific_features="18S",
                                         verbose=False,
                                         logger=logger)
         self.assertTrue([len(x) == 0 for x in
-                         [bum_nfeat2, bum_nfeat_simple2, bum_coords2]])
+                         [bum_nfeat_simple2, bum_coords2]])
 
-        filtered, nfeat, nfeat_simple = \
-            get_filtered_locus_tag_dict(gb_path=self.test_gb_file,
+        filtered, nfeat_simple = \
+            get_loci_list_for_features(gb_path=self.test_gb_file,
                                         nrecs=1,
                                         feature="rRNA",
                                         specific_features="16S",
-                                        verbose=False,
+                                        verbose=True,
                                         logger=logger)
         self.assertEqual(len(filtered), 7)
-        # check length of 1st item (ie, occurances) is same
-        self.assertEqual(len(nfeat['NC_011751.1']),
-                         len(nfeat_simple['NC_011751.1']))
-        self.assertEqual([8614, 'NC_011751.1', 'ECUMN_16S_4', 'rRNA',
-                          ['ribosomal', 'RNA', '16S']],
-                         filtered[('NC_011751.1', 4428675)])
+        sample_entry = [x for x in filtered if \
+                        x.sequence_id =='NC_011751.1' and \
+                        x.start_coord == 4428675][0]
+        self.assertEqual(sample_entry.locus_tag, 'ECUMN_16S_4')
+        self.assertEqual(sample_entry.feature_type, 'rRNA')
+        self.assertEqual(sample_entry.product, "16S")
         self.assertEqual(nfeat_simple, {'NC_011751.1': [7]})
 
     def test_parse_clusters_infer(self):
-        record = get_genbank_record(self.test_gb_file)[0]
         centers = parse_args_clusters(clusters='', nrecs=1,
                                       logger=logger)
         self.assertEqual(centers, [0])
 
     def test_parse_clusters_provide(self):
-        record = get_genbank_record(self.test_gb_file)[0]
         centers2 = parse_args_clusters(clusters='3', nrecs=1,
                                        logger=logger)
         self.assertEqual(centers2, [3])

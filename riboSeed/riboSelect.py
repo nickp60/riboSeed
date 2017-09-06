@@ -26,8 +26,10 @@ import datetime
 import argparse
 import sys
 import jenkspy
+import itertools
 from Bio import SeqIO
 
+from riboSnag import Locus
 from pyutilsnrw.utils3_5 import set_up_logging, multisplit
 
 
@@ -88,52 +90,44 @@ def get_args():  # pragma: no cover
     return args
 
 
-def count_feature_hits(all_feature, gb_path,
-                       specific_features, locus_tag_dict, logger=None):
+def count_feature_hits_per_sequence(all_feature, gb_path, rec_id_list,
+                       specific_features, loci_list, logger=None):
     """ given genome seq records, specific_features, and a
     locus_tag_dict from get_filtered_locus_tag_dict, return two structures:
     - nfeatures_occur {record.id, [[16s, 5],[23s, 4],[5s,6]]}
     - nfeatures_simple {record.id [record.id, [5,4,6]}
+    SPECIFIC FEATURES MUST BE SORTED
     """
     logger.info("counting occurances of %s", " ".join(specific_features))
     assert logger is not None, "Must use logging"
+    # if looking at all the features, ignore this whole bit
+    if all_feature:
+        return None
     #  This bit counts the number of hits per specific feature.
     logger.info("counting features")
-    if not all_feature:
-        nfeatures_occur = {}  # makes  {genome : [['18S', 5],['28S',3]]}
-        nfeat_simple = {}  # makes  {genome : [5, 3]}
-        with open(gb_path, "r") as genome_seq_records:
-            for record in SeqIO.parse(genome_seq_records, "genbank"):
-                logger.debug("counting hits in %s", record.id)
-                hit_list = []  # [specific feature, count] list
-                hit_list_simple = []  # [count] list
-                subset = {k: v for k, v in locus_tag_dict.items()
-                          if record.id in v}
-                if len(subset) == 0:
-                    continue
-                logger.debug(subset)
-                for i in specific_features:
-                    hits = 0
-                    for k, v in subset.items():
-                        # hint: v[-1] should be the product annotation
-                        if any([i == x for x in v[-1]]):
-                            hits = hits + 1
-                        else:
-                            pass
-                    hit_list.append([i, hits])
-                    hit_list_simple.append(hits)
-                nfeatures_occur[record.id] = (hit_list)
-                nfeat_simple[record.id] = hit_list_simple
-    else:
-        nfeatures_occur, nfeat_simple = None, None
-    return(nfeatures_occur, nfeat_simple)
+    nfeat_simple = {}  # makes  {genome : [5, 3]}
+    for rec_id in rec_id_list:
+        # create the entry
+        hit_list = [0 for x in specific_features]
+        for locus in loci_list:
+            if locus.sequence_id == rec_id:
+                for idx, x in enumerate(specific_features):
+                    if locus.product == x:
+                        hit_list[idx] = hit_list[idx] + 1
+                    else:
+                        pass
+        nfeat_simple[rec_id] = hit_list
+    return nfeat_simple
 
 
-def get_filtered_locus_tag_dict(gb_path, nrecs, feature="rRNA",
+def get_loci_list_for_features(gb_path, nrecs, feature="rRNA",
                                 specific_features="16S:23S",
                                 verbose=True, logger=None):
-    """ Given a LIST (as of 20160927) of genbank records,
-    returns dictionary of index:locus_tag id pairs for all
+    """ Given a path to genbank file,
+    returns a tuple of loci_list and dict of {"sequence" [counts of features]}
+
+    The list of Locus object for each feature of interest
+    (ie, all the rRNA annotations). dictionary of index:locus_tag id pairs for all
     "feature"  entries.  This then gets clustered.
     requires having locus tag in your genbank file.  Non-negitable.
     should be prokka-friendly, so if you have a gb file with legacy
@@ -143,22 +137,18 @@ def get_filtered_locus_tag_dict(gb_path, nrecs, feature="rRNA",
     if specific features is None, return all with type == feature
     Changed from having index used for clustering to using the first coord
     """
+    assert logger is not None, "must use logging, even if not 'verbose'"
     assert os.path.exists(gb_path), \
         'genbank file not found! '
-    # if specific_features is None:
-    #     all_feature = True
-    # else:
-    #     all_feature = False
     if specific_features is not None:
-        specific_features = specific_features.split(":")
-    locus_tag_dict = {}  # recipient structure
-    preunique_feats = []
-
+        specific_features = set(specific_features.split(":"))
+    loci_list = []
+    gb_record_ids = []
     # loop through records
     with open(gb_path, "r") as genome_seq_records:
-        # genome_records = list(SeqIO.parse(fh, 'genbank'))
         for record in SeqIO.parse(genome_seq_records, "genbank"):
-            loc_number = 0  # counter that for index of hits; this is clustered
+            gb_record_ids.append(record.id)
+            loc_number = 0  # counter for hits
             logger.debug("scanning %s", record.id)
             for feat in record.features:
                 if feat.type in feature:
@@ -168,59 +158,62 @@ def get_filtered_locus_tag_dict(gb_path, nrecs, feature="rRNA",
                         if verbose:
                             logger.debug("no locus tag for this feature!")
                         continue
-                    product_list = multisplit(
+                    product_list = set(multisplit(
                         [",", " ", "-", "_"],
-                        feat.qualifiers.get("product")[0])
-                    coords = [feat.location.start.position + 1,
-                              feat.location.end.position]
+                        feat.qualifiers.get("product")[0]))
                     if verbose:
-                        logger.debug(product_list)
-                        logger.debug(coords)
+                        logger.debug(locustag, product_list)
+                    product_matches = \
+                        product_list.intersection(specific_features)
+                    if len(product_matches) > 1:
+                        logger.error(
+                            "multiple hits found in a single product " +
+                            "annotation; this is likely indicative of " +
+                            "indistinct annotation. Please use with riboScan" +
+                            "or barrnap outputted genbank file to avoid this.")
+                        sys.exit(1)
                     # if either specific feature is found in product or
                     # only interested in all features, add locus to dict
                     if (specific_features is None or
-                        (specific_features is not None and
-                         any([x in specific_features for x in product_list]))):
+                        (specific_features is not None and product_matches)):
                         # key is start coord
-                        preunique_feats.extend([x for x in specific_features if
-                                                x in product_list])
-                        locus_tag_dict[(record.id, coords[0])] = [loc_number,
-                                                                  record.id,
-                                                                  locustag,
-                                                                  feat.type,
-                                                                  product_list]
+                        loci_list.append(Locus(
+                            index=loc_number,
+                            sequence_id=record.id,
+                            locus_tag=locustag,
+                            feature_type=feat.type,
+                            # cause sets cant be indexed
+                            product=next(iter(product_matches)),
+                            start_coord=feat.location.start.position + 1,
+                            end_coord=feat.location.end.position,
+                            strand=None))
+                        loc_number = loc_number + 1
                     else:
                         if verbose:
                             logger.debug("Not adding this feat to " +
                                          "list: %s", product_list)
-                        pass
-
-                    loc_number = loc_number + 1  # increment idx after feature
                 else:
                     if verbose:
                         logger.debug("skipping: %s", feat.type)
-                    loc_number = loc_number + 1  # increment idx after feature
             # this is a soft warning, as we want to be able to loop
             # through all records before worrying
-            if len(locus_tag_dict) < 1 and logger:
+            if len(loci_list) < 1:
                 logger.info(str("no locus tags found in {0} for {1} " +
                                 "features with annotated products matching" +
                                 "{2}!\n").format(record.id,
                                                  feature, specific_features))
-    # locus_tag_dict = locus_tag_dict
-    if verbose and logger:
-        for key in sorted(locus_tag_dict):
-            logger.debug("%s: %s;", key, locus_tag_dict[key])
-
+    if verbose:
+        for idx, locus in enumerate(loci_list):
+            logger.debug("%s: %s;", idx, str(locus.__dict__))
     # count the occuraces of each feature per genbank record
-    nfeatures_occur, \
-        nfeat_simple = count_feature_hits(
-            all_feature=specific_features is None,
-            gb_path=gb_path,
-            specific_features=set(preunique_feats),
-            locus_tag_dict=locus_tag_dict,
-            logger=logger)
-    return(locus_tag_dict, nfeatures_occur, nfeat_simple)
+    nfeat_simple = count_feature_hits_per_sequence(
+        all_feature=specific_features is None,
+        gb_path=gb_path,
+        rec_id_list=gb_record_ids,
+        specific_features=specific_features,
+        loci_list=loci_list,
+        logger=logger)
+    return (loci_list, nfeat_simple)
 
 
 def parse_args_clusters(clusters, nrecs, logger=None):
@@ -255,9 +248,8 @@ def dict_from_jenks(data, centers, logger=None):
     # if centers <= 1:
     #     logger.error("center value must be larger than 1")
     breaks = jenkspy.jenks_breaks(data, nb_class=centers)
-    if logger:
-        logger.debug("Jenks breaks:")
-        logger.debug(breaks)
+    logger.debug("Jenks breaks:")
+    logger.debug(breaks)
     newdata = {}
     data2 = data[:]  # we will be removing items, so lets keep track
     for idx, b in enumerate(breaks):
@@ -321,13 +313,13 @@ def main(args, logger=None):
             "product annotation").format(
             args.feature,
             str([x for x in args.specific_features.split(":")])))
-    lociDict, nfeat, nfeat_simple = \
-        get_filtered_locus_tag_dict(gb_path=args.genbank_genome,
-                                    feature=args.feature,
-                                    specific_features=args.specific_features,
-                                    verbose=args.debug,
-                                    nrecs=nrecs,
-                                    logger=logger)
+    loci_list, nfeat_simple = \
+        get_loci_list_for_features(gb_path=args.genbank_genome,
+                                   feature=args.feature,
+                                   specific_features=args.specific_features,
+                                   verbose=args.debug,
+                                   nrecs=nrecs,
+                                   logger=logger)
 
     # default case, clusters are inferred
     # if not, must be equal to the length of genbank records
@@ -344,9 +336,8 @@ def main(args, logger=None):
     #####
     ##### for each genbank record, process, and append any hits to outfile
     #####
-    logger.debug("All loci:")
-    for k, v in lociDict.items():
-        logger.debug(str(k) + "\t" + str(v))
+    logger.debug("All loci:\n" +
+                 "\n".join([str(x.__dict__) for x in loci_list]))
     outlines = []
     with open(args.genbank_genome, "r") as gb:
         for i, rec in enumerate(SeqIO.parse(args.genbank_genome, 'genbank')):
@@ -355,46 +346,39 @@ def main(args, logger=None):
             if args.clusters:
                 logger.info("using %s clusters for %s\n",
                             centers_per_seq[i], rec.id)
-            # get subset of lociDict for that id
-            subset = {key: value for key, value in lociDict.items() if
-                      rec.id == value[1]}
+            subset = [x for x in loci_list if x.sequence_id == rec.id]
             # skip if that doesnt have any hits
             if len(subset) == 0:
                 logger.info("no hits in {0}\n".format(rec.id))
                 continue
-            logger.debug("Subset loci:")
-            for k, v in subset.items():
-                logger.debug(str(k) + "\t" + str(v))
-            logger.info("hits in {0}\n".format(rec.id))
+            logger.debug("Subset loci:\n" +
+                         "\n".join([str(x.__dict__) for x in subset]))
 
             #  find nfeat for this genbank id by subsetting;
             # is this a bad way of doesnt things?
 
             # logger.debug("centers: {0}".format(centers_per_seq))
             # logger.debug("nfeat_simple: {0}".format(nfeat_simple[i]))
-
             if nfeat_simple is None and centers_per_seq[i] == 0:
-                logger.error("No specific features submitted, cannot calculate " +
-                             " number centers needed for clustering.  Please" +
-                             "submit the desired number of clusters with the  " +
-                             "--clusters argument!\n")
+                logger.error(
+                    "No specific features submitted, cannot calculate " +
+                    " number centers needed for clustering.  Please" +
+                    "submit the desired number of clusters with the  " +
+                    "--clusters argument!\n")
                 sys.exit(1)
-            logger.debug("nfeat_simple")
-            # for k, v in nfeat_simple.items():
-            #     print(k)
-            #     print(v)
-            rec_nfeat = list({k: v for k, v in nfeat_simple.items() if
-                              rec.id in k}.values())[0]
+            logger.debug("nfeat_simple:\n%s", nfeat_simple)
+            rec_nfeat = [v for k, v in nfeat_simple.items() if
+                              rec.id in k][0]
             logger.debug("rec_nfeat: {0}".format(rec_nfeat))
             if all([x == 0 for x in rec_nfeat]):
                 logger.error("unable to count features!")
                 sys.exit(1)
-            indexes = [x[1] for x in list(subset)]  # get index back from tuple key
+            indexes = [x.start_coord for x in subset]  # get index back from tuple key
             ## if centers[i] is 0, try max and min sequentially; if that fails skip
             if centers_per_seq[i] == 0:
                 # if only looking at two features, take the max
                 # if the smallest value is not greater than 1, take the max
-                # This is a shakey heuistic
+                # This is a shaky heuristic
                 if min(rec_nfeat) <= 1 or len(rec_nfeat) <= 2:
                     current_centers = max(rec_nfeat)
                 else:
@@ -402,9 +386,9 @@ def main(args, logger=None):
                 if current_centers == 0:
                     logger.info("skipping the clustering for {0}\n".format(i))
                     continue
-                logger.debug("grouping indexes with jenks natural breaks " +
-                             "assuming %d classes", current_centers)
-                logger.debug(indexes)
+                # logger.debug("grouping indexes with jenks natural breaks " +
+                #              "assuming %d classes", current_centers)
+                # logger.debug(indexes)
                 indexClusters = dict_from_jenks(
                     data=indexes, centers=current_centers, logger=logger)
             else:
@@ -413,8 +397,9 @@ def main(args, logger=None):
             # Perform actual clustering
             try:
                 # indexClusters should be like { "1": [3,4,6], "2": [66,45,63]}
-                logger.debug("grouping indexes with jenks natural breaks " +
-                             "assuming %d classes", current_centers)
+                logger.debug(
+                    "grouping the following indexes with jenks " +
+                    "natural breaks assuming %d classes", current_centers)
                 logger.debug(indexes)
                 indexClusters = dict_from_jenks(
                     data=indexes, centers=current_centers, logger=logger)
@@ -424,16 +409,17 @@ def main(args, logger=None):
             logger.debug("indexClusters:")
             logger.debug(indexClusters)
             # add output lines to list
-
             outlines.append("# Generated cluters for {0} on {1}\n".format(
                 rec.id, date))
             outlines.append("#$ FEATURE {0}\n".format(args.feature))
 
-            for k, v in indexClusters.items():
+            for k, v in sorted(indexClusters.items()):
                 outlines.append(
                     "{0} {1}\n".format(
                         rec.id,
-                        ":".join([subset[(rec.id, int(x))][2] for x in v]))
+                        # ":".join([subset[(rec.id, int(x))][2] for x in v]))
+                        ":".join([x.locus_tag for x in subset if \
+                                  x.start_coord in v]))
                 )
 
     with open(output_path, "a") as outfile:
