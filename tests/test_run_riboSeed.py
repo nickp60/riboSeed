@@ -69,7 +69,7 @@ class runRiboSeedTestCase(unittest.TestCase):
                 self.run_ref_dir, "sample_config.py"),
             logger=logger)
         self.assertEqual(
-            conf.MAUVE_ALIGNER,
+            conf.MAUVE_ALIGNER_EXE,
             '/home/nicholas/mauve_snapshot_2015-02-13/linux-x64/mauveAligner')
 
     def test_new_log_for_diff(self):

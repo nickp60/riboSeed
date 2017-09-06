@@ -117,6 +117,11 @@ def get_args():  # pragma: no cover
                           default=False,
                           help="Don't do an assembly, just generate the long" +
                           " read 'seeds'; default: %(default)s")
+    optional.add_argument("--score_vis", dest='score_vis',
+                          action="store_true",
+                          default=False,
+                          help="run riboScore and riboSketch too! " +
+                          "default: %(default)s")
     optional.add_argument("-l", "--flanking_length",
                           help="length of flanking regions, in bp; " +
                           "default: %(default)s",
@@ -367,21 +372,22 @@ def main(args):
         rsel.main(select_args, logger)
     logger.info("\nrunning riboSeed\n")
     rseed.main(seed_args, logger)
-    if conf.MAUVE_JAR is not None:
-        logger.info("\nrunning riboSketch\n")
-        rsketch.main(sketch_args, logger=logger)
-    else:
-        logger.info(
-            "Skipping riboScore: no Mauve.jar found.  If this is in error, " +
-            " add the path to Mauve.jar in the config file form this run, " +
-            " and re-run with -c path/to/config.py")
+    if args.score_vis:
+        if conf.MAUVE_JAR is not None:
+            logger.info("\nrunning riboSketch\n")
+            rsketch.main(sketch_args, logger=logger)
+        else:
+            logger.info(
+                "Skipping riboScore: no Mauve.jar found. To fix, " +
+                " add the path to Mauve.jar in the config file from this " +
+                "run, and re-run with -c path/to/config.py")
 
-    if conf.BLAST_EXE is not None:
-        logger.info("\nrunning riboScore\n")
-        rscore.main(score_args, logger=logger)
-    else:
-        logger.info("Skipping riboScore, as no blastn executable was " +
-                    "found in path.")
+        if conf.BLAST_EXE is not None:
+            logger.info("\nrunning riboScore\n")
+            rscore.main(score_args, logger=logger)
+        else:
+            logger.info("Skipping riboScore, as no blastn executable was " +
+                        "found in path.")
     new_log_for_diff(logfile_path=log_path)
 
 if __name__ == "__main__":
