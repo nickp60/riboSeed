@@ -2835,8 +2835,7 @@ def main(args, logger=None):
                 # add_args='-L 0,0 -U 0',
                 add_args=args.mapper_args,
                 logger=logger)
-        mapping_percentages.append("Iteration %i: %f" % (
-            seedGenome.this_iteration, map_percent))
+        mapping_percentages.append([seedGenome.this_iteration, map_percent])
         # if things go really bad on the first mapping, get out while you can
         if len(score_list) == 0:
             logger.error(
@@ -3061,6 +3060,13 @@ def main(args, logger=None):
     logger.info("Average depths of mapping for each cluster, by iteration:")
     logger.info("\n" + "\n".join(report))
 
+    logger.info("Average mapping percentage for initial mapping: %d",
+                mapping_percentages[0][1])
+    logger.info("Average mapping percentage of reads to pseudogenome in " +
+                "subsequent mappings:\n" +
+                "\n".join(["iter %d: %d%%" % (i[0], i[1]) for \
+                           i in mapping_percentages[1:]]))
+
     if args.just_seed:
         logger.info("Done with riboSeed: %s", time.asctime())
         logger.info("Skipping final assembly")
@@ -3070,7 +3076,8 @@ def main(args, logger=None):
 
     final_ref_as_contig = set_ref_as_contig(
         ref_arg=subassembly_ref_as_contig,
-        map_percentage=map_percent, final=True, logger=logger)
+        # initial mapping percentage is used if inferring
+        map_percentage=mapping_percentages[0][1], final=True, logger=logger)
 
     spades_quast_cmds, quast_reports = get_final_assemblies_cmds(
         seedGenome=seedGenome, exes=sys_exes,

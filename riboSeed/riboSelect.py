@@ -162,7 +162,7 @@ def get_loci_list_for_features(gb_path, nrecs, feature="rRNA",
                         [",", " ", "-", "_"],
                         feat.qualifiers.get("product")[0]))
                     if verbose:
-                        logger.debug(locustag, product_list)
+                        logger.debug("%s:%s", locustag, " ".join(product_list))
                     product_matches = \
                         product_list.intersection(specific_features)
                     if len(product_matches) > 1:
