@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
+# Copyright 2017, National University of Ireland and The James Hutton Insitute
+# Author: Nicholas Waters
+#
+# This code is part of the riboSeed package, and is governed by its licence.
+# Please see the LICENSE file that should have been included as part of
+# this package.
 
 import argparse
 import pkg_resources
@@ -26,6 +32,8 @@ sys.path.append(os.path.join('..', 'riboSeed'))
 import riboScan as rscan
 import riboSelect as rsel
 import riboSeed as rseed
+import riboSketch as rsketch
+import riboScore as rscore
 import make_riboSeed_config as mrc
 
 
@@ -35,7 +43,7 @@ def get_args():  # pragma: no cover
         "files, this facilitates reannotation of rDNA regions with Barrnap " +
         " and outputs all sequences as a single, annotated genbank file",
         add_help=False)  # to allow for custom help
-    parser.add_argument("contigs", action="store",
+    parser.add_argument("reference_fasta", action="store",
                         help="either a (multi)fasta or a directory " +
                         "containing one or more chromosomal " +
                         "sequences in fasta format")
@@ -260,7 +268,7 @@ def main(args):
 
     # if no name given, infer from the name of the contigs file
     experiment_name = args.exp_name if args.exp_name is not None else \
-        os.path.basename(os.path.splitext(args.contigs)[0])
+        os.path.basename(os.path.splitext(args.reference_fasta)[0])
 
     if args.cluster_file is None:
         cluster_txt_file = os.path.join(
@@ -269,7 +277,7 @@ def main(args):
         cluster_txt_file = args.cluster_file
 
     scan_args = Namespace(
-        contigs=args.contigs,
+        contigs=args.reference_fasta,
         output=os.path.join(output_root, "scan"),
         kingdom=args.kingdom,
         id_thresh=conf.SCAN_ID_THRESH,
@@ -326,6 +334,28 @@ def main(args):
         bwa_exe=conf.BWA_EXE,
         quast_exe=conf.QUAST_EXE,
         verbosity=conf.SEED_VERBOSITY)
+    sketch_args = Namespace(
+        indir=os.path.join(output_root, "seed","mauve"),
+        outdir=os.path.join(output_root, "sketch"),
+        assembly_ext=conf.SKETCH_ASSEMBLY_EXT,
+        ref_ext=conf.SKETCH_REF_EXT,
+        names="{0},{1},{2}".format(
+            os.path.basename(args.reference_fasta),
+            os.path.basename(experiment_name) + " de fere novo",
+            os.path.basename(experiment_name) + " de novo"),
+        replot=False,
+        mauve_jar=conf.MAUVE_JAR,
+        verbosity=conf.SKETCH_VERBOSITY)
+    score_args = Namespace(
+        indir=os.path.join(output_root, "seed","mauve"),
+        output=os.path.join(output_root, "score"),
+        flanking=args.flanking,
+        ref_ext=conf.SKETCH_REF_EXT,
+        assembly_ext=conf.SKETCH_ASSEMBLY_EXT,
+        blast_full=False,
+        verbosity=conf.SCORE_VERBOSITY)
+
+
     logger.info("\nrunning riboScan\n")
     rscan.main(scan_args, logger)
     if args.cluster_file is not None:
@@ -337,6 +367,21 @@ def main(args):
         rsel.main(select_args, logger)
     logger.info("\nrunning riboSeed\n")
     rseed.main(seed_args, logger)
+    if conf.MAUVE_JAR is not None:
+        logger.info("\nrunning riboSketch\n")
+        rsketch.main(sketch_args, logger=logger)
+    else:
+        logger.info(
+            "Skipping riboScore: no Mauve.jar found.  If this is in error, " +
+            " add the path to Mauve.jar in the config file form this run, " +
+            " and re-run with -c path/to/config.py")
+
+    if conf.BLAST_EXE is not None:
+        logger.info("\nrunning riboScore\n")
+        rscore.main(score_args, logger=logger)
+    else:
+        logger.info("Skipping riboScore, as no blastn executable was " +
+                    "found in path.")
     new_log_for_diff(logfile_path=log_path)
 
 if __name__ == "__main__":

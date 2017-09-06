@@ -1,4 +1,12 @@
-#!/usr/bin/env python3.5
+#!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+# Copyright 2017, National University of Ireland and The James Hutton Insitute
+# Author: Nicholas Waters
+#
+# This code is part of the riboSeed package, and is governed by its licence.
+# Please see the LICENSE file that should have been included as part of
+# this package.
+
 """
 Input:
 - genbank file

@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
+# Copyright 2017, National University of Ireland and The James Hutton Insitute
+# Author: Nicholas Waters
+#
+# This code is part of the riboSeed package, and is governed by its licence.
+# Please see the LICENSE file that should have been included as part of
+# this package.
 
 """
 Created on Sun Jul 24 19:33:37 2016
@@ -2401,11 +2407,11 @@ def set_ref_as_contig(ref_arg, map_percentage, final=False, logger=None):
     elif ref_arg == "ignore":
         ref_as_contig = None
     else:
-        assert ref_arg in ["trusted", "untrusted"], \
-            "error parsing ref_As_contig"
+        assert ref_arg in [None, "trusted", "untrusted"], \
+            "error parsing initial ref_as_contig: %s" % ref_arg
         ref_as_contig = ref_arg
-    # if final assembly, --ref-as-contig cannot be none, so we infer
-    if ref_as_contig is None and final:
+    if final and ref_as_contig is None:
+        # if final assembly, --ref-as-contig cannot be none, so we infer
         return set_ref_as_contig(ref_arg="infer",
                                  map_percentage=map_percentage,
                                  final=final, logger=logger)
@@ -3064,7 +3070,7 @@ def main(args, logger=None):
 
     final_ref_as_contig = set_ref_as_contig(
         ref_arg=subassembly_ref_as_contig,
-        map_percentage=map_percent, logger=logger)
+        map_percentage=map_percent, final=True, logger=logger)
 
     spades_quast_cmds, quast_reports = get_final_assemblies_cmds(
         seedGenome=seedGenome, exes=sys_exes,

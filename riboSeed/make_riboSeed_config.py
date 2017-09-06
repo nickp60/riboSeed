@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
-
-"""
-Created on Sun Jul 24 19:33:37 2016
-
-See README.md for more info and usage
-"""
+# Copyright 2017, National University of Ireland and The James Hutton Insitute
+# Author: Nicholas Waters
+#
+# This code is part of the riboSeed package, and is governed by its licence.
+# Please see the LICENSE file that should have been included as part of
+# this package.
 
 import argparse
 import sys
@@ -62,8 +62,7 @@ def config_exes():
                     ("SPADES_EXE", "spades.py"),
                     ("BWA_EXE", "bwa"),
                     ("SAMTOOLS_EXE", "samtools"),
-                    ("BALST_EXE", "blastn"),
-                    ("MAUVE_ALIGNER", "mauveAligner")]
+                    ("BLAST_EXE", "blastn")]
     config_lines = [
         "#------------------------#",
         "##  Required programs   ##",
@@ -88,7 +87,47 @@ def config_exes():
             config_lines.append(k + " = '" + shutil.which(v) + "'\n")
         else:
             config_lines.append(k + " = None\n" )
+    config_lines.extend(config_mauve())
     return config_lines
+
+
+def config_mauve():
+    mauve_config_lines = [
+        "#------------------------#",
+        "##   Mauve (Optional)   ##",
+        "#------------------------#",
+        "# Muave is used by riboSketch for orienting contigs and ",
+        "# determining synteny.  riboSketch uses the Mauve.jar java program,",
+        "# but usually only mauveAligner (in the platform specific subdir)",
+        "# is actually added to the path after installation."
+    ]
+
+    mauve_aligner_name = "mauveAligner"
+    if shutil.which(mauve_aligner_name):
+        mauve_aligner_exe = shutil.which(mauve_aligner_name)
+        # This assumes Mauve keeps installing the exe' in a platform specific
+        # subfolder, and leaves the jar in the parent of that platform folder
+        mauve_jar =  os.path.join(
+            os.path.dirname(os.path.dirname(shutil.which("mauveAligner"))),
+            "Mauve.jar")
+        if not os.path.exists(mauve_jar):
+            mauve_jar=None
+    else:
+        mauve_aligner_exe = None
+        mauve_jar = None
+
+    programs = [("MAUVE_ALIGNER_EXE", mauve_aligner_exe),
+                ("MAUVE_JAR", mauve_jar)]
+
+    for k, v in programs:
+        mauve_config_lines.append("# executable for " + v)
+        if v is not None:
+            mauve_config_lines.append(k + " = '" + v + "'\n")
+        else:
+            mauve_config_lines.append(k + " = None\n" )
+    return mauve_config_lines
+
+
 
 
 def config_scan_defaults():
@@ -196,8 +235,39 @@ def config_seed_defaults():
     return seed_lines
 
 
-def config_bug():
-    pass
+def config_sketch_defaults():
+    sketch_params = [
+        ("SKETCH_ASSEMBLY_EXT", "'.fasta'",
+         "--feature: which annotations to pay attention to; \n# " +
+         "barrnap uses 'rRNA', but others may use 'RRNA', etc"),
+        ("SKETCH_REF_EXT", "'.gb'",
+         "--specific_features: specific features to use; \n#" +
+         "if not assembling a prokaryote, or if refernce is \n# " +
+         "missing a subunit's annotation, adjust this as needed."),
+        ("SKETCH_VERBOSITY", "2",
+         "-v: verbosity for riboSketch")]
+    sketch_lines = [
+        "#------------------------#",
+        "## riboSketch Parameters ##",
+        "#------------------------#"]
+    for k, v, h in sketch_params:
+        sketch_lines.append("# " + h)
+        sketch_lines.append(k + " = " + v + "\n")
+    return sketch_lines
+
+
+def config_score_defaults():
+    score_lines = [
+        "#------------------------#",
+        "## riboScore Parameters ##",
+        "#------------------------#",
+        "# NOTE: other than verbosity, there are no parameters that are " +
+        "# unique to riboScore, as all the arguments have den defined in " +
+        "# previous programs above. See run_riboSeed.py for more info as to " +
+        "# which args are used."]
+    score_lines.append("# -v: verbosity for riboSketch")
+    score_lines.append("SCORE_VERBOSITY = 2\n")
+    return score_lines
 
 
 def write_config(header, outfile):
@@ -234,6 +304,10 @@ def main(args):
     append_config(lines=config_select_defaults(), outfile=outfile)
     # riboSeed
     append_config(lines=config_seed_defaults(), outfile=outfile)
+    # riboSketch
+    append_config(lines=config_sketch_defaults(), outfile=outfile)
+    # riboScore
+    append_config(lines=config_score_defaults(), outfile=outfile)
     # this lines allows run_riboseed to find the path to the new config
     sys.stdout.write(outfile)
     # this line allows us to just grab the main function in run_riboSeed

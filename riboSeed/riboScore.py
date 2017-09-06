@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+# Copyright 2017, National University of Ireland and The James Hutton Insitute
+# Author: Nicholas Waters
+#
+# This code is part of the riboSeed package, and is governed by its licence.
+# Please see the LICENSE file that should have been included as part of
+# this package.
+
 """
 """
 import os
@@ -19,10 +27,11 @@ def get_args():  # pragma: no cover
         description="This does some simple blasting to detect correctness " +
         "of riboSeed results")
     parser.add_argument("indir",
-                        help="dir containing a genbank file and other file")
+                        help="dir containing a genbank file, assembly files" +
+                        "as fastas. Usually the 'mauve' dir in the riboSeed " +
+                        "results")
     parser.add_argument("-o", "--output", dest='output',
                         help="directory in which to place the output files",
-                        # default=os.path.join(os.getcwd(), "riboScore"))
                         default=None)
     parser.add_argument("-l", "--flanking_length",
                         help="length of flanking regions, in bp; " +
@@ -339,7 +348,7 @@ def check_scan_select_snag_retruncodes(subreturns, logger):
         pass
 
 
-def main(args):
+def main(args, logger=None):
     if args.output is None:
         args.output = os.path.dirname(
             os.path.join(args.indir, "")
@@ -352,10 +361,10 @@ def main(args):
         sys.stderr.write("Output Directory already exists!\n")
         sys.exit(1)
     log_path = os.path.join(output_root, "riboScore.log")
-    logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=log_path,
-                            name=__name__)
-
+    if logger is None:
+        logger = set_up_logging(verbosity=args.verbosity,
+                                outfile=log_path,
+                                name=__name__)
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
         logger.debug("{0}: {1}".format(k, v))
@@ -396,8 +405,10 @@ def main(args):
         bs_dir2 = os.path.join(this_root, "bridgeSeeds_contigs")
         os.makedirs(bs_dir2)
         # snags from assembly
-        scancmd2, scangb2 = getScanCmd(ref=fasta, outroot=bs_dir2)
-        selectcmd2, cluster2 = getSelectCmd(gb=scangb2, outroot=bs_dir2)
+        scancmd2, scangb2 = getScanCmd(ref=fasta, outroot=bs_dir2,
+                                       other_args='')
+        selectcmd2, cluster2 = getSelectCmd(gb=scangb2, outroot=bs_dir2,
+                                            other_args='')
         snagcmd2, snagdir2 = getSnagCmd(scangb=scangb2, cluster=cluster2,
                                         flank=args.flanking,
                                         outroot=bs_dir2)
