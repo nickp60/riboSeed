@@ -63,6 +63,7 @@ def concat_genome(input_dir, ext, outpath, verbose=False):
             success = SeqIO.write(
                 SeqRecord(
                     seq=Seq(new_seq, IUPAC.IUPACAmbiguousDNA()),
+                    description="from concatToyGenome",
                     id="concatenated_genome"), o_file, 'fasta')
             if success:
                 print("wrote out concatenated file!")

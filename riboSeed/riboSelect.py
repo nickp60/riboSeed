@@ -286,7 +286,7 @@ def main(args, logger=None):
             name=__name__)
 
     # log = sys.stderr.write  # to keep streaming clean if this goes that route
-    logger.info("Current usage:\n{0}\n".format(" ".join(sys.argv[1:])))
+    logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
         logger.debug("%s: %s", k, v)

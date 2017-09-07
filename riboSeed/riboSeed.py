@@ -311,6 +311,7 @@ class NgsLib(object):
         self.get_readlen()
         self.smalt_insert_file()
         self.listLibs()
+        self.check_dups()
 
     def check_mands(self):
         """ checks that all mandatory arguments are not none
@@ -409,6 +410,14 @@ class NgsLib(object):
         self.liblist = [x for x in
                         [self.readF, self.readR, self.readS0, self.readS1]
                         if x is not None]
+
+    def check_dups(self):
+        if len(set(self.liblist)) < len(self.liblist):
+
+            raise ValueError(
+                "duplicate libraries detected! SPAdes will complain. " +
+                "See library list below \n{0}\n. Exiting".format(
+                    "\n".join(self.liblist)))
 
 
 class LociMapping(object):
@@ -1706,9 +1715,10 @@ def make_samtools_depth_cmds(exe, bam, chrom, start, end, region=None, prep=Fals
     return (prep_cmds, depth_cmd)
 
 
-def parse_samtools_depth_results(result):
+def parse_samtools_depth_results(result, logger=None):
     """ parses out the subprocess results from samtools depth
     """
+    assert logger is not None, "must use logging"
     try:
         splits = result.stdout.decode("utf-8").split("\n")[0].split("\t")
         if len(splits) != 3:
@@ -1759,7 +1769,7 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             check=False)
-    covs, ave = parse_samtools_depth_results(result)
+    covs, ave = parse_samtools_depth_results(result, logger)
     return [covs, ave]
 
 

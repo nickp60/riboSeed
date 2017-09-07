@@ -353,6 +353,7 @@ def extract_coords_from_locus(cluster, feature="rRNA",
     assert logger is not None, "logging must be used!"
     loc_number = 0  # index for hits
     locus_tags = [x.locus_tag for x in cluster.loci_list]
+    logger.error(locus_tags)
     if verbose:
         logger.debug("Locus tags for cluster %s: %s", cluster.index,
                      " ".join([x for x in locus_tags]))
@@ -521,6 +522,7 @@ def stitch_together_target_regions(cluster,
                 IUPAC.IUPACAmbiguousDNA()),
             id=seq_id)
     ### last minuete check
+    cluster.extractedSeqRecord.description = "from riboSnag"
     for property, value in vars(cluster).items():
         if value is None:
             logger.debug("%s has a value of None!", property)
@@ -1055,7 +1057,7 @@ def main(clusters, gb_path, logger, verbose, no_revcomp,
             extract_coords_from_locus(
                 cluster=cluster, feature=cluster.feat_of_interest,
                 logger=logger,
-                verbose=True)
+                verbose=False)
         except Exception as e:
             logger.error(e)
             sys.exit(1)

@@ -58,12 +58,6 @@ def get_args():  # pragma: no cover
     # had to make this faux "optional" parse so that the named required ones
     # above get listed first
     optional = parser.add_argument_group('optional arguments')
-    # optional.add_argument("-e", "--extension", dest='ext',
-    #                       action="store",
-    #                       help="extension of the chromosomal sequences, " +
-    #                       "usually '.fasta' or similar",
-    #                       default=".fa",
-    #                       type=str)
     optional.add_argument("-k", "--kingdom", dest='kingdom',
                           action="store",
                           choices=["bac", "euk", "arc", "mito"],
@@ -283,14 +277,14 @@ def getFastas(inp, output_root, name, logger):
         fastas = glob.glob(os.path.join(os.path.expanduser(inp),
                                         "*.fa"))
     if len(fastas) == 0:
-        logger.warning("No fasta files found with extention '.fa'. searching" +
-                       "searching for '*.fasta' files...")
+        logger.info("No fasta files found with extention '.fa'. " +
+                       "searching for '*.fasta' files instead...")
         fastas = glob.glob(os.path.join(os.path.expanduser(inp),
                                         "*.fasta"))
-        if len(fastas) == 0:
+        if len(fastas) == 0:  # still
             logger.error("No files in %s with extention '*fasta'! Exiting",
                          inp)
-        sys.exit(1)
+            sys.exit(1)
     # unify the output of multifasta
     combine_gbs(finalgb=os.path.join(output_root, "scannedScaffolds.fa"),
                 gb_list=fastas)
@@ -326,7 +320,8 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
                 fname = source_fname + "_" + str(idx)
             with open(os.path.join(output, dirname,
                                    fname + ".fa"), "w") as outf:
-                renamed_rec = SeqRecord(rec.seq, id=fname, description="")
+                renamed_rec = SeqRecord(rec.seq, id=fname,
+                                        description="from riboScan")
                 SeqIO.write(renamed_rec, outf, "fasta")
             idlist.append(fname)
     logger.debug("rewrote the following records")
