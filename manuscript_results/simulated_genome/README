@@ -1,5 +1,0 @@
-To redo the results shown here, first run the makeToyGenome.sh script that does the work of downloading, the reference, extracting the annotated rDNA sequences and flanking regions, making the toy genome, and generating reads based on it.
-
-Then, run the compareColiKleb.sh script to run the riboSeed pipeline with an example of a good reference choice and a poor choice.
-
-Both scripts are commented to provide more details.

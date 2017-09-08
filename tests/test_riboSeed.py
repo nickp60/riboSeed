@@ -73,6 +73,8 @@ class riboSeedShallow(unittest.TestCase):
                                        'toy_reads1.fq')
         self.ref_Rfastq = os.path.join(self.ref_dir,
                                        'toy_reads2.fq')
+        self.ref_Sfastq = os.path.join(self.ref_dir,
+                                       'toy_readsS.fq')
         self.ref_bam_prefix = os.path.join(self.ref_dir,
                                            'test_bam_to_fastq')
         self.smalt_exe = "smalt"
@@ -94,6 +96,28 @@ class riboSeedShallow(unittest.TestCase):
                               cores=2)
         self.cores = 2
         self.maxDiff = 2000
+        self.testmapping =  LociMapping(
+            name="test",
+            iteration=1,
+            assembly_subdir=self.test_dir,
+            ref_fasta=self.ref_fasta,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        self.testngs1 = NgsLib(
+            name="test",
+            master=False,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.smalt_exe)
+        self.testngs2 = NgsLib(
+            name="test",
+            master=False,
+            readF=self.ref_Ffastq,
+            readR=self.ref_Rfastq,
+            readS0=self.ref_Sfastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.smalt_exe)
+
         self.to_be_removed = []
         if not os.path.exists(self.test_dir):
             os.makedirs(self.test_dir, exist_ok=True)
@@ -280,59 +304,14 @@ class riboSeedShallow(unittest.TestCase):
                          "test_mappedreadS.fastq"), )
         self.assertEqual(cmd, cmd_ref)
 
-    def test_generate_spades_cmds(self):
-        """ can we make spades commands of various complexities
+    def test_generate_spades_cmds_pe_prelim(self):
+        """ PE reads, prelim
         """
-        testmapping = LociMapping(
-            name="test",
-            iteration=1,
-            assembly_subdir=self.test_dir,
-            ref_fasta=self.ref_fasta,
-            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-        testngs1 = NgsLib(
-            name="test",
-            master=False,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe)
-        testngs2 = NgsLib(
-            name="test",
-            master=False,
-            readF=self.ref_Ffastq,
-            readR=self.ref_Rfastq,
-            readS0=self.ref_Rfastq,
-            ref_fasta=self.ref_fasta,
-            mapper_exe=self.smalt_exe)
-        # PE reads, prelim
-        cmd1 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs1,
+        cmd1 = generate_spades_cmd(mapping_ob=self.testmapping,
+                                   ngs_ob=self.testngs1,
                                    ref_as_contig='trusted',
                                    as_paired=True, addLibs="",
                                    prelim=True,
-                                   k="21,33,55,77,99",
-                                   spades_exe="spades.py",
-                                   logger=logger)
-        # PE with singletons
-        cmd2 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs2,
-                                   ref_as_contig='trusted',
-                                   as_paired=True, addLibs="",
-                                   prelim=False,
-                                   k="21,33,55,77,99",
-                                   spades_exe="spades.py",
-                                   logger=logger)
-        # PE as sngle libraries
-        cmd3 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs1,
-                                   ref_as_contig='trusted',
-                                   as_paired=False, addLibs="",
-                                   prelim=False,
-                                   k="21,33,55,77,99",
-                                   spades_exe="spades.py",
-                                   logger=logger)
-        # PE and singletons all as single libraries
-        cmd4 = generate_spades_cmd(mapping_ob=testmapping, ngs_ob=testngs2,
-                                   ref_as_contig='trusted',
-                                   as_paired=False, addLibs="",
-                                   prelim=False,
                                    k="21,33,55,77,99",
                                    spades_exe="spades.py",
                                    logger=logger)
@@ -344,14 +323,36 @@ class riboSeedShallow(unittest.TestCase):
             self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir)
         self.assertEqual(cmd1, cmd1_ref)
 
+    def test_generate_spades_cmds_pe_s(self):
+        """ PE with singletons
+        """
         cmd2_ref = str(
             "spades.py --careful -k 21,33,55,77,99 --pe1-1 {0} " +
             "--pe1-2 {1} --pe1-s {2} --trusted-contigs {3}  -o {4}"
         ).format(
-            self.ref_Ffastq, self.ref_Rfastq, self.ref_Rfastq,
+            self.ref_Ffastq, self.ref_Rfastq, self.ref_Sfastq,
             self.ref_fasta, self.test_dir)
+        cmd2 = generate_spades_cmd(mapping_ob=self.testmapping,
+                                   ngs_ob=self.testngs2,
+                                   ref_as_contig='trusted',
+                                   as_paired=True, addLibs="",
+                                   prelim=False,
+                                   k="21,33,55,77,99",
+                                   spades_exe="spades.py",
+                                   logger=logger)
         self.assertEqual(cmd2, cmd2_ref)
 
+    def test_generate_spades_cmds_pe_as_s(self):
+        """ PE as sngle libraries
+        """
+        cmd3 = generate_spades_cmd(mapping_ob=self.testmapping,
+                                   ngs_ob=self.testngs1,
+                                   ref_as_contig='trusted',
+                                   as_paired=False, addLibs="",
+                                   prelim=False,
+                                   k="21,33,55,77,99",
+                                   spades_exe="spades.py",
+                                   logger=logger)
         cmd3_ref = str(
             "spades.py --careful -k 21,33,55,77,99 --pe1-s {0} " +
             "--pe2-s {1} --trusted-contigs {2}  -o {3}"
@@ -359,11 +360,23 @@ class riboSeedShallow(unittest.TestCase):
             self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir)
         self.assertEqual(cmd3, cmd3_ref)
 
+    def test_generate_spades_cmds_pe_and_s_as_s(self):
+        """ PE and singletons all as single libraries
+        """
+        cmd4 = generate_spades_cmd(mapping_ob=self.testmapping,
+                                   ngs_ob=self.testngs2,
+                                   ref_as_contig='trusted',
+                                   as_paired=False, addLibs="",
+                                   prelim=False,
+                                   k="21,33,55,77,99",
+                                   spades_exe="spades.py",
+                                   logger=logger)
         cmd4_ref = str(
             "spades.py --careful -k 21,33,55,77,99 --pe1-s {0} " +
-            "--pe2-s {1} --pe3-s {1}  --trusted-contigs {2}  -o {3}"
+            "--pe2-s {1} --pe3-s {4}  --trusted-contigs {2}  -o {3}"
         ).format(
-            self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir)
+            self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir,
+        self.ref_Sfastq)
         self.assertEqual(cmd4, cmd4_ref)
 
     def test_parse_subassembly_return_code_0(self):
@@ -1035,7 +1048,7 @@ class riboSeedShallow(unittest.TestCase):
         ngs_ob = NgsLib(
             name="test",
             master=False,
-            readS0=self.ref_Ffastq,
+            readS0=self.ref_Sfastq,
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
             ref_fasta=self.ref_fasta,
@@ -1060,7 +1073,7 @@ class riboSeedShallow(unittest.TestCase):
                 testmapping.pe_map_bam),  # map
             "bwa mem -t 4 -L 0,0 -U 0 -a -k 15 {0} {1} | samtools view -bh - | samtools sort -o {2} - ".format(
                 self.ref_fasta,  # 0
-                self.ref_Ffastq,  # 1
+                self.ref_Sfastq,  # 1
                 testmapping.s_map_bam),  # map
             "samtools merge -f {0} {1} {2}".format(
                 testmapping.mapped_bam_unfiltered,
@@ -1133,6 +1146,8 @@ class riboSeedDeep(unittest.TestCase):
                                        'toy_reads1.fq')
         self.ref_Rfastq = os.path.join(self.ref_dir,
                                        'toy_reads2.fq')
+        self.ref_Sfastq = os.path.join(self.ref_dir,
+                                       'toy_readsS.fq')
         self.ref_bam_prefix = os.path.join(self.ref_dir,
                                            'test_bam_to_fastq')
         self.depthdir = os.path.join(self.ref_dir,
@@ -1213,7 +1228,7 @@ class riboSeedDeep(unittest.TestCase):
             master=True,
             readF=self.ref_Ffastq,
             readR=self.ref_Rfastq,
-            readS0=self.ref_Rfastq,
+            readS0=self.ref_Sfastq,
             ref_fasta=self.ref_fasta,
             mapper_exe=self.bwa_exe,
             logger=logger)
