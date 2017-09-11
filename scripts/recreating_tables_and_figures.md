@@ -1,5 +1,8 @@
 # Recreating the figures and data used for the manuscript
 
+# Analysis
+
+
 # Tables
 
 
@@ -86,4 +89,16 @@ Thats it!  Our figure is in the output directory.  That wasnt so bad, was it?
 
 ### Oh, and the SNP rate for the 25 genomes
 
-First, run Parsnp of the 25 genomes along with the first rDNA from sakai as a reference.  Then, step throug getSnpFreqVcf.  The value you are looking for is the "mean(throughout)" one.
+First, run Parsnp of the 25 genomes along with the first rDNA from sakai as a reference.  Then, step through getSnpFreqVcf.  The value you are looking for is the "mean(throughout)" one.  Its kind of a hacky way of doing things, but oh well.
+
+## Suppl. Blast results
+From the analysis above, where we ran the riboScan, riboSelect, and riboSnag on the E coli sakai genome, the blast results can be used with the script called plotSnagResults.R in the scripts dir.
+
+```
+Rscript scripts/plotSnagResults.R ./manuscript_results/entropy/sakai_snag_mafft ./new_blast_results 90
+```
+
+
+## Artificial genome, Representative Mauve output
+
+This is pretty straightforward.

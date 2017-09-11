@@ -3005,7 +3005,7 @@ def main(args, logger=None):
                 seedGenome=seedGenome,
                 iteration=seedGenome.this_iteration,
                 output_root=seedGenome.output_root,
-                nbuff=5000,
+                nbuff=1000,
                 cluster_list=[x for x in clusters_for_pseudogenome if
                               x.continue_iterating],
                 logger=logger)

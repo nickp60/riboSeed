@@ -1,83 +1,64 @@
-#! /usr/bin/Rscript
-#############################################################################################
-DEBUG=F
-source("~/GitHub/open_utils/NargParse/NargParse.R")
+#!/usr/bin/env Rscript
 #############################################################################################
 help<-"
 Blast  Parser
 20170103
-
-USAGE:
-REQUIRED ARGUMENTS:
-[-r resultsfromribosnag.csv ] 
-[-o output_directory]	    path to output directory. 
-OPTIONAL ARGUMENTS:
-[-t <1-100>] bit score percentage similarity to call a hit
-[-verb T or F]	          Turn verbose output on and off
 "
-
+print("USAGE: path/to/snag/output/ path/to/output/dir/ threshold_percentage")
 require(dplyr)
-require(reshape2)
+#require(reshape2)
 require(ggplot2)
-this_version<-'0.2'
-test_args<-c(
-#  "-r", "~/GitHub/riboSeed/sakai_snag_2/BLAST_results/20170103_results_merged.csv",
-  "-r", "~/GitHub/riboSeed/manuscript_results/simulated_genome/toyGenome/snag/BLAST_results/20170623_results_merged.csv",
-  "-t","75", # threshold percentage
-  "-o","~/GitHub/riboSeed/BLAST_results/",  # output directory for figs etc
-  "-verb", "T") #Verbose Bool
-if (DEBUG | length(commandArgs(T))==0){
-  print("Caution! Using with debug dataset")
-  pre_args<-test_args
-} else{
-  pre_args<-commandArgs(T)
+this_version<-'0.3'
+if (interactive()){
+  args= c("~/GitHub/riboSeed/manuscript_results/entropy/sakai_snag_mafft",
+          "~/GitHub/riboSeed/BLAST_results/", 90)
+}else{
+  args <- commandArgs(trailingOnly = TRUE)
 }
-## @knitr part1
+snagdir <- as.character(args[1])
+outdir <- as.character(args[2])
+threshold <- as.character(args[3])
+VERBOSE_bool<-T
 
-# parse the commandline arguments 
-cline_args<-parse_flagged_args(x = pre_args, required = c("-r", "-o"), 
-                               optional = c("-t", "-verb", "-p"),
-                               version = this_version, help_message = help, test_args=test_args,DEBUG=F)
-VERBOSE_bool<-ifelse(arg_bool(cline_args['verb']), T,F)
+blast_results <- file.path(snagdir, "BLAST_results",
+  grep("*_results_merged.csv", 
+       dir(file.path(snagdir,"BLAST_results")), value=T))
 
-blast_results<- arg_file(cline_args['r'])
-
-
-
-
-perc_similarity_thresh<-arg_numeric(cline_args["t"], default = 50)*.01
-if(perc_similarity_thresh>1 |perc_similarity_thresh<=0){stop("percentage must be between 1 and 100")}
 datetime<-gsub("[:-]","",gsub("([\\d:-]*)(\\D*)","\\1",Sys.time()))
 
-output_directory<-arg_directory(cline_args["o"], makedir = T, need_write = T, recursive = F)
-output_pre<-paste0(datetime,"_blast_virulence_parser_output_")
-setwd(output_directory)
+dir.create(outdir)
 ##########
+
 #read in csv
-data<-read.csv2(blast_results, header=F, stringsAsFactors = F, sep="\t", 
-                col.names = c("query_id", "subject_id", "identity_perc", "alignment_length",
-                          "mismatches", "gap_opens", "q_start", "q_end", "s_start",
-                          "s_end", "evalue", "bit_score"))
-                # colClasses = c("character", "character", "numeric", "integer",
-                #                "integer", "integer", "integer", "integer", "integer",
-                #                "integer", "numeric", "integer"))
-data[,3:ncol(data)] = apply(data[,3:ncol(data)], 2, function(x) as.numeric(as.character(x)))
+data <- read.csv2(
+  blast_results, header=F, stringsAsFactors = F, sep="\t", 
+  col.names = c(
+    "query_id", "subject_id", "identity_perc", "alignment_length", 
+    "mismatches", "gap_opens", "q_start", "q_end", "s_start", "s_end",
+    "evalue", "bit_score"))
 data$flank <-as.numeric(gsub("(.*)_(\\d*)-bp_flanks", "\\2", data$query_id))
 data$region <-(gsub("(.*?)_(.*?)_(.*?)_.*", "\\3", data$query_id))
 
-# make column for ifelse  value/maxvalue>threshold, or if it is threshold or greater than the max bit score per gene.
-# data2<-data %>%
-#   group_by(query_id) %>%
-#   mutate(norm_bit_score=(bit_score/max(bit_score))*100)%>%
-#   mutate(pass=ifelse((bit_score/max(bit_score))>perc_similarity_thresh, 1,0))%>%
-#   filter(pass==1)
+print("DATA:")
+print(str(data))
+print("FLANKING REGIONS")
+print(unique(data$flank))
+print("REGIONS")
+print(unique(data$region))
+
 
 data2<-data %>%
+  # for each query_id, or region
   group_by(query_id) %>%
+  # normalize by length of longest match, which should be the "correct" match
   mutate(norm_alignment_perc=(alignment_length/max(alignment_length))*100)%>%
-  filter(norm_alignment_perc > 90) %>%
+  # and filter by the given percentage threshold
+  filter(norm_alignment_perc > as.numeric(threshold)) %>%
+  # and a resonable e-value
   filter(evalue < .000001) %>%
+  # and  count how many good hits remain
   mutate(count = n()) %>%
+  # and finally make the dataframe cleaner for plotting by removing duplicates
   filter(!duplicated(count))
   
 lineplot <- ggplot(data2, aes(x=flank, y=count, color=region))+
@@ -96,16 +77,55 @@ lineplot <- ggplot(data2, aes(x=flank, y=count, color=region))+
     axis.text.x = element_text(angle=45, hjust=1),
     axis.line = element_line(color = 'black', size = .1),
     legend.position=c(0.9, .2)) +
-    coord_cartesian(ylim=c(0,7))+
-  
+  coord_cartesian(ylim=c(0,7))+
   labs(color="rDNA Region", x="Length of Flanking Region (bp)",
        y="Number of BLAST hits", 
-       title="BLAST Results for BA000007.2 rDNA",
-       subtitle="(Filtered to exclude matches less than 90% of \n query length and hits with E-value >10e-6)")
+       title="BLASTn Results for BA000007.2 rDNA",
+       subtitle=paste0("(Filtered to exclude matches less than ", 
+                       threshold,
+                       "% of \n query length and hits with E-value >10e-6)"))
 
-pdf(file="./sakai_BLAST_results.pdf", width = 8, height = 6)
+# jitter, cause this all the lines converge
+data2$countj <- jitter(data2$count, amount = .08)
+grouped_lineplot <- ggplot(data2, aes(x=flank, y=countj, color=region))+
+  # facet_wrap(~region,ncol = 4, drop = TRUE, scales = "free_x")+
+  geom_point()+ 
+    scale_x_continuous(breaks=seq(0, 1000, 100), expand = c(0,1))+
+  # geom_smooth(se = F)+
+      scale_y_continuous(breaks=seq(0, 7, 1))+
+  geom_line()+
+  theme_bw() +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color=NA, size = .1),
+    strip.background = element_rect(colour = NA),
+    axis.text.x = element_text(angle=45, hjust=1),
+    legend.position=c(0.8, .5),
+    axis.line.x= element_line(color = "black", size=.5),
+    axis.line.y= element_line(color = "black", size=.5),
+    axis.line = element_line(color = NA, size = .1))+
+  coord_cartesian(ylim=c(0,7))+
+  labs(color="rDNA Region", x="Length of Flanking Region (bp)",
+       y="Number of BLAST hits", 
+       title="BLASTn Results for BA000007.2 rDNA",
+       subtitle=paste0("(Filtered to exclude matches less than ", 
+                       threshold,
+                       "% of \n query length and hits with E-value >10e-6)"))
+
+pdf(file=file.path(outdir, "sakai_BLAST_results.pdf"), width = 8, height = 6)
 lineplot
 dev.off()
-png(file="./sakai_BLAST_results.png",res=200,  units='in',width = 8, height = 6)
+png(file=file.path(outdir, "sakai_BLAST_results.png"), res=200,  units='in',width = 8, height = 6)
 lineplot
 dev.off()
+
+pdf(file=file.path(outdir, "grouped_sakai_BLAST_results.pdf"), width = 4, height = 5 )  
+grouped_lineplot
+dev.off()
+png(file=file.path(outdir, "grouped_sakai_BLAST_results.png"), res=200,  units='in',width = 4, height = 5)
+grouped_lineplot
+dev.off()
+
