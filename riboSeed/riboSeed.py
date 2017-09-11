@@ -2156,7 +2156,7 @@ def get_final_assemblies_cmds(seedGenome, exes,
         logger.info("Getting commands for %s SPAdes" % j)
         spades_cmd = generate_spades_cmd(
             single_lib=seedGenome.master_ngs_ob.libtype == "s_1",
-            check_libs=True,
+            check_libs=False,
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
             k=kmers, spades_exe=exes.spades, logger=logger)
@@ -2939,7 +2939,8 @@ def main(args, logger=None):
                 mapping_ob=cluster.mappings[-1],
                 ngs_ob=new_ngslib, single_lib=True,
                 ref_as_contig=subassembly_ref_as_contig,
-                check_libs=True,
+                # only check if files exist if using a subset of reads
+                check_libs=args.subtract,
                 as_paired=False, prelim=True,
                 k=checked_prek,
                 spades_exe=sys_exes.spades, logger=logger)
