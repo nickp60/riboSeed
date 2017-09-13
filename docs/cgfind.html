@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>Your page title here :)</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="images/favicon.png">
+
+  <!-- A Dash of js
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.1.2/papaparse.js"></script>
+<script>
+  function arrayToTable(tableData) {
+      var fields = ["tax_id", "genus", "species", "Replicons", "FTP.Path"];
+      var header = '<thead><tr>';
+      var table = ''
+      for (var i=0; i<5; i++){
+	  header += '<th>'+ fields[i] +'</th>';
+      }
+      header += "</tr></thead><tbody>";
+      console.log("header: " + header);
+      var table = header;
+      tableData.forEach(function(rowData){
+          var row = '<tr>';
+	  for (var k=0; k<5; k++){
+	      if (k == 4){
+		  console.log(rowData[fields[k]] + '/' + rowData[fields[k]].split(/[\\/]/).pop() + '_genomic.fna.gz');
+		  row += '<td>'+ '<a href="'+ rowData[fields[k]] + '/' + rowData[fields[k]].split(/[\\/]/).pop() + '_genomic.fna.gz" target="_blank">Download</a> </td>';
+	      }else{
+		  row += '<td>'+ rowData[fields[k]] +'</td>';
+	      }
+	  }
+	  row += '</tr>';
+          table += row;
+      });
+      console.log(table);
+      return table + "</tbody>";
+  }
+  var csvdata;
+     $.ajax({
+        type: "GET",
+	url: "https://raw.githubusercontent.com/nickp60/riboSeed/master/sample_data/all_complete_strains.csv",
+	 success: function(data){
+	     console.log("loaded dataset from github!")
+	     csvdata = Papa.parse(data, {header: true}).data;
+	 }
+    })
+  var genus;
+  var species;
+  function onload() {
+  }
+  function displaySubset(){
+      $('#tslot').empty();
+      genus = document.getElementById('genus').value;
+      species = document.getElementById('species').value;
+      var hitcounter = 0;
+      var arrayLength = csvdata.length;
+      var subset = [];
+      console.log("genus = species: " + genus + " - " + species );
+      console.log("array legth: " + arrayLength);
+      for (var i = 0; i < arrayLength; i++) {
+	  if (csvdata[i].genus === genus){
+	      if (csvdata[i].species.indexOf(species) !== -1){
+		  subset[hitcounter] = csvdata[i];
+		  hitcounter = hitcounter + 1;
+	      }
+	  }
+      }
+      console.log("hitcounter: " + hitcounter);
+      console.log(subset);
+      $('#tslot').append(arrayToTable(subset));
+
+  }
+  </script>
+
+</head>
+
+</head>
+<body onload="onload();">
+
+  <!-- Primary Page Layout –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <div class="container">
+    <div class="row">
+      <div class="one-half column" style="margin-top: 25%">
+        <h4>Complete Genomes</h4>
+        <p>This convenience tool is to provide a simple way to download complete genomes of interest from NCBI. </a>.</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <input placeholder="Genus" type="text" name="enter" class="enter" value="" id="genus"/>
+      <input placeholder="species" type="text" name="enter" class="enter" value="" id="species"/>
+      <input type="button" value="Go!" onclick="displaySubset();"/>
+
+    </div>
+       <div id="tslot">
+    </div>
+    <div class="row"  style='color:lightgrey'>
+       <h5>Troubleshooting</h4>
+        <p >Try refreshing your browser, check your spelling, or, if all else fails, go to <a href="http://ncbi.nlm.nih.gov/genome/browse/#"> NCBI </a> and do this the proper way </a>.</p>
+      </div>
+    </div>
+</div>
+
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>
