@@ -9,7 +9,7 @@ import os
 import unittest
 import logging
 import subprocess
-
+from argparse import Namespace
 sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
@@ -36,6 +36,10 @@ class runRiboSeedTestCase(unittest.TestCase):
             os.path.dirname(__file__),
             "references",
             "run_riboSeed_references", "")
+        self.test_args = Namespace(
+            outdir="",
+            name="empty")
+
         os.makedirs(self.test_dir, exist_ok=True)
         self.to_be_removed = []
 
@@ -45,21 +49,23 @@ class runRiboSeedTestCase(unittest.TestCase):
         path = detect_or_create_config(
             config_file=os.path.join(
                 self.run_ref_dir, "sample_config.py"),
+            theseargs=self.test_args,
             output_root="test", logger=logger)
         self.assertEqual(
             path, os.path.join(self.run_ref_dir, "sample_config.py"))
 
     def test_detect_or_create_config_noexist(self):
-        """ can we get the path to our config file back if it exists
+        """ can we get the path to our config file back if it dont exists
         """
         path = detect_or_create_config(
             config_file=os.path.join(
                 self.run_ref_dir, "not_an_existing_sample_config.py"),
             output_root=self.test_dir,
+            theseargs=self.test_args,
             newname="lookanewconfig",
             logger=logger)
         self.assertEqual(
-            path, os.path.join(self.test_dir, "lookanewconfig.py"))
+            path, os.path.join(self.test_dir, "lookanewconfig.yaml"))
 
     def test_parse_config(self):
         """ can we read in values from our sample config file

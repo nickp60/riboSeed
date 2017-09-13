@@ -122,7 +122,7 @@ class riboSeedShallow(unittest.TestCase):
         if not os.path.exists(self.test_dir):
             os.makedirs(self.test_dir, exist_ok=True)
         self.copy_fasta()
-        self.print_headsup()
+        # self.print_headsup()
 
     def copy_fasta(self):
         """ make a disposable copy of the cluster fasta
@@ -765,21 +765,15 @@ class riboSeedShallow(unittest.TestCase):
                     skip_control=False, kmers="33,77,99", logger=logger)
         final_spades_cmds_ref = [
             str(
-                "if [ -s {1} ] && [ -s {2} ] ; then " +
                 "{0} -t 4 -m 8 --careful -k 33,77,99 --pe1-1 {1} " +
-                "--pe1-2 {2} --trusted-contigs {3}  -o {4} " +
-                "; else echo 'input lib not found, " +
-                "skipping this SPAdes call' ; fi"
+                "--pe1-2 {2} --trusted-contigs {3}  -o {4}"
             ).format(
                 self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
                 gen.assembled_seeds,
                 os.path.join(self.test_dir, "final_de_fere_novo_assembly")),
             str(
-                "if [ -s {1} ] && [ -s {2} ] ; then " +
                 "{0} -t 4 -m 8 --careful -k 33,77,99 --pe1-1 {1} " +
-                "--pe1-2 {2}   -o {3} " +
-                "; else echo 'input lib not found, " +
-                "skipping this SPAdes call' ; fi"
+                "--pe1-2 {2}   -o {3}"
             ).format(
                 self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
                 os.path.join(self.test_dir, "final_de_novo_assembly"))]

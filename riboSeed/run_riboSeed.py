@@ -8,6 +8,8 @@
 # this package.
 
 import argparse
+import clg
+import yaml
 import pkg_resources
 import time
 import sys
@@ -37,22 +39,34 @@ import riboScore as rscore
 import make_riboSeed_config as mrc
 
 
+class JustWriteConfig(argparse.Action):
+    def __call__(self, parser, *args, **kwargs):
+        make_empty_config_args = Namespace(
+            outdir="",
+            name="empty")
+        config_file = mrc.main(make_empty_config_args)
+        parser.exit(message="Config file written.  Exiting\n")
+        # add_these_params_to_config(config_file=config_file,
+        #                            args=theseargs)
+
+
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
         description="Given a directory of one or more chromosomes as fasta " +
         "files, this facilitates reannotation of rDNA regions with Barrnap " +
         " and outputs all sequences as a single, annotated genbank file",
         add_help=False)  # to allow for custom help
-    parser.add_argument("reference_fasta", action="store",
+    parser.add_argument("REFERENCE_FASTA", action="store",
+                        # dest="RUN_REFERENCE_FASTA",  # this causes double def
                         help="either a (multi)fasta or a directory " +
                         "containing one or more chromosomal " +
                         "sequences in fasta format")
     optional = parser.add_argument_group('optional arguments')
-    optional.add_argument("-c", "--config", dest='config', action="store",
+    optional.add_argument("-c", "--config", dest='RUN_CONFIG', action="store",
                           help="config file; if none given, create one; " +
                           "default: %(default)s", default=os.getcwd(),
                           type=str, required=False)
-    optional.add_argument("-o", "--output", dest='output', action="store",
+    optional.add_argument("-o", "--output", dest='RUN_OUTPUT', action="store",
                           help="output directory; " +
                           "default: %(default)s",
                           default=os.path.join(
@@ -60,13 +74,21 @@ def get_args():  # pragma: no cover
                               str(time.strftime("%Y-%m-%dT%H:%M") +
                                   "_riboSeed_pipeline_results"), ""),
                           type=str)
-    optional.add_argument("-n", "--experiment_name", dest='exp_name',
+    optional.add_argument("-n", "--experiment_name",
+                          dest='RUN_EXPERIMENT_NAME',
                           action="store",
                           help="prefix for results files; " +
                           "default: inferred",
                           default=None, type=str)
+    # if this is involed, an empty config file is generated
+    optional.add_argument("-e", "--write_empty_config", dest='empty_config',
+                          action=JustWriteConfig,
+                          help="write out a empty config file for editing, " +
+                          "and exit",
+                          nargs='?')
+
     # riboScan args
-    optional.add_argument("-K", "--Kingdom", dest='kingdom',
+    optional.add_argument("-K", "--Kingdom", dest='RUN_KINGDOM',
                           action="store",
                           choices=["bac", "euk", "arc", "mito"],
                           help="whether to look for eukaryotic, archaeal, or" +
@@ -74,6 +96,7 @@ def get_args():  # pragma: no cover
                           "default: %(default)s", default="bac",
                           type=str)
     optional.add_argument("-s", "--specific_features",
+                          dest="RUN_SPECIFIC_FEATURES",
                           help="colon:separated -- specific features"
                           "; default: %(default)s",
                           default='16S:23S:5S', type=str)
@@ -84,9 +107,10 @@ def get_args():  # pragma: no cover
                           "colon:separated list whose length matches number "
                           "of genbank records.  Default is inferred from "
                           "specific feature with fewest hits", default='',
-                          type=str, dest="clusters")
+                          type=str, dest="RUN_CLUSTERS")
     # riboSeed args
     optional.add_argument("-C", "--cluster_file",
+                          dest="RUN_CLUSTER_FILE",
                           help="clustered_loci file output from riboSelect;"
                           "this is created by default from run_riboSeed, "
                           "but if you don't agree with the operon structure "
@@ -94,14 +118,14 @@ def get_args():  # pragma: no cover
                           "alternate clustered_loci file. " +
                           "default: %(default)s",
                           default=None,
-                          type=str, dest="cluster_file")
-    optional.add_argument("-F", "--fastq1", dest='fastq1', action="store",
+                          type=str)
+    optional.add_argument("-F", "--fastq1", dest='RUN_FASTQ1', action="store",
                           help="forward fastq reads, can be compressed",
                           type=str, default=None)
-    optional.add_argument("-R", "--fastq2", dest='fastq2', action="store",
+    optional.add_argument("-R", "--fastq2", dest='RUN_FASTQ2', action="store",
                           help="reverse fastq reads, can be compressed",
                           type=str, default=None)
-    optional.add_argument("-S1", "--fastq_single1", dest='fastqS1',
+    optional.add_argument("-S1", "--fastq_single1", dest='RUN_FASTQS1',
                           action="store",
                           help="single fastq reads", type=str, default=None)
     optional.add_argument("--linear",
@@ -111,13 +135,13 @@ def get_args():  # pragma: no cover
                           "seqence past chromosome origin forward by " +
                           "--padding; " +
                           "default: %(default)s",
-                          default=False, dest="linear", action="store_true")
-    optional.add_argument("-j", "--just_seed", dest='just_seed',
+                          default=False, dest="RUN_LINEAR", action="store_true")
+    optional.add_argument("-j", "--just_seed", dest='RUN_JUST_SEED',
                           action="store_true",
                           default=False,
                           help="Don't do an assembly, just generate the long" +
                           " read 'seeds'; default: %(default)s")
-    optional.add_argument("--score_vis", dest='score_vis',
+    optional.add_argument("--score_vis", dest='RUN_SCORE_VIS',
                           action="store_true",
                           default=False,
                           help="run riboScore and riboSketch too! " +
@@ -125,8 +149,8 @@ def get_args():  # pragma: no cover
     optional.add_argument("-l", "--flanking_length",
                           help="length of flanking regions, in bp; " +
                           "default: %(default)s",
-                          default=1000, type=int, dest="flanking")
-    optional.add_argument("-k", "--kmers", dest='kmers', action="store",
+                          default=1000, type=int, dest="RUN_FLANKING")
+    optional.add_argument("-k", "--kmers", dest='RUN_KMERS', action="store",
                           default="21,33,55,77,99,127", type=str,
                           help="kmers used for final assembly" +
                           ", separated by commas such as" +
@@ -134,7 +158,7 @@ def get_args():  # pragma: no cover
                           "SPAdes chooses.  We ensure kmers are not " +
                           "too big or too close to read length" +
                           "; default: %(default)s")
-    optional.add_argument("-p", "--pre_kmers", dest='pre_kmers',
+    optional.add_argument("-p", "--pre_kmers", dest='RUN_PRE_KMERS',
                           action="store",
                           default="21,33,55,77,99", type=str,
                           help="kmers used during seeding assemblies, " +
@@ -145,14 +169,14 @@ def get_args():  # pragma: no cover
                           "minimum depth is not achieved on both the 3' and" +
                           "5' end of the pseudocontig. " +
                           "default: %(default)s",
-                          default=0, dest="min_flank_depth", type=float)
-    optional.add_argument("--clean_temps", dest='clean_temps',
+                          default=0, dest="RUN_MIN_FLANKING_DEPTH", type=float)
+    optional.add_argument("--clean_temps", dest='RUN_CLEAN_TEMPS',
                           default=False, action="store_true",
                           help="if --clean_temps, mapping files will be " +
                           "removed once they are no no longer needed during" +
                           " the mapping iterations to save space; " +
                           "default: %(default)s")
-    optional.add_argument("-i", "--iterations", dest='iterations',
+    optional.add_argument("-i", "--iterations", dest='RUN_ITERATIONS',
                           action="store",
                           default=3, type=int,
                           help="if iterations>1, multiple seedings will " +
@@ -161,7 +185,7 @@ def get_args():  # pragma: no cover
                           "until --iterations are completed or --target_len"
                           " is matched or exceeded; " +
                           "default: %(default)s")
-    optional.add_argument("-v", "--verbosity", dest='verbosity',
+    optional.add_argument("-v", "--verbosity", dest='RUN_VERBOSITY',
                           action="store",
                           default=2, type=int, choices=[1, 2, 3, 4, 5],
                           help="Logger writes debug to file in output dir; " +
@@ -169,15 +193,15 @@ def get_args():  # pragma: no cover
                           " 1 = debug(), 2 = info(), 3 = warning(), " +
                           "4 = error() and 5 = critical(); " +
                           "default: %(default)s")
-    optional.add_argument("--cores", dest='cores', action="store",
+    optional.add_argument("--cores", dest='RUN_CORES', action="store",
                           default=None, type=int,
                           help="cores used" +
                           "; default: %(default)s")
-    optional.add_argument("--memory", dest='memory', action="store",
+    optional.add_argument("--memory", dest='RUN_MEMORY', action="store",
                           default=8, type=int,
                           help="cores for multiprocessing" +
                           "; default: %(default)s")
-    optional.add_argument("-t", "--threads", dest='threads',
+    optional.add_argument("-t", "--threads", dest='RUN_THREADS',
                           action="store",
                           default=1, type=int,
                           choices=[1, 2, 4],
@@ -202,7 +226,7 @@ def get_args():  # pragma: no cover
     return args
 
 
-def detect_or_create_config(config_file, output_root,
+def detect_or_create_config(config_file, output_root, theseargs,
                             newname=None, logger=None):
     """ return path to config file, or die trying.
     if a config file exists, just return the path.  If not,
@@ -214,19 +238,31 @@ def detect_or_create_config(config_file, output_root,
             outdir=output_root,
             name=newname)
         config_file = mrc.main(make_config_args)
+        add_these_params_to_config(config_file=config_file,
+                                   args=theseargs)
     else:
         pass
     return config_file
 
 
+def add_these_params_to_config(config_file, args):
+    with open(config_file, 'a') as stream:
+        yaml.dump(vars(args), stream, default_flow_style=False)
+
+
 def parse_config(config_file, logger=None):
-    import importlib.util
-    spec = importlib.util.spec_from_file_location(
-        os.path.splitext(os.path.basename(config_file))[0],
-        config_file)
-    config = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(config)
-    return(config)
+    with open(config_file, 'r') as stream:
+        try:
+            yamldata = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            logger.error(exc)
+            logger.error("error parsing config file!")
+            sys.exit(1)
+    logger.debug(yamldata)
+    newns = argparse.Namespace()
+    newns.__dict__ = yamldata
+    return(newns)
+
 
 
 def new_log_for_diff(logfile_path):
@@ -244,7 +280,7 @@ def new_log_for_diff(logfile_path):
 
 def main(args):
     # set up output directory and logging
-    output_root = os.path.abspath(os.path.expanduser(args.output))
+    output_root = os.path.abspath(os.path.expanduser(args.RUN_OUTPUT))
     try:
         os.makedirs(output_root)
     except FileExistsError:
@@ -252,7 +288,7 @@ def main(args):
               output_root)
         sys.exit(1)
     log_path = os.path.join(output_root, "run_riboSeed.log")
-    logger = set_up_logging(verbosity=args.verbosity,
+    logger = set_up_logging(verbosity=args.RUN_VERBOSITY,
                             outfile=log_path,
                             name=__name__)
     logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
@@ -261,33 +297,35 @@ def main(args):
         logger.debug("%s: %s", k, str(v))
 
     # detect system attributes if not given expressly
-    if args.cores is None:
-        args.cores = multiprocessing.cpu_count()
-        logger.info("Using %i cores", args.cores)
+    if args.RUN_CORES is None:
+        args.RUN_CORES = multiprocessing.cpu_count()
+        logger.info("Using %i cores", args.RUN_CORES)
 
     # if starting a fresh run, create a config file.  If not, read it in
-    args.config = detect_or_create_config(
-        config_file=args.config,
+    args.RUN_CONFIG = detect_or_create_config(
+        config_file=args.RUN_CONFIG,
+        theseargs=args,
         output_root=output_root, logger=logger)
-    conf = parse_config(args.config, logger=logger)
-
+    conf = parse_config(args.RUN_CONFIG, logger=logger)
     # if no name given, infer from the name of the contigs file
-    experiment_name = args.exp_name if args.exp_name is not None else \
-        os.path.basename(os.path.splitext(args.reference_fasta)[0])
+    experiment_name = conf.RUN_EXPERIMENT_NAME if conf.RUN_EXPERIMENT_NAME \
+        is not None else \
+        os.path.basename(os.path.splitext(conf.REFERENCE_FASTA)[0])
+    logger.debug(experiment_name)
 
-    if args.cluster_file is None:
+    if conf.RUN_CLUSTER_FILE is None:
         cluster_txt_file = os.path.join(
             output_root, "select", "riboSelect_grouped_loci.txt")
     else:
-        cluster_txt_file = args.cluster_file
+        cluster_txt_file = conf.RUN_CLUSTER_FILE
 
     scan_args = Namespace(
-        contigs=args.reference_fasta,
+        contigs=conf.REFERENCE_FASTA,
         output=os.path.join(output_root, "scan"),
-        kingdom=args.kingdom,
+        kingdom=conf.RUN_KINGDOM,
         id_thresh=conf.SCAN_ID_THRESH,
         name=conf.SCAN_CONTIG_NAME,
-        cores=args.cores,
+        cores=conf.RUN_CORES,
         barrnap_exe=conf.BARRNAP_EXE,
         seqret_exe=conf.SEQRET_EXE,
         min_length=conf.SCAN_MIN_LENGTH,
@@ -297,9 +335,9 @@ def main(args):
             output_root, "scan", "scannedScaffolds.gb"),
         output=os.path.join(output_root, "select"),
         feature=conf.SELECT_FEATURE,
-        specific_features=conf.SELECT_SPECIFIC_FEATURES,
+        specific_features=conf.RUN_SPECIFIC_FEATURES,
         clobber=False,
-        clusters=args.clusters,
+        clusters=conf.RUN_CLUSTERS,
         verbosity=conf.SELECT_VERBOSITY,
         debug=False)
     seed_args = Namespace(
@@ -307,30 +345,30 @@ def main(args):
         reference_genbank=os.path.join(
             output_root, "scan", "scannedScaffolds.gb"),
         output=os.path.join(output_root, "seed"),
-        fastq1=args.fastq1,
-        fastq2=args.fastq2,
-        fastqS1=args.fastqS1,
-        just_seed=args.just_seed,
-        min_flank_depth=args.min_flank_depth,
+        fastq1=conf.RUN_FASTQ1,
+        fastq2=conf.RUN_FASTQ2,
+        fastqS1=conf.RUN_FASTQS1,
+        just_seed=conf.RUN_JUST_SEED,
+        min_flank_depth=conf.RUN_MIN_FLANKING_DEPTH,
         exp_name=experiment_name,
-        clean_temps=args.clean_temps,
-        flanking=args.flanking,
+        clean_temps=conf.RUN_CLEAN_TEMPS,
+        flanking=conf.RUN_FLANKING,
         method=conf.SEED_MAP_METHOD,
-        iterations=args.iterations,
-        cores=args.cores,
-        threads=args.threads,
-        memory=args.memory,
-        kmers=args.kmers,
-        pre_kmers=args.pre_kmers,
+        iterations=conf.RUN_ITERATIONS,
+        cores=conf.RUN_CORES,
+        threads=conf.RUN_THREADS,
+        memory=conf.RUN_MEMORY,
+        kmers=conf.RUN_KMERS,
+        pre_kmers=conf.RUN_PRE_KMERS,
         score_min=conf.SEED_SCORE_MIN,
         min_assembly_len=conf.SEED_MIN_ASSEMBLY_LENGTH,
         include_short_contigs=conf.SEED_INCLUDE_SHORTS,
         subtract=conf.SEED_SUBTRACT,
-        linear=args.linear,
+        linear=conf.RUN_LINEAR,
         skip_control=conf.SEED_SKIP_CONTROL,
         target_len=conf.SEED_TARGET_LEN,
         smalt_scoring=conf.SEED_SMALT_SCORING,
-        serialize=args.serialize,
+        serialize=conf.serialize,
         ref_as_contig=conf.SEED_REF_AS_CONTIG,
         mapper_args=conf.SEED_MAPPER_ARGS,
         spades_exe=conf.SPADES_EXE,
@@ -345,7 +383,7 @@ def main(args):
         assembly_ext=conf.SKETCH_ASSEMBLY_EXT,
         ref_ext=conf.SKETCH_REF_EXT,
         names="{0},{1},{2}".format(
-            os.path.basename(args.reference_fasta),
+            os.path.basename(conf.REFERENCE_FASTA),
             os.path.basename(experiment_name) + " de fere novo",
             os.path.basename(experiment_name) + " de novo"),
         replot=False,
@@ -354,7 +392,7 @@ def main(args):
     score_args = Namespace(
         indir=os.path.join(output_root, "seed","mauve"),
         output=os.path.join(output_root, "score"),
-        flanking=args.flanking,
+        flanking=conf.RUN_FLANKING,
         ref_ext=conf.SKETCH_REF_EXT,
         assembly_ext=conf.SKETCH_ASSEMBLY_EXT,
         blast_full=False,
@@ -363,16 +401,16 @@ def main(args):
 
     logger.info("\nrunning riboScan\n")
     rscan.main(scan_args, logger)
-    if args.cluster_file is not None:
+    if conf.RUN_CLUSTER_FILE is not None:
         logger.info(
             "Skipping riboSelect, using user-supplied cluster file: %s",
-            args.cluster_file)
+            conf.RUN_CLUSTER_FILE)
     else:
         logger.info("\nrunning riboSelect\n")
         rsel.main(select_args, logger)
     logger.info("\nrunning riboSeed\n")
     rseed.main(seed_args, logger)
-    if args.score_vis:
+    if conf.RUN_SCORE_VIS:
         if conf.MAUVE_JAR is not None:
             logger.info("\nrunning riboSketch\n")
             rsketch.main(sketch_args, logger=logger)
