@@ -459,10 +459,22 @@ def main(args, logger=None):
         contig_snags_flanking = sorted(glob.glob(
             os.path.join(snagdir2, "flanking_regions_output", "") +
             "*_riboSnag_flanking_regions.fasta"))
+        logger.debug(contig_snags)
         logger.debug(contig_snags_flanking)
         # combine the assembly contigs
+        if len(contig_snags) == 0:
+            report_list.append("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(
+                os.path.abspath(os.path.expanduser(args.indir)),  # 0
+                os.path.basename(fasta),  # 1
+                len(ref_snags),  # 2
+                0,  # 3
+                0,  # 4
+                0  # 5
+            ))
+            continue
         combined_flanking_snags = combine_contigs(
-            contigs_dir=os.path.join(snagdir2, "flanking_regions_output", ""),
+            contigs_dir=os.path.join(
+                snagdir2, "flanking_regions_output", ""),
             pattern="*riboSnag_flanking_regions",
             contigs_name="combinedSnagFlanking",
             logger=logger)
@@ -556,6 +568,7 @@ def main(args, logger=None):
             ambig_hits,  # 4
             bad_hits  # 5
         ))
+        logger.debug(report_list)
     with open(os.path.join(output_root, "riboScore_report.txt"), "a") as r:
         for line in report_list:
             r.write(line)

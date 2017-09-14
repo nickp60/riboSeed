@@ -32,14 +32,7 @@ python3.5  ~/GitHub/riboSeed/riboSeed/riboSelect.py ${OUTDIR}toyGenome/scan/scan
 python3.5  ~/GitHub/riboSeed/riboSeed/riboSnag.py ${OUTDIR}toyGenome/scan/scannedScaffolds.gb  ${OUTDIR}toyGenome/select/riboSelect_grouped_loci.txt -o ${OUTDIR}toyGenome/snag/ -l 5000 --just_extract
 # combine the extracted regions into a toy genome
 python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ${OUTDIR}toyGenome/snag/ \*_riboSnag.fasta -o ${OUTDIR}toyGenome/coli_genome/
-# generate reads from the toy genome simulating a MiSeq V3 rub
-
-# ~/bin/art_bin_MountRainier/art_illumina -ss HS20 -i ./toyGenome/coli_genome/concatenated_seq.fasta -p -l 100 -f 30 -m 300 -s 10 -o ./toyGenome/reads_100_300_ -rs 3
-# gzip -c ./toyGenome/reads_100_300_1.fq > ./toyGenome/reads_100_300_1.fq.gz
-# gzip -c ./toyGenome/reads_100_300_2.fq > ./toyGenome/reads_100_300_2.fq.gz
-
-
-# ~/bin/pIRS_111/pirs simulate -i ${OUTDIR}toyGenome/coli_genome/concatenated_seq.fasta -m 300 -l 100 -x 30 -v 10 -o ${OUTDIR}toyGenome/reads
+# generate reads from the toy genome simulating a MiSeq V3 run
 ~/bin/pirs-2.0.2/pirs simulate -m 300 -l 100 -x 30 -v 10 -o ${OUTDIR}/toyGenome/reads -B ~/bin/pirs-2.0.2/Profiles/Base-Calling_Profiles/humNew.PE100.matrix.gz --compress -I ~/bin/pirs-2.0.2/Profiles/InDel_Profiles/phixv2.InDel.matrix -G ~/bin/pirs-2.0.2/Profiles/GC-depth_Profiles/humNew.gcdep_100.dat ${OUTDIR}/toyGenome/coli_genome/concatenated_seq.fasta -S ${SEED}
 
 
@@ -90,6 +83,6 @@ cp ${OUTDIR}good_ref/seed/final_de_novo_assembly/contigs.fasta ${OUTDIR}mauve/co
 
 cp ${OUTDIR}bad_ref/seed/final_de_fere_novo_assembly/contigs.fasta ${OUTDIR}mauve/kleb_de_fere_novo.fasta
 
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSketch.py ${OUTDIR}mauve/reference.gb ${OUTDIR}mauve/ -o ${OUTDIR}riboSketch/  --names "Artificial Genome, De fere novo, De novo, Kleb. de fere novo"
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSketch.py ${OUTDIR}mauve/ -o ${OUTDIR}riboSketch/  --names "Artificial Genome, De fere novo, De novo, Kleb. de fere novo"
 
 python3.5 ~/GitHub/riboSeed/riboSeed/riboScore.py ${OUTDIR}mauve -o ${OUTDIR}riboScore/

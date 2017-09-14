@@ -5,7 +5,7 @@
 library(ggplot2)
 library(reshape2)
 
-analysis_date = "2017-06-21"
+analysis_date <- Sys.Date()
 src_folders <-"~/GitHub/riboSeed/manuscript_results/simulated_genome/"
 
 names = c("sourcepath", "assembly", "total", "Correct",  "Ambiguous", "Incorrect")
