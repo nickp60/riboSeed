@@ -102,3 +102,11 @@ Rscript scripts/plotSnagResults.R ./manuscript_results/entropy/sakai_snag_mafft 
 ## Artificial genome, Representative Mauve output
 
 This is pretty straightforward.
+
+
+## Running Simulated genome analysis
+We have written a convenience script called compareColiKleb.sh.  It uses seeded random read generation (with pirs) to make a read set for an  artificial genome created from the rDNAs of E. coli sakai and the surrounding 5kb flaking reigons on either side.  E. coli k12 is then used as a reference to assemble the reads with riboSeed.  We do this 8 times, the results are scored, and then plotted with the script plotSimulatedGenome
+
+```
+for i in {1..8}; do ./compareColiKleb.sh $i; done
+```

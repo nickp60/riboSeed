@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 IFS=$'\n\t'
 
 #
@@ -40,7 +40,7 @@ python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ${OUTDIR}toyGenome/snag/ 
 
 
 # ~/bin/pIRS_111/pirs simulate -i ${OUTDIR}toyGenome/coli_genome/concatenated_seq.fasta -m 300 -l 100 -x 30 -v 10 -o ${OUTDIR}toyGenome/reads
-~/bin/pirs-2.0.2/pirs simulate -m 300 -l 100 -x 30 -v 10 -o ${OUTDIR}/toyGenome/reads -B ~/bin/pirs-2.0.2/Profiles/Base-Calling_Profiles/humNew.PE100.matrix.gz --compress -I ~/bin/pirs-2.0.2/Profiles/InDel_Profiles/phixv2.InDel.matrix -G ~/bin/pirs-2.0.2/Profiles/GC-depth_Profiles/humNew.gcdep_100.dat ${OUTDIR}/toyGenome/coli_genome/concatenated_seq.fasta
+~/bin/pirs-2.0.2/pirs simulate -m 300 -l 100 -x 30 -v 10 -o ${OUTDIR}/toyGenome/reads -B ~/bin/pirs-2.0.2/Profiles/Base-Calling_Profiles/humNew.PE100.matrix.gz --compress -I ~/bin/pirs-2.0.2/Profiles/InDel_Profiles/phixv2.InDel.matrix -G ~/bin/pirs-2.0.2/Profiles/GC-depth_Profiles/humNew.gcdep_100.dat ${OUTDIR}/toyGenome/coli_genome/concatenated_seq.fasta -S ${SEED}
 
 
 # annotate the toy genome for mauve visualization
@@ -90,7 +90,6 @@ cp ${OUTDIR}good_ref/seed/final_de_novo_assembly/contigs.fasta ${OUTDIR}mauve/co
 
 cp ${OUTDIR}bad_ref/seed/final_de_fere_novo_assembly/contigs.fasta ${OUTDIR}mauve/kleb_de_fere_novo.fasta
 
-
-python3.5 ~/GitHub/riboSeed/scripts/plotMauveBetter.py ${OUTDIR}mauve/reference.gb ${OUTDIR}mauve/coli_de_fere_novo.fasta ${OUTDIR}mauve/coli_de_novo.fasta ${OUTDIR}mauve/kleb_de_fere_novo.fasta -o ${OUTDIR}ordered_plots/  --names "Artificial Genome, De fere novo, De novo, Kleb. de fere novo"
+python3.5 ~/GitHub/riboSeed/riboSeed/riboSketch.py ${OUTDIR}mauve/reference.gb ${OUTDIR}mauve/ -o ${OUTDIR}riboSketch/  --names "Artificial Genome, De fere novo, De novo, Kleb. de fere novo"
 
 python3.5 ~/GitHub/riboSeed/riboSeed/riboScore.py ${OUTDIR}mauve -o ${OUTDIR}riboScore/

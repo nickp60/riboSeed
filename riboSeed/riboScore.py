@@ -214,7 +214,8 @@ def checkBlastForMisjoin(df, fasta, ref_lens, BUF, flanking, logger=None):
     """ results from pd.read_csv with default BLAST output 6 columns
     returns a df
     """
-
+    logger.debug("length of references:")
+    logger.debug(ref_lens)
     df['name'] = df.query_id.str.replace("_upstream", "").str.replace("_downstream", "")
     # df['name2'] = df.name.str.replace("_downstream", "")
     df['query_name'] = df['name'].str.split('flanking').str.get(0)
@@ -231,11 +232,12 @@ def checkBlastForMisjoin(df, fasta, ref_lens, BUF, flanking, logger=None):
     sdf = df.loc[(df["alignment_length"] > (flanking * 0.9) - BUF)]
     naughty_nice_list = []
     for query in queries:
+        logger.debug("checking hits for %s", query)
         tempdf = sdf.loc[(df["query_name"] == query)]
         for i, row in tempdf.iterrows():
             # print("outer row")
             subject_start = None
-            # if both start the same, we have the first hit
+            # if both start the same (around 1), we have the first hit
             if row["s_start"] - 1 < BUF and abs(row["q_start"] - 1) < BUF:
                 subject_start = row["subject_id"]
                 ref_len = ref_lens[row["subject_id"]]
@@ -244,11 +246,12 @@ def checkBlastForMisjoin(df, fasta, ref_lens, BUF, flanking, logger=None):
                 # print(tempdf)
                 foundpair = False
                 for i, innerrow in tempdf.iterrows():
-                    # print("innder row")
                     subject_len = ref_lens[innerrow["subject_id"]]
                     subject_end = innerrow["subject_id"]
                     # if hit extends to end of reference
-                    # print(abs(innerrow["s_end"] - subject_len))
+                    logger.debug("subject len: %s", subject_len)
+                    logger.debug(innerrow)
+                    logger.debug(abs(innerrow["s_end"] - subject_len))
                     if (abs(innerrow["s_end"] - subject_len)) < BUF:
                         # if same contig
                         if subject_start == subject_end:
@@ -380,7 +383,7 @@ def main(args, logger=None):
     bs_dir1 = os.path.join(output_root, "bridgeSeeds_ref")
     scancmd1, scangb1 = getScanCmd(ref=gb, outroot=bs_dir1, other_args="")
     selectcmd1, cluster1 = getSelectCmd(gb=scangb1, outroot=bs_dir1,
-                                        other_args="-s '16S:23S'")
+                                        other_args="-s 16S:23S")
     snagcmd1, snagdir1 = getSnagCmd(scangb=scangb1, cluster=cluster1,
                                     flank=args.flanking,
                                     outroot=bs_dir1,
@@ -408,7 +411,7 @@ def main(args, logger=None):
         scancmd2, scangb2 = getScanCmd(ref=fasta, outroot=bs_dir2,
                                        other_args='')
         selectcmd2, cluster2 = getSelectCmd(gb=scangb2, outroot=bs_dir2,
-                                            other_args='')
+                                            other_args="-s 16S:23S")
         snagcmd2, snagdir2 = getSnagCmd(scangb=scangb2, cluster=cluster2,
                                         flank=args.flanking,
                                         outroot=bs_dir2)
@@ -532,7 +535,7 @@ def main(args, logger=None):
                 this_root, "recip_merged_flanking_results.tab"))
         f_resultsdf = BLAST_tab_to_df(f_merged_tab)
         f_recip_resultsdf = BLAST_tab_to_df(f_recip_merged_tab)
-        # 5 columns: [fasta, good/bad, query, startseq, end_seq]
+        # 5 columns: [fasta, good/bad/?, query, startseq, end_seq]
         flanking_hits = checkBlastForMisjoin(
             fasta=fasta,
             df=f_recip_resultsdf,

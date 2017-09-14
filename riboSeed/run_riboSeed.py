@@ -8,7 +8,6 @@
 # this package.
 
 import argparse
-import clg
 import yaml
 import pkg_resources
 import time
@@ -246,11 +245,15 @@ def detect_or_create_config(config_file, output_root, theseargs,
 
 
 def add_these_params_to_config(config_file, args):
+    """ write the args used by run_riboSeed to config
+    """
     with open(config_file, 'a') as stream:
         yaml.dump(vars(args), stream, default_flow_style=False)
 
 
 def parse_config(config_file, logger=None):
+    """ Read the config file, make a namespace object out of it
+    """
     with open(config_file, 'r') as stream:
         try:
             yamldata = yaml.safe_load(stream)
@@ -262,7 +265,6 @@ def parse_config(config_file, logger=None):
     newns = argparse.Namespace()
     newns.__dict__ = yamldata
     return(newns)
-
 
 
 def new_log_for_diff(logfile_path):
@@ -427,6 +429,7 @@ def main(args):
             logger.info("Skipping riboScore, as no blastn executable was " +
                         "found in path.")
     new_log_for_diff(logfile_path=log_path)
+
 
 if __name__ == "__main__":
     args = get_args()
