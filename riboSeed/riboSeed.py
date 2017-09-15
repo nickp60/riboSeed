@@ -1226,7 +1226,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     logger.info("Mapping reads to reference genome with BWA")
     bwacommands = make_bwa_map_cmds(mapping_ob, ngsLib, cores,
                                     samtools_exe, bwa_exe, genome_fasta,
-                                    add_args='-L 0,0 -U 0 -a', logger=None)
+                                    add_args=add_args, logger=None)
     logger.info("running BWA:")
     logger.debug("with the following BWA commands:")
 
@@ -1432,8 +1432,34 @@ def make_spades_empty_check(liblist, cmd, logger):
     return str(prefix + suffix)
 
 
+def exclude_subassembly_based_on_coverage(clu, iteration, logger=None):
+    """ if using coverage_exclusion, then return 0 if passing or 2 if not.
+    if not, return None
+    deal with those excluded from assembly by lack of coverage depth
+      ie  (coverage_exclusion=True)
+    """
+    assert logger is not None, "must use logging"
+    if clu.coverage_exclusion is not None:
+        assert clu.coverage_exclusion, \
+            "this should only be set by the partition_mapping method."
+        logger.warning("THIS FEATURE IS NOT WELL TESTED! USE WITH TREPIDATION")
+        #  if this is the first iteration, return two
+        # Otherwise,  UPDATED: continue with warning
+        if iteration > 0:
+            clu.mappings[iteration].assembled_contig = \
+                clu.mappings[iteration - 1].assembled_contig
+            logger.warning(" the coverage is worryingly low, but we " +
+                           "will continue.")
+            return 0
+        else:
+            logger.info("the coverage is worryingly low, and as this " +
+                        "is the first iteration, we must discard this contig")
+            return 2
+    else:
+        return None
+
 def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
-                            include_short_contigs, min_assembly_len, read_len,
+                            include_short_contigs, min_assembly_len,
                             flank=1000,
                             min_delta=10,
                             keep_best_contig=True,
@@ -1450,23 +1476,27 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     assert logger is not None, "Must Use Logging"
     if seqname == '':
         seqname = os.path.splitext(os.path.basename(mapping_ob.ref_fasta))[0]
-    ### deal with those excluded from assembly by lack of coverage depth
-    ###  ie  (coverage_exclusion=True)
-    if clu.coverage_exclusion is not None:
-        assert clu.coverage_exclusion, \
-            "this should only be set by the partition_mapping method."
-        #  if this is the first iteration, return two
-        # Otherwise,  UPDATED: continue with warning
-        if mapping_ob.iteration > 1:
-            cluster.mappings[-1].assembled_contig = \
-                cluster.mappings[-2].assembled_contig
-            logger.warning(" the coverage is worryingly low, but we " +
-                           "will continue.")
-            return 0
-        else:
-            logger.info("the coverage is worryingly low, and as this " +
-                        "is the first iteration, we must discard this contig")
-            return 2
+    cov_exclude_result = exclude_subassembly_based_on_coverage(
+        clu=clu, iteration=mapping_ob.iteration, logger=logger)
+    if cov_exclude_result is not None:
+        return cov_exclude_result
+    # ### deal with those excluded from assembly by lack of coverage depth
+    # ###  ie  (coverage_exclusion=True)
+    # if clu.coverage_exclusion is not None:
+    #     assert clu.coverage_exclusion, \
+    #         "this should only be set by the partition_mapping method."
+    #     #  if this is the first iteration, return two
+    #     # Otherwise,  UPDATED: continue with warning
+    #     if mapping_ob.iteration > 0:
+    #         cluster.mappings[-1].assembled_contig = \
+    #             cluster.mappings[-2].assembled_contig
+    #         logger.warning(" the coverage is worryingly low, but we " +
+    #                        "will continue.")
+    #         return 0
+    #     else:
+    #         logger.info("the coverage is worryingly low, and as this " +
+    #                     "is the first iteration, we must discard this contig")
+    #         return 2
     mapping_ob.assembled_contig = os.path.join(
         mapping_ob.assembly_subdir, "contigs.fasta")
     logger.debug("checking for the following file: \n{0}".format(
@@ -1564,8 +1594,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         return 0
 
 
-def parse_subassembly_return_code(cluster, final_contigs_dir, skip_copy=False,
-                                  logger=None):
+def parse_subassembly_return_code(cluster, logger=None):
     """ given a return code from the above spades success function,
     set object attributes as needed
     20170531 depreciated return code 1: as we have moved to using the
@@ -1773,7 +1802,7 @@ def get_samtools_depths(samtools_exe, bam, chrom, start, end,
     return [covs, ave]
 
 
-def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank,
+def prepare_next_mapping(cluster, seedGenome, flank,
                          logger=None):
     """use within partition mapping funtion;
     makes LociMapping, get region coords, write extracted region,
@@ -1865,8 +1894,7 @@ def prepare_next_mapping(cluster, seedGenome, samtools_exe, flank,
     cluster.mappings.append(mapping0)
 
 
-def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe,
-                               logger=None):
+def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe):
     """ returns cmds and region
     """
     # Prepare for partitioning
@@ -1897,7 +1925,6 @@ def make_mapped_partition_cmds(cluster, mapping_ob, seedGenome, samtools_exe,
 
 
 def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
-    unmapped_cmds = []
     """ given a list of regions (formatted for samtools view, etc) make a
     list of mapped reads (file path stored under mapped_ids_txt), and
     use the cgrep voodoo to make a sam file from the full library without
@@ -1905,6 +1932,7 @@ def make_unmapped_partition_cmds(mapped_regions, samtools_exe, seedGenome):
     """
     # starting at second iteration, copy previous iterms mapped_ids_txt
     # as a starting point so we can track the reads better.
+    unmapped_cmds = []
     if seedGenome.this_iteration > 0:
         shutil.copyfile(
             seedGenome.iter_mapping_list[
@@ -1978,8 +2006,7 @@ def partition_mapping(seedGenome, samtools_exe, flank, min_flank_depth,
                 seedGenome.this_iteration)
     for cluster in cluster_list:
         prepare_next_mapping(cluster=cluster, seedGenome=seedGenome,
-                             samtools_exe=samtools_exe, flank=flank,
-                             logger=logger)
+                             flank=flank, logger=logger)
 
     mapped_regions = []
     all_depths = []  # each entry is a tuple (idx, start_ave, end_ave)
@@ -1987,8 +2014,7 @@ def partition_mapping(seedGenome, samtools_exe, flank, min_flank_depth,
     for cluster in cluster_list:
         mapped_partition_cmds, reg_to_extract = make_mapped_partition_cmds(
             cluster=cluster, mapping_ob=cluster.mappings[-1],
-            seedGenome=seedGenome, samtools_exe=samtools_exe,  # flank=flank,
-            logger=logger)
+            seedGenome=seedGenome, samtools_exe=samtools_exe)
         for cmd in mapped_partition_cmds:
             logger.debug(cmd)
             subprocess.run([cmd],
@@ -2529,6 +2555,14 @@ def check_genbank_for_fasta(gb, logger=None):
                 sys.exit(1)
 
 
+def get_fasta_consensus_from_BAM(ref, bam, outfasta):
+    ref_id = SeqIO.read(ref).ie
+    return(ref_id)
+    bamfile = pysam.AlignmentFile(bam, "rb")
+    iter = bamfile.pileup('seq1', 10, 20)
+    for x in iter:
+        print (str(x))
+
 def main(args, logger=None):
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
@@ -2984,7 +3018,6 @@ def main(args, logger=None):
         for cluster in clusters_to_process:
             cluster.assembly_success = evaluate_spades_success(
                 clu=cluster,
-                read_len=seedGenome.master_ngs_ob.readlen,
                 mapping_ob=cluster.mappings[-1],
                 include_short_contigs=args.include_short_contigs,
                 keep_best_contig=True,
@@ -2996,7 +3029,6 @@ def main(args, logger=None):
                 target_len=args.target_len)
             parse_subassembly_return_code(
                 cluster=cluster,
-                final_contigs_dir=seedGenome.final_long_reads_dir,
                 logger=logger)
         clusters_for_pseudogenome = [
             x for x in seedGenome.loci_clusters if

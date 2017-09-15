@@ -329,7 +329,7 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
                                     circular=circular))
         # cluster_index = cluster_index + 1
 
-    ### check feature; if still none or starts with #$ (ie, no split)
+    ### check feature i;f still none or starts with #$ (ie, no split)
     if feature is None:
         raise ValueError("no feature extracted from coords file! This " +
                          "has been made mandatory 20161108")
@@ -353,7 +353,6 @@ def extract_coords_from_locus(cluster, feature="rRNA",
     assert logger is not None, "logging must be used!"
     loc_number = 0  # index for hits
     locus_tags = [x.locus_tag for x in cluster.loci_list]
-    logger.error(locus_tags)
     if verbose:
         logger.debug("Locus tags for cluster %s: %s", cluster.index,
                      " ".join([x for x in locus_tags]))

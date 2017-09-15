@@ -26,7 +26,6 @@ import datetime
 import argparse
 import sys
 import jenkspy
-import itertools
 from Bio import SeqIO
 
 from riboSnag import Locus
@@ -90,7 +89,7 @@ def get_args():  # pragma: no cover
     return args
 
 
-def count_feature_hits_per_sequence(all_feature, gb_path, rec_id_list,
+def count_feature_hits_per_sequence(all_feature, rec_id_list,
                        specific_features, loci_list, logger=None):
     """ given genome seq records, specific_features, and a
     locus_tag_dict from get_filtered_locus_tag_dict, return two structures:
@@ -120,7 +119,7 @@ def count_feature_hits_per_sequence(all_feature, gb_path, rec_id_list,
     return nfeat_simple
 
 
-def get_loci_list_for_features(gb_path, nrecs, feature="rRNA",
+def get_loci_list_for_features(gb_path, feature="rRNA",
                                 specific_features="16S:23S",
                                 verbose=True, logger=None):
     """ Given a path to genbank file,
@@ -208,7 +207,6 @@ def get_loci_list_for_features(gb_path, nrecs, feature="rRNA",
     # count the occuraces of each feature per genbank record
     nfeat_simple = count_feature_hits_per_sequence(
         all_feature=specific_features is None,
-        gb_path=gb_path,
         rec_id_list=gb_record_ids,
         specific_features=specific_features,
         loci_list=loci_list,
@@ -318,7 +316,6 @@ def main(args, logger=None):
                                    feature=args.feature,
                                    specific_features=args.specific_features,
                                    verbose=args.debug,
-                                   nrecs=nrecs,
                                    logger=logger)
 
     # default case, clusters are inferred

@@ -36,7 +36,8 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     parse_samtools_depth_results, make_modest_spades_cmd, get_bam_AS, \
     pysam_extract_reads, define_score_minimum, bool_run_quast, \
     make_quast_command, check_genbank_for_fasta, \
-    filter_bam_AS, make_bwa_map_cmds, set_ref_as_contig
+    filter_bam_AS, make_bwa_map_cmds, set_ref_as_contig, \
+    get_fasta_consensus_from_BAM, exclude_subassembly_based_on_coverage
 
 from riboSeed.riboSnag import parse_clustered_loci_file
 
@@ -395,7 +396,6 @@ class riboSeedShallow(unittest.TestCase):
             logger=logger)
         gen.loci_clusters[0].assembly_success = 0
         parse_subassembly_return_code(cluster=gen.loci_clusters[0],
-                                      final_contigs_dir=self.test_dir,
                                       logger=logger)
         self.assertTrue(gen.loci_clusters[0].continue_iterating)
         self.assertTrue(gen.loci_clusters[0].keep_contigs)
@@ -419,7 +419,6 @@ class riboSeedShallow(unittest.TestCase):
         gen.loci_clusters[0].assembly_success = 1
         with self.assertRaises(ValueError):
             parse_subassembly_return_code(cluster=gen.loci_clusters[0],
-                                          final_contigs_dir=self.test_dir,
                                           skip_copy=True,
                                           logger=logger)
 
@@ -439,7 +438,6 @@ class riboSeedShallow(unittest.TestCase):
             logger=logger)
         gen.loci_clusters[0].assembly_success = 2
         parse_subassembly_return_code(cluster=gen.loci_clusters[0],
-                                      final_contigs_dir=self.test_dir,
                                       logger=logger)
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
         self.assertFalse(gen.loci_clusters[0].keep_contigs)
@@ -460,7 +458,6 @@ class riboSeedShallow(unittest.TestCase):
             logger=logger)
         gen.loci_clusters[0].assembly_success = 3
         parse_subassembly_return_code(cluster=gen.loci_clusters[0],
-                                      final_contigs_dir=self.test_dir,
                                       logger=logger)
         self.assertFalse(gen.loci_clusters[0].continue_iterating)
         self.assertFalse(gen.loci_clusters[0].keep_contigs)
@@ -518,7 +515,6 @@ class riboSeedShallow(unittest.TestCase):
             mapping_ob=testmapping,
             proceed_to_target=False, target_len=None,
             min_assembly_len=5000,
-            read_len=300,
             include_short_contigs=False, keep_best_contig=True,
             seqname='', logger=logger)
         self.assertEqual(code_0, 0)
@@ -544,7 +540,6 @@ class riboSeedShallow(unittest.TestCase):
             clu,
             mapping_ob=testmapping,
             proceed_to_target=False, target_len=None,
-            read_len=300,
             min_assembly_len=10000,
             include_short_contigs=False, keep_best_contig=True,
             seqname='', logger=logger)
@@ -553,7 +548,6 @@ class riboSeedShallow(unittest.TestCase):
             clu,
             mapping_ob=testmapping2,
             proceed_to_target=False, target_len=None,
-            read_len=300,
             min_assembly_len=5000,
             include_short_contigs=False, keep_best_contig=True,
             seqname='', logger=logger)
@@ -617,8 +611,7 @@ class riboSeedShallow(unittest.TestCase):
             cluster=gen.loci_clusters[0],
             mapping_ob=testmapping,
             seedGenome=gen,
-            samtools_exe=self.samtools_exe,
-            logger=logger)
+            samtools_exe=self.samtools_exe)
         ref_cmds = [
             '{0} sort {1} > {2}'.format(
                 self.samtools_exe,
@@ -972,6 +965,22 @@ class riboSeedShallow(unittest.TestCase):
             md5(os.path.join(self.ref_dir, "test_bam_filtered_as130.sam")))
         self.to_be_removed.append(os.path.join(self.test_dir, "filtered.sam"))
 
+    @unittest.skipIf(shutil.which("samtools") is None,
+                     "samtools executable not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
+    def test_call_consensus(self):
+        sourcebam = self.ref_bam_prefix + "_mapped.bam"
+        fasta = get_fasta_consensus_from_BAM(
+            bam=self.ref_bam_prefix,
+            ref=self.ref_fasta,
+            outfasta=os.path.join(self.test_dir, "consensus.fasta"))
+        self.assertEqual(
+            fasta,
+            md5(os.path.join(self.ref_dir, "test_bam_filtered_as130.sam")))
+        self.to_be_removed.append(os.path.join(self.test_dir, "filtered.sam"))
+
+
     def test_make_bwa_map_cmds_pe(self):
         ngs_ob = NgsLib(
             name="test",
@@ -1104,6 +1113,46 @@ class riboSeedShallow(unittest.TestCase):
             set_ref_as_contig(ref_arg="ignore", map_percentage=90,
                               logger=logger),
             None)
+
+    def test_exclude_subassembly_based_on_coverage(self):
+        gen = SeedGenome(
+            max_iterations=1,
+            genbank_path=self.ref_gb,
+            clustered_loci_txt=self.test_loci_file,
+            output_root=self.test_dir,
+            logger=logger)
+        # testmapping = LociMapping(
+        #     name="test",
+        #     iteration=1,
+        #     assembly_subdir=self.test_dir,
+        #     ref_fasta=self.ref_fasta,
+        #     mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        gen.loci_clusters = parse_clustered_loci_file(
+            filepath=gen.clustered_loci_txt,
+            gb_filepath=gen.genbank_path,
+            output_root=self.test_dir,
+            padding=1000,
+            circular=False,
+            logger=logger)
+        gen.loci_clusters[0].coverage_exclusion = True
+        # self.assertEqual(
+        #     exclude_subassembly_based_on_coverage(
+        #         clu=gen.loci_clusters[0], iteration=1, logger=logger),
+        #     0)
+        self.assertEqual(
+            exclude_subassembly_based_on_coverage(
+                clu=gen.loci_clusters[0], iteration=0, logger=logger),
+            2)
+        # this should only be none or true, never false
+        with self.assertRaises(AssertionError):
+            gen.loci_clusters[0].coverage_exclusion = False
+            exclude_subassembly_based_on_coverage(
+                clu=gen.loci_clusters[0], iteration=0, logger=logger)
+        gen.loci_clusters[0].coverage_exclusion = None
+        self.assertEqual(None,
+        exclude_subassembly_based_on_coverage(
+                clu=gen.loci_clusters[0], iteration=0, logger=logger))
+
 
     def tearDown(self):
         """ delete temp files if no errors
