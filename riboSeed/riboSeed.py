@@ -1072,6 +1072,21 @@ def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
     return map_percentage
 
 
+def index_sort_BAM(inbam):
+    try:
+        pysam.index(inbam)
+    except pysam.utils.SamtoolsError:
+        sorted_bam = os.path.join(os.path.dirname(inbam), "temp_sorted.bam")
+        pysam.sort("-o", sorted_bam, inbam)
+        inbam = sorted_bam
+        try:
+            pysam.index(inbam)
+        except pysam.utils.SamtoolsError:
+            raise ValueError("Your bam file is corrupted! No good")
+    return inbam
+
+
+
 def filter_bam_AS(inbam, outsam, score, logger=None):
     """ This is needed because bwa cannot filter based n alignment score
     for paired reads.
@@ -1083,16 +1098,7 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
     notag = 0
     written = 0
     score_list = []
-    try:
-        pysam.index(inbam)
-    except pysam.utils.SamtoolsError:
-        sorted_bam = os.path.join(os.path.dirname(inbam), "temp_sorted.bam")
-        pysam.sort("-o", sorted_bam, inbam)
-        inbam = sorted_bam
-        try:
-            pysam.index(inbam)
-        except pysam.utils.SamtoolsError:
-            raise ValueError("Your bam file is corrupted! No good")
+    inbam = index_sort_BAM(inbam)
     bam = pysam.AlignmentFile(inbam, "rb")
     osam = pysam.Samfile(outsam, 'wh', template=bam)
     for read in bam.fetch():
@@ -1137,15 +1143,20 @@ def get_bam_AS(inbam, logger=None):
     return score_list
 
 
-def sam_to_bam(samtools_exe, bam, sam, logger=None):
+def convert_sam_to_bam(samtools_exe, bam, sam, reverse=False, logger=None):
     """
     becasue pysam doesnt like to write bams in an iterator, which makes sense
+
     """
     assert logger is not None, "must use logging"
-    logger.debug("Making mapped bam file:")
-    make_mapped_bam = "{0} view -o {1} -h {2}".format(samtools_exe, bam, sam)
-    logger.debug(make_mapped_bam)
-    subprocess.run([make_mapped_bam],
+    logger.debug("Converting with the following command:")
+    if not reverse:
+        cmd = "{0} view -o {1} -bS {2}".format(samtools_exe, bam, sam)
+    else:
+        cmd = "{0} view -o {2} -h {1}".format(samtools_exe, bam, sam)
+
+    logger.debug(cmd)
+    subprocess.run([cmd],
                    shell=sys.platform != "win32",
                    stdout=subprocess.PIPE,
                    stderr=subprocess.PIPE,
@@ -1268,10 +1279,12 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
     score_list = filter_bam_AS(inbam=mapping_ob.mapped_bam_unfiltered,
                                outsam=mapping_ob.mapped_sam,
                                score=score_min, logger=logger)
-    sam_to_bam(bam=mapping_ob.mapped_bam,
-               sam=mapping_ob.mapped_sam,
-               samtools_exe=samtools_exe,
-               logger=logger)
+    convert_sam_to_bam(
+        bam=mapping_ob.mapped_bam,
+        sam=mapping_ob.mapped_sam,
+        samtools_exe=samtools_exe,
+        reverse=False,
+        logger=logger)
     logger.info(str("Mapped reads after filtering: " +
                     get_number_mapped(mapping_ob.mapped_bam,
                                       samtools_exe=samtools_exe)))
@@ -2555,13 +2568,20 @@ def check_genbank_for_fasta(gb, logger=None):
                 sys.exit(1)
 
 
-def get_fasta_consensus_from_BAM(ref, bam, outfasta):
-    ref_id = SeqIO.read(ref).ie
-    return(ref_id)
-    bamfile = pysam.AlignmentFile(bam, "rb")
-    iter = bamfile.pileup('seq1', 10, 20)
+def get_fasta_consensus_from_BAM(samtools_exe, ref, bam, outfasta, logger=None):
+    """
+    """
+    assert logger is not None, "must use logging"
+    ref_id = SeqIO.read(ref, "fasta").id
+    bam = index_sort_BAM(bam)
+    logger.error(bam)
+    bamfile = pysam.AlignmentFile(bam, "rb", check_sq=False)
+    logger.error(bamfile)
+    iter = bamfile.pileup(ref_id, 10, 20)
+    return([str(x)  for x in iter])
     for x in iter:
         print (str(x))
+
 
 def main(args, logger=None):
     # allow user to give relative paths

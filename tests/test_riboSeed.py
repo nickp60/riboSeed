@@ -419,7 +419,6 @@ class riboSeedShallow(unittest.TestCase):
         gen.loci_clusters[0].assembly_success = 1
         with self.assertRaises(ValueError):
             parse_subassembly_return_code(cluster=gen.loci_clusters[0],
-                                          skip_copy=True,
                                           logger=logger)
 
     def test_parse_subassembly_return_code_2(self):
@@ -972,9 +971,11 @@ class riboSeedShallow(unittest.TestCase):
     def test_call_consensus(self):
         sourcebam = self.ref_bam_prefix + "_mapped.bam"
         fasta = get_fasta_consensus_from_BAM(
-            bam=self.ref_bam_prefix,
+            samtools_exe=self.samtools_exe,
+            bam=self.ref_bam_prefix + "_mapped.bam",
             ref=self.ref_fasta,
-            outfasta=os.path.join(self.test_dir, "consensus.fasta"))
+            outfasta=os.path.join(self.test_dir, "consensus.fasta"),
+            logger=logger)
         self.assertEqual(
             fasta,
             md5(os.path.join(self.ref_dir, "test_bam_filtered_as130.sam")))
