@@ -2568,19 +2568,40 @@ def check_genbank_for_fasta(gb, logger=None):
                 sys.exit(1)
 
 
-def get_fasta_consensus_from_BAM(samtools_exe, ref, bam, outfasta, logger=None):
+def get_fasta_consensus_from_BAM(samtools_exe, bcftools_exe, vcfutils_exe,
+                                 ref, bam, logger=None):
     """
     """
-    assert logger is not None, "must use logging"
-    ref_id = SeqIO.read(ref, "fasta").id
-    bam = index_sort_BAM(bam)
-    logger.error(bam)
-    bamfile = pysam.AlignmentFile(bam, "rb", check_sq=False)
-    logger.error(bamfile)
-    iter = bamfile.pileup(ref_id, 10, 20)
-    return([str(x)  for x in iter])
-    for x in iter:
-        print (str(x))
+    cmd_list, consensus_fq = make_get_consensus_cmds(
+        samtools_exe=samtools_exe,
+        bcftools_exe=bcftools_exe,
+        vcfutils_exe=vcfutils_exe,
+        ref=ref, bam=bam, logger=logger)
+    for cmd in cmd_list:  # may have more cmds here in future
+        logger.error(cmd)
+        subprocess.run([cmd],
+                       shell=sys.platform != "win32",
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE,
+                       check=True)
+    return consensus_fq
+
+
+def make_get_consensus_cmds(samtools_exe, bcftools_exe, vcfutils_exe,
+                           ref, bam, logger=None):
+    sorted_bam = os.path.splitext(bam)[0] + "_sorted.bam"
+    consensus_fq = os.path.splitext(bam)[0] + "_consensus.fq"
+    faidx_cmd = "{0} faidx {1}".format(samtools_exe, ref)
+    sort_cmd = "{0} sort {1} > {2}".format(samtools_exe, bam, sorted_bam)
+    cmd = str("{0} mpileup -d8000 -uf {1} {2} | {3} call -c - |" +
+              " {4} vcf2fq > {5}").format(
+        samtools_exe,  #0
+        ref,  #1
+        sorted_bam,  #2
+        bcftools_exe,  #3
+        vcfutils_exe,  #4
+        consensus_fq)  #5
+    return ([faidx_cmd, sort_cmd, cmd], consensus_fq)
 
 
 def main(args, logger=None):

@@ -37,7 +37,7 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     pysam_extract_reads, define_score_minimum, bool_run_quast, \
     make_quast_command, check_genbank_for_fasta, \
     filter_bam_AS, make_bwa_map_cmds, set_ref_as_contig, \
-    get_fasta_consensus_from_BAM, exclude_subassembly_based_on_coverage
+    make_get_consensus_cmds, exclude_subassembly_based_on_coverage
 
 from riboSeed.riboSnag import parse_clustered_loci_file
 
@@ -964,22 +964,24 @@ class riboSeedShallow(unittest.TestCase):
             md5(os.path.join(self.ref_dir, "test_bam_filtered_as130.sam")))
         self.to_be_removed.append(os.path.join(self.test_dir, "filtered.sam"))
 
-    @unittest.skipIf(shutil.which("samtools") is None,
+    @unittest.skipIf(shutil.which("samtools") is None or \
+                     shutil.which("bcftools") is None or \
+                     shutil.which("vcfutils.pl") is None,
                      "samtools executable not found, skipping." +
                      "If this isnt an error from travis deployment, you " +
                      "probably should install it")
-    def test_call_consensus(self):
+    def test_make_get_consensus_cmds(self):
         sourcebam = self.ref_bam_prefix + "_mapped.bam"
-        fasta = get_fasta_consensus_from_BAM(
-            samtools_exe=self.samtools_exe,
+        cmd_list, outfasta = make_get_consensus_cmds(
+            samtools_exe=shutil.which("samtools"),
+            bcftools_exe=shutil.which("bcftools"),
+            vcfutils_exe=shutil.which("vcfutils.pl"),
             bam=self.ref_bam_prefix + "_mapped.bam",
-            ref=self.ref_fasta,
-            outfasta=os.path.join(self.test_dir, "consensus.fasta"),
+            ref=os.path.join(self.ref_dir, 'cluster1.fasta'),
             logger=logger)
         self.assertEqual(
-            fasta,
-            md5(os.path.join(self.ref_dir, "test_bam_filtered_as130.sam")))
-        self.to_be_removed.append(os.path.join(self.test_dir, "filtered.sam"))
+            outfasta,
+            self.ref_bam_prefix + "_mapped_consensus.fq")
 
 
     def test_make_bwa_map_cmds_pe(self):
