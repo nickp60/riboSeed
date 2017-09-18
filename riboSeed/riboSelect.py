@@ -337,7 +337,7 @@ def main(args, logger=None):
                  "\n".join([str(x.__dict__) for x in loci_list]))
     outlines = []
     with open(args.genbank_genome, "r") as gb:
-        for i, rec in enumerate(SeqIO.parse(args.genbank_genome, 'genbank')):
+        for i, rec in enumerate(SeqIO.parse(gb, 'genbank')):
             logger.info("Processing {0}\n".format(rec.id))
             # if user gives clusters, make sure it matches the length:
             if args.clusters:

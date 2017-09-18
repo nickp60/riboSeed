@@ -23,7 +23,6 @@ Output:
 import os
 import subprocess
 import datetime
-import time
 import argparse
 import sys
 import math
@@ -118,8 +117,8 @@ class Locus(object):
     """ this holds the info for each individual Locus"
     """
     def __init__(self, index, sequence_id, locus_tag, strand=None,
-                 start_coord=None, end_coord=None, rel_start_coord=None,
-                 rel_end_coord=None, product=None, product_list=None,
+                 start_coord=None, end_coord=None,
+                 product=None,
                  feature_type=None):
         # int: unique identifier for cluster
         self.index = index
@@ -274,6 +273,19 @@ def get_genbank_rec_from_multigb(recordID, genbank_records):
     raise ValueError("no record found matching record id %s!" % recordID)
 
 
+def check_loci_file_not_genbank(filepath):
+    """ raise error if "cluster file" ends in .gb, etc
+    this covers common case where user submits genbank and cluster file
+    in the wrong order.
+    """
+    if not (os.path.isfile(filepath) and os.path.getsize(filepath) > 0):
+        raise ValueError("Cluster File not found!")
+    if filepath.endswith(("gb", "genbank", "gbk")):
+        raise FileNotFoundError("Hmm, this cluster file looks like genbank;" +
+                                " it ends in {0}".format(os.path.splitext(
+                                    filepath)[1]))
+
+
 def parse_clustered_loci_file(filepath, gb_filepath, output_root,
                               circular, padding=1000, logger=None):
     """Given a file from riboSelect or manually created (see specs in README)
@@ -282,15 +294,7 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
     As of 20161028, this returns a list of LociCluster objects!
     """
     assert logger is not None, "logging must be used!"
-    if not (os.path.isfile(filepath) and os.path.getsize(filepath) > 0):
-        raise ValueError("Cluster File not found!")
     clusters = []
-    # this covers common case where user submits genbank and cluster file
-    # in the wrong order.
-    if filepath.endswith(("gb", "genbank", "gbk")):
-        raise FileNotFoundError("Hmm, this cluster file looks like genbank; " +
-                                "it ends in {0}".format(os.path.splitext(
-                                    filepath)[1]))
     try:
         with open(filepath, "r") as f:
             file_contents = list(f)
@@ -328,7 +332,6 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
                                     padding=padding,
                                     circular=circular))
         # cluster_index = cluster_index + 1
-
     ### check feature i;f still none or starts with #$ (ie, no split)
     if feature is None:
         raise ValueError("no feature extracted from coords file! This " +
@@ -336,13 +339,20 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
     ###
     if len(clusters) == 0:
         raise ValueError("No Clusters Found!!")
-    # match up seqrecords
-    gb_records = SeqIO.index(gb_filepath, 'genbank')
     for clu in clusters:
         clu.feat_of_interest = feature
+    return clusters
+
+
+def add_gb_seqrecords_to_cluster_list(cluster_list, gb_filepath):
+    """ return cluster list with seq_records attached
+    """
+    # match up seqrecords
+    gb_records = SeqIO.index(gb_filepath, 'genbank')
+    for clu in cluster_list:
         clu.seq_record = gb_records[clu.sequence_id]
     gb_records.close()
-    return clusters
+    return cluster_list
 
 
 def extract_coords_from_locus(cluster, feature="rRNA",
@@ -522,9 +532,9 @@ def stitch_together_target_regions(cluster,
             id=seq_id)
     ### last minuete check
     cluster.extractedSeqRecord.description = "from riboSnag"
-    for property, value in vars(cluster).items():
+    for prop, value in vars(cluster).items():
         if value is None:
-            logger.debug("%s has a value of None!", property)
+            logger.debug("%s has a value of None!", prop)
     return cluster
 
 
@@ -695,8 +705,8 @@ def annotate_msa_conensus(tseq_array, seq_file, barrnap_exe,
             found = m.group(1)
         named_coords.append([found, [int(i[3]), int(i[4])]])
     if len(named_coords) == 0:
-        raise ValueError(str("Error extracting coords from barrnap gff line" +
-                             " %s with pattern %s!" % (str(i), pattern)))
+        raise ValueError(str("Error extracting coords from barrnap gff" +
+                             "with pattern %s!" %  pattern))
     return (results_list, consensus, named_coords)
 
 
@@ -1346,6 +1356,7 @@ if __name__ == "__main__":
         coerce_two_digit=True,
         min_version="0.0.7")
     # parse cluster file
+    check_loci_file_not_genbank(args.clustered_loci, )
     try:
         clusters = parse_clustered_loci_file(args.clustered_loci,
                                              gb_filepath=args.genbank_genome,
@@ -1353,6 +1364,9 @@ if __name__ == "__main__":
                                              padding=args.padding,
                                              circular=args.circular,
                                              logger=logger)
+        clusters = add_gb_seqrecords_to_cluster_list(
+            cluster_list=clusters,
+            gb_filepath=args.genbank_genome)
     except Exception as e:
         logger.error(e)
         sys.exit(1)

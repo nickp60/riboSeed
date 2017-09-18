@@ -8,6 +8,8 @@ import logging
 import shutil
 import os
 import unittest
+import time
+
 from unittest.mock import Mock
 
 # I hate this line but it works :(
@@ -55,6 +57,7 @@ class riboScoreTestCase(unittest.TestCase):
             "references",
             "riboScore_references",
             "reverse.tab")
+        self.startTime = time.time()
 
         self.to_be_removed = []
 
@@ -212,6 +215,8 @@ class riboScoreTestCase(unittest.TestCase):
                 os.unlink(filename)
             except IsADirectoryError:
                 shutil.rmtree(filename)
+        t = time.time() - self.startTime
+        print("%s: %.3f" % (self.id(), t))
 
 
 if __name__ == '__main__':

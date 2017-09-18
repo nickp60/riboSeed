@@ -7,6 +7,7 @@ Created on Tue Aug 30 08:57:31 2016
 import sys
 import logging
 import shutil
+import time
 # import subprocess
 import os
 import unittest
@@ -66,6 +67,7 @@ class riboSeedTestCase(unittest.TestCase):
                               spades_exe="spades.py",
                               quast_exe="python2.7 quast.py",
                               cores=2)
+        self.startTime = time.time()
         self.cores = 2
         self.maxDiff = 2000
         self.to_be_removed = []
@@ -177,7 +179,8 @@ class riboSeedTestCase(unittest.TestCase):
                 os.unlink(filename)
             except IsADirectoryError:
                 shutil.rmtree(filename)
-        pass
+        t = time.time() - self.startTime
+        print("%s: %.3f" % (self.id(), t))
 
 if __name__ == '__main__':
     unittest.main()

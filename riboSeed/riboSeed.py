@@ -2569,38 +2569,86 @@ def check_genbank_for_fasta(gb, logger=None):
 
 
 def get_fasta_consensus_from_BAM(samtools_exe, bcftools_exe, vcfutils_exe,
-                                 ref, bam, logger=None):
-    """
+                                 outfasta, ref, bam, logger=None):
+    """ run system commands to get consensus fastq from fastq
     """
     cmd_list, consensus_fq = make_get_consensus_cmds(
         samtools_exe=samtools_exe,
         bcftools_exe=bcftools_exe,
         vcfutils_exe=vcfutils_exe,
-        ref=ref, bam=bam, logger=logger)
+        ref=ref, bam=bam,
+        outfastq=os.path.splitext(outfasta)[0] + ".fastq",
+        old_method=True,
+        logger=logger)
     for cmd in cmd_list:  # may have more cmds here in future
-        logger.error(cmd)
+        logger.debug(cmd)
         subprocess.run([cmd],
                        shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE,
                        check=True)
-    return consensus_fq
+    consensus_fa = convert_fastq_to_fasta(
+        fastq=consensus_fq, outfasta=outfasta,
+        only_ATCG=True, logger=logger)
+    return consensus_fa
+
+
+def convert_fastq_to_fasta(fastq, outfasta,  # only_first=True,
+                           only_ATCG=True, logger=None):
+    """ This converts fastq to fasta, as well as converting non ATCG bases
+    to N's.  Currently only works on single entry fastqs.
+    If you need to convert more, learn how to use awk.
+    """
+    assert logger is not None, "must use logging"
+    from Bio.Alphabet import IUPAC
+    counter = 0
+    with open(outfasta, "w") as ofile:
+        with open(fastq, "r") as ifile:
+            for read in SeqIO.parse(ifile, "fastq"):
+                if counter > 0:  # and only_first:
+                    raise ValueError
+                if only_ATCG:
+                    new_record = read
+                    new_seq = ""
+                    for i in range(0, len(read.seq)):
+                        if read.seq[i] not in ["A","T", "C", "G"]:
+                            new_seq = new_seq + "N"
+                        else:
+                            new_seq = new_seq + read.seq[i]
+                    new_record.seq = Seq(new_seq, IUPAC.ambiguous_dna)
+                    SeqIO.write(new_record, ofile, "fasta")
+                else:
+                    SeqIO.write(read, ofile, "fasta")
+                counter = counter + 1
+    return outfasta
 
 
 def make_get_consensus_cmds(samtools_exe, bcftools_exe, vcfutils_exe,
-                           ref, bam, logger=None):
+                            ref, bam, outfastq=None, old_method=False,
+                            logger=None):
+    """ use samtoolsa nd vcftools to get a consesnus fastq from a BAM file
+    the old_method referes to how bcftools calls consensuses since 1.2
+    """
     sorted_bam = os.path.splitext(bam)[0] + "_sorted.bam"
-    consensus_fq = os.path.splitext(bam)[0] + "_consensus.fq"
+    if outfastq is None:
+        consensus_fq = os.path.splitext(bam)[0] + "_consensus.fq"
+    else:
+        consensus_fq = outfastq
     faidx_cmd = "{0} faidx {1}".format(samtools_exe, ref)
+    if old_method:
+        call = "-c"
+    else:
+        call = "-m"
     sort_cmd = "{0} sort {1} > {2}".format(samtools_exe, bam, sorted_bam)
-    cmd = str("{0} mpileup -d8000 -uf {1} {2} | {3} call -c - |" +
+    cmd = str("{0} mpileup -d8000 -uf {1} {2} | {3} call {6} - |" +
               " {4} vcf2fq > {5}").format(
-        samtools_exe,  #0
-        ref,  #1
-        sorted_bam,  #2
-        bcftools_exe,  #3
-        vcfutils_exe,  #4
-        consensus_fq)  #5
+                  samtools_exe,  #0
+                  ref,  #1
+                  sorted_bam,  #2
+                  bcftools_exe,  #3
+                  vcfutils_exe,  #4
+                  consensus_fq,
+                  call)  #5
     return ([faidx_cmd, sort_cmd, cmd], consensus_fq)
 
 
@@ -2752,6 +2800,9 @@ def main(args, logger=None):
             output_root=output_root,
             circular=args.linear is False,
             logger=logger)
+        seedGenome.loci_clusters = add_gb_seqrecords_to_cluster_list(
+            cluster_list=seedGenome.loci_clusters,
+            gb_filepath=seedGenome.genbank_path)
     except Exception as e:
         logger.error(e)
         logger.error(last_exception())

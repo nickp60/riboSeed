@@ -8,6 +8,7 @@ import sys
 import logging
 import os
 import unittest
+import time
 
 # I hate this line but it works :(
 sys.path.append(os.path.join(
@@ -41,13 +42,13 @@ class riboSelect_TestCase(unittest.TestCase):
         self.test_loci_file = os.path.join(os.path.dirname(__file__),
                                            str("references" + os.path.sep +
                                                'grouped_loci_reference.txt'))
+        self.startTime = time.time()
         if not os.path.exists(self.testdirname):
             os.makedirs(self.testdirname, exist_ok=True)
 
     def test_count_feature_hits_per_sequence_all_features(self):
         nfeat_simple = count_feature_hits_per_sequence(
             all_feature=True,
-            gb_path=self.test_gb_file,
             specific_features=[],
             rec_id_list=[],
             loci_list=[],
@@ -81,7 +82,6 @@ class riboSelect_TestCase(unittest.TestCase):
 
         nfeat_simple2 = count_feature_hits_per_sequence(
             all_feature=False,
-            gb_path=self.test_gb_file,
             specific_features=["16S", "23S"],
             loci_list=filtered_loci_list,
             rec_id_list = ['NC_011751.1'],
@@ -147,7 +147,6 @@ class riboSelect_TestCase(unittest.TestCase):
             get_loci_list_for_features(gb_path=self.test_gb_file,
                                         feature="RRNA",
                                         specific_features="16S",
-                                        nrecs=1,
                                         verbose=False,
                                         logger=logger)
         self.assertTrue([len(x) == 0 for x in
@@ -155,7 +154,6 @@ class riboSelect_TestCase(unittest.TestCase):
         bum_coords2,  bum_nfeat_simple2 = \
             get_loci_list_for_features(gb_path=self.test_gb_file,
                                         feature="rRNA",
-                                        nrecs=1,
                                         specific_features="18S",
                                         verbose=False,
                                         logger=logger)
@@ -164,7 +162,6 @@ class riboSelect_TestCase(unittest.TestCase):
 
         filtered, nfeat_simple = \
             get_loci_list_for_features(gb_path=self.test_gb_file,
-                                        nrecs=1,
                                         feature="rRNA",
                                         specific_features="16S",
                                         verbose=True,
@@ -189,7 +186,8 @@ class riboSelect_TestCase(unittest.TestCase):
         self.assertEqual(centers2, [3])
 
     def tearDown(self):
-        pass
+        t = time.time() - self.startTime
+        print("%s: %.3f" % (self.id(), t))
 
 
 if __name__ == '__main__':

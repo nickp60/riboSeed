@@ -9,6 +9,7 @@ import logging
 import os
 import unittest
 import shutil
+import time
 
 from Bio import SeqIO
 
@@ -23,7 +24,8 @@ from riboSeed.riboSnag import parse_clustered_loci_file, \
     pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd,\
     calc_Shannon_entropy, calc_entropy_msa,\
     annotate_msa_conensus, plot_scatter_with_anno, get_all_kmers,\
-    profile_kmer_occurances, plot_pairwise_least_squares, make_msa
+    profile_kmer_occurances, plot_pairwise_least_squares, make_msa, \
+    check_loci_file_not_genbank, add_gb_seqrecords_to_cluster_list
 
 from riboSeed.riboSnag import LociCluster, Locus
 
@@ -75,31 +77,20 @@ class riboSnag_TestCase(unittest.TestCase):
         self.prank_exe = "prank"
         self.mafft_exe = "mafft"
         self.maxDiff = 1000
+        self.startTime = time.time()
         self.to_be_removed = []
         if not os.path.exists(self.testdirname):
             os.makedirs(self.testdirname, exist_ok=True)
 
+    def test_check_loci_not_gb(self):
+        """ check that the loci file is not a genbank file
+        """
+        with self.assertRaises(FileNotFoundError):
+            check_loci_file_not_genbank(self.test_gb_file)
+
     def test_parse_loci(self):
         """this checks the parsing of riboSelect ouput
         """
-        # error parsing
-        with self.assertRaises(ValueError):
-            parse_clustered_loci_file(
-                filepath=str(self.test_loci_file + "png"),
-                gb_filepath=self.test_gb_file,
-                output_root=self.testdirname,
-                padding=100,
-                circular=True,
-                logger=logger)
-        # error wrong files provided
-        with self.assertRaises(FileNotFoundError):
-            parse_clustered_loci_file(
-                gb_filepath=self.test_loci_file,
-                filepath=self.test_gb_file,
-                padding=100,
-                output_root=self.testdirname,
-                circular=True,
-                logger=logger)
         clusters = parse_clustered_loci_file(
             filepath=self.test_loci_file,
             gb_filepath=self.test_gb_file,
@@ -204,6 +195,9 @@ class riboSnag_TestCase(unittest.TestCase):
             padding=padding_val,
             circular=True,
             logger=logger)
+        clusters = add_gb_seqrecords_to_cluster_list(
+            cluster_list=clusters,
+            gb_filepath=self.test_gb_file)
         cluster = clusters[0]  # this should be reverse complimented
         extract_coords_from_locus(
             cluster=cluster,
@@ -520,6 +514,8 @@ class riboSnag_TestCase(unittest.TestCase):
         """
         for filename in self.to_be_removed:
             os.unlink(filename)
+        t = time.time() - self.startTime
+        print("%s: %.3f" % (self.id(), t))
 
 if __name__ == '__main__':
     unittest.main()

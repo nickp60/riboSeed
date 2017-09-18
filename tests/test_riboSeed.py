@@ -10,6 +10,7 @@ import shutil
 import mock
 import os
 import unittest
+import time
 
 from Bio import SeqIO
 from argparse import Namespace
@@ -37,7 +38,8 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     pysam_extract_reads, define_score_minimum, bool_run_quast, \
     make_quast_command, check_genbank_for_fasta, \
     filter_bam_AS, make_bwa_map_cmds, set_ref_as_contig, \
-    make_get_consensus_cmds, exclude_subassembly_based_on_coverage
+    make_get_consensus_cmds, exclude_subassembly_based_on_coverage, \
+    convert_fastq_to_fasta, get_fasta_consensus_from_BAM
 
 from riboSeed.riboSnag import parse_clustered_loci_file
 
@@ -78,6 +80,10 @@ class riboSeedShallow(unittest.TestCase):
                                        'toy_readsS.fq')
         self.ref_bam_prefix = os.path.join(self.ref_dir,
                                            'test_bam_to_fastq')
+        self.ref_fastq_with_iupac_bases = os.path.join(
+            self.ref_dir,
+            "riboSeed_references",
+            "file_with_iupac_bases.fastq")
         self.smalt_exe = "smalt"
         self.bwa_exe = "bwa"
         self.samtools_exe = "samtools"
@@ -123,6 +129,7 @@ class riboSeedShallow(unittest.TestCase):
         if not os.path.exists(self.test_dir):
             os.makedirs(self.test_dir, exist_ok=True)
         self.copy_fasta()
+        self.startTime = time.time()
         # self.print_headsup()
 
     def copy_fasta(self):
@@ -970,19 +977,82 @@ class riboSeedShallow(unittest.TestCase):
                      "samtools executable not found, skipping." +
                      "If this isnt an error from travis deployment, you " +
                      "probably should install it")
-    def test_make_get_consensus_cmds(self):
-        sourcebam = self.ref_bam_prefix + "_mapped.bam"
-        cmd_list, outfasta = make_get_consensus_cmds(
+    def test_get_fasta_consensus_from_BAM(self):
+        get_fasta_consensus_from_BAM(
             samtools_exe=shutil.which("samtools"),
             bcftools_exe=shutil.which("bcftools"),
             vcfutils_exe=shutil.which("vcfutils.pl"),
+            outfasta=os.path.join(self.test_dir, "bam_consensus.fasta"),
+            ref=os.path.join(self.ref_dir, 'cluster1.fasta'),
             bam=self.ref_bam_prefix + "_mapped.bam",
+            logger=logger)
+        self.assertEqual(
+            md5(os.path.join(self.test_dir, "bam_consensus.fasta")),
+            md5(os.path.splitext(
+                self.ref_fastq_with_iupac_bases)[0] + ".fasta"))
+
+    def test_make_get_consensus_cmds_nofastq(self):
+        cmd_list, outfasta = make_get_consensus_cmds(
+            samtools_exe="samtools",
+            bcftools_exe="bcftools",
+            vcfutils_exe="vcfutils.pl",
+            bam=self.ref_bam_prefix + "_mapped.bam",
+            outfastq=None,
             ref=os.path.join(self.ref_dir, 'cluster1.fasta'),
             logger=logger)
         self.assertEqual(
             outfasta,
             self.ref_bam_prefix + "_mapped_consensus.fq")
 
+    def test_make_get_consensus_cmds_withfastq(self):
+        destfastq= self.ref_dir + "mapped.fastq"
+        cmd_list, outfastq = make_get_consensus_cmds(
+            samtools_exe="samtools",
+            bcftools_exe="bcftools",
+            vcfutils_exe="vcfutils.pl",
+            bam=self.ref_bam_prefix + "_mapped.bam",
+            outfastq=destfastq,
+            ref=os.path.join(self.ref_dir, 'cluster1.fasta'),
+            logger=logger)
+        self.assertEqual(outfastq, destfastq)
+
+    def test_make_get_consensus_cmds_check_cmds(self):
+        ref_list = [
+            "samtools faidx ref.fasta",
+            "samtools sort bambam.bam > bambam_sorted.bam",
+            "samtools mpileup -d8000 -uf ref.fasta bambam_sorted.bam | " +
+            "bcftools call -c - | vcfutils.pl vcf2fq > result.fastq"
+        ]
+        cmd_list, outfasta = make_get_consensus_cmds(
+            samtools_exe="samtools",
+            bcftools_exe="bcftools",
+            vcfutils_exe="vcfutils.pl",
+            bam="bambam.bam",
+            outfastq="result.fastq",
+            old_method=True,
+            ref="ref.fasta",
+            logger=logger)
+        for i in range(0, len(cmd_list)):
+            self.assertEqual(cmd_list[i], ref_list[i])
+
+    def test_convert_fastq_to_fasta(self):
+        outfasta = os.path.join(self.test_dir, "pass_fastq_to_fasta.fasta")
+        convert_fastq_to_fasta(fastq=self.ref_fastq_with_iupac_bases,
+                               outfasta=outfasta,
+                               only_ATCG=True, logger=logger)
+        self.assertEqual(
+            md5(os.path.splitext(
+                self.ref_fastq_with_iupac_bases)[0] + ".fasta"),
+            md5(outfasta))
+
+    def test_convert_fastq_to_fasta_failmulti(self):
+        with self.assertRaises(ValueError):
+            convert_fastq_to_fasta(
+                fastq=self.ref_Rfastq,
+                outfasta = os.path.join(
+                    self.test_dir, "fail_fastq_to_fasta.fasta"),
+                only_ATCG=True,
+                logger=logger)
 
     def test_make_bwa_map_cmds_pe(self):
         ngs_ob = NgsLib(
@@ -1160,9 +1230,11 @@ class riboSeedShallow(unittest.TestCase):
     def tearDown(self):
         """ delete temp files if no errors
         """
+
         for filename in self.to_be_removed:
             os.unlink(filename)
-        pass
+        t = time.time() - self.startTime
+        print("%s: %.3f" % (self.id(), t))
 
 
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),
@@ -1223,6 +1295,7 @@ class riboSeedDeep(unittest.TestCase):
         self.cores = 2
         self.maxDiff = 2000
         self.to_be_removed = []
+        self.startTime = time.time()
         if not os.path.exists(self.test_dir):
             os.makedirs(self.test_dir, exist_ok=True)
         self.copy_fasta()
@@ -1428,7 +1501,8 @@ class riboSeedDeep(unittest.TestCase):
         """
         for filename in self.to_be_removed:
             os.unlink(filename)
-        pass
+        t = time.time() - self.startTime
+        print("%s: %.3f" % (self.id(), t))
 
 
 @unittest.skipIf((sys.version_info[0] != 3) or (sys.version_info[1] < 5),

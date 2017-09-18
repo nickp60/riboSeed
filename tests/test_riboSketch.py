@@ -7,6 +7,7 @@ import sys
 import shutil
 import os
 import unittest
+import time
 
 from pyutilsnrw.utils3_5 import md5
 from argparse import Namespace
@@ -48,6 +49,7 @@ class riboSketchTestCase(unittest.TestCase):
             "ref_vs_kleb_de_fere_novo", "alignment2"
             "")
         os.makedirs(self.test_dir, exist_ok=True)
+        self.startTime = time.time()
         self.to_be_removed = []
 
     def test_parseDirContents(self):
@@ -169,6 +171,8 @@ class riboSketchTestCase(unittest.TestCase):
                 os.unlink(filename)
             except IsADirectoryError:
                 shutil.rmtree(filename)
+        t = time.time() - self.startTime
+        print("%s: %.3f" % (self.id(), t))
 
 
 if __name__ == '__main__':
