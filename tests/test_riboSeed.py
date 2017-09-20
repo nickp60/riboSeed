@@ -11,6 +11,7 @@ import mock
 import os
 import unittest
 import time
+import subprocess
 
 from Bio import SeqIO
 from argparse import Namespace
@@ -1424,6 +1425,30 @@ class riboSeedDeep(unittest.TestCase):
                      "samtools executable not found, skipping." +
                      "If this isnt an error from travis deployment, you " +
                      "probably should install it")
+    def test_bam_to_fastq(self):
+        testmapping = LociMapping(
+            name="test",
+            iteration=1,
+            mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
+        cmd, ngs = convert_bam_to_fastqs_cmd(mapping_ob=testmapping,
+                                             ref_fasta="test_reference.fasta",
+                                             samtools_exe=self.samtools_exe,
+                                             which='mapped',
+                                             single=True,
+                                             source_ext="_bam",
+                                             logger=logger)
+        subprocess.run([cmd],
+                       shell=sys.platform != "win32",
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE,
+                       check=True)
+        self.assertTrue(os.path.getsize(ngs.readS0) > 0)
+
+
+    @unittest.skipIf(shutil.which("samtools") is None,
+                     "samtools executable not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
     def test_pysam_extract_reads(self):
         """ test extracting reads from a sam file
         """
@@ -1490,7 +1515,7 @@ class riboSeedDeep(unittest.TestCase):
         clu = gen.loci_clusters[0]
         self.assertEqual(len(clu.mappings), 0)
         prepare_next_mapping(
-            cluster=clu, seedGenome=gen, samtools_exe=self.samtools_exe,
+            cluster=clu, seedGenome=gen,
             flank=0,
             logger=logger)
         new_name = "NC_011751.1_cluster_{0}".format(clu.index)

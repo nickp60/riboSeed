@@ -63,7 +63,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, \
     file_len, check_version_from_cmd
 
 from riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
-    extract_coords_from_locus
+    extract_coords_from_locus, add_gb_seqrecords_to_cluster_list
 
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
