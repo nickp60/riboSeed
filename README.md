@@ -43,6 +43,7 @@ The pipeline consists of 3 main stages: preprocessing, de fere novo assembly, an
 #### Usage
 
 riboScan can either use a directory of fastas or one (multi)fasta file.  If using a directory of fastas, provide the appropriate extension using the `-e` option. If using a (multi)fasta as input, it write out each entry to its own fasta in the `contigs` subdirectory that it makes in the output. For each of the fastas, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a GenBank file that contains just annotated rRNA features. The last step is a concatenation which, whether or not there are multiple files, makes a single (possibly multi-entry) genbank file perfect for riboSeed-ing.
+
 NOTE: If using a reference with long names or containing special characters, use the --name argument to rename the contigs to something a bit more convenient and less prone to errors when piping results.
 
 
@@ -172,6 +173,8 @@ Decause assembly using short reads often collases rDNA repeats, it is not uncomm
 
 It requires a mapping BAM file and the riboScan output directory as input.
 
+
+
 ### `riboSwap.py`
 Infrequently, `riboSeed` has joined together contigs that appear incorrect according to your reference.  If you are at all unhappy with a bridging, `riboSwap.py` allows swapping of a "bad" contig for one or more syntenic contigs from the *de novo* assembly.
 #### USAGE
@@ -215,7 +218,7 @@ The tests for the module can be found under the `tests` directory. I run them wi
 ## Installation
 
 ### From conda (new and recommended!)
-Conda is a cross-platform, cross-language package management system.  If you haven't already installed conda, follow (these instructions here)[https://bioconda.github.io/index.html], and install the python3.6 version.  Once you have that done, add the appropriate channels.
+Conda is a cross-platform, cross-language package management system.  If you haven't already installed conda, follow [these instructions here](https://bioconda.github.io/index.html), and install the python3.6 version.  Once you have that done, add the appropriate channels.
 
 ```
 conda config --add channels defaults

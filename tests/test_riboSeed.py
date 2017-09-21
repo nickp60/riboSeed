@@ -1399,7 +1399,7 @@ class riboSeedDeep(unittest.TestCase):
                 logger=logger))
         self.assertEqual(round(results[0][1], 4), .9945)
 
-    @unittest.skipIf(sys.version_info[1] == 5 and \
+    @unittest.skipIf(sys.version_info[1] == 5 or \
                      shutil.which("spades.py") is None,
                      "spades executable not found, skipping." +
                      "If this isnt an error from travis deployment, you " +
