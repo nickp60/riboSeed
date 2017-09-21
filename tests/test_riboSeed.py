@@ -772,7 +772,7 @@ class riboSeedShallow(unittest.TestCase):
                 gen.assembled_seeds,
                 os.path.join(self.test_dir, "final_de_fere_novo_assembly")),
             str(
-                "{0} -t 4 -m 8 --careful -k 33,77,99 --pe1-1 {1} " +
+                "/bin/python3.5 {0} -t 4 -m 8 --careful -k 33,77,99 --pe1-1 {1} " +
                 "--pe1-2 {2}   -o {3}"
             ).format(
                 self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
