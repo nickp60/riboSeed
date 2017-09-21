@@ -38,6 +38,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
+from distutils.version import StrictVersion
+
 
 try:
     import numpy as np
@@ -1268,7 +1270,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
         score_min = score_minimum
     else:
         logger.debug(
-            "no bwa mapping score minprovided; default is 1/2 read " +
+            "no bwa mapping score min provided; default is 1/2 read " +
             "length or 50, whichever is greater.")
         # hard minimum of 50
         score_min = max(int(round(float(ngsLib.readlen) / 2.0)), 50)
@@ -1346,6 +1348,60 @@ def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
                             ref_fasta=ref_fasta))
 
 
+def fiddle_with_spades_exe(spades_exe, logger=None):
+    """  so heres the deal.  SPAdes 3.9  can be run with python3.5 and below.
+     version 3.10 can be run with 3.6 and below.  If the version of spades
+     and the version of execultion doest jive, this will try to correct it.
+    return (wait for it, this is harebrained) the python executable needed!
+    """
+    assert logger is not None, "must use logging"
+    assert sys.version_info[0] != 2 and sys.version_info[1] >= 5, \
+        "how did we get here? cannot use riboSeed with anything less than 3.5"
+    # spades will throw an error if run with the wrong version of python.  So
+    # we will assume the error means that we are running with an incompatible
+    # version of python
+    # SPAdes 3.11.0 : all
+    # SPAdes 3.10.0 : python3.5 and below
+    # SPAdes 3.9.0 : python3.4 and below
+    try:
+        spades_verison = check_version_from_cmd(
+            exe=sys.executable + " " + spades_exe,
+            cmd='--version', line=1, where='stderr',
+            pattern=r"\s*v(?P<version>[^(]+)",
+            min_version="3.9.0", logger=logger)
+        SPADES_VERSION_SUCCESS = True
+    except Exception as e:
+        SPADES_VERSION_SUCCESS = False
+        logger.warning("failed inital attempt to get spades version")
+        logger.warning(e)
+    if not SPADES_VERSION_SUCCESS:
+        # if python 3.6, we should try to use python3.5 if the user has it
+        if sys.version_info[1] == 6:
+            try:
+                spades_verison = check_version_from_cmd(
+                    exe="python3.5 " + spades_exe,
+                    cmd='--version', line=1, where='stderr',
+                    pattern=r"\s*v(?P<version>[^(]+)",
+                    min_version="3.9.0", logger=logger)
+                SPADES_VERSION_SUCCESS = True
+                return "python3.5"
+            except Exception as e:
+                SPADES_VERSION_SUCCESS = False
+                logger.error(e)
+                logger.error("There is an apparent mismatch between python" +
+                             " and spades.  Check to see if your spades " +
+                             "version is compatible with your python version")
+                sys.exit(1)
+        elif sys.version_info[1] == 5:
+            logger.error("spades appears not to be working with python3.5")
+            sys.exit(1)
+        else:
+            logger.error("poorly understood error")
+            sys.exit(1)
+
+    return sys.executable
+
+
 def generate_spades_cmd(
         mapping_ob, ngs_ob, ref_as_contig, as_paired=True, addLibs="",
         prelim=False, k="21,33,55,77,99", spades_exe="spades.py",
@@ -1354,15 +1410,10 @@ def generate_spades_cmd(
     wrapper for common spades setting for long illumina reads
     ref_as_contig should be either None, 'trusted', or 'untrusted'
     prelim flag is True, only assembly is run, and without coverage corrections
-    #TODO
-    the seqname variable is used only for renaming the resulting contigs
-    during iterative assembly.  It would be nice to inheirit from "ref",
-    but that is changed with each iteration. This should probably be addressed
-    before next major version change
-    #TODO dynamicllly choose kmers based on read len and whether prelim
     """
     assert logger is not None, "Must Use Logging"
-
+    spades_python = fiddle_with_spades_exe(
+        spades_exe=spades_exe, logger=logger)
     # make kmer comamnd empty if using "auto", or set to something like
     # -k 55,77,99
     if k is not 'auto':
@@ -1424,7 +1475,7 @@ def generate_spades_cmd(
                                              logger=logger)
     else:
         spades_cmd = cmd
-    return spades_cmd
+    return spades_python + " " + spades_cmd
 
 
 def make_spades_empty_check(liblist, cmd, logger):
@@ -2492,7 +2543,7 @@ def make_modest_spades_cmd(cmd, cores, memory, split=0,
     assert logger is not None, "Must use logging"
     cmdA, cmdB = cmd.split("--careful")
     if serialize:
-        logger.info("Allocating SPAdes %dgb of memory", memory)
+        logger.debug("Allocating SPAdes %dgb of memory", memory)
         mem_each = memory
         cores_each = cores
     else:
@@ -2540,7 +2591,7 @@ def define_score_minimum(args, readlen, iteration, logger):
                 scaling_factor, score_minimum, readlen)
         else:
             assert args.method == 'bwa', "must be either smalt or bwa"
-            logger.info("using the default minimum score for BWA")
+            logger.debug("using the default minimum score for BWA")
             score_minimum = None
     else:
         if readlen < args.score_min:
@@ -2882,7 +2933,7 @@ def main(args, logger=None):
                     inbam=clu.mappings[-1].mapped_bam,
                     logger=logger)
                 if len(mapped_scores) > 200000:
-                    logger.info("Downsampling our pltting data to 20k points")
+                    logger.info("Downsampling our plotting data to 20k points")
                     mapped_scores = random.sample(mapped_scores, 200000)
                 printPlot(data=mapped_scores, line=score_minimum,
                           ymax=18, xmax=60, tick=.2, fill=True,
@@ -3044,7 +3095,7 @@ def main(args, logger=None):
             logger.error(e)
             sys.exit(1)
 
-        logger.info(iter_depths)
+        logger.debug(iter_depths)
         region_depths.append(iter_depths)
         extract_convert_assemble_cmds = []
         # generate spades cmds (cannot be multiprocessed becuase of python's

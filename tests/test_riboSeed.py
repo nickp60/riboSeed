@@ -7,7 +7,7 @@ Created on Tue Aug 30 08:57:31 2016
 import sys
 import logging
 import shutil
-import mock
+import unittest.mock
 import os
 import unittest
 import time
@@ -40,13 +40,13 @@ from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
     make_quast_command, check_genbank_for_fasta, \
     filter_bam_AS, make_bwa_map_cmds, set_ref_as_contig, \
     make_get_consensus_cmds, exclude_subassembly_based_on_coverage, \
-    convert_fastq_to_fasta, get_fasta_consensus_from_BAM
+    convert_fastq_to_fasta, get_fasta_consensus_from_BAM, \
+    fiddle_with_spades_exe
 
 from riboSeed.riboSnag import parse_clustered_loci_file
 
 
 sys.dont_write_bytecode = True
-
 logger = logging
 
 
@@ -1398,6 +1398,19 @@ class riboSeedDeep(unittest.TestCase):
                 prep=True,
                 logger=logger))
         self.assertEqual(round(results[0][1], 4), .9945)
+
+    @unittest.skipIf(sys.version_info[1] == 5 and \
+                     shutil.which("spades.py") is None,
+                     "spades executable not found, skipping." +
+                     "If this isnt an error from travis deployment, you " +
+                     "probably should install it")
+    def test_fiddle_with_spades_exe(self):
+        """
+        """
+        logger.error(sys.executable)
+        self.assertEqual(
+            fiddle_with_spades_exe(shutil.which("spades.py"), logger=logger),
+            "python3.5")
 
     @unittest.skipIf(shutil.which("samtools") is None,
                      "samtools executable not found, skipping." +
