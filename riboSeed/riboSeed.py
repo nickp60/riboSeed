@@ -523,7 +523,7 @@ class Exes(object):
 
     """
     def __init__(self, python, samtools, method, spades, quast,
-                 smalt, bwa, check=True, mapper=None):
+                 smalt, bwa, bcftools, vcfutils, check=True, mapper=None):
         self.python = python
         self.samtools = samtools
         self.method = method
@@ -532,10 +532,13 @@ class Exes(object):
         self.quast = quast
         self.smalt = smalt
         self.bwa = bwa
+        self.bcftools = bcftools
+        self.vcfutils = vcfutils
         self.check = check
         self.check_mands()
         self.set_mapper()
-        self.check_expand_exes()
+        self.check_expand_mand_exes()
+        self.check_expand_opt_exes()
 
     def check_mands(self):
         """ checks that all mandatory arguments are not none
@@ -556,7 +559,7 @@ class Exes(object):
         else:
             raise ValueError("Mapping method not found!")
 
-    def check_expand_exes(self):
+    def check_expand_mand_exes(self):
         """ for each executable, expand wildcards and use shutil.which
         to get full path to executable.  If not found, throw an error
         """
@@ -571,9 +574,22 @@ class Exes(object):
         else:
             pass
 
+    def check_expand_opt_exes(self):
+        """ for each executable, expand wildcards and use shutil.which
+        to get full path to executable.
+        """
+        if self.check:
+            for exe in ["bcftools", "vcfutils"]:
+                exe_groomed = os.path.expanduser(getattr(self, exe))
+                exe_groomed = shutil.which(exe_groomed)
+                setattr(self, exe, exe_groomed)
+        else:
+            pass
+
     def check_spades_python_version(self, logger):
         """   ensure that we have a availible python to
-        ruin spades with.  See details in method docstrings
+        ruin spades with. See details in method docstrings
+        Note this version will be used for quast as well
         """
         spades_python = fiddle_with_spades_exe(
             spades_exe=self.spades, logger=logger)
@@ -773,6 +789,12 @@ def get_args():  # pragma: no cover
                           help="if --serialize, runs seeding and assembly " +
                           "without multiprocessing. This is recommended for " +
                           "machines with less than 8GB RAM: %(default)s")
+    optional.add_argument("--consensus", dest='initial_consensus',
+                          action="store_true",
+                          default=False,
+                          help="if --initial_consensus, " +
+                          "generate a mpileup-based consesnsus instead of " +
+                          "doing a proper spades subassembly")
     optional.add_argument("--smalt_scoring", dest='smalt_scoring',
                           action="store",
                           default="match=1,subst=-4,gapopen=-4,gapext=-3",
@@ -814,6 +836,14 @@ def get_args():  # pragma: no cover
     optional.add_argument("--quast_exe", dest="quast_exe",
                           action="store", default="quast.py",
                           help="Path to quast executable; " +
+                          "default: %(default)s")
+    optional.add_argument("--bcftools_exe", dest="bcftools_exe",
+                          action="store", default="bcftools",
+                          help="Path to bcftools executable; " +
+                          "default: %(default)s")
+    optional.add_argument("--vcfutils_exe", dest="vcfutils_exe",
+                          action="store", default="vcfutils.pl",
+                          help="Path to vcfutils executable; " +
                           "default: %(default)s")
     optional.add_argument('--version', action='version',
                           version='%(prog)s {version}'.format(
@@ -2689,7 +2719,7 @@ def check_genbank_for_fasta(gb, logger=None):
 
 
 def get_fasta_consensus_from_BAM(samtools_exe, bcftools_exe, vcfutils_exe,
-                                 outfasta, ref, bam, logger=None):
+                                 outfasta, ref, bam, region=None, logger=None):
     """ run system commands to get consensus fastq from fastq
     """
     cmd_list, consensus_fq = make_get_consensus_cmds(
@@ -2697,6 +2727,7 @@ def get_fasta_consensus_from_BAM(samtools_exe, bcftools_exe, vcfutils_exe,
         bcftools_exe=bcftools_exe,
         vcfutils_exe=vcfutils_exe,
         ref=ref, bam=bam,
+        region=region,
         outfastq=os.path.splitext(outfasta)[0] + ".fastq",
         old_method=True,
         logger=logger)
@@ -2745,8 +2776,8 @@ def convert_fastq_to_fasta(fastq, outfasta,  # only_first=True,
 
 def make_get_consensus_cmds(samtools_exe, bcftools_exe, vcfutils_exe,
                             ref, bam, outfastq=None, old_method=False,
-                            logger=None):
-    """ use samtoolsa nd vcftools to get a consesnus fastq from a BAM file
+                            region=None, logger=None):
+    """ use samtoolsa nd vcfutils to get a consesnus fastq from a BAM file
     the old_method referes to how bcftools calls consensuses since 1.2
     """
     sorted_bam = os.path.splitext(bam)[0] + "_sorted.bam"
@@ -2759,17 +2790,25 @@ def make_get_consensus_cmds(samtools_exe, bcftools_exe, vcfutils_exe,
         call = "-c"
     else:
         call = "-m"
+    if region is None:
+        this_region = ""
+    else:
+        assert isinstance(region, str), \
+            "region must be a string in the form of 'chr:start-end'"
+        this_region = "-r {0} ".format(region)
     sort_cmd = "{0} sort {1} > {2}".format(samtools_exe, bam, sorted_bam)
-    cmd = str("{0} mpileup -d8000 -uf {1} {2} | {3} call {6} - |" +
+    index_cmd = "{0} index {1}".format(samtools_exe, sorted_bam)
+    cmd = str("{0} mpileup -d8000 -E -uf {1} -a {7}{2} | {3} call {6} - |" +
               " {4} vcf2fq > {5}").format(
                   samtools_exe,  #0
                   ref,  #1
                   sorted_bam,  #2
                   bcftools_exe,  #3
                   vcfutils_exe,  #4
-                  consensus_fq,
-                  call)  #5
-    return ([faidx_cmd, sort_cmd, cmd], consensus_fq)
+                  consensus_fq, #5
+                  call,  #6
+                  this_region)  #7
+    return ([faidx_cmd, sort_cmd, index_cmd, cmd], consensus_fq)
 
 
 def main(args, logger=None):
@@ -2813,13 +2852,15 @@ def main(args, logger=None):
                         bwa=args.bwa_exe,
                         smalt=args.smalt_exe,
                         quast=args.quast_exe,
+                        bcftools=args.bcftools_exe,
+                        vcfutils=args.vcfutils_exe,
                         method=args.method)
         sys_exes.python = sys_exes.check_spades_python_version(logger=logger)
     except Exception as e:
         logger.error(e)
         sys.exit(1)
 
-    logger.debug("All needed system executables found!")
+    logger.debug("All required system executables found!")
     logger.debug(str(sys_exes.__dict__))
     try:
         samtools_verison = check_version_from_cmd(
@@ -2838,6 +2879,14 @@ def main(args, logger=None):
         test_smalt_bam_install(cmds=test_smalt_cmds, logger=logger)
     else:
         logger.info("BWA is the selected mapper")
+    # if --Initial_consensus, ensure our optional programs are in working order
+    if args.initial_consensus:
+        if any([x is None for x in [sys_exes.bcftools, sys_exes.vcfutils]]):
+            logger.error("Must have availible executables for both bcftools " +
+                         "and vcfutils if using `--inital_consensus option! " +
+                         "Exiting (1)")
+            sys.exit(1)
+
     try:
         check_genbank_for_fasta(gb=args.reference_genbank, logger=logger)
     except:
@@ -3173,6 +3222,22 @@ def main(args, logger=None):
         # subassembly_ref_as_contig must be 'trusted' here because of the multimapping/
         #  coverage issues
         for cluster in clusters_to_subassemble:
+            if args.initial_consensus and seedGenome.this_iteration == 0:
+                consensus_fasta = get_fasta_consensus_from_BAM(
+                    samtools_exe=sys_exes.samtools,
+                    bcftools_exe=sys_exes.bcftools,
+                    vcfutils_exe=sys_exes.vcfutils,
+                    region="{0}:{1}-{2}".format(
+                        cluster.sequence_id,
+                        cluster.global_start_coord - args.flanking,
+                        cluster.global_end_coord + args.flanking),
+                    outfasta=os.path.join(
+                        cluster.mappings[-1].mapping_subdir,
+                        "consensus.fasta"),
+                    ref=seedGenome.next_reference_path,
+                    bam=seedGenome.iter_mapping_list[0].mapped_bam,
+                    logger=logger)
+            sys.exit(1)
             cmdlist = []
             logger.debug("generating commands to convert bam to fastqs " +
                          "and assemble long reads")
@@ -3189,7 +3254,8 @@ def main(args, logger=None):
                 # only check if files exist if using a subset of reads
                 check_libs=args.subtract,
                 python_exe=sys_exes.python,
-                as_paired=False, prelim=True,
+                as_paired=False,
+                prelim=True,
                 k=checked_prek,
                 spades_exe=sys_exes.spades, logger=logger)
             # setting some thread limits here
