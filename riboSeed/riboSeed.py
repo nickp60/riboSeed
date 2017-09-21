@@ -18,6 +18,7 @@ import sys
 import time
 import random
 import os
+import re
 import shutil
 import multiprocessing
 import subprocess
@@ -569,6 +570,14 @@ class Exes(object):
                 setattr(self, exe, exe_groomed)
         else:
             pass
+
+    def check_spades_python_version(self, logger):
+        """   ensure that we have a availible python to
+        ruin spades with.  See details in method docstrings
+        """
+        spades_python = fiddle_with_spades_exe(
+            spades_exe=self.spades, logger=logger)
+        return spades_python
 
 
 # --------------------------- methods --------------------------- #
@@ -1348,6 +1357,68 @@ def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
                             ref_fasta=ref_fasta))
 
 
+def check_version_from_cmd2(
+        exe,
+        cmd, line,
+        pattern=r"^__version__ = '(?P<version>[^']+)'$",
+        where='stderr',
+        min_version="0.0.0", logger=None,
+        coerce_two_digit=False):
+    """the guts have been stolen from pyani; returns version
+    from an system call that should return a version string.
+    Hacky, but better than nothing.
+    line arg is 1-indexed
+    .strip() is called on match to remove whitspaces
+
+    This will be removed when pyutilsnrw v0.1.1 is released
+    """
+    # exe_path = shutil.which(exe)
+    # if exe_path is None:
+    #     raise ValueError("executable %s not found!" % exe)
+    from distutils.version import StrictVersion
+    result = subprocess.run("{0} {1}".format(exe, cmd),
+                             # is this a securiy risk?
+                            shell=sys.platform != "win32",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            check=False)
+    logger.debug(result)
+    try:
+        if where == 'stderr':
+            printout = result.stderr.decode("utf-8").split("\n")
+        elif where == 'stdout':
+            printout = result.stdout.decode("utf-8").split("\n")
+        else:
+            raise ValueError("where option can only be 'stderr' or 'stdout'")
+    except Exception as e:
+        raise e
+    if logger:
+        logger.debug(printout)
+    this_version = None
+    try:
+        m = re.search(pattern, printout[line - 1])
+    except IndexError as e:
+        raise e
+    if m:
+        this_version = m.group('version').strip()
+    if logger:
+        logger.debug("this_version: %s", this_version)
+    if coerce_two_digit:
+        this_version = "0.{0}".format(this_version)
+        if logger:
+            logger.debug("coerced this_version: %s", this_version)
+    if this_version is None:
+        raise ValueError("No verison was captured with pattern" +
+                         "{0}".format(pattern))
+    try:
+        if StrictVersion(this_version) < StrictVersion(min_version):
+            raise ValueError("{0} version {1} must be greater than {2}".format(
+                cmd, this_version, min_version))
+    except Exception as e:
+        raise e
+    return(this_version)
+
+
 def fiddle_with_spades_exe(spades_exe, logger=None):
     """  so heres the deal.  SPAdes 3.9  can be run with python3.5 and below.
      version 3.10 can be run with 3.6 and below.  If the version of spades
@@ -1363,8 +1434,11 @@ def fiddle_with_spades_exe(spades_exe, logger=None):
     # SPAdes 3.11.0 : all
     # SPAdes 3.10.0 : python3.5 and below
     # SPAdes 3.9.0 : python3.4 and below
+    logger.debug("Making sure python's version is compatible with SPAdes")
+    logger.debug("Python executable: %s", sys.executable)
+    logger.debug("SPAdes executable: %s", spades_exe)
     try:
-        spades_verison = check_version_from_cmd(
+        spades_verison = check_version_from_cmd2(
             exe=sys.executable + " " + spades_exe,
             cmd='--version', line=1, where='stderr',
             pattern=r"\s*v(?P<version>[^(]+)",
@@ -1375,45 +1449,37 @@ def fiddle_with_spades_exe(spades_exe, logger=None):
         logger.warning("failed inital attempt to get spades version")
         logger.warning(e)
     if not SPADES_VERSION_SUCCESS:
-        # if python 3.6, we should try to use python3.5 if the user has it
-        if sys.version_info[1] == 6:
-            try:
-                spades_verison = check_version_from_cmd(
-                    exe="python3.5 " + spades_exe,
-                    cmd='--version', line=1, where='stderr',
-                    pattern=r"\s*v(?P<version>[^(]+)",
-                    min_version="3.9.0", logger=logger)
-                SPADES_VERSION_SUCCESS = True
-                return "python3.5"
-            except Exception as e:
-                SPADES_VERSION_SUCCESS = False
-                logger.error(e)
-                logger.error("There is an apparent mismatch between python" +
-                             " and spades.  Check to see if your spades " +
-                             "version is compatible with your python version")
-                sys.exit(1)
-        elif sys.version_info[1] == 5:
-            logger.error("spades appears not to be working with python3.5")
-            sys.exit(1)
-        else:
-            logger.error("poorly understood error")
+        # if python 3.5 or 3.6, we should try to use python3.5 explicitly
+        # if the user has it
+        try:
+            spades_verison = check_version_from_cmd2(
+                exe=shutil.which("python3.5") + " " + spades_exe,
+                cmd='--version', line=1, where='stderr',
+                pattern=r"\s*v(?P<version>[^(]+)",
+                min_version="3.9.0", logger=logger)
+            SPADES_VERSION_SUCCESS = True
+            return shutil.which("python3.5")
+        except Exception as e:
+            SPADES_VERSION_SUCCESS = False
+            logger.error(e)
+            logger.error("There is an apparent mismatch between python" +
+                         " and spades.  Check to see if your spades " +
+                         "version is compatible with your python version")
             sys.exit(1)
 
     return sys.executable
 
 
 def generate_spades_cmd(
-        mapping_ob, ngs_ob, ref_as_contig, as_paired=True, addLibs="",
-        prelim=False, k="21,33,55,77,99", spades_exe="spades.py",
-        single_lib=False, logger=None, check_libs=False):
+        mapping_ob, ngs_ob, ref_as_contig, python_exe, as_paired=True,
+        addLibs="", prelim=False, k="21,33,55,77,99", spades_exe="spades.py",
+        single_lib=False, logger=None, check_libs=False, check_exe=True):
     """return spades command so we can multiprocess the assemblies
     wrapper for common spades setting for long illumina reads
     ref_as_contig should be either None, 'trusted', or 'untrusted'
     prelim flag is True, only assembly is run, and without coverage corrections
     """
     assert logger is not None, "Must Use Logging"
-    spades_python = fiddle_with_spades_exe(
-        spades_exe=spades_exe, logger=logger)
     # make kmer comamnd empty if using "auto", or set to something like
     # -k 55,77,99
     if k is not 'auto':
@@ -1475,7 +1541,7 @@ def generate_spades_cmd(
                                              logger=logger)
     else:
         spades_cmd = cmd
-    return spades_python + " " + spades_cmd
+    return python_exe + " " + spades_cmd
 
 
 def make_spades_empty_check(liblist, cmd, logger):
@@ -1565,12 +1631,14 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         mapping_ob.assembly_subdir, "contigs.fasta")
     logger.debug("checking for the following file: \n{0}".format(
         mapping_ob.assembled_contig))
+    # check for a spades failure
     if not (os.path.isfile(mapping_ob.assembled_contig) and
             os.path.getsize(mapping_ob.assembled_contig) > 0):
         logger.warning(
             "%s No output from SPAdes this time around! return code 3",
             prelog)
         return 3
+    # by default, we keep only the longest, bestest, most fantastic-est contig
     if keep_best_contig:
         logger.info("reserving first contig")
         try:
@@ -2247,6 +2315,7 @@ def get_final_assemblies_cmds(seedGenome, exes,
         spades_cmd = generate_spades_cmd(
             single_lib=seedGenome.master_ngs_ob.libtype == "s_1",
             check_libs=False,
+            python_exe=exes.python,
             mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
             ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
             k=kmers, spades_exe=exes.spades, logger=logger)
@@ -2745,6 +2814,7 @@ def main(args, logger=None):
                         smalt=args.smalt_exe,
                         quast=args.quast_exe,
                         method=args.method)
+        sys_exes.python = sys_exes.check_spades_python_version(logger=logger)
     except Exception as e:
         logger.error(e)
         sys.exit(1)
@@ -3118,6 +3188,7 @@ def main(args, logger=None):
                 ref_as_contig=subassembly_ref_as_contig,
                 # only check if files exist if using a subset of reads
                 check_libs=args.subtract,
+                python_exe=sys_exes.python,
                 as_paired=False, prelim=True,
                 k=checked_prek,
                 spades_exe=sys_exes.spades, logger=logger)

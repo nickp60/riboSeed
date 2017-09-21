@@ -7,7 +7,7 @@ Created on Tue Aug 30 08:57:31 2016
 import sys
 import logging
 import shutil
-import unittest.mock
+from unittest.mock import patch
 import os
 import unittest
 import time
@@ -322,10 +322,11 @@ class riboSeedShallow(unittest.TestCase):
                                    as_paired=True, addLibs="",
                                    prelim=True,
                                    k="21,33,55,77,99",
+                                   python_exe="python3.5",
                                    spades_exe="spades.py",
                                    logger=logger)
         cmd1_ref = str(
-            "spades.py --only-assembler --cov-cutoff off --sc --careful " +
+            "python3.5 spades.py --only-assembler --cov-cutoff off --sc --careful " +
             "-k 21,33,55,77,99 --pe1-1 {0} " +
             "--pe1-2 {1} --trusted-contigs {2}  -o {3}"
         ).format(
@@ -336,7 +337,7 @@ class riboSeedShallow(unittest.TestCase):
         """ PE with singletons
         """
         cmd2_ref = str(
-            "spades.py --careful -k 21,33,55,77,99 --pe1-1 {0} " +
+            "python3.5 spades.py --careful -k 21,33,55,77,99 --pe1-1 {0} " +
             "--pe1-2 {1} --pe1-s {2} --trusted-contigs {3}  -o {4}"
         ).format(
             self.ref_Ffastq, self.ref_Rfastq, self.ref_Sfastq,
@@ -347,6 +348,7 @@ class riboSeedShallow(unittest.TestCase):
                                    as_paired=True, addLibs="",
                                    prelim=False,
                                    k="21,33,55,77,99",
+                                   python_exe="python3.5",
                                    spades_exe="spades.py",
                                    logger=logger)
         self.assertEqual(cmd2, cmd2_ref)
@@ -360,10 +362,11 @@ class riboSeedShallow(unittest.TestCase):
                                    as_paired=False, addLibs="",
                                    prelim=False,
                                    k="21,33,55,77,99",
+                                   python_exe="python3.5",
                                    spades_exe="spades.py",
                                    logger=logger)
         cmd3_ref = str(
-            "spades.py --careful -k 21,33,55,77,99 --pe1-s {0} " +
+            "python3.5 spades.py --careful -k 21,33,55,77,99 --pe1-s {0} " +
             "--pe2-s {1} --trusted-contigs {2}  -o {3}"
         ).format(
             self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir)
@@ -378,10 +381,11 @@ class riboSeedShallow(unittest.TestCase):
                                    as_paired=False, addLibs="",
                                    prelim=False,
                                    k="21,33,55,77,99",
+                                   python_exe="python3.5",
                                    spades_exe="spades.py",
                                    logger=logger)
         cmd4_ref = str(
-            "spades.py --careful -k 21,33,55,77,99 --pe1-s {0} " +
+            "python3.5 spades.py --careful -k 21,33,55,77,99 --pe1-s {0} " +
             "--pe2-s {1} --pe3-s {4}  --trusted-contigs {2}  -o {3}"
         ).format(
             self.ref_Ffastq, self.ref_Rfastq, self.ref_fasta, self.test_dir,
@@ -487,7 +491,6 @@ class riboSeedShallow(unittest.TestCase):
         shutil.copyfile(self.good_contig,
                         os.path.join(self.test_dir,
                                      "contigs.fasta"))
-        # assert os.path.exists(self.ref_fasta), "WTF"
         gen = SeedGenome(
             max_iterations=1,
             genbank_path=self.ref_gb,
@@ -514,7 +517,6 @@ class riboSeedShallow(unittest.TestCase):
             assembly_subdir="nonexistantdir",
             ref_fasta=self.ref_fasta,
             mapping_subdir=os.path.join(self.test_dir, "LociMapping"))
-        add_coords_to_clusters(seedGenome=gen, logger=logger)
         clu = gen.loci_clusters[0]
         clu.mappings.append(testmapping)
         code_0 = evaluate_spades_success(
@@ -708,8 +710,6 @@ class riboSeedShallow(unittest.TestCase):
             padding=100,
             circular=False,
             logger=logger)
-        add_coords_to_clusters(seedGenome=gen, logger=logger)
-
         for clu in gen.loci_clusters:
             clu.keep_contig = True
             clu.mappings.append(LociMapping(
@@ -753,7 +753,7 @@ class riboSeedShallow(unittest.TestCase):
         test_exes.spades = "spades.py"
         test_exes.quast = "quast.py"
         gen.ref_fasta = self.ref_fasta
-        with mock.patch.object(sys, 'version_info') as v_info:
+        with patch.object(sys, 'version_info') as v_info:
             v_info.minor = 5
             final_cmds, quast_reports = \
                 get_final_assemblies_cmds(
@@ -765,7 +765,7 @@ class riboSeedShallow(unittest.TestCase):
                     skip_control=False, kmers="33,77,99", logger=logger)
         final_spades_cmds_ref = [
             str(
-                "{0} -t 4 -m 8 --careful -k 33,77,99 --pe1-1 {1} " +
+                "/bin/python3.5 {0} -t 4 -m 8 --careful -k 33,77,99 --pe1-1 {1} " +
                 "--pe1-2 {2} --trusted-contigs {3}  -o {4}"
             ).format(
                 self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
@@ -925,13 +925,13 @@ class riboSeedShallow(unittest.TestCase):
                 readlen=100, logger=logger)
 
     def test_bool_run_quast_false(self):
-        with mock.patch.object(sys, 'version_info') as v_info:
+        with patch.object(sys, 'version_info') as v_info:
             v_info.minor = 6
             self.assertFalse(
                 bool_run_quast(logger))
 
     def test_bool_run_quast_true(self):
-        with mock.patch.object(sys, 'version_info') as v_info:
+        with patch.object(sys, 'version_info') as v_info:
             v_info.minor = 5
             self.assertTrue(
                 bool_run_quast(logger))
@@ -1405,12 +1405,15 @@ class riboSeedDeep(unittest.TestCase):
                      "If this isnt an error from travis deployment, you " +
                      "probably should install it")
     def test_fiddle_with_spades_exe(self):
+        """ Verify the right python version is used for thisversion of SPAdes.
+        This is a bad test, but there is no way that I know of to mock both
+        subprocesses output and shutil.which and sys.executable.
+
+        If it makes you feel better, I do have a hard time sleeping.
         """
-        """
-        logger.error(sys.executable)
         self.assertEqual(
             fiddle_with_spades_exe(shutil.which("spades.py"), logger=logger),
-            "python3.5")
+            sys.executable)
 
     @unittest.skipIf(shutil.which("samtools") is None,
                      "samtools executable not found, skipping." +
