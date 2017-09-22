@@ -656,7 +656,7 @@ def get_args():  # pragma: no cover
                           help="length of flanking regions, in bp; " +
                           "default: %(default)s",
                           default=1000, type=int, dest="flanking")
-    optional.add_argument("-m", "--method_for_map", dest='method',
+    optional.add_argument("--mapper", dest='method',
                           action="store", choices=["smalt", "bwa"],
                           help="available mappers: smalt and bwa; " +
                           "default: %(default)s",
@@ -665,7 +665,7 @@ def get_args():  # pragma: no cover
                           default=None, type=int,
                           help="cores used" +
                           "; default: %(default)s")
-    optional.add_argument("--memory", dest='memory', action="store",
+    optional.add_argument("-m", "--memory", dest='memory', action="store",
                           default=8, type=int,
                           help="cores for multiprocessing" +
                           "; default: %(default)s")
@@ -1476,7 +1476,7 @@ def fiddle_with_spades_exe(spades_exe, logger=None):
         SPADES_VERSION_SUCCESS = True
     except Exception as e:
         SPADES_VERSION_SUCCESS = False
-        logger.warning("failed inital attempt to get spades version")
+        logger.warning("failed initial attempt to get spades version")
         logger.warning(e)
     if not SPADES_VERSION_SUCCESS:
         # if python 3.5 or 3.6, we should try to use python3.5 explicitly
@@ -1493,7 +1493,7 @@ def fiddle_with_spades_exe(spades_exe, logger=None):
             SPADES_VERSION_SUCCESS = False
             logger.error(e)
             logger.error("There is an apparent mismatch between python" +
-                         " and spades.  Check to see if your spades " +
+                         " and spades. Check to see if your spades " +
                          "version is compatible with your python version")
             sys.exit(1)
 
@@ -2279,11 +2279,28 @@ def add_coords_to_clusters(seedGenome, logger=None):
         logger.debug(str(cluster.__dict__))
 
 
-def bool_run_quast(logger):
+def bool_run_quast(quast_exe, logger):
     if sys.version_info.minor == 6:
-        logger.warning("QUAST only supports python3.5 and below. Will " +
+        logger.warning("QUAST only supports python3.5 and below. We are " +
                        "skipping QUAST evalutation")
         return False
+    if quast_exe is None:
+        return False
+    try:
+        quast_version = check_version_from_cmd2(
+            exe=sys.executable + " " + quast_exe,
+            cmd='--version', line=1, where='stderr',
+            pattern=r"\s*v(?P<version>[^(]+),",
+            min_version="4.0", logger=logger)
+        if quast_version =="4.5":
+            logger.warning("Due to bugs in QUAST 4.5, we will not run QUAST")
+            return False
+
+    except Exception as e:
+        logger.error(e)
+        return False
+
+
     return True
 
 
@@ -2357,7 +2374,7 @@ def get_final_assemblies_cmds(seedGenome, exes,
             exes=exes, output_root=seedGenome.output_root, ref=ref,
             assembly_subdir=final_mapping.assembly_subdir, name=j,
             logger=logger)
-        if bool_run_quast:
+        if bool_run_quast(exes.quast, logger):
             quast_reports.append(
                 os.path.join(seedGenome.output_root,
                              str("quast_" + j), "report.tsv"))
@@ -3243,8 +3260,10 @@ def main(args, logger=None):
                     bcftools_exe=sys_exes.bcftools,
                     region="{0}:{1}-{2}".format(
                         cluster.sequence_id,
-                        cluster.global_start_coord - args.flanking,
-                        cluster.global_end_coord + args.flanking),
+                        # cluster.global_start_coord - args.flanking,
+                        # cluster.global_end_coord + args.flanking),
+                        cluster.global_start_coord,
+                        cluster.global_end_coord),
                     # region=None,
                     outfasta=os.path.join(
                         cluster.mappings[-1].mapping_subdir,
@@ -3253,7 +3272,9 @@ def main(args, logger=None):
                     bam=seedGenome.iter_mapping_list[0].sorted_mapped_bam,
                     # bam=cluster.mappings[-1].mapped_bam,
                     logger=logger)
-            sys.exit(1)
+                # assign our consensus seqeunce to replace the segment of
+                # reference fasta used in initial subassembly
+                cluster.mappings[-1].ref_fasta = consensus_fasta
             cmdlist = []
             logger.debug("generating commands to convert bam to fastqs " +
                          "and assemble long reads")
@@ -3431,13 +3452,18 @@ def main(args, logger=None):
         logger.info("running without multiprocessing!")
         # unpack nested spades quast list, ignoring Nones
         # hate me yet?
+        spades_results = []
         for cmd in [j for i in spades_quast_cmds for j in i if j is not None]:
             logger.debug(cmd)
-            subprocess.run([cmd],
-                           shell=sys.platform != "win32",
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE,
-                           check=True)
+            spades_result = subprocess.run(
+                [cmd],
+                shell=sys.platform != "win32",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True)
+            spades_results.append(spades_result)
+            spades_results_sum = sum([r.returncode for r in spades_results])
+
     else:
         # split the processors based on how many spades_cmds are on the list
         # dont correct for threads, as Spades defaults to lots of threads
@@ -3447,7 +3473,7 @@ def main(args, logger=None):
         pool = multiprocessing.Pool(processes=split_cores)
         logger.debug("running the following commands:")
         logger.debug("\n".join([j for i in spades_quast_cmds for j in i]))
-        results = [
+        spades_results = [
             pool.apply_async(subprocess_run_list,
                              (cmds,),
                              {"logger": None,
@@ -3456,8 +3482,13 @@ def main(args, logger=None):
         pool.close()
         pool.join()
         logger.info("Sum of return codes (should be 0):")
-        logger.info(sum([r.get() for r in results]))
-
+        spades_results_sum = sum([r.get() for r in spades_results])
+        logger.info(spades_results_sum)
+    if spades_results_sum != 0:
+        logger.error("%d error(s) occurred when running SPAdes!",
+                     spades_results_sum)
+        logger.error("Check the spades logs to diagnose.  Exiting (1)")
+        sys.exit(1)
     if not args.skip_control and quast_reports is not None:
         logger.debug("writing combined quast reports")
         logger.info("Comparing de novo and de fere novo assemblies:")
