@@ -523,7 +523,7 @@ class Exes(object):
 
     """
     def __init__(self, python, samtools, method, spades, quast,
-                 smalt, bwa, bcftools, vcfutils, check=True, mapper=None):
+                 smalt, bwa, bcftools=None, vcfutils=None, check=True, mapper=None):
         self.python = python
         self.samtools = samtools
         self.method = method
@@ -2718,17 +2718,17 @@ def check_genbank_for_fasta(gb, logger=None):
                 sys.exit(1)
 
 
-def get_fasta_consensus_from_BAM(samtools_exe, bcftools_exe, vcfutils_exe,
+def get_fasta_consensus_from_BAM(samtools_exe, bcftools_exe, # vcfutils_exe,
                                  outfasta, ref, bam, region=None, logger=None):
     """ run system commands to get consensus fastq from fastq
     """
-    cmd_list, consensus_fq = make_get_consensus_cmds(
+    cmd_list, consensus_fa = make_get_consensus_cmds(
         samtools_exe=samtools_exe,
         bcftools_exe=bcftools_exe,
-        vcfutils_exe=vcfutils_exe,
+        # vcfutils_exe=vcfutils_exe,
         ref=ref, bam=bam,
         region=region,
-        outfastq=os.path.splitext(outfasta)[0] + ".fastq",
+        outfasta=outfasta,
         old_method=True,
         logger=logger)
     for cmd in cmd_list:  # may have more cmds here in future
@@ -2738,9 +2738,9 @@ def get_fasta_consensus_from_BAM(samtools_exe, bcftools_exe, vcfutils_exe,
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE,
                        check=True)
-    consensus_fa = convert_fastq_to_fasta(
-        fastq=consensus_fq, outfasta=outfasta,
-        only_ATCG=True, logger=logger)
+    # consensus_fa = convert_fastq_to_fasta(
+    #     fastq=consensus_fq, outfasta=outfasta,
+    #     only_ATCG=True, logger=logger)
     return consensus_fa
 
 
@@ -2774,17 +2774,17 @@ def convert_fastq_to_fasta(fastq, outfasta,  # only_first=True,
     return outfasta
 
 
-def make_get_consensus_cmds(samtools_exe, bcftools_exe, vcfutils_exe,
-                            ref, bam, outfastq=None, old_method=False,
+def make_get_consensus_cmds(samtools_exe, bcftools_exe,# vcfutils_exe,
+                            ref, bam, outfasta=None, old_method=False,
                             region=None, logger=None):
     """ use samtoolsa nd vcfutils to get a consesnus fastq from a BAM file
     the old_method referes to how bcftools calls consensuses since 1.2
     """
     sorted_bam = os.path.splitext(bam)[0] + "_sorted.bam"
-    if outfastq is None:
-        consensus_fq = os.path.splitext(bam)[0] + "_consensus.fq"
+    if outfasta is None:
+        consensus_fa = os.path.splitext(bam)[0] + "_consensus.fa"
     else:
-        consensus_fq = outfastq
+        consensus_fa = outfasta
     faidx_cmd = "{0} faidx {1}".format(samtools_exe, ref)
     if old_method:
         call = "-c"
@@ -2796,19 +2796,34 @@ def make_get_consensus_cmds(samtools_exe, bcftools_exe, vcfutils_exe,
         assert isinstance(region, str), \
             "region must be a string in the form of 'chr:start-end'"
         this_region = "-r {0} ".format(region)
+    temp_zvcf = os.path.join(os.path.dirname(sorted_bam), "consensus.vcf.gz")
+
     sort_cmd = "{0} sort {1} > {2}".format(samtools_exe, bam, sorted_bam)
     index_cmd = "{0} index {1}".format(samtools_exe, sorted_bam)
-    cmd = str("{0} mpileup -d8000 -E -uf {1} -a {7}{2} | {3} call {6} - |" +
-              " {4} vcf2fq > {5}").format(
-                  samtools_exe,  #0
-                  ref,  #1
-                  sorted_bam,  #2
-                  bcftools_exe,  #3
-                  vcfutils_exe,  #4
-                  consensus_fq, #5
-                  call,  #6
-                  this_region)  #7
-    return ([faidx_cmd, sort_cmd, index_cmd, cmd], consensus_fq)
+    # -A means ignore strainge pairing (which we need, as we are subsetting a region already)
+    # -E means recalculate scores, for imporved accuracy
+    # -u for uncocmpressed output
+    # -a for all positions, even those with low coverage
+    vcf_cmd = str("{0} mpileup -d8000 -EA -uf {1}  {5}{2} | " +
+                  "{3} call --ploidy 1 {4} -Oz -o {6} -").format(
+                      samtools_exe,  #0
+                      ref,  #1
+                      sorted_bam,  #2
+                      bcftools_exe,  #3
+                      call,  #4
+                      this_region,  #5
+                      temp_zvcf) #6
+    tabix_cmd = "{0} {1}".format("tabix", temp_zvcf)
+    consensus_cmd = "{0} faidx {1} {2} | {3} consensus {4} > {5}".format(
+        samtools_exe,  #0
+        ref,  #1
+          #2, note this is not "this_region", as we do not need the -r
+        region if region is not None else "",
+        bcftools_exe,  #3
+        temp_zvcf,  #4
+        consensus_fa)
+    return ([faidx_cmd, sort_cmd, index_cmd, vcf_cmd,
+             tabix_cmd, consensus_cmd], consensus_fa)
 
 
 def main(args, logger=None):
@@ -2881,7 +2896,7 @@ def main(args, logger=None):
         logger.info("BWA is the selected mapper")
     # if --Initial_consensus, ensure our optional programs are in working order
     if args.initial_consensus:
-        if any([x is None for x in [sys_exes.bcftools, sys_exes.vcfutils]]):
+        if any([x is None for x in [sys_exes.bcftools]]):
             logger.error("Must have availible executables for both bcftools " +
                          "and vcfutils if using `--inital_consensus option! " +
                          "Exiting (1)")
@@ -3226,16 +3241,17 @@ def main(args, logger=None):
                 consensus_fasta = get_fasta_consensus_from_BAM(
                     samtools_exe=sys_exes.samtools,
                     bcftools_exe=sys_exes.bcftools,
-                    vcfutils_exe=sys_exes.vcfutils,
                     region="{0}:{1}-{2}".format(
                         cluster.sequence_id,
                         cluster.global_start_coord - args.flanking,
                         cluster.global_end_coord + args.flanking),
+                    # region=None,
                     outfasta=os.path.join(
                         cluster.mappings[-1].mapping_subdir,
                         "consensus.fasta"),
                     ref=seedGenome.next_reference_path,
-                    bam=seedGenome.iter_mapping_list[0].mapped_bam,
+                    bam=seedGenome.iter_mapping_list[0].sorted_mapped_bam,
+                    # bam=cluster.mappings[-1].mapped_bam,
                     logger=logger)
             sys.exit(1)
             cmdlist = []

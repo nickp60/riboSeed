@@ -612,7 +612,7 @@ class riboSeedShallow(unittest.TestCase):
             padding=1000,
             circular=False,
             logger=logger)
-        add_coords_to_clusters(seedGenome=gen, logger=logger)
+        # add_coords_to_clusters(seedGenome=gen, logger=logger)
         gen.loci_clusters[0].global_start_coord = 5000
         gen.loci_clusters[0].global_end_coord = 10000
         # print(gen.loci_clusters[0].__dict__)
@@ -973,8 +973,7 @@ class riboSeedShallow(unittest.TestCase):
         self.to_be_removed.append(os.path.join(self.test_dir, "filtered.sam"))
 
     @unittest.skipIf(shutil.which("samtools") is None or \
-                     shutil.which("bcftools") is None or \
-                     shutil.which("vcfutils.pl") is None,
+                     shutil.which("bcftools") is None,
                      "samtools executable not found, skipping." +
                      "If this isnt an error from travis deployment, you " +
                      "probably should install it")
@@ -982,7 +981,6 @@ class riboSeedShallow(unittest.TestCase):
         get_fasta_consensus_from_BAM(
             samtools_exe=shutil.which("samtools"),
             bcftools_exe=shutil.which("bcftools"),
-            vcfutils_exe=shutil.which("vcfutils.pl"),
             outfasta=os.path.join(self.test_dir, "bam_consensus.fasta"),
             ref=os.path.join(self.ref_dir, 'cluster1.fasta'),
             bam=self.ref_bam_prefix + "_mapped.bam",
@@ -996,55 +994,56 @@ class riboSeedShallow(unittest.TestCase):
         cmd_list, outfasta = make_get_consensus_cmds(
             samtools_exe="samtools",
             bcftools_exe="bcftools",
-            vcfutils_exe="vcfutils.pl",
             bam=self.ref_bam_prefix + "_mapped.bam",
-            outfastq=None,
+            outfasta=None,
             ref=os.path.join(self.ref_dir, 'cluster1.fasta'),
             logger=logger)
         self.assertEqual(
             outfasta,
-            self.ref_bam_prefix + "_mapped_consensus.fq")
+            self.ref_bam_prefix + "_mapped_consensus.fa")
 
     def test_make_get_consensus_cmds_withfastq(self):
-        destfastq= self.ref_dir + "mapped.fastq"
-        cmd_list, outfastq = make_get_consensus_cmds(
+        destfasta= self.ref_dir + "mapped.fasta"
+        cmd_list, outfasta = make_get_consensus_cmds(
             samtools_exe="samtools",
             bcftools_exe="bcftools",
-            vcfutils_exe="vcfutils.pl",
             bam=self.ref_bam_prefix + "_mapped.bam",
-            outfastq=destfastq,
+            outfasta=destfasta,
             ref=os.path.join(self.ref_dir, 'cluster1.fasta'),
             logger=logger)
-        self.assertEqual(outfastq, destfastq)
+        self.assertEqual(outfasta, destfasta)
 
     def test_make_get_consensus_cmds_check_cmds(self):
         ref_list = [
             "samtools faidx ref.fasta",
             "samtools sort bambam.bam > bambam_sorted.bam",
-            "samtools mpileup -d8000 -uf ref.fasta bambam_sorted.bam | " +
-            "bcftools call -c - | vcfutils.pl vcf2fq > result.fastq"
+            "samtools index bambam_sorted.bam",
+            "samtools mpileup -d8000 -EA -uf ref.fasta  bambam_sorted.bam | " +
+            "bcftools call --ploidy 1 -c -Oz -o consensus.vcf.gz -",
+            "tabix consensus.vcf.gz",
+            "samtools faidx ref.fasta  | bcftools consensus " +
+            "consensus.vcf.gz > out.fa"
         ]
         cmd_list, outfasta = make_get_consensus_cmds(
             samtools_exe="samtools",
             bcftools_exe="bcftools",
-            vcfutils_exe="vcfutils.pl",
             bam="bambam.bam",
-            outfastq="result.fastq",
+            outfasta="out.fa",
             old_method=True,
             ref="ref.fasta",
             logger=logger)
         for i in range(0, len(cmd_list)):
             self.assertEqual(cmd_list[i], ref_list[i])
 
-    def test_convert_fastq_to_fasta(self):
-        outfasta = os.path.join(self.test_dir, "pass_fastq_to_fasta.fasta")
-        convert_fastq_to_fasta(fastq=self.ref_fastq_with_iupac_bases,
-                               outfasta=outfasta,
-                               only_ATCG=True, logger=logger)
-        self.assertEqual(
-            md5(os.path.splitext(
-                self.ref_fastq_with_iupac_bases)[0] + ".fasta"),
-            md5(outfasta))
+    # def test_convert_fastq_to_fasta(self):
+    #     outfasta = os.path.join(self.test_dir, "pass_fastq_to_fasta.fasta")
+    #     convert_fastq_to_fasta(fastq=self.ref_fastq_with_iupac_bases,
+    #                            outfasta=outfasta,
+    #                            only_ATCG=True, logger=logger)
+    #     self.assertEqual(
+    #         md5(os.path.splitext(
+    #             self.ref_fastq_with_iupac_bases)[0] + ".fasta"),
+    #         md5(outfasta))
 
     def test_convert_fastq_to_fasta_failmulti(self):
         with self.assertRaises(ValueError):
