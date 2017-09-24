@@ -1,4 +1,6 @@
-  
+# This script is run to recreate the subset of sthe Prokaryotes.txt file used
+# by cgfind.  
+
 proks <- read.csv("ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prokaryotes.txt", header=T, sep="\t", stringsAsFactors=FALSE)
 proks <- proks[grepl("Complete", proks$Status), ]
 
@@ -18,4 +20,4 @@ for (thing in c("Status", "WGS", "Group", "SubGroup", "BioProject.Accession", "B
   proks[ , thing] <- NULL
   print(object.size(proks))
 }
-write.csv(x = proks, file = "complete_genomes_min.csv")
+write.csv(x = proks, file = paste0(Sys.Date(), "_complete_genomes_min.csv"))
