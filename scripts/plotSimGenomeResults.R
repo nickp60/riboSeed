@@ -12,7 +12,7 @@ names = c("sourcepath", "assembly", "total", "Correct",  "Ambiguous", "Incorrect
 dir(src_folders)
 folders<- dir(src_folders, pattern = "simulatedGenomeResults_",full.names = T)
 folders
-folders = folders[1:8]
+# folders = folders[1:5]
 
 out_folder <- paste0("~/GitHub/riboSeed/", analysis_date, "-simulated-genome-replot/")
 dir.create(out_folder)
@@ -25,15 +25,17 @@ for (folder in folders){
                              sep="\t", stringsAsFactors = F, header = F, col.names = names))
   )
 }
-#  add in de novo values;  future riboScore will output Null datasets to avoid this
-de_novo <- data.frame("sourcepath"=paste0("manually_added", 1:8),
-                      "assembly"=rep("coli_de_novo.fasta", 8),
-                      "total"=rep(7, 8), 
-                      "Correct"=rep(0, 8),
-                      "Ambiguous"=rep(0, 8),
-                      "Incorrect"=rep(0, 8))
+str(results_table)
+#  add in kleb de fere novo values;  
+kleb_de_fere_novo <- data.frame(
+  "sourcepath"=paste0("manually_added", 1:10),
+  "assembly"=rep("kleb_de_fere_novo.fasta", 10),
+  "total"=rep(7, 10), 
+  "Correct"=rep(0, 10),
+  "Ambiguous"=rep(0, 10),
+  "Incorrect"=rep(0, 10))
 
-results_table <- rbind(results_table, de_novo)
+results_table <- rbind(results_table, kleb_de_fere_novo)
 str(results_table)
 results_table$name <-gsub("\\.fasta", "", results_table$assembly)
 results_table$assembly <- NULL
@@ -115,7 +117,7 @@ boxy
 # boxy_group_rdna
 # boxy_group_strain
 dev.off()
-png(filename = paste0(plot1, ".png"), width = 4, height = 4, units = "in", res = 300)
+png(filename = paste0(out_folder, "simulated_genome.png"), width = 4, height = 4, units = "in", res = 300)
 boxy
 dev.off()
 

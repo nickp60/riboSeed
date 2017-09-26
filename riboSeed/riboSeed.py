@@ -3472,7 +3472,8 @@ def main(args, logger=None):
             split_cores = 1
         pool = multiprocessing.Pool(processes=split_cores)
         logger.debug("running the following commands:")
-        logger.debug("\n".join([j for i in spades_quast_cmds for j in i]))
+        logger.debug("\n".join([j for i in spades_quast_cmds for
+                                j in i if j is not None]))
         spades_results = [
             pool.apply_async(subprocess_run_list,
                              (cmds,),
