@@ -20,8 +20,6 @@ import subprocess
 import os
 import traceback
 
-# need this line for unittesting
-sys.path.append(os.path.join('..', 'riboSeed'))
 from pyutilsnrw.utils3_5 import set_up_logging
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord

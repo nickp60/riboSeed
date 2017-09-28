@@ -56,8 +56,6 @@ from collections import defaultdict  # for calculating kmer frequency
 from itertools import product  # for getting all possible kmers
 # from heatmapcluster import heatmapcluster
 
-#from pyutilsnrw import utils3_5
-sys.path.append(os.path.join('..', 'riboSeed'))
 from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
     combine_contigs, check_version_from_cmd
 

@@ -123,7 +123,6 @@ setup(
     #     'Biopython==1.68',
     #     'jenkspy==0.1.3',
     #     'pysam==0.9.1.4',
-    #     'pyutilsnrw>=0.0.768',
     #     'matplotlib==1.5.3',
     #     'pandas==0.18.1'
     # ],

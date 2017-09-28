@@ -28,7 +28,7 @@ import math
 import pkg_resources
 
 try:  # development mode
-    from _version import __version__
+    from ._version import __version__
 except ImportError:  # ie, if an installed pkg from pip or other using setup.py
     __version__ = pkg_resources.require("riboSeed")[0].version
 
@@ -56,16 +56,13 @@ except Exception as e:  # most likely an ImportError, but Im not taking chances
     PLOT = False
 
 
-# need this line for unittesting
-sys.path.append(os.path.join('..', 'riboSeed'))
-
 from pyutilsnrw.utils3_5 import set_up_logging, \
     combine_contigs, get_ave_read_len_from_fastq, \
     get_number_mapped, \
     keep_only_first_contig, get_fasta_lengths, \
     file_len, check_version_from_cmd
 
-from riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
+from .riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
     extract_coords_from_locus, add_gb_seqrecords_to_cluster_list
 
 # GLOBALS
@@ -600,10 +597,7 @@ class Exes(object):
 
 
 def get_args():  # pragma: no cover
-    """#TODO:     for cli mods:
-    http://stackoverflow.com/questions/18025646/
-         python-argparse-conditional-requirements
-    make this able to handle different library types such as two unpaired runs
+    """
     """
     parser = argparse.ArgumentParser(
         description="Given cluster file of rDNA regions from riboSelect and " +
@@ -1157,7 +1151,7 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
     logger.debug("Reads after filtering: %i", written)
     if notag != 0:
         logger.debug("Reads lacking alignment score: %i", notag)
-    return(score_list)
+    return score_list
 
 
 def get_bam_AS(inbam, logger=None):
@@ -1446,7 +1440,7 @@ def check_version_from_cmd2(
                 cmd, this_version, min_version))
     except Exception as e:
         raise e
-    return(this_version)
+    return this_version
 
 
 def fiddle_with_spades_exe(spades_exe, logger=None):
@@ -2213,13 +2207,13 @@ def partition_mapping(seedGenome, samtools_exe, flank, min_flank_depth,
                     end_ave_depth)
         if start_ave_depth < min_flank_depth:
             logger.warning(str("cluster {0} has insufficient 5' flanking " +
-                           "coverage depth for subassembly, and will be " +
-                           "removed").format(cluster.index))
+                               "coverage depth for subassembly, and will be " +
+                               "removed").format(cluster.index))
             cluster.coverage_exclusion = True
         elif end_ave_depth < min_flank_depth:
             logger.warning(str("cluster {0} has insufficient 3' flanking " +
-                           "coverage depth for subassembly, and will be " +
-                           "removed").format(cluster.index))
+                               "coverage depth for subassembly, and will be " +
+                               "removed").format(cluster.index))
             cluster.coverage_exclusion = True
         else:
             mapped_regions.append(reg_to_extract)
@@ -2646,7 +2640,7 @@ def report_region_depths(inp, logger):
                     report_list.append(
                         "\tIter %i -- 5' coverage: %.2f  3' coverage %.2f" % (
                             itidx, cluster[1], cluster[2]))
-    return(report_list)
+    return report_list
 
 
 def make_modest_spades_cmd(cmd, cores, memory, split=0,
