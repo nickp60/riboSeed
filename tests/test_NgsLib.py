@@ -9,9 +9,6 @@ import logging
 import os
 import unittest
 
-# I hate this line but it works :(
-sys.path.append(os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 from riboSeed.riboSeed import NgsLib, nonify_empty_lib_files
 

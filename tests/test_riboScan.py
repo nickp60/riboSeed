@@ -18,11 +18,6 @@ from Bio.SeqRecord import SeqRecord
 from argparse import Namespace
 from unittest.mock import MagicMock, patch
 
-# I hate this line but it works :(
-sys.path.append(os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
-
-
 from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboScan import parse_fasta_header, make_barrnap_cmd, \
     add_locus_tags_to_gff, combine_gbs, append_accession_and_version, \

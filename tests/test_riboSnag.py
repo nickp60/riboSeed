@@ -13,9 +13,6 @@ import time
 
 from Bio import SeqIO
 
-sys.path.append(os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
-
 from pyutilsnrw.utils3_5 import get_genbank_record, combine_contigs, md5
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
@@ -27,7 +24,7 @@ from riboSeed.riboSnag import parse_clustered_loci_file, \
     profile_kmer_occurances, plot_pairwise_least_squares, make_msa, \
     check_loci_file_not_genbank, add_gb_seqrecords_to_cluster_list
 
-from riboSeed.riboSnag import LociCluster, Locus
+from riboSeed.classes import LociCluster, Locus
 
 
 sys.dont_write_bytecode = True

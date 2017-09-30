@@ -10,12 +10,8 @@ import shutil
 # import subprocess
 import os
 import unittest
-# I hate this line but it works :(
-sys.path.append(os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
-
-from riboSeed.riboSeed import Exes
+from riboSeed.classes import Exes
 
 
 sys.dont_write_bytecode = True
@@ -25,7 +21,6 @@ logger = logging
 
 @unittest.skipIf(shutil.which("bwa") is None or
                  shutil.which("quast.py") is None or
-                 shutil.which("smalt") is None or
                  shutil.which("python2.7") is None or
                  shutil.which("spades.py") is None,
                  "bwa executable not found, skipping.If this isnt an " +
@@ -40,7 +35,7 @@ class ExesTest(unittest.TestCase):
         self.samtools_exe = "samtools"
         self.spades_exe = "spades.py"
         self.quast_exe = "quast.py"
-        self.python2_7_exe = "python2"
+        self.python_exe = "python"
 
     def test_Exes_bad_method(self):
         """check bad method arg given to Exes object"""
@@ -48,7 +43,7 @@ class ExesTest(unittest.TestCase):
             Exes(samtools=self.samtools_exe,
                  quast=self.quast_exe,
                  smalt=self.smalt_exe,
-                 python2_7=self.python2_7_exe,
+                 python=self.python_exe,
                  spades=self.spades_exe,
                  bwa=self.bwa_exe,
                  method="bowtie")
@@ -59,7 +54,7 @@ class ExesTest(unittest.TestCase):
             Exes(samtools=None,
                  quast=self.quast_exe,
                  spades=self.spades_exe,
-                 python2_7=self.python2_7_exe,
+                 python=self.python_exe,
                  smalt=self.smalt_exe,
                  bwa=self.bwa_exe,
                  method="bwa")
@@ -70,7 +65,7 @@ class ExesTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             Exes(samtools="nottheactualsamtools_exe",
                  quast=self.quast_exe,
-                 python2_7=self.python2_7_exe,
+                 python=self.python_exe,
                  smalt=self.smalt_exe,
                  spades=self.spades_exe,
                  bwa=self.bwa_exe,
@@ -80,7 +75,7 @@ class ExesTest(unittest.TestCase):
         """check with  executable"""
         test_exes = Exes(samtools=self.samtools_exe,
                          quast=self.quast_exe,
-                         python2_7=self.python2_7_exe,
+                         python=self.python_exe,
                          smalt=self.smalt_exe,
                          spades=self.spades_exe,
                          bwa=self.bwa_exe,

@@ -12,15 +12,12 @@ import time
 
 from unittest.mock import Mock
 
-# I hate this line but it works :(
-sys.path.append(os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
-
 
 from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboScore import getSnagCmd, getSelectCmd, getScanCmd, \
     parseDirContents, make_nuc_nuc_recip_blast_cmds, merge_outfiles, \
-    BLAST_tab_to_df, filter_recip_BLAST_df, checkBlastForMisjoin, check_scan_select_snag_retruncodes
+    BLAST_tab_to_df, filter_recip_BLAST_df, checkBlastForMisjoin, \
+    check_scan_select_snag_retruncodes
 
 sys.dont_write_bytecode = True
 

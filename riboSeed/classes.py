@@ -520,7 +520,6 @@ class Exes(object):
         self.smalt = smalt
         self.bwa = bwa
         self.bcftools = bcftools
-        self.vcfutils = vcfutils
         self.check = check
         self.check_mands()
         self.set_mapper()
@@ -531,7 +530,7 @@ class Exes(object):
         """ checks that all mandatory arguments are not none
         """
         mandatory = [self.python, self.spades, self.quast, self.method,
-                     self.samtools]
+                     self.samtools, self.bwa]
         assert None not in mandatory, \
             "must instantiate with python, samtools, spades, method, quast!"
 
@@ -566,10 +565,12 @@ class Exes(object):
         to get full path to executable.
         """
         if self.check:
-            for exe in ["bcftools", "vcfutils"]:
-                exe_groomed = os.path.expanduser(getattr(self, exe))
-                exe_groomed = shutil.which(exe_groomed)
-                setattr(self, exe, exe_groomed)
+            for exe in ["bcftools", "quast"]:
+                if getattr(self, exe) is not None:
+                    print(exe)
+                    exe_groomed = os.path.expanduser(getattr(self, exe))
+                    exe_groomed = shutil.which(exe_groomed)
+                    setattr(self, exe, exe_groomed)
         else:
             pass
 

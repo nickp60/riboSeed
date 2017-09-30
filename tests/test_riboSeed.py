@@ -16,14 +16,11 @@ import subprocess
 from Bio import SeqIO
 from argparse import Namespace
 
-# # I hate this line but it works :(
-sys.path.append(os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
-
 
 from pyutilsnrw.utils3_5 import md5, get_number_mapped
 
-from riboSeed.riboSeed import SeedGenome, NgsLib, LociMapping, Exes, \
+from riboSeed.classes import SeedGenome, NgsLib, LociMapping, Exes,
+from riboSeed.riboSeed import \
     map_to_genome_ref_smalt, map_to_genome_ref_bwa, \
     add_coords_to_clusters, partition_mapping, \
     convert_bam_to_fastqs_cmd, get_smalt_full_install_cmds,\
