@@ -23,19 +23,13 @@ from argparse import Namespace
 # from make_riboSeed_config import make_config_header, write_config, \
 #     append_config
 
-try:  # development mode
-    from _version import __version__
-except ImportError:  # ie, if an installed pkg from pip or other using setup.py
-    __version__ = pkg_resources.require("riboSeed")[0].version
-
-sys.path.append(os.path.join('..', 'riboSeed'))
-
-import riboScan as rscan
-import riboSelect as rsel
-import riboSeed as rseed
-import riboSketch as rsketch
-import riboScore as rscore
-import make_riboSeed_config as mrc
+from .._version import __version__
+from .. import riboScan as rscan
+from .. import riboSelect as rsel
+from .. import riboSeed as rseed
+from .. import riboSketch as rsketch
+from .. import riboScore as rscore
+from .. import make_riboSeed_config as mrc
 
 
 class JustWriteConfig(argparse.Action):
@@ -431,6 +425,6 @@ def main(args):
     new_log_for_diff(logfile_path=log_path)
 
 
-if __name__ == "__main__":
-    args = get_args()
-    main(args)
+# if __name__ == "__main__":
+#     args = get_args()
+#     main(args)

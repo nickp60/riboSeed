@@ -45,7 +45,7 @@ def get_args():  # pragma: no cover
     requiredNamed.add_argument("-o", "--output",
                                help="output directory;"
                                "default: %(default)s",
-                               default=os.getcwd(),
+                               required=True,
                                type=str, dest="output")
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("-f", "--feature",

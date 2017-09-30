@@ -1,6 +1,4 @@
 """
-Setup for nrw_python_utils
-
 A setuptools based setup module.
 See:
 https://packaging.python.org/en/latest/distributing.html
@@ -107,8 +105,8 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    # packages=['riboSeed'],
-    packages=find_packages(),
+    packages=['riboSeed', 'riboSeed/scripts'],
+    #packages=find_packages(),
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
@@ -151,23 +149,25 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    #entry_points={
-    #    'console_scripts': [
-    #        'sample=sample:main',
-    #    ],
-    #},
+    entry_points={
+       'console_scripts': [
+           'ribo=bin.ribo:main',
+       ],
+    },
     # Using the scripts keyword here for speed, as the entry points are not
     # yet defined
-    scripts=['riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
-             'riboSeed/riboSnag.py', 'riboSeed/riboSwap.py',
-             'riboSeed/riboScan.py', "scripts/runme.py",
-             'riboSeed/riboSim.py',
-             'riboSeed/riboSketch.py',
-             'riboSeed/riboScore.py',
-             'riboSeed/riboStack.py',
-             'riboSeed/run_riboSeed.py',
-             'riboSeed/make_riboSeed_config.py',
-             "scripts/OSX_INSTALL_DEPS.sh",
-             'scripts/riboBatch.sh',
-             'scripts/concatToyGenome.py'],
+    # scripts=[
+    #     'bin/ribo.py'],
+        # 'riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
+        #      'riboSeed/riboSnag.py', 'riboSeed/riboSwap.py',
+        #      'riboSeed/riboScan.py', "scripts/runme.py",
+        #      'riboSeed/riboSim.py',
+        #      'riboSeed/riboSketch.py',
+        #      'riboSeed/riboScore.py',
+        #      'riboSeed/riboStack.py',
+        #      'riboSeed/run_riboSeed.py',
+        #      'riboSeed/make_riboSeed_config.py',
+        #      "scripts/OSX_INSTALL_DEPS.sh",
+        #      'scripts/riboBatch.sh',
+        #      'scripts/concatToyGenome.py'],
 )

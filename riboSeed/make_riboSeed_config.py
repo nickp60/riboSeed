@@ -14,10 +14,6 @@ import os
 import shutil
 import pkg_resources
 
-try:  # development mode
-    from _version import __version__
-except ImportError:  # ie, if an installed pkg from pip or other using setup.py
-    __version__ = pkg_resources.require("riboSeed")[0].version
 
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
