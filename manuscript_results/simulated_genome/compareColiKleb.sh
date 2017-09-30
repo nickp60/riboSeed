@@ -25,11 +25,11 @@ get_genomes.py -q ${toyref} -o ./
 fi
 
 # annotate regions
-python3.5  ~/GitHub/riboSeed/riboSeed/riboScan.py ./${toyref}.fasta -o ${OUTDIR}toyGenome/scan/
+ribo scan ./${toyref}.fasta -o ${OUTDIR}toyGenome/scan/
 # Cluster regions
-python3.5  ~/GitHub/riboSeed/riboSeed/riboSelect.py ${OUTDIR}toyGenome/scan/scannedScaffolds.gb -o ${OUTDIR}toyGenome/select/
+ribo select ${OUTDIR}toyGenome/scan/scannedScaffolds.gb -o ${OUTDIR}toyGenome/select/
 # extract regions with 5kb flanking
-python3.5  ~/GitHub/riboSeed/riboSeed/riboSnag.py ${OUTDIR}toyGenome/scan/scannedScaffolds.gb  ${OUTDIR}toyGenome/select/riboSelect_grouped_loci.txt -o ${OUTDIR}toyGenome/snag/ -l 5000 --just_extract
+ribo snag ${OUTDIR}toyGenome/scan/scannedScaffolds.gb  ${OUTDIR}toyGenome/select/riboSelect_grouped_loci.txt -o ${OUTDIR}toyGenome/snag/ -l 5000 --just_extract
 # combine the extracted regions into a toy genome
 python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ${OUTDIR}toyGenome/snag/ \*_riboSnag.fasta -o ${OUTDIR}toyGenome/coli_genome/
 # generate reads from the toy genome simulating a MiSeq V3 run
@@ -37,7 +37,7 @@ python3.5 ~/GitHub/riboSeed/scripts/concatToyGenome.py ${OUTDIR}toyGenome/snag/ 
 
 
 # annotate the toy genome for mauve visualization
-python3.5  ~/GitHub/riboSeed/riboSeed/riboScan.py ${OUTDIR}toyGenome/coli_genome/concatenated_seq.fasta -o ${OUTDIR}toyGenome/coli_genome/scan/
+ribo scan ${OUTDIR}toyGenome/coli_genome/concatenated_seq.fasta -o ${OUTDIR}toyGenome/coli_genome/scan/
 
 ##############################################################################
 
@@ -65,11 +65,11 @@ fi
 
 # anotate the rDNAs
 
-python3.5 ~/GitHub/riboSeed/riboSeed/riboScan.py ./${ref}.fasta -o ${OUTDIR}${i}_ref/scan/
+ribo scan ./${ref}.fasta -o ${OUTDIR}${i}_ref/scan/
 # cluster
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSelect.py ${OUTDIR}${i}_ref/scan/scannedScaffolds.gb  -o ${OUTDIR}${i}_ref/select/
+ribo select ${OUTDIR}${i}_ref/scan/scannedScaffolds.gb  -o ${OUTDIR}${i}_ref/select/
 # run riboSeed
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSeed.py -r ${OUTDIR}${i}_ref/scan/scannedScaffolds.gb  -o ${OUTDIR}${i}_ref/seed/ ${OUTDIR}${i}_ref/select/riboSelect_grouped_loci.txt -F ${OUTDIR}toyGenome/reads_100_300_1.fq.gz -R ${OUTDIR}toyGenome/reads_100_300_2.fq.gz -i 3 -c 2 -v 1 -l ${FLANK} --clean_temps
+ribo seed -r ${OUTDIR}${i}_ref/scan/scannedScaffolds.gb  -o ${OUTDIR}${i}_ref/seed/ ${OUTDIR}${i}_ref/select/riboSelect_grouped_loci.txt -F ${OUTDIR}toyGenome/reads_100_300_1.fq.gz -R ${OUTDIR}toyGenome/reads_100_300_2.fq.gz -i 3 -c 2 -v 1 -l ${FLANK} --clean_temps
 done
 
 # make copy of contigs renamed for mauve
@@ -83,6 +83,6 @@ cp ${OUTDIR}good_ref/seed/final_de_novo_assembly/contigs.fasta ${OUTDIR}mauve/co
 
 cp ${OUTDIR}bad_ref/seed/final_de_fere_novo_assembly/contigs.fasta ${OUTDIR}mauve/kleb_de_fere_novo.fasta
 
-python3.5 ~/GitHub/riboSeed/riboSeed/riboSketch.py ${OUTDIR}mauve/ -o ${OUTDIR}riboSketch/  --names "Artificial Genome, De fere novo, De novo, Kleb. de fere novo"
+ribo sketch ${OUTDIR}mauve/ -o ${OUTDIR}riboSketch/  --names "Artificial Genome, De fere novo, De novo, Kleb. de fere novo"
 
-python3.5 ~/GitHub/riboSeed/riboSeed/riboScore.py ${OUTDIR}mauve -o ${OUTDIR}riboScore/
+ribo score ${OUTDIR}mauve -o ${OUTDIR}riboScore/

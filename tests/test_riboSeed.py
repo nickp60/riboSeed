@@ -19,7 +19,7 @@ from argparse import Namespace
 
 from pyutilsnrw.utils3_5 import md5, get_number_mapped
 
-from riboSeed.classes import SeedGenome, NgsLib, LociMapping, Exes,
+from riboSeed.classes import SeedGenome, NgsLib, LociMapping, Exes
 from riboSeed.riboSeed import \
     map_to_genome_ref_smalt, map_to_genome_ref_bwa, \
     add_coords_to_clusters, partition_mapping, \

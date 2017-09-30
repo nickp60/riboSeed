@@ -27,11 +27,8 @@ import pysam
 import math
 import pkg_resources
 
-try:  # development mode
-    from ._version import __version__
-except ImportError:  # ie, if an installed pkg from pip or other using setup.py
-    __version__ = pkg_resources.require("riboSeed")[0].version
-
+from riboSeed import __version__
+from .classes import SeedGenome, LociMapping, Exes, NgsLib
 from bisect import bisect
 from itertools import chain
 from collections import namedtuple
@@ -313,7 +310,7 @@ def get_args():  # pragma: no cover
                           help="Path to vcfutils executable; " +
                           "default: %(default)s")
     optional.add_argument('--version', action='version',
-                          version='%(prog)s {version}'.format(
+                          version='riboSeed {version}'.format(
                               version=__version__))
     args = parser.parse_args(sys.argv[2:])
     return args

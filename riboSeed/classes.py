@@ -178,6 +178,7 @@ class SeedGenome(object):
         """ if the genome is circular (which it is, by default) adjust the
         cluster coordinates and rewrite the reference fasta as padded.
         """
+        from .riboSnag import pad_genbank_sequence
         if circular:
             for clu in self.loci_clusters:
                 clu.padding = pad
@@ -579,6 +580,7 @@ class Exes(object):
         ruin spades with. See details in method docstrings
         Note this version will be used for quast as well
         """
+        from .riboSeed import fiddle_with_spades_exe
         spades_python = fiddle_with_spades_exe(
             spades_exe=self.spades, logger=logger)
         return spades_python
