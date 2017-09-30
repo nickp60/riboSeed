@@ -121,8 +121,6 @@ def config_mauve():
     return mauve_config_lines
 
 
-
-
 def config_scan_defaults():
     scan_params = [
         ("SCAN_ID_THRESH", "0.5",
@@ -317,7 +315,3 @@ def main(args):
     sys.stdout.write(outfile)
     # this line allows us to just grab the main function in run_riboSeed
     return outfile
-
-if __name__ == "__main__":
-    args = get_args()
-    main(args)

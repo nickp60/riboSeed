@@ -3510,8 +3510,3 @@ def main(args, logger=None):
     logger.info("Combined Contig Seeds (for validation or alternate " +
                 "assembly): %s", seedGenome.assembled_seeds)
     logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
-
-
-if __name__ == "__main__":
-    args = get_args()
-    main(args)

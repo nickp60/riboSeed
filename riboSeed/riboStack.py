@@ -226,10 +226,7 @@ def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
 def mean(x):
     return float(sum(x)) / max(len(x), 1)
 
-
-if __name__ == "__main__":
-    args = get_args()
-    # allow user to give relative paths
+def main(args, logger=None):
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
         os.makedirs(output_root, exist_ok=False)
@@ -239,9 +236,10 @@ if __name__ == "__main__":
     t0 = time.time()
     log_path = os.path.join(output_root, "riboStack.log")
 
-    logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=log_path,
-                            name=__name__)
+    if logger is None:
+        logger = set_up_logging(verbosity=args.verbosity,
+                                outfile=log_path,
+                                name=__name__)
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):

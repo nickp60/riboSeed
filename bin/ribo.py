@@ -10,6 +10,8 @@ from riboSeed import riboSeed as seed
 from riboSeed import riboScore
 from riboSeed import riboSketch
 from riboSeed import riboSim
+from riboSeed import riboSwap
+from riboSeed import make_riboSeed_config
 
 helpmsg = [
     "riboSeed v" + __version__,
@@ -26,6 +28,8 @@ helpmsg = [
 
 
 def main():
+    assert ((sys.version_info[0] == 3) and (sys.version_info[1] >= 5)), \
+        "Must use python3.5 or higher!"
     if len(sys.argv) == 1:
         print("\n".join(helpmsg))
         sys.exit(1)
@@ -39,7 +43,9 @@ def main():
         "seed": seed,
         "sketch": riboSketch,
         "score": riboScore,
-        "sim": riboSim}
+        "sim": riboSim,
+        "swap": riboSwap,
+        "config": make_riboSeed_config}
     if sys.argv[1] not in modules_dict.keys():
         print("help")
         sys.exit(1)

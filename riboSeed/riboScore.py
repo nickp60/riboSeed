@@ -572,10 +572,3 @@ def main(args, logger=None):
     with open(os.path.join(output_root, "riboScore_report.txt"), "a") as r:
         for line in report_list:
             r.write(line)
-
-
-if __name__ == '__main__':
-    assert ((sys.version_info[0] == 3) and (sys.version_info[1] >= 5)), \
-        "Must use python3.5 or higher!"
-    args = get_args()
-    main(args=args)

@@ -408,8 +408,3 @@ def main(args, logger=None):
     logger.info("Done: %s", time.asctime())
     logger.info("combined scaffolds can be found here: %s", output_file)
     logger.info("Time taken: %.3fs" % (time.time() - t0))
-
-
-if __name__ == "__main__":
-    args = get_args()
-    main(args)

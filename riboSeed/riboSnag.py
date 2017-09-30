@@ -1033,7 +1033,7 @@ def get_rec_from_generator(recordID, gen, method=None):
     raise ValueError("no record found matching record id %s!" % recordID)
 
 
-def main(clusters, gb_path, logger, verbose, no_revcomp,
+def submain(clusters, gb_path, logger, verbose, no_revcomp,
          output, circular, flanking, prefix_name, args):
     get_rev_comp = no_revcomp is False  # kinda clunky
     flanking_regions_output = os.path.join(output, "flanking_regions_output")
@@ -1314,8 +1314,7 @@ def run_blast(query_list, ref, name, output, mbdb_exe='', logger=None):
     logger.info(merged_tsv)
 
 
-if __name__ == "__main__":
-    args = get_args()
+def main(args, logger=None):
     output_root = os.path.abspath(os.path.expanduser(args.output))
     # Create output directory only if it does not exist
     try:
@@ -1330,9 +1329,10 @@ if __name__ == "__main__":
         else:
             print("# continuing, and risking potential loss of data")
     log_path = os.path.join(output_root, "riboSnag.log")
-    logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=log_path,
-                            name=__name__)
+    if logger is None:
+        logger = set_up_logging(verbosity=args.verbosity,
+                                outfile=log_path,
+                                name=__name__)
 
     logger.debug("Usage:\n{0}\n".format(str(" ".join([x for x in sys.argv]))))
     logger.debug("All settings used:")
@@ -1378,7 +1378,7 @@ if __name__ == "__main__":
             logger.info(cluster.__dict__)
     if args.name is None:  # if none given, use date for name (for out files)
         args.name = date
-    regions, ref_fasta, region_files = main(
+    regions, ref_fasta, region_files = submain(
         clusters=clusters,
         gb_path=args.genbank_genome,
         logger=logger,

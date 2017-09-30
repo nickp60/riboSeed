@@ -404,8 +404,3 @@ def main(args, logger=None):
                        aspect=.4,
                        output_prefix=os.path.join(args.outdir,
                                                   "PrettyMauve"))
-
-
-if __name__ == "__main__":
-    args = get_args()
-    main(args)

@@ -423,8 +423,3 @@ def main(args, logger=None):
         for i in outlines:
             sys.stdout.write(i)
             outfile.write(i)
-
-
-if __name__ == "__main__":
-    args = get_args()
-    main(args)

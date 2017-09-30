@@ -133,8 +133,7 @@ def append_replacement_contigs(infile, outfile, name_list, logger=None):
     return(outfile)
 
 
-if __name__ == "__main__":  # pragma: no cover
-    args = get_args()
+def main(args, logger=None):
     # allow user to give relative paths
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
@@ -144,9 +143,10 @@ if __name__ == "__main__":  # pragma: no cover
         sys.exit(1)
     t0 = time.time()
     log_path = os.path.join(output_root, "riboSwap.log")
-    logger = set_up_logging(verbosity=args.verbosity,
-                            outfile=log_path,
-                            name=__name__)
+    if logger is None:
+        logger = set_up_logging(verbosity=args.verbosity,
+                                outfile=log_path,
+                                name=__name__)
     # # log version of riboSeed, commandline options, and all settings
 
     logger.info("Usage:\n{0}\n".format(" ".join([x for x in sys.argv])))
