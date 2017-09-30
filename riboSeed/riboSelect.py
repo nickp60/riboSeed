@@ -85,7 +85,7 @@ def get_args():  # pragma: no cover
                           "default: %(default)s")
     optional.add_argument("--debug", dest="debug", action="store_true",
                           help="Enable debug messages", default=False)
-    args = parser.parse_args()
+    args = parser.parse_args(sys.argv[2:])
     return args
 
 

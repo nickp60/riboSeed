@@ -80,7 +80,7 @@ def get_args():  # pragma: no cover
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
-    args = parser.parse_args()
+    args = parser.parse_args(sys.argv[2:])
     return args
 
 
@@ -142,6 +142,7 @@ def ageSequence(rec, outfile, freq, end_length, seed, logger=None):
 
     assert len(newseqlist) == len(rec.seq), \
         "something bad happened! unequal lengths of input and output sequences"
+
 
 def main(args, logger=None):
     # allow user to give relative paths
