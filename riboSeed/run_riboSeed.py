@@ -23,13 +23,13 @@ from argparse import Namespace
 # from make_riboSeed_config import make_config_header, write_config, \
 #     append_config
 
-from .._version import __version__
-from .. import riboScan as rscan
-from .. import riboSelect as rsel
-from .. import riboSeed as rseed
-from .. import riboSketch as rsketch
-from .. import riboScore as rscore
-from .. import make_riboSeed_config as mrc
+from ._version import __version__
+from . import riboScan as rscan
+from . import riboSelect as rsel
+from . import riboSeed as rseed
+from . import riboSketch as rsketch
+from . import riboScore as rscore
+from . import make_riboSeed_config as mrc
 
 
 class JustWriteConfig(argparse.Action):
