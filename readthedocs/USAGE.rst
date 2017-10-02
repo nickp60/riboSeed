@@ -1,7 +1,7 @@
 Usage
 ===============
 
-Minimal example: ``run_riboSeed.py``
+Minimal example: ``ribo run``
 -------
 
 The pseudogenome was constructed from the 7 rDNAs separated by several kb of flanking DNA.  If can be found under `./riboSeed/integration_test/concatenated_seq.fasta`.  If you have installed using setuptools, the `integration_test` folder will be installed in the site-packages dir, such as `/venv-riboSeed/lib/python3.5/site-packages/riboSeed/integration_data/`.
@@ -35,6 +35,14 @@ submit it to ``ribo run`` using the -c flag.
 Running individual scripts
 -------
 
-All of the scripts in the package can be run individually. Perhaps you want to
-modify barrnap's behaviour in riboScan, or you want to experiment with
-different feature selectors in riboSelect.  Go for it!
+All of the elements of the package can be run individually: Perhaps you want to
+modify barrnap's behaviour in ``scan``, or you want to experiment with
+different feature selectors in ``select``.  Go for it!
+
+``ribo scan``
+``ribo select``
+``ribo seed``
+``ribo snag``
+``ribo score``
+
+And so on...
