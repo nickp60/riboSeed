@@ -5,22 +5,25 @@ import sys
 import importlib
 import riboSeed
 
+CITATION = ""
 helpmsg = [
     "riboSeed v" + riboSeed.__version__,
     "Contact: Nick Waters <nickp60@gmail.com>",
+    "Description: A suite of tools to perform de fere novo assembly to bridge",
+    "             gaps caused by rDNA repeats",
     "",
     "Usage:   ribo <command> [options]",
     "",
-    "Availible commands:",
-    "-run: execute the whole pipeline the whole pipeline",
-    "-scan: reannotate rRNAs in a FASTA file isong help ",
+    "Available commands:",
+    "-run:    execute the whole pipeline (scan, select, seed, sketch, and score)",
+    "-scan:   reannotate rRNAs in a FASTA file isong help ",
     "-select: group rRNA annotations into rDNA operons",
-    "-seed: perform de fere novo assembly",
-    "-snag: extract rDNA regions and plot entropy",
-    "-sim: perform simulations used in manuscript",
+    "-seed:   perform de fere novo assembly",
+    "-snag:   extract rDNA regions and plot entropy",
+    "-sim:    perform simulations used in manuscript",
     "-sketch: plot results from a de fere novo assembly",
-    "-score: score batches of assemblies with BLASTn",
-    "-swap: swap contigs from assemblies"
+    "-score:  score batches of assemblies with BLASTn",
+    "-swap:   swap contigs from assemblies"
 ]
 
 

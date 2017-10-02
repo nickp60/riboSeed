@@ -20,8 +20,6 @@ import re
 
 from pyutilsnrw.utils3_5 import set_up_logging
 from argparse import Namespace
-# from make_riboSeed_config import make_config_header, write_config, \
-#     append_config
 
 from ._version import __version__
 from . import riboScan as rscan
@@ -44,10 +42,10 @@ class JustWriteConfig(argparse.Action):
 
 
 def get_args():  # pragma: no cover
-    parser = argparse.ArgumentParser(
-        description="Given a directory of one or more chromosomes as fasta " +
-        "files, this facilitates reannotation of rDNA regions with Barrnap " +
-        " and outputs all sequences as a single, annotated genbank file",
+    parser = argparse.ArgumentParser(prog="ribo run",
+        description="Run the riboSeed pipeline of scan, select, seed, " +
+        "sketch, and score.  Uses a config file to wrangle all the args not"+
+        "available via these commandline args."
         add_help=False)  # to allow for custom help
     parser.add_argument("REFERENCE_FASTA", action="store",
                         # dest="RUN_REFERENCE_FASTA",  # this causes double def

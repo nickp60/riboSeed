@@ -13,18 +13,14 @@ import traceback
 
 from Bio import SeqIO
 
-# need this line for unittesting
-sys.path.append(os.path.join('..', 'riboSeed'))
 from pyutilsnrw.utils3_5 import set_up_logging
-
-# --------------------------- classes --------------------------- #
-
 
 # --------------------------- methods --------------------------- #
 
 
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
+        prog="ribo swap",
         description="Given de novo and de fere novo contigs files, a " +
         "misjoined de fere novo contig name,  and a colon:separated " +
         "list of de novo contig names, replace the offending contig with " +

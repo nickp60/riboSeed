@@ -36,7 +36,8 @@ def get_args():  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
     """
-    parser = argparse.ArgumentParser(description="This is used to identify" +
+    parser = argparse.ArgumentParser(prog="ribo select",
+                                     description="This is used to identify" +
                                      " and cluster rRNA regions from a gb " +
                                      "file, returns" +
                                      "a text file with the clusters")

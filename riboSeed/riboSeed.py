@@ -69,7 +69,7 @@ SAMTOOLS_MIN_VERSION = '1.3.1'
 def get_args():  # pragma: no cover
     """
     """
-    parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(prog="ribo seed",
         description="Given cluster file of rDNA regions from riboSelect and " +
         "either paired-end or single-end reads, assembles the mapped reads " +
         "into pseduocontig 'seeds', and uses those with the reads to run" +

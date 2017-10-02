@@ -59,87 +59,15 @@ from itertools import product  # for getting all possible kmers
 from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
     combine_contigs, check_version_from_cmd
 
-
-class LociCluster(object):
-    """ organizes the clustering process instead of dealing with nested lists
-    This holds the whole cluster of one to several individual loci
-    """
-    newid = itertools.count()
-
-    def __init__(self, sequence_id, loci_list, padding=None,
-                 global_start_coord=None, global_end_coord=None,
-                 seq_record=None, feat_of_interest=None, mappings=None,
-                 extractedSeqRecord=None, cluster_dir_name=None,
-                 coverage_exclusion=None,
-                 circular=False, output_root=None, final_contigs_path=None,
-                 continue_iterating=True, keep_contigs=True):
-        # int: unique identifier for cluster
-        self.index = next(LociCluster.newid)
-        # self.index = index
-        # str: sequence name, usually looks like 'NC_17777373.1' or similar
-        self.sequence_id = sequence_id
-        # list: hold locus objects for each item in cluster
-        self.loci_list = loci_list  # this holds the Locus objects
-        # int: bounds ____[___.....rRNA....rRNA..rRNA....__]_________
-        self.global_start_coord = global_start_coord
-        self.global_end_coord = global_end_coord
-        # int: how much to pad sequences y if treating as circular
-        self.padding = padding
-        # str: feature for filtering: rRNA, cDNA, exon, etc
-        self.feat_of_interest = feat_of_interest
-        # Bool: treat seqs as circular by padding the ends
-        self.circular = circular
-        # path: where your cluster-specific output goes
-        self.cluster_dir_name = cluster_dir_name  # named dynamically
-        # path: where the overall output goes
-        self.output_root = output_root
-        # list: lociMapping objects that hold mappinging paths
-        self.mappings = mappings
-        # SeqRecord: holds SeqIO Seqrecord for sequence_id
-        self.seq_record = seq_record
-        # SeqRecord: holds SeqIO Seqrecord for seq extracted from global coords
-        self.extractedSeqRecord = extractedSeqRecord
-        # path: for best contig after riboseed2 iterations
-        self.keep_contigs = keep_contigs  # by default, include all
-        self.continue_iterating = continue_iterating  # by default, keep going
-        self.coverage_exclusion = coverage_exclusion
-        self.final_contig_path = final_contigs_path
-        self.name_mapping_dir()
-
-    def name_mapping_dir(self):
-        self.cluster_dir_name = str("{0}_cluster_{1}").format(
-            self.sequence_id, self.index)
-
-
-class Locus(object):
-    """ this holds the info for each individual Locus"
-    """
-    def __init__(self, index, sequence_id, locus_tag, strand=None,
-                 start_coord=None, end_coord=None,
-                 product=None,
-                 feature_type=None):
-        # int: unique identifier for cluster
-        self.index = index
-        # str: sequence name, usually looks like 'NC_17777373.1' or similar
-        self.sequence_id = sequence_id  # is this needed? I dont think so as long
-        # str: unique identifier from \locus_tag= of gb file
-        self.locus_tag = locus_tag
-        # int: 1 is +strand, -1 is -strand
-        self.strand = strand
-        # int:
-        self.start_coord = start_coord
-        self.end_coord = end_coord
-        # str: from \product= of gb file
-        self.product = product
-        # str "feature" genbank identifier
-        self.feature_type = feature_type
+from .classes import LociCluster, Locus
 
 
 def get_args():  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
     """
-    parser = argparse.ArgumentParser(description="Use to extract regions " +
+    parser = argparse.ArgumentParser(prog="ribo snag",
+                                     description="Use to extract regions " +
                                      "of interest based on supplied Locus " +
                                      "tags and evaluate the extracted regions",
                                      add_help=False)

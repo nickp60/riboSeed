@@ -31,15 +31,13 @@ from Bio.SeqRecord import SeqRecord
 
 
 def get_args():  # pragma: no cover
-    """#TODO:     for cli mods:
-    http://stackoverflow.com/questions/18025646/
-         python-argparse-conditional-requirements
-    make this able to handle different library types such as two unpaired runs
     """
-    parser = argparse.ArgumentParser(
+    """
+    parser = argparse.ArgumentParser(prog="ribo scan",
         description="Given a directory of one or more chromosomes as fasta " +
         "files, this facilitates reannotation of rDNA regions with Barrnap " +
         " and outputs all sequences as a single, annotated genbank file",
+        # usage='xuxxxxxu',
         add_help=False)  # to allow for custom help
     parser.add_argument("contigs", action="store",
                         help="either a (multi)fasta or a directory " +

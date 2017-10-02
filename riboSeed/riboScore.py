@@ -23,7 +23,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, combine_contigs
 
 
 def get_args():  # pragma: no cover
-    parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(prog="ribo score",
         description="This does some simple blasting to detect correctness " +
         "of riboSeed results")
     parser.add_argument("indir",
