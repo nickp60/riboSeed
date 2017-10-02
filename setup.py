@@ -136,7 +136,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
        'console_scripts': [
-           'ribo=bin.ribo:main',
+           'ribo=riboSeed.ribo:main',
        ],
     },
     # Using the scripts keyword here for speed, as the entry points are not
