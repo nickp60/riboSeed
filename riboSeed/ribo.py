@@ -27,7 +27,11 @@ helpmsg = [
 ]
 
 
-def main(args):
+def main(args=None):
+    # this looks stupid, but conda requires a main funtion
+    # that does not have required args.  Sigh...
+    if args is None:
+        args = sys.argv
     assert ((sys.version_info[0] == 3) and (sys.version_info[1] >= 5)), \
         "Must use python3.5 or higher!"
     if len(args) == 1:
