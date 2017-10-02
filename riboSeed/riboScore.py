@@ -62,7 +62,7 @@ def get_args():  # pragma: no cover
                         "default: %(default)s")
     # parser.add_argument("-t", "--blast_type",
     #                     help="blastn or tblastx", default="tblastx")
-    args = parser.parse_args()
+    args = parser.parse_args(sys.argv[2:])
     return(args)
 
 
