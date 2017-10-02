@@ -42,10 +42,11 @@ class JustWriteConfig(argparse.Action):
 
 
 def get_args():  # pragma: no cover
-    parser = argparse.ArgumentParser(prog="ribo run",
+    parser = argparse.ArgumentParser(
+        prog="ribo run",
         description="Run the riboSeed pipeline of scan, select, seed, " +
         "sketch, and score.  Uses a config file to wrangle all the args not"+
-        "available via these commandline args."
+        "available via these commandline args.",
         add_help=False)  # to allow for custom help
     parser.add_argument("REFERENCE_FASTA", action="store",
                         # dest="RUN_REFERENCE_FASTA",  # this causes double def
