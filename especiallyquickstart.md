@@ -11,5 +11,5 @@ Two read files can be found in the same directory.
 
 
 ```
-python3.5 ./riboSeed/run_riboSeed.py ./riboSeed/integration_data/concatenated_seq.fasta -F ./riboSeed/integration_data/test_reads1.fq -R ./riboSeed/integration_data/test_reads2.fq -o ./test1/ -v 1
+ribo run ./riboSeed/integration_data/concatenated_seq.fasta -F ./riboSeed/integration_data/test_reads1.fq -R ./riboSeed/integration_data/test_reads2.fq -o ./test1/ -v 1
 ```

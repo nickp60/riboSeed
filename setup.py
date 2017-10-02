@@ -5,9 +5,7 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 
-# Always prefer setuptools over distutils
 from setuptools import setup, find_packages
-# To use a consistent encoding
 import re
 from codecs import open
 from os import path
@@ -16,19 +14,6 @@ from pip.req import parse_requirements
 
 here = path.abspath(path.dirname(__file__))
 
-# Get the long description from the README file
-# with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-#     long_description = f.read()
-
-# # from pyani
-# with open(path.join(here, 'riboSeed', '__init__.py'), 'r') as fh:
-#     for line in fh:
-#         m = re.search(r"^__version__ = '(?P<version>[^']+)'$", line)
-#         if m:
-#             init_version = m.group('version')
-#             break
-# from http://stackoverflow.com/questions/458550/
-#         standard-way-to-embed-version-into-python-package
 VERSIONFILE = "riboSeed/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
@@ -105,7 +90,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['riboSeed', 'riboSeed/scripts'],
+    packages=['riboSeed', 'riboSeed/scripts', 'tests'],
     #packages=find_packages(),
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
@@ -156,11 +141,13 @@ setup(
     },
     # Using the scripts keyword here for speed, as the entry points are not
     # yet defined
-    # scripts=[
-    #     'bin/ribo.py'],
+    scripts=[
+        'scripts/seedRand.py',
+        "scripts/runme.py"
+    ],
         # 'riboSeed/riboSelect.py', 'riboSeed/riboSeed.py',
         #      'riboSeed/riboSnag.py', 'riboSeed/riboSwap.py',
-        #      'riboSeed/riboScan.py', "scripts/runme.py",
+        #      'riboSeed/riboScan.py', ,
         #      'riboSeed/riboSim.py',
         #      'riboSeed/riboSketch.py',
         #      'riboSeed/riboScore.py',

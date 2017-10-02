@@ -8,13 +8,13 @@ Assessment
 ~~~
 Suppose you have a whole bunch of assemblies to assess. The most rigorous way of checking the assemblies would be to use Mauve (or a similar whole genome alignment visualizer tool) for the job, and manually check the quality of each assembly, listening to the ends of the contigs, seeking one-ness with the data.  Thats all well and good if you are (a) independantly wealthy and enjoy doing this sort of thing, (b) seeking a meditative state through mindless clicking, or (c) an undergrad assistant, but for the rest of us, we are willing to sacrifice a bit of accuracy for throughput.  This is, after all, why we aren't sequencing on gels anymore.
 
-``riboScore.py`` outputs two types of score repors as text files: one which is
+``ribo score`` outputs two types of score repors as text files: one which is
 easy for humans to read, and the other that can be easily combined with
 hundreds like it to make various types of graphs etc.
 
 ::
 
-   usage: riboScore.py [-h] [-o OUTPUT] [-l FLANKING] [-p MIN_PERCENT]
+   usage: ribo score [-h] [-o OUTPUT] [-l FLANKING] [-p MIN_PERCENT]
                     [-f ASSEMBLY_EXT] [-g REF_EXT] [-F] [-v {1,2,3,4,5}]
                     indir
 
@@ -125,10 +125,10 @@ Usage:
                             kingdom for barrnap; default: bac
       -h, --help            Displays this help message
 
-``riboStack.py``
+``ribo stack``
 ~~~~~~~~~~~~~~~~
 
-Decause assembly using short reads often collases rDNA repeats, it is
+Because assembly using short reads often collases rDNA repeats, it is
 not uncommon to find a reference genome that has less than the actual
 number of rDNAs. riboStack uses ``bedtools`` and ``samtools`` to
 determine the coverage across rDNA regiosn, adn compares that coverage
@@ -149,14 +149,14 @@ Utilities
 ``riboSwap.py``
 ~~~~~~~~~~~~~~~
 
-Infrequently, ``riboSeed`` has joined together contigs that appear
+Infrequently, riboSeed has joined together contigs that appear
 incorrect according to your reference. If you are at all unhappy with a
-bridging, ``riboSwap.py`` allows swapping of a "bad" contig for one or
+bridging, ``ribo swap`` allows swapping of a "bad" contig for one or
 more syntenic contigs from the *de novo* assembly. #### USAGE
 
 ::
 
-    usage: riboSwap.py -o OUTPUT [-v {1,2,3,4,5}] [-h]
+    usage: ribo swap -o OUTPUT [-v {1,2,3,4,5}] [-h]
                        de_novo_file de_fere_novo_file bad_contig good_contigs
 
     Given de novo and de fere novo contigs files, a misjoined de fere novo contig
@@ -187,7 +187,7 @@ more syntenic contigs from the *de novo* assembly. #### USAGE
 ~~~~~
 
 There is no convenient unix command to generate seeded random numbers from the
-command line.  This script uses numpy (if availible) or the built-in random
+command line.  This standalone script uses numpy (if availible) or the built-in random
 module to generate *n* random numbers given a seed.
 
 Note:  numpy *should* give you the same random numbers given the same seed

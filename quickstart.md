@@ -35,12 +35,12 @@ Let's use the *Listeria monocytogenes str. 4b F2365* genome as reference, NCBI a
 $ get_genomes.py -q AE017262.2 -o ./
 ```
 
-## run_riboSeed
+## `ribo run`
 Now that we have the reference as a fasta file and our reads, lets run the pipeline:
 
 ```
-$ run_riboSeed.py ./AE017262.2.fasta -F ./SRR5181495_1.fastq -R ./SRR5181495_2.fastq  --cores 4 --threads 1 -v 1 --serialize  --keep_temps -o ./listeria_riboSeed_output/
+$ ribo run ./AE017262.2.fasta -F ./SRR5181495_1.fastq -R ./SRR5181495_2.fastq  --cores 4 --threads 1 -v 1 --serialize  --keep_temps -o ./listeria_riboSeed_output/
 ```
 
 ## Evaluate
-Use MAUVE to visualize the assemblies found in `./seed_output/final_de_novo_assembly` and `./seed_output/final_de_fere_novo_assembly`.  You should see that 4 out of the 6 regions were bridged.  The remaining region consists of a tandem rDNA repeat, which is a continuing problem for rDNA assembly.  Looking at the riboSelect output, we can see that it has chosen 6 clusters.  We can try to treat the tandem clusters as one (for a total of 5 clusters) by re-running `run_riboSeed` with `--clusters 5`.
+Use MAUVE to visualize the assemblies found in `./seed_output/final_de_novo_assembly` and `./seed_output/final_de_fere_novo_assembly`.  You should see that 4 out of the 6 regions were bridged.  The remaining region consists of a tandem rDNA repeat, which is a continuing problem for rDNA assembly.  Looking at the riboSelect output, we can see that it has chosen 6 clusters.  We can try to treat the tandem clusters as one (for a total of 5 clusters) by re-running `ribo run` with `--clusters 5`.

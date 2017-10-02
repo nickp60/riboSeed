@@ -1,8 +1,24 @@
 riboSeed Pipeline
 =================
 
-The pipeline consists of 3 main stages: preprocessing, de fere novo
-assembly, and visualization/assessment.
+Usage
+--------
+The pipeline consists of 3 main stages: preprocessing, de fere novo assembly, and visualization/assessment. As of version 0.4.21, the pipeline is run by invoking ``ribo`` and then one of the following commands:
+
+[ preprocessing ]
+- ``scan``
+- ``select``
+
+[ de fere novo assembly ]
+- ``seed``
+
+[ visualizations/assessment ]
+- ``snag``
+- ``stack``
+- ``sketch``
+- ``swap``
+- ``score``
+
 
 
 Before We Start
@@ -12,7 +28,7 @@ This pipeline is still very much in testing. Please back up any and all
 data used, and work within a virtualenv.
 
 Genome assembly gobbles RAM. If you, like me, are working on a 4gb RAM
-lappy, don't run riboSeed in parallel and instead run in series by using
+lappy, don't run seed in parallel and instead run in series by using
 the ``--serialize`` option. That should prevent you from running out of
 RAM during the final SPAdes calls.
 
@@ -20,10 +36,10 @@ RAM during the final SPAdes calls.
 0: Preprocessing
 ----------------
 
-``riboScan.py``
+``scan``
 ~~~~~~~~~~~~~~~
 
-``riboScan.py`` preprocesses sequences straight from a multifasta or one
+``scan`` preprocesses sequences straight from a multifasta or one
 or more fasta. The issue with many legacy annotations, assemblies, and
 scaffold collections is rDNAs are often poorly annotated at best, and
 unannotated at worst. This is shortcut to happiness without using the
@@ -32,7 +48,7 @@ full Prokka annotation scheme. It requires
 and seqret (from ```emboss`` <http://www.ebi.ac.uk/Tools/emboss/>`__) to
 be available in your path. #### Usage
 
-riboScan can either use a directory of fastas or one (multi)fasta file.
+``scan`` can either use a directory of fastas or one (multi)fasta file.
 If using a directory of fastas, provide the appropriate extension using
 the ``-e`` option. If using a (multi)fasta as input, it write out each
 entry to its own fasta in the ``contigs`` subdirectory that it makes in
@@ -42,11 +58,11 @@ the gff to add fake incrementing locus\_tags, and uses the original
 sequence file through seqret to make a GenBank file that contains just
 annotated rRNA features. The last step is a concatenation which, whether
 or not there are multiple files, makes a single (possibly multi-entry)
-genbank file perfect for riboSeed-ing.
+genbank file perfect for seed-ing.
 
 ::
 
-    usage: riboScan.py -o OUTPUT [-e EXT] [-k {bac,euk,arc,mito}] [-t ID_THRESH]
+    usage: ribo scan -o OUTPUT [-e EXT] [-k {bac,euk,arc,mito}] [-t ID_THRESH]
                        [-b BARRNAP_EXE] [-n NAME] [-c {1,2,4,8,16}]
                        [-s SEQRET_EXE] [-v {1,2,3,4,5}] [-h]
                        contigs
@@ -62,7 +78,7 @@ genbank file perfect for riboSeed-ing.
     required named arguments:
       -o OUTPUT, --output OUTPUT
                             output directory; default:
-                            /home/nicholas/GitHub/riboSeed
+                            /home/nicholas/GitHub/seed
 
 
     optional arguments:
@@ -92,17 +108,17 @@ NOTE: If using a reference with long names or containing special
 characters, use the --name argument to rename the contigs to something a
 bit more convenient and less prone to errors when piping results.
 
-``riboSelect.py``
+``select``
 ~~~~~~~~~~~~~~~~~
 
-``riboSelect.py`` searches the genome for rRNA annotations, clusters
+``select`` searches the genome for rRNA annotations, clusters
 them into likely ribosomal groups, and outputs a colon-separated list of
 clustered rRNA locus tags by record id.
 
 You will probably want to preview your file to figure out the syntax
 used. (ie, 16s vs 16S, rRNA vs RRNA, etc...)
 
-If not using ``riboScan.py`` or if not working with a prokaryotic
+If not using ``scan`` or if not working with a prokaryotic
 genome, you will need to change ``--specific_features`` appropriately to
 reflect the annotations in your reference (ie, for a fungal genome, use
 ``--specific_features 5_8S:18S:28S``).
@@ -133,7 +149,7 @@ Usage
 
 ::
 
-    usage: riboSelect.py [-h] [-o OUTPUT] [-f FEATURE] [-s SPECIFIC_FEATURES]
+    usage: ribo select [-h] [-o OUTPUT] [-f FEATURE] [-s SPECIFIC_FEATURES]
                          [--keep_temps] [--clobber] [-c CLUSTERS] [-v VERBOSITY]
                          [--debug]
                          genbank_genome
@@ -150,7 +166,7 @@ Usage
     required named arguments:
       -o OUTPUT, --output OUTPUT
                             output directory;default:
-                            /home/nicholas/GitHub/riboSeed
+                            /home/nicholas/GitHub/seed
 
     optional arguments:
       -f FEATURE, --feature FEATURE
@@ -174,16 +190,16 @@ Usage
 2: *De fere novo* Assembly
 --------------------------
 
-``riboSeed.py``
+``seed``
 ~~~~~~~~~~~~~~~
 
-``riboSeed.py`` maps reads to a genome and (1) extracts reads mapping to
+``seed`` maps reads to a genome and (1) extracts reads mapping to
 rDNA regions, (2) perfoms subassemblies on each pool of extracted reads
 to recover the rDNA complete with flanking regions (resulting in a
 pseudocontig) (3) concatenates a;; pseudocontigs into them into a
 pseudogenome with 5kb spacers of N's in between, (5) map remaining reads
 to the pseudogenome, and (6) repeat steps 1-5 for a given number of
-iterations (default 3 iterations). Finally, riboSeed runs SPAdes
+iterations (default 3 iterations). Finally, seed runs SPAdes
 assemblied with and without the pseudocontigs and the resulting
 assemblies are assessed with QUAST.
 
@@ -206,11 +222,11 @@ Usage:
 ^^^^^^
 
 minimal usage:
-``riboSeed.py clustered_accession\list.txt -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT``
+``ribo seed clustered_accession\list.txt -F FASTQ1 -R FASTQ2 -r REFERENCE_GENOME -o OUTPUT``
 
 ::
 
-    usage: riboSeed.py -r REFERENCE_GENBANK -o OUTPUT [-F FASTQ1] [-R FASTQ2]
+    usage: ribo seed -r REFERENCE_GENBANK -o OUTPUT [-F FASTQ1] [-R FASTQ2]
                        [-S1 FASTQS1] [-n EXP_NAME] [-l FLANKING] [-m {smalt,bwa}]
                        [-c CORES] [-k KMERS] [-p PRE_KMERS] [-s SCORE_MIN]
                        [-a MIN_ASSEMBLY_LEN] [--include_shorts] [--linear]
@@ -224,12 +240,12 @@ minimal usage:
                        [--python2_7_exe PYTHON2_7_EXE]
                        clustered_loci_txt
 
-    Given cluster file of rDNA regions from riboSelect and either paired-end or
+    Given cluster file of rDNA regions from select and either paired-end or
     single-end reads, assembles the mapped reads into pseduocontig 'seeds', and
     uses those with the reads to runde fere novo and de novo assembly with SPAdes
 
     positional arguments:
-      clustered_loci_txt    output from riboSelect
+      clustered_loci_txt    output from select
 
     required named arguments:
       -r REFERENCE_GENBANK, --reference_genbank REFERENCE_GENBANK
@@ -237,7 +253,7 @@ minimal usage:
                             compare with QUAST
       -o OUTPUT, --output OUTPUT
                             output directory; default:
-                            /home/nicholas/GitHub/riboSeed
+                            /home/nicholas/GitHub/seed
 
     optional arguments:
       -F FASTQ1, --fastq1 FASTQ1
@@ -247,7 +263,7 @@ minimal usage:
       -S1 FASTQS1, --fastq_single1 FASTQS1
                             single fastq reads
       -n EXP_NAME, --experiment_name EXP_NAME
-                            prefix for results files; default: riboSeed
+                            prefix for results files; default: seed
       -l FLANKING, --flanking_length FLANKING
                             length of flanking regions, in bp; default: 1000
       -m {smalt,bwa}, --method_for_map {smalt,bwa}
@@ -375,10 +391,10 @@ Results can be tuned by changing several of the default parameters.
 3: Visualization/Assessment
 ---------------------------
 
-``riboSnag.py``
+``snag``
 ~~~~~~~~~~~~~~~
 
-``riboSnag.py`` takes the list of clustered locus tags and extracts
+``snag`` takes the list of clustered locus tags and extracts
 their sequences with flanking regions, optionally turning the coding
 sequences to N's to minimize bias towards reference. Is used to pull out
 regions of interest from a Genbank file. Outputs a directory with a
@@ -392,7 +408,7 @@ Usage:
 
 ::
 
-    usage: riboSnag.py [-o OUTPUT] [-n NAME] [-l FLANKING] [--msa_kmers] [-c]
+    usage: ribo snag [-o OUTPUT] [-n NAME] [-l FLANKING] [--msa_kmers] [-c]
                        [-p PADDING] [-v VERBOSITY] [--clobber] [--no_revcomp]
                        [--skip_check] [--msa_tool {mafft,prank}]
                        [--prank_exe PRANK_EXE] [--mafft_exe MAFFT_EXE]
@@ -406,12 +422,12 @@ Usage:
 
     positional arguments:
       genbank_genome        Genbank file (WITH SEQUENCE)
-      clustered_loci        output from riboSelect
+      clustered_loci        output from select
 
     required named arguments:
       -o OUTPUT, --output OUTPUT
                             output directory; default:
-                            /home/nicholas/GitHub/riboSeed
+                            /home/nicholas/GitHub/seed
 
     optional arguments:
       -n NAME, --name NAME  rename the contigs with this prefixdefault: date
@@ -452,12 +468,12 @@ Usage:
                             kingdom for barrnap; default: bac
       -h, --help            Displays this help message
 
-``riboStack.py``
+``stack``
 ~~~~~~~~~~~~~~~~
 
 Decause assembly using short reads often collases rDNA repeats, it is
 not uncommon to find a reference genome that has less than the actual
-number of rDNAs. riboStack uses ``bedtools`` and ``samtools`` to
+number of rDNAs. stack uses ``bedtools`` and ``samtools`` to
 determine the coverage across rDNA regiosn, adn compares that coverage
 depth to 10 sets of randomly selected non-rDNA regions. If the number of
 rDNAs in the reference matches the number of rDNAs in your sequecned
@@ -466,20 +482,20 @@ in your rDNA regions is significantly higher, than there are likely more
 rDNAs in your sequenced isoalte that there are in the reference, which
 is something to be aware of.
 
-It requires a mapping BAM file and the riboScan output directory as
+It requires a mapping BAM file and the scan output directory as
 input.
 
-``riboSwap.py``
+``swap``
 ~~~~~~~~~~~~~~~
 
-Infrequently, ``riboSeed`` has joined together contigs that appear
+Infrequently, ``seed`` has joined together contigs that appear
 incorrect according to your reference. If you are at all unhappy with a
-bridging, ``riboSwap.py`` allows swapping of a "bad" contig for one or
+bridging, ``swap`` allows swapping of a "bad" contig for one or
 more syntenic contigs from the *de novo* assembly. #### USAGE
 
 ::
 
-    usage: riboSwap.py -o OUTPUT [-v {1,2,3,4,5}] [-h]
+    usage: ribo swap -o OUTPUT [-v {1,2,3,4,5}] [-h]
                        de_novo_file de_fere_novo_file bad_contig good_contigs
 
     Given de novo and de fere novo contigs files, a misjoined de fere novo contig
@@ -495,7 +511,7 @@ more syntenic contigs from the *de novo* assembly. #### USAGE
     required named arguments:
       -o OUTPUT, --output OUTPUT
                             output directory; default:
-                            /home/nicholas/GitHub/riboSeed
+                            /home/nicholas/GitHub/seed
 
     optional arguments:
       -v {1,2,3,4,5}, --verbosity {1,2,3,4,5}

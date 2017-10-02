@@ -29,10 +29,10 @@ Because the MiniKraken database was built from all the complete genomes from Ref
 PS:  This is a great time to check if you have any contamination in your sample;  thanks, Kraken!
 
 
-Method #2: reads2type and cgfind
+Method #2: reads2type and  `cgFind <https://nickp60.github.io/cgfind>`__
 ~~~~~
 
 
 reads2type is also a kmer-based phylogeny tool, but it relies on a lightweight, prebuilt database that allows the analysis to be performed in your web browser, and it doesn't require you to upload your whole read file to a webserver.  It works by taking one read at a time from your file, generating 55-mers, and comparing to its databse. If there is not enough taxanomic information to indentify the isolate off of that read alone, additional reads will be processed until a single taxonomy is achieved.  This method works best on trimmed reads. `Instructions and the webserver can be found here <https://cge.cbs.dtu.dk/services/Reads2Type/>`__
 
-Once you have a genus and species, you can use ``cgfind``, a tool we developed to provide easy access to downloadable genomes based on the complete prokaryotic genomes found in NCBI.  `it can be found here <https://nickp60.github.io/riboSeed/cgfind>`__  Just enter your genus and species name, and select one of the avaible strains to download.
+Once you have a genus and species, you can use ``cgfind``, a tool we developed to provide easy access to downloadable genomes based on the complete prokaryotic genomes found in NCBI.  `it can be found here <https://nickp60.github.io/cgfind>`__  Just enter your genus and species name, and select one of the available strains to download.

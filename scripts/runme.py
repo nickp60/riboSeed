@@ -6,8 +6,6 @@ import sys
 import os
 import shutil
 import subprocess
-# sys.path.append(os.path.join('..', 'riboSeed'))
-# from riboSeed import riboSnag as rs
 
 resource_package = pkg_resources.Requirement.parse("riboSeed")  # Could be any module/package name
 print(resource_package)
@@ -39,26 +37,26 @@ root_dir = os.path.join(os.getcwd(), "integration_test_results")
 os.makedirs(root_dir, exist_ok=True)
 cmds = [
     # riboScan
-    "{0} {1} {2}{3} -o {4} -k bac".format(
+    "ribo scan {2}{3} -o {4} -k bac".format(
         sys.executable,
         shutil.which("riboScan.py"),
         os.path.join(os.path.dirname(fasta), ""),
         os.path.basename(fasta), os.path.join(root_dir, "scan", "")),
     # riboSelect
-    "{0} {1} {2}scannedScaffolds.gb -o {3}".format(
+    "ribo select {2}scannedScaffolds.gb -o {3}".format(
         sys.executable,
         shutil.which("riboSelect.py"),
         os.path.join(root_dir, "scan", ""),
         os.path.join(root_dir, "select","")),
     # riboSnag
-    "{0} {1} {2}scannedScaffolds.gb {3}riboSelect_grouped_loci.txt -o {4} ".format(
+    "ribo snag {2}scannedScaffolds.gb {3}riboSelect_grouped_loci.txt -o {4} ".format(
         sys.executable,
         shutil.which("riboSnag.py"),
         os.path.join(root_dir, "scan", ""),
         os.path.join(root_dir, "select", ""),
         os.path.join(root_dir, "snag", "")),
     # riboSeed
-    "{0} {1} -r {2}scannedScaffolds.gb {3}riboSelect_grouped_loci.txt -o {4} -F {5} -R {6} --serialize -v 1 ".format(
+    "ribo seed -r {2}scannedScaffolds.gb {3}riboSelect_grouped_loci.txt -o {4} -F {5} -R {6} --serialize -v 1 ".format(
         sys.executable,
         shutil.which("riboSeed.py"),
         os.path.join(root_dir, "scan", ""),

@@ -27,7 +27,7 @@ From Pypi
 -----------
 
 riboSeed is on Pypi, so you can install with pip, preferably within a
-virtualenv (recommended):
+virtualenv:
 
 ::
 
@@ -49,12 +49,13 @@ To install the bleeding-edge version, install from testpypi:
 From GitHub
 -----------
 
-You can also clone this repository, and run
+You can also clone this repository, create a virtual environment, and run
 ``python3.5 setup.py install``.
 
-In the scripts directory, there is a script called ``runme.py`` which
-run the pipeline on a small sample dataset. it should output a folder to
-your current working dir called ``integration_tests``.
+..
+   In the scripts directory, there is a script called ``runme.py`` which
+   run the pipeline on a small sample dataset. it should output a folder to
+   your current working dir called ``integration_tests``.
 
 Dependencies
 -----------
@@ -65,7 +66,7 @@ External Requirements
 riboScan.py
 
 -  Barrnap (must be 0.7 or above)
--  Seqret
+-  EMBOSS's Seqret
 
 riboSelect.py
 
@@ -85,5 +86,5 @@ riboSeed.py
 -  QUAST (tested with 4.1)
 
 NOTE: barrnap has certain Perl requirements that may not be included on
-your machine. Ensure barrnap runs fine before trying ``riboSnag.py``. Or
+your machine. Ensure barrnap runs fine before trying riboSeed. Or
 try `python barrnap <https://github.com/nickp60/barrnap/>`__.

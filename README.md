@@ -17,11 +17,11 @@ Preprint of the riboSeed manuscript can be found [here](http://www.biorxiv.org/c
 ## Table of Contents
 
 * [`Description`](./README.md#description)
-* [`riboScan: Preprocessing`](./README.md#0-preprocessing)
-* [`riboSelect: Determine rDNA Operon Structure`](./README.md#1-selection-and-extraction)
-* [`riboSeed: Seeded Assembly`](./README.md#2-seeded-assembly)
+* [`scan: Preprocessing`](./README.md#0-preprocessing)
+* [`select: Determine rDNA Operon Structure`](./README.md#1-selection-and-extraction)
+* [`seed: Seeded Assembly`](./README.md#2-seeded-assembly)
 * [`riboSeed Key Parameters`](./README.md#key-parameters)
-* [`riboSwap: Assembly Refinement`](./README.md#3-assembly-refinement)
+* [`swap: Assembly Refinement`](./README.md#3-assembly-refinement)
 * [`Installation`](./README.md#installation)
 * [`External Requirements`](./README.md#external-requirements)
 
@@ -34,12 +34,24 @@ Genome assembly gobbles RAM. If you, like me, are working on a 4gb RAM lappy, do
 
 riboSeed is an supplemental assembly refinement method to try to address the issue of multiple ribosomal regions in a genome, as these create repeats unresolvable by short read sequencing.  It takes advantage of the fact that while each region is identical, the regions flanking are unique, and therefore can potentially be used to seed an assembly in such a way that rDNA regions are bridged.
 
-The pipeline consists of 3 main stages: preprocessing, de fere novo assembly, and visualization/assessment
+Preprocessing
+- `scan`
+- `select`
+
+*De fere novo assembly*
+- `seed`
+
+Visualizations/assessment
+- `snag`
+- `stack`
+- `sketch`
+- `swap`
+- `score`
 
 ## 0: Preprocessing
 
-### `riboScan.py`
-`riboScan.py` preprocesses sequences straight from a multifasta or  one or more fasta. The issue with many legacy annotations, assemblies, and scaffold collections is rDNAs are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml) and seqret (from [`emboss`](http://www.ebi.ac.uk/Tools/emboss/))  to be available in your path.
+### `scan`
+`scan` preprocesses sequences straight from a multifasta or  one or more fasta. The issue with many legacy annotations, assemblies, and scaffold collections is rDNAs are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml) and seqret (from [`emboss`](http://www.ebi.ac.uk/Tools/emboss/))  to be available in your path.
 #### Usage
 
 riboScan can either use a directory of fastas or one (multi)fasta file.  If using a directory of fastas, provide the appropriate extension using the `-e` option. If using a (multi)fasta as input, it write out each entry to its own fasta in the `contigs` subdirectory that it makes in the output. For each of the fastas, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a GenBank file that contains just annotated rRNA features. The last step is a concatenation which, whether or not there are multiple files, makes a single (possibly multi-entry) genbank file perfect for riboSeed-ing.
@@ -47,12 +59,12 @@ riboScan can either use a directory of fastas or one (multi)fasta file.  If usin
 NOTE: If using a reference with long names or containing special characters, use the --name argument to rename the contigs to something a bit more convenient and less prone to errors when piping results.
 
 
-### `riboSelect.py`
-`riboSelect.py` searches the genome for rRNA annotations, clusters them into likely ribosomal groups, and outputs a colon-separated list of clustered rRNA locus tags by record id.
+### `select`
+`select` searches the genome for rRNA annotations, clusters them into likely ribosomal groups, and outputs a colon-separated list of clustered rRNA locus tags by record id.
 
 You will probably want to preview your file to figure out the syntax used. (ie, 16s vs 16S, rRNA vs RRNA, etc...)
 
-If not using `riboScan.py` or if not working with a prokaryotic genome, you will need to change `--specific_features` appropriately to reflect the annotations in your reference (ie, for a fungal genome, use `--specific_features 5_8S:18S:28S`).
+If not using `scan` or if not working with a prokaryotic genome, you will need to change `--specific_features` appropriately to reflect the annotations in your reference (ie, for a fungal genome, use `--specific_features 5_8S:18S:28S`).
 
 NOTE: the format of the output text file is very simple, and due to the relatively small number of such coding sequences in bacterial genomes, this can be constructed by hand if the clusters do not look appropriate. The format is `genome_sequence_id locus_tag1:locus_tag2`, where each line represents a cluster. See example below, where 14 rRNAs are clustered into 6 groups:
 
@@ -69,8 +81,8 @@ CM000577.1 FGSG_20075:FGSG_20074
 ```
 
 ## 2: *De fere novo* Assembly
-### `riboSeed.py`
-`riboSeed.py` maps reads to a genome and (1) extracts reads mapping to rDNA regions, (2) perfoms subassemblies on each pool of extracted reads to recover the rDNA complete with flanking regions (resulting in a pseudocontig) (3) concatenates a;; pseudocontigs into them into a pseudogenome with 5kb spacers of N's in between, (5) map remaining reads to the pseudogenome, and (6) repeat steps 1-5 for a given number of iterations (default 3 iterations). Finally, riboSeed runs SPAdes assemblied with and without the pseudocontigs and the resulting assemblies are assessed with QUAST.
+### `seed`
+`seed` maps reads to a genome and (1) extracts reads mapping to rDNA regions, (2) perfoms subassemblies on each pool of extracted reads to recover the rDNA complete with flanking regions (resulting in a pseudocontig) (3) concatenates a;; pseudocontigs into them into a pseudogenome with 5kb spacers of N's in between, (5) map remaining reads to the pseudogenome, and (6) repeat steps 1-5 for a given number of iterations (default 3 iterations). Finally, riboSeed runs SPAdes assemblied with and without the pseudocontigs and the resulting assemblies are assessed with QUAST.
 
 #### Output
 
@@ -98,8 +110,8 @@ Results can be tuned by changing several of the default parameters.
 
 ## 3: Visualization/Assessment
 
-### `riboSnag.py`
-`riboSnag.py` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
+### `snag`
+`snag` takes the list of clustered locus tags and extracts their sequences with flanking regions, optionally turning the coding sequences to N's to minimize bias towards reference. Is used to pull out regions of interest from a Genbank file. Outputs a directory with a fasta file for each clustered region (and a log file).
 
 Additionally, it does a lot of plotting to visualize the Shannon entropy, coverage, occurrences, and other useful metrics.
 
@@ -107,7 +119,7 @@ Additionally, it does a lot of plotting to visualize the Shannon entropy, covera
 #### Usage:
 
 ```
-usage: riboSnag.py [-o OUTPUT] [-n NAME] [-l FLANKING] [--msa_kmers] [-c]
+usage: ribo snag  [-o OUTPUT] [-n NAME] [-l FLANKING] [--msa_kmers] [-c]
                    [-p PADDING] [-v VERBOSITY] [--clobber] [--no_revcomp]
                    [--skip_check] [--msa_tool {mafft,prank}]
                    [--prank_exe PRANK_EXE] [--mafft_exe MAFFT_EXE]
@@ -168,18 +180,18 @@ optional arguments:
   -h, --help            Displays this help message
 ```
 
-### `riboStack.py`
+### `stack`
 Decause assembly using short reads often collases rDNA repeats, it is not uncommon to find a reference genome that has less than the actual number of rDNAs.  riboStack uses `bedtools` and `samtools` to determine the coverage across rDNA regiosn, adn compares that coverage depth to 10 sets of randomly selected non-rDNA regions.  If the number of rDNAs in the reference matches the number of rDNAs in your sequecned isolate, the coverage should be pretty similar. However, if the coverage in your rDNA regions is significantly higher, than there are likely more rDNAs in your sequenced isoalte that there are in the reference, which is something to be aware of.
 
 It requires a mapping BAM file and the riboScan output directory as input.
 
 
 
-### `riboSwap.py`
-Infrequently, `riboSeed` has joined together contigs that appear incorrect according to your reference.  If you are at all unhappy with a bridging, `riboSwap.py` allows swapping of a "bad" contig for one or more syntenic contigs from the *de novo* assembly.
+### `swap`
+Infrequently, `seed` has joined together contigs that appear incorrect according to your reference.  If you are at all unhappy with a bridging, `swap` allows swapping of a "bad" contig for one or more syntenic contigs from the *de novo* assembly.
 #### USAGE
 ```
-usage: riboSwap.py -o OUTPUT [-v {1,2,3,4,5}] [-h]
+usage: ribo swap -o OUTPUT [-v {1,2,3,4,5}] [-h]
                    de_novo_file de_fere_novo_file bad_contig good_contigs
 
 Given de novo and de fere novo contigs files, a misjoined de fere novo contig
@@ -286,7 +298,7 @@ riboSeed.py
 * SAMTools (must be 1.3.1 or above)
 * QUAST (tested with 4.5)
 
-NOTE: barrnap has certain Perl requirements that may not be included on your machine. Ensure barrnap runs fine before trying `riboSnag.py`.  Or try [python barrnap](https://github.com/nickp60/barrnap/).
+NOTE: barrnap has certain Perl requirements that may not be included on your machine. Ensure barrnap runs fine before trying `snag.py`.  Or try [python barrnap](https://github.com/nickp60/barrnap/).
 
 
 ## Suggested Running
