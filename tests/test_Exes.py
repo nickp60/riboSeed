@@ -7,7 +7,6 @@ Created on Tue Aug 30 08:57:31 2016
 import sys
 import logging
 import shutil
-# import subprocess
 import os
 import unittest
 

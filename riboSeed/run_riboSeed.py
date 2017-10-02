@@ -37,8 +37,6 @@ class JustWriteConfig(argparse.Action):
             name="empty")
         config_file = mrc.main(make_empty_config_args)
         parser.exit(message="Config file written.  Exiting\n")
-        # add_these_params_to_config(config_file=config_file,
-        #                            args=theseargs)
 
 
 def get_args():  # pragma: no cover
@@ -214,7 +212,7 @@ def get_args():  # pragma: no cover
     optional.add_argument('--version', action='version',
                           version='%(prog)s {version}'.format(
                               version=__version__))
-    args = parser.parse_args()
+    args = parser.parse_args(sys.argv[2:])
     return args
 
 

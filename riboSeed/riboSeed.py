@@ -902,7 +902,7 @@ def check_version_from_cmd2(
         if logger:
             logger.debug("coerced this_version: %s", this_version)
     if this_version is None:
-        raise ValueError("No verison was captured with pattern" +
+        raise ValueError("No version was captured with pattern" +
                          "{0}".format(pattern))
     try:
         if StrictVersion(this_version) < StrictVersion(min_version):
@@ -2364,8 +2364,17 @@ def main(args, logger=None):
             pattern=r"\s*Version: (?P<version>[^(]+)",
             min_version=SAMTOOLS_MIN_VERSION, logger=logger)
     except Exception as e:
-        logger.error(e)
-        sys.exit(1)
+        logger.info(e)
+        logger.info("perhaps conda is giving a build warning?")
+        try:
+            samtools_verison = check_version_from_cmd(
+                exe=sys_exes.samtools, cmd='', line=4, where='stderr',
+                pattern=r"\s*Version: (?P<version>[^(]+)",
+                min_version=SAMTOOLS_MIN_VERSION, logger=logger)
+        except Exception as f:
+            logger.error(f)
+            sys.exit(1)
+
     logger.debug("samtools version: %s", samtools_verison)
     # check bambamc is installed proper if using smalt
     if args.method == "smalt":

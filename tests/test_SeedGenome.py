@@ -11,16 +11,10 @@ import os
 import unittest
 from Bio import SeqIO
 
-# I hate this line but it works :(
-sys.path.append(os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
-
 from riboSeed.riboSeed import SeedGenome, add_coords_to_clusters
 
 from riboSeed.riboSnag import parse_clustered_loci_file
 
-
-sys.dont_write_bytecode = True
 
 logger = logging
 
