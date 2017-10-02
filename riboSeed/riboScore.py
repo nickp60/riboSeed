@@ -313,7 +313,7 @@ def getSelectCmd(gb, outroot, other_args):
                                       "riboSelect_grouped_loci.txt")
     if other_args != "":
         other_args = " " + other_args  # pad with space for easier testing
-    return ("{0} {1} {2} -o {3}{4}".format(
+    return ("ribo select {2} -o {3}{4}".format(
         sys.executable,
         os.path.join(
             os.path.dirname(__file__),
@@ -326,7 +326,7 @@ def getSelectCmd(gb, outroot, other_args):
 def getSnagCmd(scangb, cluster, flank, outroot, other_args=""):
     if other_args != "":
         other_args = " " + other_args  # pad with space for easier testing
-    return ("{0} {1} {2} {3} -l {4} --just_extract -o {5}{6}".format(
+    return ("ribo snag {2} {3} -l {4} --just_extract -o {5}{6}".format(
         sys.executable,
         os.path.join(
             os.path.dirname(__file__),

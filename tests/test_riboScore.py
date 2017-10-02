@@ -83,7 +83,7 @@ class riboScoreTestCase(unittest.TestCase):
     def test_getSelectCmd(self):
         res = getSelectCmd(gb="test.gb", outroot="outdir",
                            other_args="-s 16S:23S")
-        ref_cmd = "{0} {1} test.gb -o outdir{2}select -s 16S:23S".format(
+        ref_cmd = "ribo select test.gb -o outdir{2}select -s 16S:23S".format(
             sys.executable,
             os.path.join(
                 "..", "..",
@@ -99,7 +99,7 @@ class riboScoreTestCase(unittest.TestCase):
     def test_getSnagCmd(self):
         res = getSnagCmd(scangb="test.gb", cluster="clusters.txt",
                          flank=20, outroot="outdir", other_args="")
-        ref_cmd = "{0} {1} test.gb clusters.txt -l 20 --just_extract -o outdir{2}snag".format(
+        ref_cmd = "ribo snag test.gb clusters.txt -l 20 --just_extract -o outdir{2}snag".format(
             sys.executable,
             os.path.join(
                 "..", "..",
