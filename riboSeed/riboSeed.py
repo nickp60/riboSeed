@@ -2955,7 +2955,7 @@ def main(args, logger=None):
                 stderr=subprocess.PIPE,
                 check=True)
             spades_results.append(spades_result)
-            spades_results_sum = sum([r.returncode for r in spades_results])
+        spades_results_sum = sum([r.returncode for r in spades_results])
 
     else:
         # split the processors based on how many spades_cmds are on the list
@@ -2975,6 +2975,7 @@ def main(args, logger=None):
             for cmds in spades_quast_cmds]
         pool.close()
         pool.join()
+        logger.debug(spades_results)
         logger.info("Sum of return codes (should be 0):")
         spades_results_sum = sum([r.get() for r in spades_results])
         if spades_results_sum == 0:
