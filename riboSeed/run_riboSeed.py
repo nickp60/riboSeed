@@ -364,6 +364,7 @@ def main(args):
         serialize=conf.serialize,
         ref_as_contig=conf.SEED_REF_AS_CONTIG,
         mapper_args=conf.SEED_MAPPER_ARGS,
+        initial_consensus=conf.SEED_INITIAL_CONSENSUS,
         spades_exe=conf.SPADES_EXE,
         samtools_exe=conf.SAMTOOLS_EXE,
         smalt_exe=conf.SMALT_EXE,
@@ -421,8 +422,3 @@ def main(args):
             logger.info("Skipping riboScore, as no blastn executable was " +
                         "found in path.")
     new_log_for_diff(logfile_path=log_path)
-
-
-# if __name__ == "__main__":
-#     args = get_args()
-#     main(args)

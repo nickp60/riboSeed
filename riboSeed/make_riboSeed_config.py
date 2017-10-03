@@ -147,10 +147,6 @@ def config_select_defaults():
         ("SELECT_FEATURE", "'rRNA'",
          "--feature: which annotations to pay attention to; \n# " +
          "barrnap uses 'rRNA', but others may use 'RRNA', etc"),
-        # ("SELECT_SPECIFIC_FEATURES", "'16S:23S:5S'",
-        #  "--specific_features: specific features to use; \n# " +
-        #  "if not assembling a prokaryote, or if refernce is \n# " +
-        #  "missing a subunit's annotation, adjust this as needed."),
         ("SELECT_VERBOSITY", "2",
          "-v: verbosity for riboSelect")]
     select_lines = [
@@ -217,7 +213,11 @@ def config_seed_defaults():
          "submit custom smalt scoring via smalt -S \n#" +
          "scorespec option"),
         ("SEED_VERBOSITY", "2",
-         "-v: verbosity for riboSeed")]
+         "-v: verbosity for riboSeed"),
+        ("SEED_INITIAL_CONSENSUS", "False",
+         "--initial_consensus enables a consensus approach to the first\n#" +
+         " iterations subassemblies, rather than a de Druijn graph de non\n#" +
+         " assembly with SPAdes")]
     seed_lines = [
         "#------------------------#",
         "##  riboSeed Parameters ##",
