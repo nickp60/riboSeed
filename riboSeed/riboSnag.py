@@ -7,19 +7,6 @@
 # Please see the LICENSE file that should have been included as part of
 # this package.
 
-"""
-Minor version changes:
- - cleaned up
-Input:
-- genbank file
-- dictionary
-- specific features : 16S, 5S
-- upstream, downstream widths
-
-Output:
--dir containing DNA fastas in their
-
-"""
 import os
 import subprocess
 import datetime
@@ -331,13 +318,13 @@ def extract_coords_from_locus(cluster, feature="rRNA",
         logger.error("no hits found in any record with feature %s! Double " +
                      "check your genbank file", feature)
         raise ValueError
-    # logger.debug("adding extracted sequence")
-    # cluster.extractedSeqRecord = cluster.seq_record.seq[cluster.
-    # return cluster
 
 
 def pad_genbank_sequence(cluster, logger=None, verbose=False):
-    """coords in coords list should be the 1st list item, with the index
+    """ circular genomes need "padding" to get flanking coordinates near the
+    origin
+
+    coords in coords list should be the 1st list item, with the index
     being 0th. Given a genbank record and a coord_list. this returns a seq
     padded on both ends by --padding bp, and returns a coord_list with coords
     adjusted accordingly.  Used to capture regions across origin.
@@ -871,6 +858,7 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     r"""
+    smoothing algorithm
     http://scipy.github.io/old-wiki/pages/Cookbook/SavitzkyGolay
     Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
     The Savitzky-Golay filter removes high frequency noise from data.

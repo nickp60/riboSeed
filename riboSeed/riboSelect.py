@@ -56,11 +56,6 @@ def get_args():  # pragma: no cover
                           help="colon:separated -- specific features"
                           "; default: %(default)s",
                           default='16S:23S:5S', type=str)
-    # optional.add_argument("--keep_temps",
-    #                       help="view intermediate clustering files"
-    #                       "default: %(default)s",
-    #                       action='store_true',
-    #                       default=False, dest="keep_temps")
     optional.add_argument("--clobber",
                           help="overwrite previous output files: "
                           "default: %(default)s", action='store_true',
@@ -94,7 +89,6 @@ def count_feature_hits_per_sequence(all_feature, rec_id_list,
                        specific_features, loci_list, logger=None):
     """ given genome seq records, specific_features, and a
     locus_tag_dict from get_filtered_locus_tag_dict, return two structures:
-    - nfeatures_occur {record.id, [[16s, 5],[23s, 4],[5s,6]]}
     - nfeatures_simple {record.id [record.id, [5,4,6]}
     SPECIFIC FEATURES MUST BE SORTED
     """
@@ -127,7 +121,7 @@ def get_loci_list_for_features(gb_path, feature="rRNA",
     returns a tuple of loci_list and dict of {"sequence" [counts of features]}
 
     The list of Locus object for each feature of interest
-    (ie, all the rRNA annotations). dictionary of index:locus_tag id pairs for all
+    (ie, all rRNA annotations). dictionary of index:locus_tag id pairs for all
     "feature"  entries.  This then gets clustered.
     requires having locus tag in your genbank file.  Non-negitable.
     should be prokka-friendly, so if you have a gb file with legacy
@@ -236,6 +230,8 @@ def parse_args_clusters(clusters, nrecs, logger=None):
 
 
 def dict_from_jenks(data, centers, logger=None):
+    """ use jenks natural breaks to split a list of coordinates accordingly
+    """
     assert logger is not None, "must use logging"
     assert centers is not 0, "cannot use 0 center"
     if len(data) <= centers:
@@ -284,7 +280,6 @@ def main(args, logger=None):
             outfile=os.path.join(output_root, "riboSelect.log"),
             name=__name__)
 
-    # log = sys.stderr.write  # to keep streaming clean if this goes that route
     logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):

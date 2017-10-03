@@ -24,12 +24,6 @@ from pyutilsnrw.utils3_5 import set_up_logging
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
-# --------------------------- classes --------------------------- #
-
-
-# --------------------------- methods --------------------------- #
-
-
 def get_args():  # pragma: no cover
     """
     """

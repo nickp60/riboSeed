@@ -1,7 +1,17 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
+#!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+# Copyright 2017, National University of Ireland and The James Hutton Insitute
+# Author: Nicholas Waters
+#
+# This code is part of the riboSeed package, and is governed by its licence.
+# Please see the LICENSE file that should have been included as part of
+# this package.
+
+
+
 import sys
-# print("\n".join(sys.path))
 import importlib
 import riboSeed
 
@@ -23,12 +33,15 @@ helpmsg = [
     " -sim      perform simulations used in manuscript",
     " -sketch   plot results from a de fere novo assembly",
     " -score    score batches of assemblies with BLASTn",
-    " -swap     swap contigs from assemblies"
+    " -swap     swap contigs from assemblies",
+    ""
 ]
 
 
 def main(args=None):
-    # this looks stupid, but conda requires a main funtion
+    """ given a riboSeed cmd, import that submodule, and run the main function
+    """
+    # this args thing looks stupid, but conda requires a main funtion
     # that does not have required args.  Sigh...
     if args is None:
         args = sys.argv

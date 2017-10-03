@@ -127,11 +127,20 @@ def get_args():  # pragma: no cover
                           default='bwa', type=str)
     optional.add_argument("-c", "--cores", dest='cores', action="store",
                           default=None, type=int,
-                          help="cores used" +
+                          help="cores to be used" +
                           "; default: %(default)s")
+    optional.add_argument("-t", "--threads", dest='threads',
+                          action="store",
+                          default=1, type=int,
+                          choices=[1, 2, 4],
+                          help="if your cores are hyperthreaded, set number" +
+                          " threads to the number of threads per processer." +
+                          "If unsure, see 'cat /proc/cpuinfo' under 'cpu " +
+                          "cores', or 'lscpu' under 'Thread(s) per core'." +
+                          ": %(default)s")
     optional.add_argument("-m", "--memory", dest='memory', action="store",
                           default=8, type=int,
-                          help="cores for multiprocessing" +
+                          help="system memory available" +
                           "; default: %(default)s")
     optional.add_argument("-k", "--kmers", dest='kmers', action="store",
                           default="21,33,55,77,99,127", type=str,
@@ -238,15 +247,6 @@ def get_args():  # pragma: no cover
                           "decimal between 0 and 5, or set as an absolute " +
                           "number of base pairs by giving an integer greater" +
                           " than 50. Not used by default")
-    optional.add_argument("-t", "--threads", dest='threads',
-                          action="store",
-                          default=1, type=int,
-                          choices=[1, 2, 4],
-                          help="if your cores are hyperthreaded, set number " +
-                          "threads to the number of threads per processer." +
-                          "If unsure, see 'cat /proc/cpuinfo' under 'cpu " +
-                          "cores', or 'lscpu' under 'Thread(s) per core'." +
-                          ": %(default)s")
     optional.add_argument("-z", "--serialize", dest='serialize',
                           action="store_true",
                           default=False,
@@ -304,10 +304,6 @@ def get_args():  # pragma: no cover
     optional.add_argument("--bcftools_exe", dest="bcftools_exe",
                           action="store", default="bcftools",
                           help="Path to bcftools executable; " +
-                          "default: %(default)s")
-    optional.add_argument("--vcfutils_exe", dest="vcfutils_exe",
-                          action="store", default="vcfutils.pl",
-                          help="Path to vcfutils executable; " +
                           "default: %(default)s")
     optional.add_argument('--version', action='version',
                           version='riboSeed {version}'.format(
@@ -2133,16 +2129,25 @@ def make_modest_spades_cmd(cmd, cores, memory, split=0,
                              "values less than 1!")
                 sys.exit(1)
             mem_each = int(memory / split)
+            if mem_each < 1:
+                logger.warning(
+                    "you must have at least 1gb memory allocated " +
+                    "to each spades call! allocating minimum")
+                mem_each = 1
             cores_each = int(cores / split)
             logger.info("Running spades with %d cores and %d gb memory",
                         cores_each, mem_each)
         else:
             # make sure spades doesnt hog processors or ram
             mem_each = int(memory / cores)  # should be floor
+            if mem_each < 1:
+                logger.warning("you must have at least 1gb memory allocated " +
+                             "to each spades call!  allocating minimum")
+                mem_each = 1
             cores_each = 1
             logger.info(
                 "Allocating SPAdes %dgb of memory for each of %d cores",
-                memory, cores)
+                mem_each, cores)
     return "{0}-t {1} -m {2} --careful{3}".format(
         cmdA,
         cores_each,
@@ -2349,7 +2354,6 @@ def main(args, logger=None):
                         smalt=args.smalt_exe,
                         quast=args.quast_exe,
                         bcftools=args.bcftools_exe,
-                        vcfutils=args.vcfutils_exe,
                         method=args.method)
         sys_exes.python = sys_exes.check_spades_python_version(logger=logger)
     except Exception as e:
@@ -2802,7 +2806,17 @@ def main(args, logger=None):
             pool.close()
             pool.join()
             logger.info("Sum of return codes (should be 0):")
-            logger.info(sum([r.get() for r in results]))
+            subassembly_spades_return_code = sum([r.get() for r in results])
+            if subassembly_spades_results_sum == 0:
+                logger.info(subassembly_spades_results_sum)
+            else:
+                logger.warning(
+                    "%d error(s) occurred when subassembling with SPAdes!",
+                    subassembly_spades_results_sum)
+                logger.warning(
+                    "Check the SPAdes logs to diagnose, especially if " +
+                    "this occurs with more than one subassembly. Continuing")
+
 
         # evaluate mapping (cant be multiprocessed)
         for cluster in clusters_to_process:
@@ -2957,7 +2971,11 @@ def main(args, logger=None):
         pool.join()
         logger.info("Sum of return codes (should be 0):")
         spades_results_sum = sum([r.get() for r in spades_results])
-        logger.info(spades_results_sum)
+        if spades_results_sum == 0:
+            logger.info(spades_results_sum)
+        else:
+            logger.warning(spades_results_sum)
+
     if spades_results_sum != 0:
         logger.error("%d error(s) occurred when running SPAdes!",
                      spades_results_sum)
