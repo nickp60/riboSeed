@@ -2787,14 +2787,19 @@ def main(args, logger=None):
             len([j for i in extract_convert_assemble_cmds for j in i]),
             "\n".join([j for i in extract_convert_assemble_cmds for j in i]))
         if args.serialize:
-            logger.warning("running without multiprocessing!")
+            subassembly_return_sum = 0
+            logger.info("running without multiprocessing!")
             for cmd in [j for i in extract_convert_assemble_cmds for j in i]:
                 logger.debug(cmd)
-                subprocess.run([cmd],
-                               shell=sys.platform != "win32",
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE,
-                               check=True)
+                result = subprocess.run([cmd],
+                                        shell=sys.platform != "win32",
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        check=False)
+                logger.debug(result.returncode)
+                subassembly_return_sum = \
+                    subassembly_return_sum + result.returncode
+
         else:
             pool = multiprocessing.Pool(processes=args.cores)
             results = [
@@ -2805,17 +2810,18 @@ def main(args, logger=None):
                 for cmds in extract_convert_assemble_cmds]
             pool.close()
             pool.join()
-            logger.info("Sum of return codes (should be 0):")
-            subassembly_spades_return_code = sum([r.get() for r in results])
-            if subassembly_spades_results_sum == 0:
-                logger.info(subassembly_spades_results_sum)
-            else:
-                logger.warning(
-                    "%d error(s) occurred when subassembling with SPAdes!",
-                    subassembly_spades_results_sum)
-                logger.warning(
-                    "Check the SPAdes logs to diagnose, especially if " +
-                    "this occurs with more than one subassembly. Continuing")
+            subassembly_return_sum = sum([r.get() for r in results])
+        # check return codes
+        logger.info("Sum of return codes (should be 0):")
+        if subassembly_return_sum == 0:
+            logger.info(subassembly_return_sum)
+        else:
+            logger.warning(
+                "%d error(s) occurred when converting reads and subassembling with SPAdes!",
+                subassembly_return_sum)
+            logger.warning(
+                "Check the SPAdes and  logs to diagnose, especially if " +
+                "this occurs with more than one subassembly. Continuing")
 
 
         # evaluate mapping (cant be multiprocessed)
