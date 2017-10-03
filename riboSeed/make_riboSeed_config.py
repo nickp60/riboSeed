@@ -69,7 +69,8 @@ def config_exes():
 
     # # find all optional sys requirements
     opt_programs = [("QUAST_EXE", "quast.py"),
-                    ("SMALT_EXE", "smalt")]
+                    ("SMALT_EXE", "smalt"),
+                    ("BCFTOOLS_EXE", "bcftools")]
     config_lines.extend([
         "#------------------------#",
         "##  Optional programs   ##",

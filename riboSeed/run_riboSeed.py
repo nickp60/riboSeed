@@ -368,6 +368,7 @@ def main(args):
         samtools_exe=conf.SAMTOOLS_EXE,
         smalt_exe=conf.SMALT_EXE,
         bwa_exe=conf.BWA_EXE,
+        bcftools_exe=conf.BCFTOOLS_EXE,
         quast_exe=conf.QUAST_EXE,
         verbosity=conf.SEED_VERBOSITY)
     sketch_args = Namespace(
