@@ -298,13 +298,10 @@ def getScanCmd(ref, outroot, other_args):
         return (None, ref)
 
     resulting_gb = os.path.join(outroot, "scan", "scannedScaffolds.gb")
-    return ("{0} {1} {2} --min_length 5000 -o {3}{4}".format(
-        sys.executable,
-        os.path.join(
-            os.path.dirname(__file__),
-            "riboScan.py"),
+    return ("ribo scan {0} --min_length 5000 -o {1}{2}".format(
         ref,
-        os.path.join(outroot, "scan"), other_args
+        os.path.join(outroot, "scan"),
+        other_args
     ), resulting_gb)
 
 
@@ -313,32 +310,26 @@ def getSelectCmd(gb, outroot, other_args):
                                       "riboSelect_grouped_loci.txt")
     if other_args != "":
         other_args = " " + other_args  # pad with space for easier testing
-    return ("ribo select {2} -o {3}{4}".format(
-        sys.executable,
-        os.path.join(
-            os.path.dirname(__file__),
-            "riboSelect.py"),
+    return ("ribo select {0} -o {1}{2}".format(
         gb,
-        os.path.join(outroot, "select"), other_args
+        os.path.join(outroot, "select"),
+        other_args
     ), resulting_clusters)
 
 
 def getSnagCmd(scangb, cluster, flank, outroot, other_args=""):
     if other_args != "":
         other_args = " " + other_args  # pad with space for easier testing
-    return ("ribo snag {2} {3} -l {4} --just_extract -o {5}{6}".format(
-        sys.executable,
-        os.path.join(
-            os.path.dirname(__file__),
-            "riboSnag.py"),
-        scangb, cluster,
+    return ("ribo snag {0} {1} -l {2} --just_extract -o {3}{4}".format(
+        scangb,
+        cluster,
         flank,
-        os.path.join(outroot, "snag"), other_args
+        os.path.join(outroot, "snag"),
+        other_args
     ), os.path.join(outroot, "snag"))
 
 
 def check_scan_select_snag_retruncodes(subreturns, logger):
-
     if subreturns[0].returncode != 0:
         logger.error("error with riboScan! Check the riboScan log files")
         sys.exit(1)
@@ -348,7 +339,6 @@ def check_scan_select_snag_retruncodes(subreturns, logger):
     if subreturns[2].returncode != 0:
         logger.info("error with riboSnag! This often happens if " +
                     "the assembly doesnt reconstruct any rDNAs.")
-        pass
 
 
 def main(args, logger=None):

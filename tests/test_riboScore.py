@@ -66,7 +66,7 @@ class riboScoreTestCase(unittest.TestCase):
     def test_getScanCmd(self):
         res = getScanCmd(ref="test.fa", outroot="outdir", other_args="")
         res2 = getScanCmd(ref="test.gb", outroot="outdir", other_args="")
-        ref_cmd = "{0} {1} test.fa --min_length 5000 -o outdir{2}scan".format(
+        ref_cmd = "ribo scan test.fa --min_length 5000 -o outdir{2}scan".format(
             sys.executable,
             os.path.join("..", "..",
                          os.path.dirname(os.path.dirname(__file__)),

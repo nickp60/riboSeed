@@ -58,28 +58,21 @@ root_dir = os.path.join(os.getcwd(), "integration_test_results")
 os.makedirs(root_dir, exist_ok=True)
 cmds = [
     # riboScan
-    "ribo scan {2}{3} -o {4} -k bac".format(
-        sys.executable,
-        shutil.which("riboScan.py"),
+    "ribo scan {0}{1} -o {2} -k bac".format(
         os.path.join(os.path.dirname(fasta), ""),
-        os.path.basename(fasta), os.path.join(root_dir, "scan", "")),
+        os.path.basename(fasta),
+        os.path.join(root_dir, "scan", "")),
     # riboSelect
-    "ribo select {2}scannedScaffolds.gb -o {3}".format(
-        sys.executable,
-        shutil.which("riboSelect.py"),
+    "ribo select {0}scannedScaffolds.gb -o {1}".format(
         os.path.join(root_dir, "scan", ""),
         os.path.join(root_dir, "select","")),
     # riboSnag
-    "ribo snag {2}scannedScaffolds.gb {3}riboSelect_grouped_loci.txt -o {4} ".format(
-        sys.executable,
-        shutil.which("riboSnag.py"),
+    "ribo snag {0}scannedScaffolds.gb {1}riboSelect_grouped_loci.txt -o {2}".format(
         os.path.join(root_dir, "scan", ""),
         os.path.join(root_dir, "select", ""),
         os.path.join(root_dir, "snag", "")),
     # riboSeed
-    "ribo seed -r {2}scannedScaffolds.gb {3}riboSelect_grouped_loci.txt -o {4} -F {5} -R {6} --serialize -v 1 ".format(
-        sys.executable,
-        shutil.which("riboSeed.py"),
+    "ribo seed -r {0}scannedScaffolds.gb {1}riboSelect_grouped_loci.txt -o {2} -F {3} -R {4} --serialize -v 1 ".format(
         os.path.join(root_dir, "scan", ""),
         os.path.join(root_dir, "select", ""),
         os.path.join(root_dir, "seed", ""),
@@ -87,11 +80,12 @@ cmds = [
         fastq2)
 ]
 
-ribo_run_cmd = "ribo run -r {0} -o {1} -F {2} -R {3} --serialize -v 1".format(
-    fasta,
-    os.path.join(root_dir, "run"),
-    fastq1,
-    fastq2)
+ribo_run_cmd = \
+    "ribo run -r {0} -o {1} -F {2} -R {3} --serialize -v 1 --score".format(
+        fasta,
+        os.path.join(root_dir, "run"),
+        fastq1,
+        fastq2)
 print("running " + ribo_run_cmd)
 
 subprocess.run([ribo_run_cmd],

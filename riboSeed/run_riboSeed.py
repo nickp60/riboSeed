@@ -147,10 +147,15 @@ def get_args():  # pragma: no cover
                           default=False,
                           help="Don't do an assembly, just generate the long" +
                           " read 'seeds'; default: %(default)s")
-    optional.add_argument("--score_vis", dest='RUN_SCORE_VIS',
+    optional.add_argument("--score", dest='RUN_SCORE',
                           action="store_true",
                           default=False,
-                          help="run riboScore and riboSketch too! " +
+                          help="run riboScore too! " +
+                          "default: %(default)s")
+    optional.add_argument("--sketch", dest='RUN_SKETCH',
+                          action="store_true",
+                          default=False,
+                          help="run riboSketch too! " +
                           "default: %(default)s")
     optional.add_argument("-l", "--flanking_length",
                           help="length of flanking regions, in bp; " +
@@ -424,16 +429,16 @@ def main(args):
         rsel.main(select_args, logger)
     logger.info("\nrunning riboSeed\n")
     rseed.main(seed_args, logger)
-    if conf.RUN_SCORE_VIS:
+    if conf.RUN_SKETCH:
         if conf.MAUVE_JAR is not None:
             logger.info("\nrunning riboSketch\n")
             rsketch.main(sketch_args, logger=logger)
         else:
             logger.info(
-                "Skipping riboScore: no Mauve.jar found. To fix, " +
-                " add the path to Mauve.jar in the config file from this " +
+                "Skipping riboSketch: no Mauve.jar found. To fix, " +
+                "add the path to Mauve.jar in the config file from this " +
                 "run, and re-run with -c path/to/config.py")
-
+    if conf.RUN_SCORE:
         if conf.BLAST_EXE is not None:
             logger.info("\nrunning riboScore\n")
             rscore.main(score_args, logger=logger)
