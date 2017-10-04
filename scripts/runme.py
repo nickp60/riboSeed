@@ -87,7 +87,7 @@ cmds = [
         fastq2)
 ]
 
-ribo_run_cmd = "ribo run {0} -o {1} -F {2} -R {3} --serialize -v 1".format(
+ribo_run_cmd = "ribo run -r {0} -o {1} -F {2} -R {3} --serialize -v 1".format(
     fasta,
     os.path.join(root_dir, "run"),
     fastq1,

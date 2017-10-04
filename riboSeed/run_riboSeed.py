@@ -43,8 +43,11 @@ def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
         prog="ribo run",
         description="Run the riboSeed pipeline of scan, select, seed, " +
-        "sketch, and score.  Uses a config file to wrangle all the args not"+
-        "available via these commandline args.",
+        "sketch, and score.  Uses a config file to wrangle all the args not " +
+        "available via these commandline args.\n\n\n" +
+        "This can either be run by providing (as minimum) a reference, " +
+        "some reads, and an output directory; or, if you have a completed " +
+        "config file, you can run it with just that.",
         formatter_class=argparse.MetavarTypeHelpFormatter,
         add_help=False)  # to allow for custom help
     optional = parser.add_argument_group('optional arguments')
@@ -52,13 +55,14 @@ def get_args():  # pragma: no cover
                           dest="REFERENCE_FASTA", action="store",
                           help="path to a (multi)fasta or a directory " +
                           "containing one or more chromosomal " +
-                          "sequences in fasta format.  Required, unless" +
-                          "using a config file",
+                          "sequences in fasta format. Required, unless " +
+                          "using a config file", type=str,
+                          metavar="reference.fasta",
                           default=None)
     optional.add_argument("-c", "--config", dest='RUN_CONFIG', action="store",
                           help="config file; if none given, create one; " +
                           "default: %(default)s", default=os.getcwd(),
-                          type=str, required=False,
+                          type=str, required="-r" not in sys.argv,
                           metavar="config_file")
     optional.add_argument("-o", "--output", dest='RUN_OUTPUT', action="store",
                           help="output directory; " +
