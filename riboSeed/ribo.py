@@ -34,6 +34,7 @@ helpmsg = [
     " -sketch   plot results from a de fere novo assembly",
     " -score    score batches of assemblies with BLASTn",
     " -swap     swap contigs from assemblies",
+    " -config   write out a blank config file to be used with `run`",
     ""
 ]
 

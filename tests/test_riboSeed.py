@@ -17,7 +17,7 @@ from Bio import SeqIO
 from argparse import Namespace
 
 
-from pyutilsnrw.utils3_5 import md5, get_number_mapped
+from pyutilsnrw.utils3_5 import md5, get_number_mapped, check_version_from_cmd
 
 from riboSeed.classes import SeedGenome, NgsLib, LociMapping, Exes
 from riboSeed.riboSeed import \
@@ -929,6 +929,26 @@ class riboSeedShallow(unittest.TestCase):
 
     def test_bool_run_quast_false_none(self):
         self.assertFalse(bool_run_quast(None, logger))
+
+    def test_bool_run_quast_true_regex(self):
+        """ this just check the regex
+        """
+        pattern=r".* v(?P<version>[^\n,]+)"
+        import re
+        line = 1
+        result = str.encode("QUAST v4.4\n")
+        printout = result.decode("utf-8").split("\n")
+        logger.warning(printout)
+        this_version = None
+        try:
+            m = re.search(pattern, printout[line - 1])
+        except IndexError as e:
+            raise e
+        print (m)
+        if m:
+            this_version = m.group('version').strip()
+        logger.warning("this_version: %s", this_version)
+        self.assertEqual("4.4", this_version)
 
     # @patch('subprocess.run')
     # def test_bool_run_quast_false_quast45(self, process_mock):

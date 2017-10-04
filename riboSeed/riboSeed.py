@@ -847,66 +847,66 @@ def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
                             ref_fasta=ref_fasta))
 
 
-def check_version_from_cmd2(
-        exe,
-        cmd, line,
-        pattern=r"^__version__ = '(?P<version>[^']+)'$",
-        where='stderr',
-        min_version="0.0.0", logger=None,
-        coerce_two_digit=False):
-    """the guts have been stolen from pyani; returns version
-    from an system call that should return a version string.
-    Hacky, but better than nothing.
-    line arg is 1-indexed
-    .strip() is called on match to remove whitspaces
+# def check_version_from_cmd2(
+#         exe,
+#         cmd, line,
+#         pattern=r"^__version__ = '(?P<version>[^']+)'$",
+#         where='stderr',
+#         min_version="0.0.0", logger=None,
+#         coerce_two_digit=False):
+#     """the guts have been stolen from pyani; returns version
+#     from an system call that should return a version string.
+#     Hacky, but better than nothing.
+#     line arg is 1-indexed
+#     .strip() is called on match to remove whitspaces
 
-    This will be removed when pyutilsnrw v0.1.1 is released
-    """
-    # exe_path = shutil.which(exe)
-    # if exe_path is None:
-    #     raise ValueError("executable %s not found!" % exe)
-    from distutils.version import StrictVersion
-    result = subprocess.run("{0} {1}".format(exe, cmd),
-                             # is this a securiy risk?
-                            shell=sys.platform != "win32",
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            check=False)
-    logger.debug(result)
-    try:
-        if where == 'stderr':
-            printout = result.stderr.decode("utf-8").split("\n")
-        elif where == 'stdout':
-            printout = result.stdout.decode("utf-8").split("\n")
-        else:
-            raise ValueError("where option can only be 'stderr' or 'stdout'")
-    except Exception as e:
-        raise e
-    if logger:
-        logger.debug(printout)
-    this_version = None
-    try:
-        m = re.search(pattern, printout[line - 1])
-    except IndexError as e:
-        raise e
-    if m:
-        this_version = m.group('version').strip()
-    if logger:
-        logger.debug("this_version: %s", this_version)
-    if coerce_two_digit:
-        this_version = "0.{0}".format(this_version)
-        if logger:
-            logger.debug("coerced this_version: %s", this_version)
-    if this_version is None:
-        raise ValueError("No version was captured with pattern" +
-                         "{0}".format(pattern))
-    try:
-        if StrictVersion(this_version) < StrictVersion(min_version):
-            raise ValueError("{0} version {1} must be greater than {2}".format(
-                cmd, this_version, min_version))
-    except Exception as e:
-        raise e
-    return this_version
+#     This will be removed when pyutilsnrw v0.1.1 is released
+#     """
+#     # exe_path = shutil.which(exe)
+#     # if exe_path is None:
+#     #     raise ValueError("executable %s not found!" % exe)
+#     from distutils.version import StrictVersion
+#     result = subprocess.run("{0} {1}".format(exe, cmd),
+#                              # is this a securiy risk?
+#                             shell=sys.platform != "win32",
+#                             stdout=subprocess.PIPE,
+#                             stderr=subprocess.PIPE,
+#                             check=False)
+#     logger.debug(result)
+#     try:
+#         if where == 'stderr':
+#             printout = result.stderr.decode("utf-8").split("\n")
+#         elif where == 'stdout':
+#             printout = result.stdout.decode("utf-8").split("\n")
+#         else:
+#             raise ValueError("where option can only be 'stderr' or 'stdout'")
+#     except Exception as e:
+#         raise e
+#     if logger:
+#         logger.debug(printout)
+#     this_version = None
+#     try:
+#         m = re.search(pattern, printout[line - 1])
+#     except IndexError as e:
+#         raise e
+#     if m:
+#         this_version = m.group('version').strip()
+#     if logger:
+#         logger.debug("this_version: %s", this_version)
+#     if coerce_two_digit:
+#         this_version = "0.{0}".format(this_version)
+#         if logger:
+#             logger.debug("coerced this_version: %s", this_version)
+#     if this_version is None:
+#         raise ValueError("No version was captured with pattern" +
+#                          "{0}".format(pattern))
+#     try:
+#         if StrictVersion(this_version) < StrictVersion(min_version):
+#             raise ValueError("{0} version {1} must be greater than {2}".format(
+#                 cmd, this_version, min_version))
+#     except Exception as e:
+#         raise e
+#     return this_version
 
 
 def fiddle_with_spades_exe(spades_exe, logger=None):
@@ -928,7 +928,7 @@ def fiddle_with_spades_exe(spades_exe, logger=None):
     logger.debug("Python executable: %s", sys.executable)
     logger.debug("SPAdes executable: %s", spades_exe)
     try:
-        spades_verison = check_version_from_cmd2(
+        spades_verison = check_version_from_cmd(
             exe=sys.executable + " " + spades_exe,
             cmd='--version', line=1, where='stderr',
             pattern=r"\s*v(?P<version>[^(]+)",
@@ -942,7 +942,7 @@ def fiddle_with_spades_exe(spades_exe, logger=None):
         # if python 3.5 or 3.6, we should try to use python3.5 explicitly
         # if the user has it
         try:
-            spades_verison = check_version_from_cmd2(
+            spades_verison = check_version_from_cmd(
                 exe=shutil.which("python3.5") + " " + spades_exe,
                 cmd='--version', line=1, where='stderr',
                 pattern=r"\s*v(?P<version>[^(]+)",
@@ -1745,12 +1745,14 @@ def bool_run_quast(quast_exe, logger):
                        "skipping QUAST evalutation")
         return False
     if quast_exe is None:
+        logger.warning("QUAST executable not provided or available. We are " +
+                       "skipping QUAST evalutation")
         return False
     try:
-        quast_version = check_version_from_cmd2(
+        quast_version = check_version_from_cmd(
             exe=sys.executable + " " + quast_exe,
             cmd='--version', line=1, where='stderr',
-            pattern=r"\s*v(?P<version>[^(]+),",
+            pattern=r".* v(?P<version>[^\n,]+)",
             min_version="4.0", logger=logger)
         if quast_version =="4.5":
             logger.warning("Due to bugs in QUAST 4.5, we will not run QUAST")
@@ -1758,9 +1760,9 @@ def bool_run_quast(quast_exe, logger):
 
     except Exception as e:
         logger.error(e)
+        logger.warning("Error occured while trying to check QUAST version." +
+                       "We are skipping QUAST evalutation")
         return False
-
-
     return True
 
 
@@ -2363,7 +2365,7 @@ def main(args, logger=None):
     logger.debug("All required system executables found!")
     logger.debug(str(sys_exes.__dict__))
     try:
-        samtools_verison = check_version_from_cmd(
+        samtools_version = check_version_from_cmd(
             exe=sys_exes.samtools, cmd='', line=3, where='stderr',
             pattern=r"\s*Version: (?P<version>[^(]+)",
             min_version=SAMTOOLS_MIN_VERSION, logger=logger)
@@ -2371,7 +2373,7 @@ def main(args, logger=None):
         logger.info(e)
         logger.info("perhaps conda is giving a build warning?")
         try:
-            samtools_verison = check_version_from_cmd(
+            samtools_version = check_version_from_cmd(
                 exe=sys_exes.samtools, cmd='', line=4, where='stderr',
                 pattern=r"\s*Version: (?P<version>[^(]+)",
                 min_version=SAMTOOLS_MIN_VERSION, logger=logger)
@@ -2379,7 +2381,10 @@ def main(args, logger=None):
             logger.error(f)
             sys.exit(1)
 
-    logger.debug("samtools version: %s", samtools_verison)
+    logger.debug("samtools version: %s", samtools_version)
+    if samtools_version.startswith("1.5"):
+        logger.error("Cannot use samtools 1.5! see samtools github issue #726")
+        sys.exit(1)
     # check bambamc is installed proper if using smalt
     if args.method == "smalt":
         logger.info("SMALT is the selected mapper")

@@ -27,7 +27,7 @@ def get_args():  # pragma: no cover
                         help="name of config file; " +
                         "default: timestamped", default=None,
                         type=str, required=False)
-    args = parser.parse_args()
+    args = parser.parse_args(sys.argv[2:])
     return args
 
 

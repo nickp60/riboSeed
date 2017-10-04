@@ -45,17 +45,21 @@ def get_args():  # pragma: no cover
         description="Run the riboSeed pipeline of scan, select, seed, " +
         "sketch, and score.  Uses a config file to wrangle all the args not"+
         "available via these commandline args.",
+        formatter_class=argparse.MetavarTypeHelpFormatter,
         add_help=False)  # to allow for custom help
-    parser.add_argument("REFERENCE_FASTA", action="store",
-                        # dest="RUN_REFERENCE_FASTA",  # this causes double def
-                        help="either a (multi)fasta or a directory " +
-                        "containing one or more chromosomal " +
-                        "sequences in fasta format")
     optional = parser.add_argument_group('optional arguments')
+    optional.add_argument("-r", "--reference_fasta",
+                          dest="REFERENCE_FASTA", action="store",
+                          help="path to a (multi)fasta or a directory " +
+                          "containing one or more chromosomal " +
+                          "sequences in fasta format.  Required, unless" +
+                          "using a config file",
+                          default=None)
     optional.add_argument("-c", "--config", dest='RUN_CONFIG', action="store",
                           help="config file; if none given, create one; " +
                           "default: %(default)s", default=os.getcwd(),
-                          type=str, required=False)
+                          type=str, required=False,
+                          metavar="config_file")
     optional.add_argument("-o", "--output", dest='RUN_OUTPUT', action="store",
                           help="output directory; " +
                           "default: %(default)s",
@@ -63,19 +67,21 @@ def get_args():  # pragma: no cover
                               os.getcwd(),
                               str(time.strftime("%Y-%m-%dT%H:%M") +
                                   "_riboSeed_pipeline_results"), ""),
-                          type=str)
+                          type=str,
+                          metavar="/output/dir/")
     optional.add_argument("-n", "--experiment_name",
                           dest='RUN_EXPERIMENT_NAME',
                           action="store",
                           help="prefix for results files; " +
                           "default: inferred",
-                          default=None, type=str)
-    # if this is involed, an empty config file is generated
-    optional.add_argument("-e", "--write_empty_config", dest='empty_config',
-                          action=JustWriteConfig,
-                          help="write out a empty config file for editing, " +
-                          "and exit",
-                          nargs='?')
+                          default=None, type=str,
+                          metavar="experiment_name")
+    # # if this is involed, an empty config file is generated
+    # optional.add_argument("-e", "--write_empty_config", dest='empty_config',
+    #                       action=JustWriteConfig,
+    #                       help="write out a empty config file for editing, " +
+    #                       "and exit",
+    #                       nargs='?')
 
     # riboScan args
     optional.add_argument("-K", "--Kingdom", dest='RUN_KINGDOM',
@@ -89,7 +95,8 @@ def get_args():  # pragma: no cover
                           dest="RUN_SPECIFIC_FEATURES",
                           help="colon:separated -- specific features"
                           "; default: %(default)s",
-                          default='16S:23S:5S', type=str)
+                          default='16S:23S:5S', type=str,
+                          metavar='16S:23S:5S')
     #riboSelect args
     optional.add_argument("--clusters",
                           help="number of rDNA clusters;"
@@ -110,14 +117,18 @@ def get_args():  # pragma: no cover
                           default=None,
                           type=str)
     optional.add_argument("-F", "--fastq1", dest='RUN_FASTQ1', action="store",
-                          help="forward fastq reads, can be compressed",
-                          type=str, default=None)
+                          help="path to forward fastq file, can be compressed",
+                          type=str, default=None,
+                          metavar="reads_F.fq")
     optional.add_argument("-R", "--fastq2", dest='RUN_FASTQ2', action="store",
-                          help="reverse fastq reads, can be compressed",
-                          type=str, default=None)
+                          help="path to reverse fastq file, can be compressed",
+                          type=str, default=None,
+                          metavar="reads_R.fq")
     optional.add_argument("-S1", "--fastq_single1", dest='RUN_FASTQS1',
                           action="store",
-                          help="single fastq reads", type=str, default=None)
+                          help="path to single fastq file", type=str,
+                          default=None,
+                          metavar="reads_S.fq")
     optional.add_argument("--linear",
                           help="if genome is known to not be circular and " +
                           "a region of interest (including flanking bits) " +
@@ -125,7 +136,8 @@ def get_args():  # pragma: no cover
                           "seqence past chromosome origin forward by " +
                           "--padding; " +
                           "default: %(default)s",
-                          default=False, dest="RUN_LINEAR", action="store_true")
+                          default=False, dest="RUN_LINEAR",
+                          action="store_true")
     optional.add_argument("-j", "--just_seed", dest='RUN_JUST_SEED',
                           action="store_true",
                           default=False,
@@ -147,19 +159,19 @@ def get_args():  # pragma: no cover
                           "21,33,55,77,99,127. Can be set to 'auto', where " +
                           "SPAdes chooses.  We ensure kmers are not " +
                           "too big or too close to read length" +
-                          "; default: %(default)s")
+                          "; default: %(default)s", metavar="21,33,55,77,99")
     optional.add_argument("-p", "--pre_kmers", dest='RUN_PRE_KMERS',
                           action="store",
                           default="21,33,55,77,99", type=str,
                           help="kmers used during seeding assemblies, " +
                           "separated bt commas" +
-                          "; default: %(default)s")
+                          "; default: %(default)s", metavar="21,33,55,77,99")
     optional.add_argument("-d", "--min_flank_depth",
                           help="a subassembly won't be performed if this " +
                           "minimum depth is not achieved on both the 3' and" +
                           "5' end of the pseudocontig. " +
                           "default: %(default)s",
-                          default=0, dest="RUN_MIN_FLANKING_DEPTH", type=float)
+                          default=0, dest="RUN_MIN_FLANKING_DEPTH", type=int)
     optional.add_argument("--clean_temps", dest='RUN_CLEAN_TEMPS',
                           default=False, action="store_true",
                           help="if --clean_temps, mapping files will be " +
@@ -224,6 +236,7 @@ def detect_or_create_config(config_file, output_root, theseargs,
     """
     assert logger is not None, "must use logging"
     if not os.path.isfile(config_file):
+        logger.debug("creating config file")
         make_config_args = Namespace(
             outdir=output_root,
             name=newname)
@@ -231,7 +244,8 @@ def detect_or_create_config(config_file, output_root, theseargs,
         add_these_params_to_config(config_file=config_file,
                                    args=theseargs)
     else:
-        pass
+        logger.info("using provided config file! ignoring any other args" +
+                    "provided via commandline")
     return config_file
 
 
@@ -288,11 +302,12 @@ def main(args):
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
         logger.debug("%s: %s", k, str(v))
-
-    # detect system attributes if not given expressly
-    if args.RUN_CORES is None:
-        args.RUN_CORES = multiprocessing.cpu_count()
-        logger.info("Using %i cores", args.RUN_CORES)
+    # if not using a config, groom some of the arguments
+    if args.REFERENCE_FASTA is not None:
+        # detect system attributes if not given expressly
+        if args.RUN_CORES is None:
+            args.RUN_CORES = multiprocessing.cpu_count()
+            logger.info("Using %i cores", args.RUN_CORES)
 
     # if starting a fresh run, create a config file.  If not, read it in
     args.RUN_CONFIG = detect_or_create_config(
