@@ -104,9 +104,44 @@ Rscript scripts/plotSnagResults.R ./manuscript_results/entropy/sakai_snag_mafft 
 This is pretty straightforward.
 
 
-## Running Simulated genome analysis
+## Running artificial genome analysis
 We have written a convenience script called compareColiKleb.sh.  It uses seeded random read generation (with pirs) to make a read set for an  artificial genome created from the rDNAs of E. coli sakai and the surrounding 5kb flaking reigons on either side.  E. coli k12 is then used as a reference to assemble the reads with riboSeed.  We do this 10 times, the results are scored, and then plotted with the script plotSimulatedGenome
 
 ```
 for i in {1..10}; do ./compareColiKleb.sh $i; done
+```
+
+
+## Running Simulated Genomes for E. coli and Klebsiella
+
+in the scripts folder, you will find two scripts, colisimulation.sh, and klebSimulation.  These orchestrate the running of PIRS and riboSeed.  They are both run as follows:
+```
+for i in {1..10}; do ./coliSimulation.sh $i; done
+```
+The results are gathered from the score_reports directory.  we put the combined score reports in folders called "coli" and "kleb", in order to keep track of them.  To generate  the plot, the script plotSimColiKleb.sh was run to extract the relevent data and plot. it is run from RStudio.  Sorry about that...
+
+
+## Degenerate sequence sequence.
+
+The script that orchestrates this can be found in ./scripts/runDegenerate.sh.  Beware, this is one of the more brain-twisting scripts in the pacakge, so here goes:
+
+It takes a single argument that acts as the replicate number an d also the random seed base (SEED).  The first step is to generate a toy genome with the procedure described previously.  Reads are simulared using PIRS (seeded with SEED).
+
+We empirically determined a good range to test, based off a which gave good resolution for both mutations i the flanking regions and throughout.  This range is (currently) :
+
+FREQS=( 0.0 0.0025 0.0050 0.0075 0.0100 0.0150 0.0200 0.0250 0.0500 0.0750 0.1000 0.1250 0.1500 0.1750 0.2000 0.2250 0.2500 0.2750 0.3000 )
+
+Then, we generate some SUBSEEDS using seedRand.py, one for each of our frequencies.  For each of these, we use riboSim to mutate the flanking regions (or entire sequence) of our toyGenome using riboSim, and concatenating the sequences back together.  This results in a pseudorandomly mutated sequence with a desired frequency.
+
+We then try to run riboSeed to assemble the reads we generated earlier using a progressively worse (more highly mutated)reference sequence.
+```
+for i in {1..1000}; do ~/GitHub/riboSeed/scripts/runDegenerate.sh $i; done
+```
+This takes a while (about 15 frequences, 100 replicates, etc).
+
+
+To generate the plots, use scripts/plotDegenResults:
+
+```
+Rscript plotDegenResults.R -r path/to/combinedresults.txt -o ./output_dir/
 ```

@@ -8,7 +8,13 @@ require(argparse, quietly = T, warn.conflicts = F)
 require(reshape2, quietly = T, warn.conflicts = F)
 require(dplyr)
 require(tidyr)
+help <- "
+This script is used to plot the results from runDegenerate.  As an input, it takes a file containing the combined ribo score reports, and requires an output directory.
 
+USAGE:
+Rscript plotDegenResults.R -r path/to/combinedresults.txt -o ./output_dir/
+
+"
 ###################################################################
 # create parser object
 parser <- ArgumentParser()
@@ -25,6 +31,10 @@ parser$add_argument("-o", "--out_dir", action="store",
                     dest="out_folder", help="output_directory")
 
 args <- parser$parse_args()
+if (is.null(args$out_folder)){
+  message(help)
+  stop("Must provide output path")
+}
 print(args)
 if (dir.exists(args$out_folder)){
   print("output dir exists!")
@@ -42,11 +52,14 @@ freqs = c(0.0, 0.0025, 0.0050, 0.0075, 0.0100, 0.0150, 0.0200, 0.0250, 0.0500, 0
 str(reportsdf)
 temp_new_table <- read.csv2(
   args$combined_reports, sep="\t", stringsAsFactors = F, header = F, col.names = names)
-# temp_new_table <- read.csv2(
-#   "~/GitHub/riboSeed/2017-07-13-degen-results/2017-07-13-all-reports.txt", sep="\t", stringsAsFactors = F, header = F, col.names = names)
+# temp_new_table <- read.csv2("~/GitHub/riboSeed/2017-10-09-degenerate_1_to_50/2017-10-09-combined_degen_reports.txt", sep="\t", stringsAsFactors = F, header = F, col.names = names)
 (temp_new_table$freq <- as.numeric(gsub("(.*)/seed_(.*?)/mauve", "\\2", temp_new_table$sourcepath)))
 (temp_new_table$where <- factor(gsub("(.*)_degenerate_output_(.*?)_(.*)", "\\2", temp_new_table$sourcepath)))
 (temp_new_table$seed <- as.numeric(gsub("(.*)_degenerate_output_(.*?)_(.*?)/(.*)", "\\3", temp_new_table$sourcepath)))
+
+# remove de novo assemblies!
+temp_new_table <- temp_new_table[grepl("de_fere_novo", temp_new_table$assembly),]
+
 temp_new_table$sourcepath <-NULL
 temp_new_table$assembly <-NULL
 
@@ -76,9 +89,8 @@ for (where in c("ALL", "FLANK")){
   }
 }
   
-    
-write.csv(reportsdf, file = file.path(args$out_folder, "test"))
 reportsdf <- temp_new_table
+write.csv(reportsdf, file = file.path(args$out_folder, "test"))
 str(reportsdf)
 reportsdf$value <- reportsdf$good
 tall <- reportsdf[,!colnames(reportsdf) %in% c("bad",  "ambiguous", "total", "good") ]
@@ -124,13 +136,12 @@ labelsdf <- data.frame(x1=c(0,.05, .15),
 )
 labelss <- c()
 for (freq in freqs){
-  if (freq %in% c(0.0, 0.1, 0.2, 0.3)){
+  if (freq %in% c(0.0, .05, 0.1, 0.2, 0.3)){
     labelss <- c(labelss, freq)
   } else{
     labelss <- c(labelss, "")
   }
 }
-labelss
 
 line_lin <- ggplot(tall,#[tall$freq != 0, ],
                     aes(x=freq, color=where, y=value))+ 

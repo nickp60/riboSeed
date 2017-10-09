@@ -207,9 +207,9 @@ def get_args():  # pragma: no cover
                           "subassembly. trusted: SPAdes will use the seed" +
                           " sequences as a --trusted-contig; untrusted: " +
                           "SPAdes will treat as --untrusted-contig. " +
-                          "infer: if mapping " +
-                          "percentage over 80%: 'trusted', else 'untrusted'" +
-                          "See SPAdes docs for details.  default: infer")
+                          "infer: if mapping percentage " +
+                          "over 80%%, 'trusted'; else 'untrusted'." +
+                          " See SPAdes docs for details.  default: infer")
     optional.add_argument("--clean_temps", dest='clean_temps',
                           default=False, action="store_true",
                           help="if --clean_temps, mapping files will be " +
