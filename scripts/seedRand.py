@@ -27,8 +27,25 @@ def get_args():  # pragma: no cover
     args = parser.parse_args()
     return args
 
+
+def main(args=None):
+    """Generate a certain amount of pseudorandom numbers
+
+    Args:
+        args: argparse Namespace
+    Returns:
+        (str): 0 if all is well, 1 if error
+
+    """
+    try:
+        random.seed(args.seed)
+        for i in range(0, args.n):
+            sys.stdout.write(str(random.randint(1, 9999)) + "\n")
+        return 0
+    except Exception as e:
+        sys.stderr.write(e)
+        return 1
+
 if __name__ == "__main__":
     args = get_args()
-    random.seed(args.seed)
-    for i in range(0, args.n):
-        sys.stdout.write(str(random.randint(1, 9999)) + "\n")
+    main(args)

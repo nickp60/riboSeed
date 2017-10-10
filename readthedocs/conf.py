@@ -31,6 +31,7 @@ sys.path.append(os.path.join(os.path.dirname(__name__), '..'))
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinxcontrib.napoleon',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',

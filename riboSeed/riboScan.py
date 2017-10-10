@@ -114,6 +114,15 @@ def last_exception():
 
 def parse_fasta_header(first_line):
     """ return accession from first line of a fasta file as a string
+
+    Args:
+        first_line (str): The first line of a file
+    Raise:
+        ValueError: if first_line doesnt start with a ">"
+        ValueError: if regex to extract accession fails to get a group
+    Returns:
+        str: name of the accession
+
     """
     if not first_line.startswith(">"):
         raise ValueError("A valid fasta must start with a '>'!")
@@ -134,7 +143,17 @@ def parse_fasta_header(first_line):
 
 def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, threads=1):
     """ construct a system call to barrnap
-    retruns a string
+
+    Args:
+        infasta (str): path to fasta file
+        outgff (str): name of gff file to create
+        exe (str): path to system executable for barrnap
+        thresh (float): Proportional length threshold to reject prediction
+        kingdom (str): bac, euk, arc, or mito
+        threads (int): number of threads to use
+    Returns:
+        (str): command
+
     """
     assert thresh > 0 and thresh < 1, "Thresh must be between 0 and 1!"
     if exe.endswith("py"):
@@ -156,7 +175,13 @@ def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, threads=1):
 
 def add_locus_tags_to_gff(gff, acc):
     """ Add fake locus tags to gff file in place.
-    retrun path to new gff file
+
+    Args:
+        gff (str): path to gff file
+        acc (str): accession to label the loci with
+    Returns:
+        retrun path to new gff file (the old one, but with _tagged at the end
+
     """
     LOCUS = 0
     gff_list = []
@@ -181,8 +206,16 @@ def add_locus_tags_to_gff(gff, acc):
 
 
 def combine_gbs(finalgb, gb_list):
-    """ pretty self explanatory - it combines files,
+    """ pretty self explanatory - it combines files
+
     it skips lines starting with "##"
+
+    Args:
+        finalgb (str): path to ourput file
+        gb_list (str): list of other file paths to be combined
+    Returns:
+        None: doesn't return something
+
     """
     with open(finalgb, 'w') as outfile:
         for idx, fname in enumerate(gb_list):
@@ -194,8 +227,20 @@ def combine_gbs(finalgb, gb_list):
 
 
 def append_accession_and_version(accession, ingb, finalgb):
-    """ add accession, versionm and GI to a gb file from seqret
-    This allows it to be read in by biopython easier.
+    """ add accession, version and GI to a gb file
+
+    Biopython requires a version and an accession to parse correctly.
+    This adds it
+
+    Args:
+        accession (str): Accession string to add
+        ingb (str): path to initial genbank file
+        finalgb (str): path to resulting genbank file
+    Returns:
+        None
+    Raises:
+        None
+
     """
     with open(finalgb, 'w') as outfile:
         with open(ingb) as infile:
@@ -211,7 +256,20 @@ def append_accession_and_version(accession, ingb, finalgb):
 
 
 def make_seqret_cmd(exe, outgb, ingff, infasta):
-    """ onstruct system call to seqret from EMBOSS
+    """construct system call to seqret to make genbank file
+
+    Construct a genbank file from a gff and fasta file
+
+    Args:
+        exe (str): path to seqret executable or just the name (seqret)
+        outgb (str): path to resulting genbank file
+        ingff (str): path to gff(3?) file from barrnap
+        infasta (str): path to fasta file
+    Returns:
+        (str): command
+    Raises:
+        None
+
     """
     assert shutil.which(exe) is not None, "seqret executable not found!"
     cmd = str(
@@ -226,8 +284,17 @@ def make_seqret_cmd(exe, outgb, ingff, infasta):
 
 
 def checkSingleFasta(fasta, logger):
-    """ raise systen exit if multiple entries in fasta.
+    """raise systen exit if multiple entries in fasta.
+
     This is mostly depreciated, but left in place juuuust in case
+
+    Args:
+        fasta (type): path to file
+    Returns:
+        None
+    Raises:
+        SystemExit: thrown if fasta has multiple entries
+
     """
     with open(fasta, 'r') as f:
         counter = 0
@@ -242,9 +309,23 @@ def checkSingleFasta(fasta, logger):
 
 
 def getFastas(inp, output_root, name, logger):
-    """ return list of fasta files
-    given an input that could either be a single fasta, multifasta,
+    """return list of fasta files
+
+    If the input is a multifasta, a new directory is created to contain
+    single sequence files.  given an input that could either
+    be a single fasta, multifasta,
     or a directory, retrun the appropriate files
+
+    Args:return list of fasta files
+        inp (str): either the path to a file or a directory
+        output_root: path to where the contigs dir will be created, if needed
+        name (str): accession for resulting contig files or sequences
+    Returns:
+        (list): paths to sequences
+    Raises:
+        SystemExit: if file is empty or path doesnt exist
+        SystemExit: if no files end in *fasta or *fa
+
     """
     if not os.path.isdir(os.path.expanduser(inp)):
         if not os.path.isfile(os.path.expanduser(inp)):
@@ -282,9 +363,21 @@ def getFastas(inp, output_root, name, logger):
 
 
 def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
-    """ create new files containing a single fasta entry each
+    """create new files containing a single fasta entry each
+
     regex stolen from SO
     name is the name of the file, output is the parent dir for the output dir
+
+    Args:
+        multi (str): path to multifasta
+        output (str): path to output directory
+        name (str): accession for renaming multifasta
+        dirname (str): name of directory to fold split fastas
+    Returns:
+        None
+    Raises:
+        None
+
     """
     idlist = []
     assert logger is not None, "must use logging"
@@ -331,9 +424,10 @@ def main(args, logger=None):
         sys.exit(1)
     t0 = time.time()
     if logger is None:
-        logger = set_up_logging(verbosity=args.verbosity,
-                                outfile=os.path.join(output_root, "riboScan.log"),
-                                name=__name__)
+        logger = set_up_logging(
+            verbosity=args.verbosity,
+            outfile=os.path.join(output_root, "riboScan.log"),
+            name=__name__)
     logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
