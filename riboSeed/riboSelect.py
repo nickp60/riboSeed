@@ -87,10 +87,24 @@ def get_args():  # pragma: no cover
 
 def count_feature_hits_per_sequence(all_feature, rec_id_list,
                        specific_features, loci_list, logger=None):
-    """ given genome seq records, specific_features, and a
+    """count rDNA features in each sequence
+
+    given genome seq records, specific_features, and a
     locus_tag_dict from get_filtered_locus_tag_dict, return two structures:
-    - nfeatures_simple {record.id [record.id, [5,4,6]}
+    - nfeatures_simple {record.id: [5,4,6]}
     SPECIFIC FEATURES MUST BE SORTED
+
+    Args:
+        all_feature (bool): if counting all features, exit, return none
+        rec_id_list (list): list of genome accessions
+        specific_features (list): list of features as strings to observe
+        loci_list (list): see get_loci_list_for_features
+    Returns:
+        (dict): {sequenceID: [n_16s, n_23s]}
+        None: if all_features
+    Raises:
+        None
+
     """
     logger.info("counting occurances of %s", " ".join(specific_features))
     assert logger is not None, "Must use logging"
@@ -117,8 +131,10 @@ def count_feature_hits_per_sequence(all_feature, rec_id_list,
 def get_loci_list_for_features(gb_path, feature="rRNA",
                                 specific_features="16S:23S",
                                 verbose=True, logger=None):
-    """ Given a path to genbank file,
-    returns a tuple of loci_list and dict of {"sequence" [counts of features]}
+    """get list of loci matching specific features
+
+    Given a genbank path, returns a tuple of loci_list and
+    dict of {"sequence" [counts of features]}
 
     The list of Locus object for each feature of interest
     (ie, all rRNA annotations). dictionary of index:locus_tag id pairs for all
@@ -130,6 +146,21 @@ def get_loci_list_for_features(gb_path, feature="rRNA",
     ribosome product annoation, not ht locus tag.
     if specific features is None, return all with type == feature
     Changed from having index used for clustering to using the first coord
+
+    Args:
+    gb_path (str): path to genbank file
+        feature (str): default="rRNA"; the genbank feature type
+        specific_features (str): default="16S:23S"; comma sep list of subunits
+                                 to consider
+        verbose (bool): default=True
+    Returns:
+        (tuple):
+          (list): loci_list,
+          (dict): {accession: [n_16, n_23]}
+
+    Raises:
+        SystemExit: Error with the annotations
+
     """
     assert logger is not None, "must use logging, even if not 'verbose'"
     assert os.path.exists(gb_path), \
@@ -210,10 +241,21 @@ def get_loci_list_for_features(gb_path, feature="rRNA",
 
 
 def parse_args_clusters(clusters, nrecs, logger=None):
+    """determine number of centers based on cluster arg
+
+    default case, clusters are inferred
+    if not, must be equal to the length of genbank records
+
+    Args:
+        clusters (str): argparse --clusters; to be coerrced to an int or
+                        list of ints
+    Returns:
+        (int): number of centers to use
+    Raises:
+        SystemExit: cant coerce to int after splitting
+
     """
-    """
-    # default case, clusters are inferred
-    # if not, must be equal to the length of genbank records
+
     assert logger is not None, "logging must be used"
     logger.info("parsing --clusters args")
     if clusters != "":
@@ -230,7 +272,20 @@ def parse_args_clusters(clusters, nrecs, logger=None):
 
 
 def dict_from_jenks(data, centers, logger=None):
-    """ use jenks natural breaks to split a list of coordinates accordingly
+    """use jenks natural breaks to split a list of coordinates accordingly
+
+    Jenks natural breaks is used to split a list of coordinates at N centers
+    to group neighboring coords
+
+    Args:
+        data (list): list of coordinates (int)
+        centers (int): number of breaks to use
+    Returns:
+        (dict): {1: [3000, 4330, 4100],
+                 2: [6000, 6200, 6143]}
+    Raises:
+        None
+
     """
     assert logger is not None, "must use logging"
     assert centers is not 0, "cannot use 0 center"

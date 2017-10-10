@@ -950,25 +950,13 @@ class riboSeedShallow(unittest.TestCase):
         logger.warning("this_version: %s", this_version)
         self.assertEqual("4.4", this_version)
 
-    # @patch('subprocess.run')
-    # def test_bool_run_quast_false_quast45(self, process_mock):
-    #     process_mock.stderr = b"QUAST v4.5, 15ca3b9"
-    #     attrs = {'run.return_value': ('output', 'error')}
-    #     process_mock.configure_mock(**attrs)
-    #     # mock_subproc_popen.return_value = process_mock
-    #     subprocess.run = create_autospec(subprocess.run, return_value='mocked!')
-    #     self.assertFalse(bool_run_quast("quast.py", logger))
-
-    # def test_bool_run_quast_false_quast45(self):
-    #     self.assertFalse(bool_run_quast("quast.py", logger))
-
     @unittest.skipIf(shutil.which("quast.py") is None,
                      "samtools executable not found, skipping." +
                      "If this isnt an error from travis deployment, you " +
                      "probably should install it")
     def test_bool_run_quast_true(self):
         with patch.object(sys, 'version_info') as v_info:
-            v_info.minor = 5
+            v_info.minor = 4
             self.assertTrue(
                 bool_run_quast("quast.py", logger))
 

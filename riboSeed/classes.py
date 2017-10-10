@@ -55,6 +55,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, \
     keep_only_first_contig, get_fasta_lengths, \
     file_len, check_version_from_cmd
 
+
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
 # --------------------------- classes --------------------------- #
@@ -663,3 +664,41 @@ class Locus(object):
 
 
 # --------------------------- methods --------------------------- #
+
+def estimate_distances_smalt(outfile, smalt_exe, ref_genome, fastq1, fastq2,
+                             cores=None, logger=None):  # pragma: no cover
+    """Given fastq pair and a reference, returns path to distance estimations
+    used by smalt to help later with mapping. if one already exists,
+    return path to it.
+    """
+    if cores is None:
+        cores = multiprocessing.cpu_count()
+    if not os.path.exists(outfile):
+        # Index reference for sampling to get PE distances
+        if logger:
+            logger.info("Estimating insert distances with SMALT")
+        # index with default params for genome-sized sequence
+        refindex_cmd = str(smalt_exe + " index -k {0} -s {1} {2} " +
+                           "{3}").format(20, 10, outfile, ref_genome)
+        refsample_cmd = str(smalt_exe + " sample -n {0} -o {1} {2} {3} " +
+                            "{4}").format(cores,
+                                          outfile,
+                                          outfile,
+                                          fastq1,
+                                          fastq2)
+        if logger:
+            logger.info("Sampling and indexing {0}".format(
+                ref_genome))
+        for cmd in [refindex_cmd, refsample_cmd]:
+            if logger:
+                logger.debug("\t command:\n\t {0}".format(cmd))
+            subprocess.run(cmd,
+                           shell=sys.platform != "win32",
+                           stderr=subprocess.PIPE,
+                           stdout=subprocess.PIPE,
+                           check=True)
+    else:
+        if logger:
+            logger.info("using existing reference file")
+        pass
+    return outfile
