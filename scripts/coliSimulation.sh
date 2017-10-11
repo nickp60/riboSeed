@@ -65,21 +65,20 @@ for COV in 20 50
 do
 for ((i = 0; i < ${#runs[@]}; i++))
 do
-    echo "Running simulation for ${runs[$i]}"    
+    echo "Running simulation for ${runs[$i]} with ${COV}x coverage, rep ${REP}"    
     runarray=(${runs[$i]})
     tech=${runarray[0]}
     len=${runarray[1]}
 
     name="sim_${tech}_${len}_COV_${COV}_${FLANK}_rep${REP}"
-    echo "output directory"
     thisoutdir="${OUTDIR}${name}/"
     mkdir ${thisoutdir}
 
-    echo "simulating reads from the mg1655 genome"
+    echo " simulating reads from the mg1655 genome with seed ${REP}"
 
     ~/bin/pirs-2.0.2/pirs simulate -m 300 --threads 1 -l ${len} -x ${COV} -v 10 -B ~/bin/pirs-2.0.2/Profiles/Base-Calling_Profiles/humNew.PE100.matrix.gz -I ~/bin/pirs-2.0.2/Profiles/InDel_Profiles/phixv2.InDel.matrix -G ~/bin/pirs-2.0.2/Profiles/GC-depth_Profiles/humNew.gcdep_200.dat -o ${thisoutdir}MG1655_${tech} --compress -S ${REP} ${OUTDIR}NC_000913.3.fasta &>> ${LOG}
 
-    echo "running riboSeed with sakai as reference"
+    echo " running riboSeed with sakai as reference"
     ribo seed -r ${OUTDIR}scan/scannedScaffolds.gb -o ${thisoutdir}seed/ -F ${thisoutdir}MG1655_${tech}_${len}_300_1.fq.gz -R ${thisoutdir}MG1655_${tech}_${len}_300_2.fq.gz  -v 1 -c 4 -t 2 -z ${OUTDIR}select/riboSelect_grouped_loci.txt -s $((len/2)) --memory 16 --clean_temps -l ${FLANK} &>> ${LOG}
 
     ribo score ${thisoutdir}seed/mauve &>> ${LOG}
