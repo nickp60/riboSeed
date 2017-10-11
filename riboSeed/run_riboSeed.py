@@ -25,7 +25,6 @@ from ._version import __version__
 from . import riboScan as rscan
 from . import riboSelect as rsel
 from . import riboSeed as rseed
-from . import riboSketch as rsketch
 from . import riboScore as rscore
 from . import make_riboSeed_config as mrc
 
@@ -430,6 +429,8 @@ def main(args):
     logger.info("\nrunning riboSeed\n")
     rseed.main(seed_args, logger)
     if conf.RUN_SKETCH:
+        # import this here in case there are issues with mpl''s X windows
+        from . import riboSketch as rsketch
         if conf.MAUVE_JAR is not None:
             logger.info("\nrunning riboSketch\n")
             rsketch.main(sketch_args, logger=logger)
