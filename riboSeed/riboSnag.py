@@ -172,24 +172,19 @@ def get_args():  # pragma: no cover
     return args
 
 
-def get_genbank_rec_from_multigb(recordID, genbank_records):
-    """ given a record ID and and list of genbank records, return sequence of
-    genbank record that has all the loci.
-    If on different sequences, return error
-    """
-    for record in genbank_records:
-        if recordID == record.id:
-            return record
-        else:
-            pass
-    # if none found, raise error
-    raise ValueError("no record found matching record id %s!" % recordID)
-
-
 def check_loci_file_not_genbank(filepath):
     """ raise error if "cluster file" ends in .gb, etc
+
     this covers common case where user submits genbank and cluster file
     in the wrong order.
+
+    Args:
+        filepath (str): path to what should be a loci file
+    Returns:
+        None
+    Raises:
+       FileNotFoundError: if the file smells like a genbank file
+
     """
     if not (os.path.isfile(filepath) and os.path.getsize(filepath) > 0):
         raise ValueError("Cluster File not found!")
@@ -201,10 +196,25 @@ def check_loci_file_not_genbank(filepath):
 
 def parse_clustered_loci_file(filepath, gb_filepath, output_root,
                               circular, padding=1000, logger=None):
-    """Given a file from riboSelect or manually created (see specs in README)
+    """parses the clusters and returns a list of LociCluster objects
+
+    Given a file from riboSelect or manually created (see specs in README)
     this parses the clusters and returns a list where [0] is sequence name
     and [1] is a list of loci in that cluster
-    As of 20161028, this returns a list of LociCluster objects!
+
+    Args:
+        filepath (str): path to loci file form riboSelect
+        gb_filepath (str): path to genbank file from riboScan
+        output_root (str): output root directory
+        circular (bool): whether or not the gneome is circular; if so, the ends of 
+                         the sequences will be the padded 
+        padding (int):  how many base pairs to pad width
+    Returns:
+        (list): list of LociCluster objects
+    Raises:
+        Exception: one of the various things that can happen with bad files
+        ValueError: No clusters found
+
     """
     assert logger is not None, "logging must be used!"
     clusters = []
@@ -258,7 +268,19 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
 
 
 def add_gb_seqrecords_to_cluster_list(cluster_list, gb_filepath):
-    """ return cluster list with seq_records attached
+    """return cluster list with seq_records attached
+
+    We need seqrecords in the lociCluster. So we look through the gb file
+    to check for a sequence matching the LociClusters's sequence ID
+
+    Args:
+        cluster_list (list): List of LociCluster objects
+        gb_filepath (str): oath to genbank file
+    Returns:
+        (list): the same cluster list, but with their seq records
+    Raises:
+        None
+
     """
     # match up seqrecords
     gb_records = SeqIO.index(gb_filepath, 'genbank')

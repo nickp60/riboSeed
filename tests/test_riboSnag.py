@@ -17,7 +17,7 @@ from pyutilsnrw.utils3_5 import get_genbank_record, combine_contigs, md5
 
 from riboSeed.riboSnag import parse_clustered_loci_file, \
     extract_coords_from_locus, \
-    stitch_together_target_regions, get_genbank_rec_from_multigb,\
+    stitch_together_target_regions, \
     pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd,\
     calc_Shannon_entropy, calc_entropy_msa,\
     annotate_msa_conensus, plot_scatter_with_anno, get_all_kmers,\
@@ -101,16 +101,16 @@ class riboSnag_TestCase(unittest.TestCase):
         self.assertEqual(clusters[0].sequence_id, ref_seq_name)
         self.assertEqual(test_locus_tags, ref_loci_list)
 
-    def test_genbank_match_id(self):
-        """ tests get_genbank_rec_from_multigb
-        """
-        records = get_genbank_record(self.test_gb_file)
-        record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
-                                              genbank_records=records)
-        self.assertEqual(records[0].seq, record.seq)
-        with self.assertRaises(ValueError):
-            get_genbank_rec_from_multigb(
-                recordID='NC_011751.X', genbank_records=records)
+    # def test_genbank_match_id(self):
+    #     """ tests get_genbank_rec_from_multigb
+    #     """
+    #     records = get_genbank_record(self.test_gb_file)
+    #     record = get_genbank_rec_from_multigb(recordID='NC_011751.1',
+    #                                           genbank_records=records)
+    #     self.assertEqual(records[0].seq, record.seq)
+    #     with self.assertRaises(ValueError):
+    #         get_genbank_rec_from_multigb(
+    #             recordID='NC_011751.X', genbank_records=records)
 
     def test_extract_coords_from_locus(self):
         """todo: replace essentially unused get_genbank_record function
