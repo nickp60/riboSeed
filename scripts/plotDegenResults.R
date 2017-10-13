@@ -54,6 +54,8 @@ str(reportsdf)
 temp_new_table <- read.csv2(
   args$combined_reports, sep="\t", stringsAsFactors = F, header = F, col.names = names)
 # temp_new_table <- read.csv2("~/GitHub/riboSeed/2017-10-09-degenerate_1_to_50/tmp_degen.txt", sep="\t", stringsAsFactors = F, header = F, col.names = names)
+ temp_new_table <- read.csv2("~/GitHub/riboSeed/2017-10-degen-results/2017-10-13-combined-trusted-degen.txt", sep="\t", stringsAsFactors = F, header = F, col.names = names)
+
 (temp_new_table$freq <- as.numeric(gsub("(.*)/seed_(.*?)/mauve", "\\2", temp_new_table$sourcepath)))
 (temp_new_table$where <- factor(gsub("(.*)_degenerate_output_(.*?)_(.*)", "\\2", temp_new_table$sourcepath)))
 (temp_new_table$seed <- as.numeric(gsub("(.*)_degenerate_output_(.*?)_(.*?)/(.*)", "\\3", temp_new_table$sourcepath)))

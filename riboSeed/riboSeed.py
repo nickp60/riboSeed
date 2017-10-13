@@ -1899,6 +1899,7 @@ def subprocess_run_list(cmdlist, hard=False, logger=None):
 
 
 def copy_to_handy_dir(outdir, pre, ref_gb, seedGenome,
+                      skip_control=False,
                       hard=False, logger=None):
     """ copy the resulting contigs and reference to dir for mauving
     """
@@ -1913,6 +1914,9 @@ def copy_to_handy_dir(outdir, pre, ref_gb, seedGenome,
     new_names = [pre + "_de_fere_novo_contigs.fasta",
                  pre + "_de_novo_contigs.fasta",
                  pre + ".gb"]
+    if skip_control:
+        new_names = [new_names[i] for i in [0,2]]
+        file_to_copy = [file_to_copy[i] for i in [0,2]]
     for idx, f in enumerate(files_to_copy):
         logger.debug("copying %s to %s as %s",
                      f,
@@ -2970,11 +2974,11 @@ def main(args, logger=None):
             logger.error(e)
     # make dir for easy downloading from cluster
     copy_to_handy_dir(outdir=os.path.join(output_root, "mauve"),
-                   pre=args.exp_name,
-                   ref_gb=args.reference_genbank,
-                   seedGenome=seedGenome,
-                   hard=False, logger=logger)
-    # Report that we've finished
+                      pre=args.exp_name,
+                      ref_gb=args.reference_genbank,
+                      skip_control=args.skip_control,
+                      seedGenome=seedGenome,
+                      hard=False, logger=logger)
     logger.info("Done with riboSeed: %s", time.asctime())
     logger.info("riboSeed Assembly: %s", seedGenome.output_root)
     logger.info("Combined Contig Seeds (for validation or alternate " +

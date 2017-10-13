@@ -26,7 +26,7 @@ helpmsg = [
     "",
     "Available commands:",
     " -run      execute the whole pipeline (scan, select, seed, sketch, and score)",
-    " -scan     reannotate rRNAs in a FASTA file isong help ",
+    " -scan     reannotate rRNAs in a FASTA file",
     " -select   group rRNA annotations into rDNA operons",
     " -seed     perform de fere novo assembly",
     " -snag     extract rDNA regions and plot entropy",

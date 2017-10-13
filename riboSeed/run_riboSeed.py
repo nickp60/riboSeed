@@ -79,13 +79,6 @@ def get_args():  # pragma: no cover
                           "default: inferred",
                           default=None, type=str,
                           metavar="experiment_name")
-    # # if this is involed, an empty config file is generated
-    # optional.add_argument("-e", "--write_empty_config", dest='empty_config',
-    #                       action=JustWriteConfig,
-    #                       help="write out a empty config file for editing, " +
-    #                       "and exit",
-    #                       nargs='?')
-
     # riboScan args
     optional.add_argument("-K", "--Kingdom", dest='RUN_KINGDOM',
                           action="store",

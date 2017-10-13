@@ -35,20 +35,6 @@ from Bio.Alphabet import IUPAC
 from distutils.version import StrictVersion
 
 
-try:
-    import numpy as np
-    import matplotlib as mpl
-    mpl.use('Agg')
-    import matplotlib.pyplot as plt
-    import matplotlib.patches as patches
-    PLOT = True
-except Exception as e:  # most likely an ImportError, but Im not taking chances
-    print(e)
-    print("\nlooks like you have some issue with matplotlib.  " +
-          "Classic matplotlib, amirite? Plotting is disabled\n")
-    PLOT = False
-
-
 from pyutilsnrw.utils3_5 import set_up_logging, \
     combine_contigs, get_ave_read_len_from_fastq, \
     get_number_mapped, \
