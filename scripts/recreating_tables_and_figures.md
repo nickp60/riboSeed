@@ -89,7 +89,17 @@ Thats it!  Our figure is in the output directory.  That wasnt so bad, was it?
 
 ### Oh, and the SNP rate for the 25 genomes
 
-First, run Parsnp of the 25 genomes along with the first rDNA from sakai as a reference.  Then, step through getSnpFreqVcf.  The value you are looking for is the "mean(throughout)" one.  Its kind of a hacky way of doing things, but oh well.
+First, run Parsnp of the 25 genomes along with the first rDNA from sakai as a reference.
+```
+ribo scan ./manuscript_results/entropy/sakai_snag_mafft/20170907_region_1_riboSnag.fasta -o manuscript_results/entropy/sakai_1st_rDNA_scan
+mkdir manuscript_results/entropy/extraction_gmbH_regions
+for i in {1..25} ; do cp manuscript_results/entropy/snag_gmbH_mafft/*_region_${i}_riboSnag.fasta manuscript_results/entropy/extraction_gmbH_regions ; done
+ ~/bin/Parsnp-Linux64-v1.2/parsnp -g ./manuscript_results/entropy/sakai_1st_rDNA_scan/scannedScaffolds.gb -d ./manuscript_results/entropy/extraction_gmbH_regions -o 2017-10-13-parsnp
+```
+
+Open up the resulting file in Gingr, and export as a vcf
+
+Then, step through getSnpFreqVcf.  The value you are looking for is the "mean(throughout)" one.  Its kind of a hacky way of doing things, but oh well.
 
 ## Suppl. Blast results
 From the analysis above, where we ran the riboScan, riboSelect, and riboSnag on the E coli sakai genome, the blast results can be used with the script called plotSnagResults.R in the scripts dir.
@@ -137,7 +147,7 @@ We then try to run riboSeed to assemble the reads we generated earlier using a p
 ```
 for i in {1..1000}; do ~/GitHub/riboSeed/scripts/runDegenerate.sh $i; done
 ```
-This takes a while (about 15 frequences, 100 replicates, etc).
+This takes a while (19 frequences, two conditions (ALL, FLANK), 100 replicates, etc).
 
 
 To generate the plots, use scripts/plotDegenResults:
@@ -145,3 +155,6 @@ To generate the plots, use scripts/plotDegenResults:
 ```
 Rscript plotDegenResults.R -r path/to/combinedresults.txt -o ./output_dir/
 ```
+
+## Degenerate (trusted)
+We realized that our intended range overlapped with our cutoff for trusted/untrusted contig treatment of the subseeds.  This required us to run this a second time, but using the old default (--ref_as_contig trust) flag.

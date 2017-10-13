@@ -3,11 +3,8 @@
 # source("http://www.bioconductor.org/biocLite.R")
 # biocLite("msa")
 # biocLite("ggtree")
-require(ggplot2)
+#  Imports are moved til after argument parses!
 require(argparse, quietly = T, warn.conflicts = F)
-require(reshape2, quietly = T, warn.conflicts = F)
-require(dplyr)
-require(tidyr)
 help <- "
 This script is used to plot the results from runDegenerate.  As an input, it takes a file containing the combined ribo score reports, and requires an output directory.
 
@@ -40,6 +37,10 @@ if (dir.exists(args$out_folder)){
   print("output dir exists!")
   quit()
 }
+require(ggplot2)
+require(reshape2, quietly = T, warn.conflicts = F)
+require(dplyr)
+require(tidyr)
 
 # (analysis_date <- gsub("(.*)([0-9]{4}-[0-9]{2}-[0-9]{2})(.*)", "\\2", args$src_folder))
 
@@ -52,7 +53,7 @@ freqs = c(0.0, 0.0025, 0.0050, 0.0075, 0.0100, 0.0150, 0.0200, 0.0250, 0.0500, 0
 str(reportsdf)
 temp_new_table <- read.csv2(
   args$combined_reports, sep="\t", stringsAsFactors = F, header = F, col.names = names)
-# temp_new_table <- read.csv2("~/GitHub/riboSeed/2017-10-09-degenerate_1_to_50/2017-10-09-combined_degen_reports.txt", sep="\t", stringsAsFactors = F, header = F, col.names = names)
+# temp_new_table <- read.csv2("~/GitHub/riboSeed/2017-10-09-degenerate_1_to_50/tmp_degen.txt", sep="\t", stringsAsFactors = F, header = F, col.names = names)
 (temp_new_table$freq <- as.numeric(gsub("(.*)/seed_(.*?)/mauve", "\\2", temp_new_table$sourcepath)))
 (temp_new_table$where <- factor(gsub("(.*)_degenerate_output_(.*?)_(.*)", "\\2", temp_new_table$sourcepath)))
 (temp_new_table$seed <- as.numeric(gsub("(.*)_degenerate_output_(.*?)_(.*?)/(.*)", "\\3", temp_new_table$sourcepath)))
