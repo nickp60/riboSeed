@@ -24,6 +24,7 @@ try:
     import matplotlib as mpl
     mpl.use('Agg')
     import matplotlib.pyplot as plt
+    plt.ioff()
     import matplotlib.patches as patches
     mpl.rc('font', family='sans-serif')
     PLOT = True
@@ -206,8 +207,8 @@ def parse_clustered_loci_file(filepath, gb_filepath, output_root,
         filepath (str): path to loci file form riboSelect
         gb_filepath (str): path to genbank file from riboScan
         output_root (str): output root directory
-        circular (bool): whether or not the gneome is circular; if so, the ends of 
-                         the sequences will be the padded 
+        circular (bool): whether or not the gneome is circular; if so, the ends of
+                         the sequences will be the padded
         padding (int):  how many base pairs to pad width
     Returns:
         (list): list of LociCluster objects

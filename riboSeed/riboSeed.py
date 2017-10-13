@@ -44,6 +44,7 @@ try:
     import matplotlib as mpl
     mpl.use('Agg')
     import matplotlib.pyplot as plt
+    plt.ioff()
     import matplotlib.patches as patches
     PLOT = True
 except Exception as e:  # most likely an ImportError, but Im not taking chances

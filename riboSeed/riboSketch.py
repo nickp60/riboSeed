@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
+plt.ioff()
 import matplotlib.patches as patches
 from matplotlib.patches import FancyBboxPatch
 
