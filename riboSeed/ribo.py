@@ -25,7 +25,7 @@ helpmsg = [
     "Usage:   ribo <command> [options]",
     "",
     "Available commands:",
-    " -run      execute the whole pipeline (scan, select, seed, sketch, and score)",
+    " -run      execute the pipeline (scan, select, seed, sketch, and score)",
     " -scan     reannotate rRNAs in a FASTA file",
     " -select   group rRNA annotations into rDNA operons",
     " -seed     perform de fere novo assembly",
