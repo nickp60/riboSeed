@@ -12,13 +12,13 @@ files of coli, and of kleb.  These files should not be cat-ed into one, as it
 is easier to fill iun missing values if they are kept separate.
 "
 
-src_folder <-"/home/nicholas/GitHub/riboSeed/2017-10-06-coli_kleb_simulated_reads"
+src_folder <-"/home/nicholas/GitHub/riboSeed/2017-10-16-coli_kleb/"
 names = c("sourcepath", "variable", "start",  "end1", "end2", "localpath")
 dir(src_folder)
 files <- dir(src_folder, pattern = "*.txt",full.names = T, recursive = T)
 files
 
-out_folder <- paste0("~/GitHub/riboSeed/2017-10-09-simReads/")
+out_folder <- paste0("~/GitHub/riboSeed/2017-10-16-simReads/")
 
 dir.create(out_folder)
 results_table <- as.data.frame(
