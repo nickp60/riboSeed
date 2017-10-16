@@ -50,7 +50,7 @@ def main(args=None):
         args = sys.argv
     assert ((sys.version_info[0] == 3) and (sys.version_info[1] >= 5)), \
         "Must use python3.5 or higher!"
-    if len(args) == 1:
+    if len(args) == 1 or "-h" in args[1]:
         print("\n".join(helpmsg))
         return 0
     if "-v" in args[1]:

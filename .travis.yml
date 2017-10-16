@@ -14,9 +14,8 @@ install:
 script:
 - python setup.py install
 - nosetests --with-coverage --cover-package=riboSeed tests/ -v
-- ribo -h
-- ribo scan -h
 - ribo run -h
+- ribo scan -h
 
 after_success: coveralls
 deploy:
