@@ -22,9 +22,11 @@ import multiprocessing
 try:
     import numpy as np
     import matplotlib as mpl
-    mpl.use('Agg')
-    import matplotlib.pyplot as plt
-    plt.ioff()
+    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+    from matplotlib.figure import Figure
+    # mpl.use('Agg')
+    # import matplotlib.pyplot as plt
+    # plt.ioff()
     import matplotlib.patches as patches
     mpl.rc('font', family='sans-serif')
     PLOT = True
@@ -666,8 +668,15 @@ def plot_scatter_with_anno(data,
     df_con = pd.DataFrame(consensus_cov, columns=["base",
                                                   "depth"])
     cov_max_depth = max(df_con['depth'])
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True,
-                                   gridspec_kw={'height_ratios': [4, 1]})
+    fig = Figure()
+    FigureCanvas(fig)
+    #fig.SubplotParams(hspace=0.0)
+    # fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True,
+    #                                gridspec_kw={'height_ratios': [4, 1]})
+    ax1 = fig.add_subplot(211)
+    ax1.set_aspect(4)
+    ax2 = fig.add_subplot(212)
+    ax2.set_aspect(1)
     colors = ['#ff4c05', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',
               '#ff4c05', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F']
     ax1.set_title(title, y=1.08)
@@ -736,7 +745,7 @@ def plot_scatter_with_anno(data,
     ax2.yaxis.label.set_color('black')
     ax1.xaxis.label.set_color('black')
     ax2.xaxis.label.set_color('black')
-    plt.tight_layout()
+#    plt.tight_layout()
     fig.subplots_adjust(hspace=0)
     fig.set_size_inches(12, 7.5)
     fig.savefig(str(output_prefix + '.png'), dpi=(200))
@@ -806,7 +815,11 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
                          sum(this_pairs_diffs)])
     lsdf_wNA = pd.DataFrame(res_list, columns=["locus_1", "locus_2", "sls"])
     wlsdf = lsdf_wNA.pivot(index='locus_1', columns='locus_2', values='sls')
-    fig, ax = plt.subplots(1, 1)
+    fig = Figure()
+    FigureCanvas(fig)
+    ax = fig.add_subplot(111)
+    print(ax)
+    #fi, ax = plt.subplots(1, 1)
     lsdf = lsdf_wNA.fillna(value=0)
     heatmap = ax.pcolormesh(wlsdf,
                             cmap='Greens')
@@ -816,18 +829,18 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     # # want a more natural, table-like display
     ax.invert_yaxis()
     ax.xaxis.tick_top()
-    plt.xticks(rotation=90)
     # # Set the labels
-    ax.set_xticklabels(wlsdf.columns.values, minor=False)
+    ax.set_xticklabels(wlsdf.columns.values, minor=False, rotation=90)
     ax.set_yticklabels(wlsdf.index, minor=False)
     fig.colorbar(heatmap)  # add colorbar key
-    plt.tight_layout()  # pad=0, w_pad=5, h_pad=.0)
+    fig.tight_layout()  # pad=0, w_pad=5, h_pad=.0)
+    # fig.subplots_adjust(top=0.4, bottom=0.0, hspace=0, wspace=0.3 )
     fig.set_size_inches(8, 8)
     fig.savefig(str(output_prefix + "heatmap.png"), dpi=(200))
     fig.savefig(str(output_prefix + "heatmap.pdf"), dpi=(200))
     ####  plot clustered heatmap
-    plt.close('all')
-    plt.figure(1, figsize=(6, 6))
+#    plt.close('all')
+#    plt.figure(1, figsize=(6, 6))
     # h = heatmapcluster(wlsdf.as_matrix(), row_labels=wlsdf.index,
     #                    col_labels=wlsdf.columns.values,
     #                    num_row_clusters=2, num_col_clusters=2,
