@@ -163,12 +163,12 @@ def config_seed_defaults():
     seed_params = [
         ("SEED_MAP_METHOD", "bwa",
          "--method_for_map: which mapper to use, (default bwa)"),
-        ("SEED_SCORE_MIN", "null",
-         "--score_min: If using smalt, this sets the '-m' param; \n# " +
-         "default with smalt is inferred from \n# " +
-         "read length. If using BWA, reads mapping with AS\n# " +
-         "score lower than this will be rejected\n# " +
-         "; default with BWA is half of read length"),
+        # ("SEED_SCORE_MIN", "null",
+        #  "--score_min: If using smalt, this sets the '-m' param; \n# " +
+        #  "default with smalt is inferred from \n# " +
+        #  "read length. If using BWA, reads mapping with AS\n# " +
+        #  "score lower than this will be rejected\n# " +
+        #  "; default with BWA is half of read length"),
         ("SEED_MIN_ASSEMBLY_LENGTH", "6000",
          "if initial SPAdes assembly largest contig \n# " +
          "is not at least as long as --min_assembly_len, \n# " +
@@ -186,14 +186,14 @@ def config_seed_defaults():
         ("SEED_SKIP_CONTROL", "false",
          "if --skip_control, no de novo \n# " +
          "assembly will be done; default: %(default)s"),
-        ("SEED_REF_AS_CONTIG", "infer",
-         "ignore: reference will not be used in \n# " +
-         "subassembly. trusted: SPAdes will use the seed\n# " +
-         " sequences as a --trusted-contig; untrusted: \n# " +
-         "SPAdes will treat as --untrusted-contig. \n# " +
-         "infer: if mapping \n#" +
-         "percentage over 80%: 'trusted', else 'untrusted'\n# " +
-         "See SPAdes docs for details.  default: infer"),
+        # ("SEED_REF_AS_CONTIG", "infer",
+        #  "ignore: reference will not be used in \n# " +
+        #  "subassembly. trusted: SPAdes will use the seed\n# " +
+        #  " sequences as a --trusted-contig; untrusted: \n# " +
+        #  "SPAdes will treat as --untrusted-contig. \n# " +
+        #  "infer: if mapping \n#" +
+        #  "percentage over 80%: 'trusted', else 'untrusted'\n# " +
+        #  "See SPAdes docs for details.  default: infer"),
         ("SEED_TARGET_LEN", "null",
          "If set, iterations will continue until \n# " +
          "contigs reach this length, or max iterations (\n#" +

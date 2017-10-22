@@ -753,7 +753,7 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                       samtools_exe=samtools_exe)))
     # apparently there have been no errors, so mapping success!
     ngsLib.mapping_success = True
-    return (map_percentage, score_list)
+    return (map_percentage, score_list, score_min)
 
 
 def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
@@ -2609,7 +2609,7 @@ def main(args, logger=None):
                 logger=logger)
         else:
             assert args.method == "bwa", "must be either bwa or smalt"
-            map_percent, score_list = map_to_genome_ref_bwa(
+            map_percent, score_list, score_minimum = map_to_genome_ref_bwa(
                 mapping_ob=seedGenome.iter_mapping_list[
                     seedGenome.this_iteration],
                 ngsLib=unmapped_ngsLib,
@@ -2657,19 +2657,6 @@ def main(args, logger=None):
                 subassembly_ref_as_contig = set_ref_as_contig(
                     ref_arg=args.ref_as_contig,
                     map_percentage=map_percent, logger=logger)
-                # if args.ref_as_contig == "infer":
-                #     if map_percent > 80:
-                #         ref_as_contig = "trusted"
-                #     else:
-                #         ref_as_contig = "untrusted"
-                #         logger.info(
-                #             str("unfiltered mapping percentage is %f2 so " +
-                #                 "'ref_as_contigs' is set to %s"),
-                #             map_percent, ref_as_contig)
-                # elif args.ref_as_contig == "ignore":
-                #     ref_as_contig = None
-                # else:
-                #     ref_as_contig = args.ref_as_contig
             else:
                 subassembly_ref_as_contig = args.ref_as_contig
         else:
