@@ -157,4 +157,87 @@ Rscript plotDegenResults.R -r path/to/combinedresults.txt -o ./output_dir/
 ```
 
 ## Degenerate (trusted)
-We realized that our intended range overlapped with our cutoff for trusted/untrusted contig treatment of the subseeds.  This required us to run this a second time, but using the old default (--ref_as_contig trust) flag.
+We realized that our intended range overlapped with our cutoff for trusted/untrusted contig treatment of the subseeds.  This required us to run this a second time, but using the old default (--ref_as_contig trusted) flag.
+
+
+## Pseudomonas
+
+
+
+
+## Verifying B. cereus vd118
+### The problem.
+We noticed that riboSeed calculated the percent mapped reads at less than 80% for this strain.
+
+### Kraken
+Upon further investigation with Kraken, we determined that 30% of the reads were unclassifiable with the Kraken miniKraken database, and only 70% of the trimmed reads were classifiable to bacteria.  Of those, 68% appeared to be B. cereus.  Thats not quite enough for my taste.
+
+```
+kraken --db ~/bin/minikraken_20141208/ ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq > ~/Downloads/hi/cereus/2017-10-18-minikraken_cereus  _README
+kraken --db ~/bin/minikraken_20141208/ ~/Downloads/hi/cereus/raw/insert_180_1__cov250x.fastq ~/Downloads/hi/cereus/raw/insert_180_2__cov250x.fastq > ~/Downloads/hi/cereus/2017-10-18-minikraken_cereus_untrimmed  _README
+kraken-report --db ~/bin/minikraken/ ~/Downloads/hi/cereus/2017-10-18-minikraken_cereus > ~/Downloads/hi/cereus/2017-10-18-minikraken_cereus_report
+kraken-report --db ~/bin/minikraken/ ~/Downloads/hi/cereus/2017-10-18-minikraken_cereus_untrimmed > ~/Downloads/hi/cereus/2017-10-18-minikraken_cereus_untrimmed_report
+```
+
+### metaspades
+We assembled the genome denovo with metaspades for downstream analysis with MBBC, MaxBin, and blobtools
+
+```
+metaspades.py -o ./2017-10-17-metaspades-cereus --pe1-1 ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq --pe1-2 ~/Downloads/hi/cereus/trimmed/insert_180_2__cov250x.fastq --threads 12 --memory 50
+```
+
+### MAxBin
+
+### blobtools
+We wanted to generate a blobplot with blobtools.  That requires 1) an assembly 2) a mapping file, and 3) a "hits file.  After much jockeying, I eventualy got thisworking after downloading the entire nt database to microgue.
+
+We genereated the blast hits file with the dollowing command:
+
+```
+blastn -db ~/BLASTDB/nt -query ~/results/2017-10-17-metaspades-cereus/contigs.fasta -out results/2017-10-19-cereus_assembly_blastn_nt_ids.out -outfmt '6 qseqid staxids bitscore std sscinames sskingdoms stitle' -num_threads 12
+```
+And then we rna blobtools as follows
+```
+# build the database
+blobtools create -i ~/results/2017-10-17-metaspades-cereus/contigs.fasta -y spades -t ~/results/2017-10-19-cereus_assembly_blastn_nt_ids.out -o ./blobplot_spades_cov_tax
+# generate the table (for some reason? just for viewing, I guess?)
+grep '^##' blobplot_spades_cov_tax.blobDB.table.txt > blobplot_spades_cov_tax_view ;  grep -v '^##' blobplot_spades_cov_tax.blobDB.table.txt |  column -t -s $'\t'  >> blobplot_spades_cov_tax_view
+# build the blobplot at species level
+blobtools blobplot  -i blobplot_spades_cov_tax.blobDB.json -r species  -o ./
+```
+
+
+
+
+
+### Maxbin
+Now that we had proof of contamination, we used MAxbin to separated the contigs likely belonging to each assembly
+
+```
+~/bin/MaxBin-2.2.4/run_MaxBin.pl -contig ~/results/2017-10-17-metaspades-cereus/contigs.fasta  -out ~/results/2017-10-19-cereus_maxbin_fastqreads -reads ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq -reads2 ~/Downloads/hi/cereus/trimmed/insert_180_2__cov250x.fastq -thread 2
+```
+After renaming the output files to get rid of the leading ".", we mapped the reads to the contigs in the second bin (002), as that had the \~30 of reads we were interested in, and converted to fastq
+```
+bwa index ./002.fasta
+bwa mem ./002.fasta ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq ~/Downloads/hi/cereus/trimmed/insert_180_2__cov250x.fastq > cereus_mapped_to_002.sam
+samtools view -h -F 4 cereus_mapped_to_002.sam | samtools fastq -1 cereus_subset_002_1.fastq -2 cereus_subset_002_2.fastq -
+```
+
+
+
+
+Now that we had
+
+
+
+## Archaea
+
+### Formicum
+
+### Barkeri
+This dataset is HUGE, so thats why we downsampled it to just 5\% of the reads:
+```
+~/miniconda3/bin/fastq-dump --split-files SRR2064286
+
+seqtk sample -s 27 ./SRR2064286_1.fastq 0.05 > SRR2064286_1_sub.fastq; seqtk sample -s 27 ./SRR2064286_2.fastq 0.05 > SRR2064286_2_sub.fastq
+```

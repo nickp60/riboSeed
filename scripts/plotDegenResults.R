@@ -153,7 +153,7 @@ line_lin <- ggplot(tall,#[tall$freq != 0, ],
     annotate("text", x=0.025,  y=7.5, label="Intraspecies", size=5)+
     annotate("text", x=0.090,  y=7.5, label="Interspecies", size=5)+
     geom_smooth(size=0.5,
-       # method="loess", 
+        method="loess", 
       formula = y ~ x, span=1)+
     geom_point(data=tall[tall$out==T, ], shape=3, size=1, alpha=.8, position=position_jitter(width = .0005, height = .05))+
     geom_point(data=tall[tall$out==F, ], shape=1, size=1, alpha=.5, position=position_jitter(width = .001, height = .05))+
