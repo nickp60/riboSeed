@@ -68,7 +68,7 @@ def get_args():  # pragma: no cover
                           "default: %(default)s",
                           default=os.path.join(
                               os.getcwd(),
-                              str(time.strftime("%Y-%m-%dT%H:%M") +
+                              str(time.strftime("%Y-%m-%dT%H%M") +
                                   "_riboSeed_pipeline_results"), ""),
                           type=str,
                           metavar="/output/dir/")
@@ -87,7 +87,7 @@ def get_args():  # pragma: no cover
                           " bacterial rDNA; " +
                           "default: %(default)s", default="bac",
                           type=str)
-    optional.add_argument("-s", "--specific_features",
+    optional.add_argument("-S", "--specific_features",
                           dest="RUN_SPECIFIC_FEATURES",
                           help="colon:separated -- specific features"
                           "; default: %(default)s",
@@ -125,6 +125,25 @@ def get_args():  # pragma: no cover
                           help="path to single fastq file", type=str,
                           default=None,
                           metavar="reads_S.fq")
+    optional.add_argument("-s", "--score_min", dest='RUN_SCORE_MIN',
+                          action="store",
+                          default=None, type=int,
+                          help="If using smalt, this sets the '-m' param; " +
+                          "default with smalt is inferred from " +
+                          "read length. If using BWA, reads mapping with AS" +
+                          "score lower than this will be rejected" +
+                          "; default with BWA is half of read length")
+    optional.add_argument("--ref_as_contig", dest='RUN_REF_AS_CONTIG',
+                          action="store", type=str,
+                          default="infer",
+                          choices=["ignore", "infer", "trusted", "untrusted"],
+                          help="ignore: reference will not be used in " +
+                          "subassembly. trusted: SPAdes will use the seed" +
+                          " sequences as a --trusted-contig; untrusted: " +
+                          "SPAdes will treat as --untrusted-contig. " +
+                          "infer: if mapping percentage " +
+                          "over 80%%, 'trusted'; else 'untrusted'." +
+                          " See SPAdes docs for details.  default: infer")
     optional.add_argument("--linear",
                           help="if genome is known to not be circular and " +
                           "a region of interest (including flanking bits) " +
@@ -316,10 +335,19 @@ def main(args):
         theseargs=args,
         output_root=output_root, logger=logger)
     conf = parse_config(args.RUN_CONFIG, logger=logger)
-    # if no name given, infer from the name of the contigs file
-    experiment_name = conf.RUN_EXPERIMENT_NAME if conf.RUN_EXPERIMENT_NAME \
-        is not None else \
-        os.path.basename(os.path.splitext(conf.REFERENCE_FASTA)[0])
+    # if no name given, infer from the name of the contigs file, from either
+    # args or the config file
+    if conf.RUN_EXPERIMENT_NAME is not None:
+        experiment_name = conf.RUN_EXPERIMENT_NAME
+    elif conf.REFERENCE_FASTA is not  None:
+        experiment_name = os.path.basename(
+            os.path.splitext(conf.REFERENCE_FASTA)[0])
+    else:  # infer from riboScan arg
+        assert conf.SCAN_CONTIG_NAME is not None, \
+            "no reference fasta found in args or config! Exiting"
+        experiment_name = os.path.basename(
+            os.path.splitext(conf.SCAN_CONTIG_NAME)[0])
+
     logger.debug(experiment_name)
 
     if conf.RUN_CLUSTER_FILE is None:
@@ -369,7 +397,7 @@ def main(args):
         memory=conf.RUN_MEMORY,
         kmers=conf.RUN_KMERS,
         pre_kmers=conf.RUN_PRE_KMERS,
-        score_min=conf.SEED_SCORE_MIN,
+        score_min=conf.RUN_SCORE_MIN,
         min_assembly_len=conf.SEED_MIN_ASSEMBLY_LENGTH,
         include_short_contigs=conf.SEED_INCLUDE_SHORTS,
         subtract=conf.SEED_SUBTRACT,
@@ -378,7 +406,7 @@ def main(args):
         target_len=conf.SEED_TARGET_LEN,
         smalt_scoring=conf.SEED_SMALT_SCORING,
         serialize=conf.serialize,
-        ref_as_contig=conf.SEED_REF_AS_CONTIG,
+        ref_as_contig=conf.RUN_REF_AS_CONTIG,
         mapper_args=conf.SEED_MAPPER_ARGS,
         initial_consensus=conf.SEED_INITIAL_CONSENSUS,
         spades_exe=conf.SPADES_EXE,

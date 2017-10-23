@@ -42,8 +42,10 @@ def make_config_header():
         "# Please see the LICENSE file that should have been included as part of",
         "# this package.\n\n"]
     t0 = time.asctime()
+    noteline = "# NOTE: 'null' will be interpretted as a python None "
     timestamp = "# This config file was generated " + str(t0) + "\n\n"
     hashbang.extend(copy_header)
+    hashbang.append(noteline)
     hashbang.append(timestamp)
     return(hashbang)
 
@@ -65,6 +67,8 @@ def config_exes():
         if shutil.which(v):
             config_lines.append(k + " : " + shutil.which(v) + "\n")
         else:
+            sys.stderr.write("Warning! No executable found for " + v + "; " +
+                             "Please add it to the config file manually\n")
             config_lines.append(k + " : null\n" )
 
     # # find all optional sys requirements
@@ -291,7 +295,7 @@ def main(args):
     if args.name is None:
         outfile = os.path.join(
             os.path.abspath(os.path.expanduser(args.outdir)),
-            str(time.strftime("%Y-%m-%dT%H:%M") +
+            str(time.strftime("%Y-%m-%dT%H%M") +
                 "_riboSeed_config.yaml"))
     else:
         outfile = os.path.join(
