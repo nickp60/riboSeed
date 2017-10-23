@@ -42,9 +42,8 @@ from distutils.version import StrictVersion
 try:
     import numpy as np
     import matplotlib as mpl
-    mpl.use('Agg')
-    import matplotlib.pyplot as plt
-    plt.ioff()
+    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+    from matplotlib.figure import Figure
     import matplotlib.patches as patches
     PLOT = True
 except Exception as e:  # most likely an ImportError, but Im not taking chances
@@ -1992,33 +1991,38 @@ def plotAsScores(score_list, score_min, outdir, logger=None):
     ymax = max(set(score_list), key=score_list.count)
     logger.info("score_min, xmax and ymax: %s, %s, %s", score_min, xmax, ymax)
     # plt.figure()  # <- makes a new figure and sets it active (add this)
-    fig, (plt1, plt2) = plt.subplots(1, 2, sharex=False)
+    fig = Figure()
+    FigureCanvas(fig)
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+
+    # fig, (ax1, ax2) = plt.subplots(1, 2, sharex=False)
     # ,
     #                                  gridspec_kw={'height_ratios': [1, 1]})
-    plt1.hist(score_list, bins=50, color='b', alpha=0.9, label='Binned')
-    plt1.hist(score_list, bins=100,
+    ax1.hist(score_list, bins=50, color='b', alpha=0.9, label='Binned')
+    ax1.hist(score_list, bins=100,
               cumulative=True, color='r', alpha=0.5,
               label='Cumulative')
-    plt1.set_title('Read Alignment Score Histogram')
-    plt1.set_xlabel('Alignemnt Score')
-    plt1.set_ylabel('Abundance')
-    plt1.plot([score_min, score_min], [0, len(score_list) * 1.1],
+    ax1.set_title('Read Alignment Score Histogram')
+    ax1.set_xlabel('Alignemnt Score')
+    ax1.set_ylabel('Abundance')
+    ax1.plot([score_min, score_min], [0, len(score_list) * 1.1],
               color='green', linewidth=5, alpha=0.6)
-    plt1.axis([0, max(score_list), 0, len(score_list) * 1.1])
-    # plt1.set_yscale("log", nonposy='clip')
-    plt1.legend()
-    plt.tight_layout()
-    plt1.grid(True)
-    plt2.grid(True)
+    ax1.axis([0, max(score_list), 0, len(score_list) * 1.1])
+    # ax1.set_yscale("log", nonposy='clip')
+    ax1.legend()
+    fig.tight_layout()
+    ax1.grid(True)
+    ax2.grid(True)
 
-    plt2.scatter(y=sorted(score_list, reverse=True),
+    ax2.scatter(y=sorted(score_list, reverse=True),
                  x=range(0, len(score_list)))
-    plt2.plot([0, len(score_list) * 1.1], [score_min, score_min],
+    ax2.plot([0, len(score_list) * 1.1], [score_min, score_min],
               color='green', linewidth=5, alpha=0.6)
-    plt2.axis([0, len(score_list) * 1.1, 0, max(score_list) * 1.1])
-    plt2.set_title('Read Alignment Score, Sorted')
-    plt2.set_ylabel('Alignment Score')
-    plt2.set_xlabel('Index of Sorted Read')
+    ax2.axis([0, len(score_list) * 1.1, 0, max(score_list) * 1.1])
+    ax2.set_title('Read Alignment Score, Sorted')
+    ax2.set_ylabel('Alignment Score')
+    ax2.set_xlabel('Index of Sorted Read')
     fig.set_size_inches(12, 7.5)
     fig.savefig(str(basename + '.png'), dpi=(200))
     fig.savefig(str(basename + '.pdf'), dpi=(200))

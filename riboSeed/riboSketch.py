@@ -10,9 +10,9 @@
 
 import numpy as np
 import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
-plt.ioff()
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib import gridspec
 import matplotlib.patches as patches
 from matplotlib.patches import FancyBboxPatch
 
@@ -188,7 +188,9 @@ def plot_mauve_compare(refgb,
     npanels = len(assembly_list) + 1
     max_combined_len = max([sum(x) for x in assembly_lens]) + bufferlen
     print(max_combined_len)
-    fig, ax = plt.subplots(1, 1)
+    fig = Figure()
+    FigureCanvas(fig)
+    ax = fig.add_subplot(111)
     ax.set_title(title, y=1.08)
     relheight = max_combined_len * aspect
     coding_height = .05 * relheight
@@ -331,7 +333,7 @@ def plot_mauve_compare(refgb,
     ax.spines["right"].set_visible(False)
     ax.spines["bottom"].set_visible(False)
 
-    plt.tight_layout()
+    fig.tight_layout()
     fig.subplots_adjust(hspace=0)
     fig.set_size_inches(12, 12 * aspect)
     fig.savefig(str(output_prefix + '.png'), dpi=(200), transparent=True)

@@ -29,10 +29,6 @@ from pyutilsnrw.utils3_5 import set_up_logging
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 
 # --------------------------- classes --------------------------- #

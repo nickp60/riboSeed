@@ -24,9 +24,7 @@ try:
     import matplotlib as mpl
     from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
     from matplotlib.figure import Figure
-    # mpl.use('Agg')
-    # import matplotlib.pyplot as plt
-    # plt.ioff()
+    from matplotlib import gridspec
     import matplotlib.patches as patches
     mpl.rc('font', family='sans-serif')
     PLOT = True
@@ -109,12 +107,12 @@ def get_args():  # pragma: no cover
                           "default: %(default)s")
     optional.add_argument("--title",
                           help="String for plot title;" +
-                          " uses matplotlib math processing for italics: " +
+                          " uses matplotlib math processing for italics " +
+                          "(you know, the LaTeX $..$ syntax): " +
                           "https://matplotlib.org/users/mathtext.html " +
-                          "default: %(default)s",
+                          "default: inferred from --seq_name",
                           action='store',
-                          default=str(
-                              "'Shannon Entropy by Position\\n<--seq_name>'"),
+                          default=None,
                           dest="title")
     optional.add_argument("--clobber",
                           help="overwrite previous output files" +
@@ -652,7 +650,7 @@ def plot_scatter_with_anno(data,
                            consensus_cov,
                            anno_list,
                            names=["Position", "Entropy"],
-                           title="Shannon Entropy by Position",
+                           title="$Strain Name$",
                            output_prefix="entropy_plot.png"):
     """Given annotation coords [feature, [start, end]],
     consensus cov list ['base', coverage_depth],
@@ -673,13 +671,13 @@ def plot_scatter_with_anno(data,
     #fig.SubplotParams(hspace=0.0)
     # fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True,
     #                                gridspec_kw={'height_ratios': [4, 1]})
-    ax1 = fig.add_subplot(211)
-    ax1.set_aspect(4)
-    ax2 = fig.add_subplot(212)
-    ax2.set_aspect(1)
+    gs = gridspec.GridSpec(2, 1, height_ratios=[4, 1])
+    ax1 = fig.add_subplot(gs[0])
+    ax2 = fig.add_subplot(gs[1])
+    ax1.get_shared_x_axes().join(ax1, ax2)
     colors = ['#ff4c05', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',
               '#ff4c05', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F']
-    ax1.set_title(title, y=1.08)
+    ax1.set_title("Shannon Entropy by Position\n" + title, y=1.08)
     xmin, xmax = 0, len(data)
     ymin, ymax = -0.1, (max(data) * 1.2)
     ax1.set_xlim([xmin, xmax])
@@ -745,7 +743,7 @@ def plot_scatter_with_anno(data,
     ax2.yaxis.label.set_color('black')
     ax1.xaxis.label.set_color('black')
     ax2.xaxis.label.set_color('black')
-#    plt.tight_layout()
+    fig.tight_layout()
     fig.subplots_adjust(hspace=0)
     fig.set_size_inches(12, 7.5)
     fig.savefig(str(output_prefix + '.png'), dpi=(200))
@@ -818,7 +816,6 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     fig = Figure()
     FigureCanvas(fig)
     ax = fig.add_subplot(111)
-    print(ax)
     #fi, ax = plt.subplots(1, 1)
     lsdf = lsdf_wNA.fillna(value=0)
     heatmap = ax.pcolormesh(wlsdf,
@@ -1398,12 +1395,13 @@ def main(args, logger=None):
             excludedash=False,
             kingdom=args.kingdom,
             logger=logger)
-        label_name = args.seq_name if args.seq_name is not None else \
-            os.path.basename(
-                os.path.splitext(
-                    args.genbank_genome)[0])
-        # title = str("Shannon Entropy by Position\n" +
-        #             label_name)
+        if args.title is None:
+            label_name = args.seq_name if args.seq_name is not None else \
+                         os.path.basename(
+                             os.path.splitext(
+                                 args.genbank_genome)[0])
+        else:
+            label_name = args.title
         return_code = plot_scatter_with_anno(
             data=seq_entropy,
             consensus_cov=consensus_cov,
