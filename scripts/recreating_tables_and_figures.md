@@ -211,26 +211,43 @@ blobtools blobplot  -i blobplot_spades_cov_tax.blobDB.json -r species  -o ./
 
 
 ### Maxbin
-Now that we had proof of contamination, we used MAxbin to separated the contigs likely belonging to each assembly
+<!-- Now that we had proof of contamination, we used MAxbin to separated the contigs likely belonging to each assembly -->
+
+<!-- ``` -->
+<!-- ~/bin/MaxBin-2.2.4/run_MaxBin.pl -contig ~/results/2017-10-17-metaspades-cereus/contigs.fasta  -out ~/results/2017-10-19-cereus_maxbin_fastqreads -reads ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq -reads2 ~/Downloads/hi/cereus/trimmed/insert_180_2__cov250x.fastq -thread 2 -->
+<!-- ``` -->
+<!-- After renaming the output files to get rid of the leading ".", we mapped the reads to the contigs in the second bin (002), as that had the \~30 of reads we were interested in, and converted to fastq -->
+<!-- ``` -->
+<!-- bwa index ./002.fasta -->
+<!-- bwa mem ./002.fasta ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq ~/Downloads/hi/cereus/trimmed/insert_180_2__cov250x.fastq > cereus_mapped_to_002.sam -->
+<!-- samtools view -h -F 4 cereus_mapped_to_002.sam | samtools fastq -1 cereus_subset_002_1.fastq -2 cereus_subset_002_2.fastq - -->
+<!-- ``` -->
+<!-- Now that we had -->
+
+We attempted to use maxbn to separate the reads belonging to each of the groups, but presumably because the GC content was so similar and the fact that even after filtering out the reads directly mapping to the B. cereus reference, many of the resulting contigs showed homology to B. cereus, we decided this was not the most appropriate way to isolate the contmainates.
+
+### Mapping to filter out Non-B. cereus reads:
+We were able to make it a bit clearer by first mapping the reads to the reference genome, filtering out those reads mapping, and assembling the remaining reads.
+```
+bwa index ~/Downloads/hi/cereus/AE017194.1.fasta
+bwa mem ~/Downloads/hi/cereus/AE017194.1.fasta ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq ~/Downloads/hi/cereus/trimmed/insert_180_2__cov250x.fastq > cereus_subset_atcc.sam
+samtools fastq -F 12 cereus_subset_atcc.sam -1 cereus_subset_atcc_mappedF12_1.fastq -2 cereus_subset_atcc_mappedF12_2.fastq
+
+metaspades.py --pe1-1 ./cereus_subset_atcc_mappedF12_1.fastq --pe1-2 ./cereus_subset_atcc_mappedF12_2.fastq -o ./assembled_atcc/
+```
+Then, we reran the blast search toget a hits file for blobtools, and generated a blobplot
 
 ```
-~/bin/MaxBin-2.2.4/run_MaxBin.pl -contig ~/results/2017-10-17-metaspades-cereus/contigs.fasta  -out ~/results/2017-10-19-cereus_maxbin_fastqreads -reads ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq -reads2 ~/Downloads/hi/cereus/trimmed/insert_180_2__cov250x.fastq -thread 2
-```
-After renaming the output files to get rid of the leading ".", we mapped the reads to the contigs in the second bin (002), as that had the \~30 of reads we were interested in, and converted to fastq
-```
-bwa index ./002.fasta
-bwa mem ./002.fasta ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq ~/Downloads/hi/cereus/trimmed/insert_180_2__cov250x.fastq > cereus_mapped_to_002.sam
-samtools view -h -F 4 cereus_mapped_to_002.sam | samtools fastq -1 cereus_subset_002_1.fastq -2 cereus_subset_002_2.fastq -
+blastn -db ~/BLASTDB/nt -query ./assembled_atcc/contigs.fasta -out atcc_blastn_nt_ids.out -outfmt '6 qseqid staxids bitscore std sscinames sskingdoms stitle' -num_threads 12
+blobtools create -i ./assembled_atcc/contigs.fasta  -y spades -o ./blob_atcc/ -t ./atcc_blastn_nt_ids.out
 ```
 
 
-
-
-Now that we had
-
+That was all a bit confusing, so we made a script that runs all the commands.  Paths are hardcoded, so it is more of a description of the work than a portable script, but oh well.
 
 
 ## Archaea
+
 
 ### Formicum
 

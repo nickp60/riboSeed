@@ -141,6 +141,30 @@ def parse_fasta_header(first_line):
     return accession
 
 
+def test_barrnap_ok(exe):
+    """Ensure barrnap isnt missing perl dependencies if not using py barrnap
+
+    Args:
+        exe (str): path to system executable for barrnap
+    Raises:
+        SystemExit: if we get an error when running barrnap
+    Returns:
+
+    """
+    cmd = "{0} -h".format(exe)
+    result = subprocess.run(cmd,
+                            shell=sys.platform != "win32",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            check=False)
+    if result.returncode == 127:
+        print("It appears that you have barrnap installed, but it lacks " +
+              "certain perl dependecies. Either install those, or install " +
+              "python barrnap from https://github.com/nickp60/barrnap-python")
+        sys.exit(1)
+
+
+
 def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, threads=1):
     """ construct a system call to barrnap
 
@@ -417,6 +441,7 @@ def main(args, logger=None):
     sys_barrnap = shutil.which(args.barrnap_exe)
     assert sys_barrnap is not None, \
         "barrnap executable not found!"
+    test_barrnap_ok(exe=sys_barrnap)
     try:
         os.makedirs(output_root, exist_ok=False)
     except OSError:
