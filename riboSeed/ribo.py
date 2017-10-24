@@ -13,8 +13,6 @@
 
 import sys
 import importlib
-import matplotlib
-matplotlib.use('Agg')
 import riboSeed
 
 CITATION = ""
