@@ -355,7 +355,7 @@ def pad_genbank_sequence(cluster, logger=None, verbose=False):
     """
     # take care of the coordinates
     if logger:
-        logger.info(str("adjusting coordinates by {0} to account for " +
+        logger.debug(str("adjusting coordinates by {0} to account for " +
                         "padding").format(cluster.padding))
     for loc in cluster.loci_list:
         if logger:

@@ -897,8 +897,8 @@ def fiddle_with_spades_exe(spades_exe, logger=None):
         SPADES_VERSION_SUCCESS = True
     except Exception as e:
         SPADES_VERSION_SUCCESS = False
-        logger.warning("failed initial attempt to get spades version")
-        logger.warning(e)
+        logger.info("failed initial attempt to get spades version")
+        logger.info(e)
     if not SPADES_VERSION_SUCCESS:
         # if python 3.5 or 3.6, we should try to use python3.5 explicitly
         # if the user has it
@@ -2173,7 +2173,7 @@ def check_genbank_for_fasta(gb, logger=None):
         for idx, line in enumerate(ingb):
             if line.startswith(">"):
                 logger.error("This genbank file looks like a fasta! Exiting")
-                sys.exit(1)
+                raise ValueError
 
 
 def get_fasta_consensus_from_BAM(samtools_exe, bcftools_exe, # vcfutils_exe,
@@ -2373,8 +2373,7 @@ def main(args, logger=None):
 
     try:
         check_genbank_for_fasta(gb=args.reference_genbank, logger=logger)
-    except:
-        logger.error(last_exception())
+    except ValueError:
         sys.exit(1)
     # if the target_len is set. set needed params
     try:

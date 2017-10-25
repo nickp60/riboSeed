@@ -161,9 +161,34 @@ We realized that our intended range overlapped with our cutoff for trusted/untru
 
 
 ## Pseudomonas
+### Assembly
+riboSeed was run on the dataset as follows:
+```
+/ribo run -r ./data/NZ_CP017149.1.fasta -o /home/nick/results/2017-10-25-pao_ATCC_ref/ -F ./data/SRR3500543_1.fastq -R ./data/SRR3500543_2.fastq --memory 42 --cores 12 --threads 2
+```
 
+To determine how it performed in relation to using the whole genome as a reference, we reran the last SPAdes call as follows:
 
+```
+/python3.5 /home/nick/miniconda3/bin/spades.py -t 6 -m 21 --careful -k 21,33,55,77 --pe1-1 ./data/SRR3500543_1.fastq --pe1-2 ./data/SRR3500543_2.fastq --trusted-contigs /home/nick/results/2017-10-25-pao_ATCC_ref/scan/contigs/NZ_CP017149.1_0.fasta  -o /home/nick/results/2017-10-25-pao_ATCC_ref/seed/final_full_ref_assembly
+```
+### QUAST
+Then, after copying the reesults to the mauve dir, we ran quast on the results as follows:
 
+```
+/home/nicholas/bin/quast-4.4/quast.py -o 2017-10-25-pao_ATCC_ref/QUAST/  -R ./CP015377.1.fasta --threads 4 ./2017-10-25-pao_ATCC_ref/NZ_CP017149.1_de_fere_novo_contigs.fasta ./2017-10-25-pao_ATCC_ref/NZ_CP017149.1_de_novo_contigs.fasta ./2017-10-25-pao_ATCC_ref/NZ_CP017149.1_full_ref.fasta
+```
+### SNPs
+To count the snps comparing the reference to the de fere novo assembly and the de novo assembly, we ran parsnp as follows:
+
+```
+~/bin/Parsnp-Linux64-v1.2/parsnp -g ./CP015377.gb -c -d ./2017-10-25-pao_ATCC_ref/parsnp_genomes/ -p 8 -o ./2017-10-25-pao_ATCC_ref/parsnp_results/
+```
+where the parsnp_genomes dir contained the de fere novo assembly and the refernece as a fasta.
+
+The resulting file was opened in gingr and exported as a vcf.
+
+riboScan was run on the true reference (CP015377.1.fasta) to generate a gff file, which is then used along with the vcf in a scrript poorly named checkParsnpVcf.R.
 
 ## Verifying B. cereus vd118
 ### The problem.
@@ -243,7 +268,7 @@ blobtools create -i ./assembled_atcc/contigs.fasta  -y spades -o ./blob_atcc/ -t
 ```
 
 
-That was all a bit confusing, so we made a script that runs all the commands.  Paths are hardcoded, so it is more of a description of the work than a portable script, but oh well.
+That was all a bit confusing, so we made a script (./scripts/blob_cereus.sh)that runs all the commands.  Paths are hardcoded, so it is more of a description of the work than a portable script, but oh well.
 
 
 ## Archaea
