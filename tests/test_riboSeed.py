@@ -979,7 +979,7 @@ class riboSeedShallow(unittest.TestCase):
         self.assertEqual(ref_cmd, test_cmd)
 
     def test_check_genbank_for_fasta(self):
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(ValueError):
             check_genbank_for_fasta(gb=self.ref_fasta, logger=logger)
 
     @unittest.skipIf(shutil.which("samtools") is None,
