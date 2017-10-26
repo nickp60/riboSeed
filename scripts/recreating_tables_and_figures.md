@@ -178,6 +178,10 @@ Then, after copying the reesults to the mauve dir, we ran quast on the results a
 ```
 /home/nicholas/bin/quast-4.4/quast.py -o 2017-10-25-pao_ATCC_ref/QUAST/  -R ./CP015377.1.fasta --threads 4 ./2017-10-25-pao_ATCC_ref/NZ_CP017149.1_de_fere_novo_contigs.fasta ./2017-10-25-pao_ATCC_ref/NZ_CP017149.1_de_novo_contigs.fasta ./2017-10-25-pao_ATCC_ref/NZ_CP017149.1_full_ref.fasta
 ```
+
+The table was then recapitualed in LaTeX.  Bummer, right?  I wish they could do colored output in latex by default.
+
+
 ### SNPs
 To count the snps comparing the reference to the de fere novo assembly and the de novo assembly, we ran parsnp as follows:
 
@@ -238,16 +242,6 @@ blobtools blobplot  -i blobplot_spades_cov_tax.blobDB.json -r species  -o ./
 ### Maxbin
 <!-- Now that we had proof of contamination, we used MAxbin to separated the contigs likely belonging to each assembly -->
 
-<!-- ``` -->
-<!-- ~/bin/MaxBin-2.2.4/run_MaxBin.pl -contig ~/results/2017-10-17-metaspades-cereus/contigs.fasta  -out ~/results/2017-10-19-cereus_maxbin_fastqreads -reads ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq -reads2 ~/Downloads/hi/cereus/trimmed/insert_180_2__cov250x.fastq -thread 2 -->
-<!-- ``` -->
-<!-- After renaming the output files to get rid of the leading ".", we mapped the reads to the contigs in the second bin (002), as that had the \~30 of reads we were interested in, and converted to fastq -->
-<!-- ``` -->
-<!-- bwa index ./002.fasta -->
-<!-- bwa mem ./002.fasta ~/Downloads/hi/cereus/trimmed/insert_180_1__cov250x.fastq ~/Downloads/hi/cereus/trimmed/insert_180_2__cov250x.fastq > cereus_mapped_to_002.sam -->
-<!-- samtools view -h -F 4 cereus_mapped_to_002.sam | samtools fastq -1 cereus_subset_002_1.fastq -2 cereus_subset_002_2.fastq - -->
-<!-- ``` -->
-<!-- Now that we had -->
 
 We attempted to use maxbn to separate the reads belonging to each of the groups, but presumably because the GC content was so similar and the fact that even after filtering out the reads directly mapping to the B. cereus reference, many of the resulting contigs showed homology to B. cereus, we decided this was not the most appropriate way to isolate the contmainates.
 
@@ -272,9 +266,16 @@ That was all a bit confusing, so we made a script (./scripts/blob_cereus.sh)that
 
 
 ## Archaea
-
-
 ### Formicum
+This was a strange one:  we found out after enforcing stricter kmer choices that performace dropped off.
+riboSeed was run, and then we re-ran spades with different kmers
+```
+ ribo seed -r ./scan/scannedScaffolds.gb -S1 ./DRR017790_1.fastq  -z --cores 4 --memory 16 -o form_infer --ref_as_contig infer ./select/riboSelect_grouped_loci.txt
+/home/nw42839/.pyenv/shims/python3.5 /home/nw42839/miniconda3/bin/spades.py -t 16 -m 32 --careful -k 21,33,55,77,99 --pe1-s ./DRR017790_1.fastq --trusted-contigs /home/nw42839/Results/form/form_infer_k85/final_long_reads/riboSeedContigs.fasta  -o /home/nw42839/Results/form/form_infer_k85/final_de_fere_k99
+
+```
+
+
 
 ### Barkeri
 This dataset is HUGE, so thats why we downsampled it to just 5\% of the reads:
@@ -282,4 +283,11 @@ This dataset is HUGE, so thats why we downsampled it to just 5\% of the reads:
 ~/miniconda3/bin/fastq-dump --split-files SRR2064286
 
 seqtk sample -s 27 ./SRR2064286_1.fastq 0.05 > SRR2064286_1_sub.fastq; seqtk sample -s 27 ./SRR2064286_2.fastq 0.05 > SRR2064286_2_sub.fastq
+```
+Then, we ran riboSeed:
+
+```
+/home/nw42839/miniconda3/bin/ribo scan CP009526.1.fasta -o scan
+/home/nw42839/miniconda3/bin/ribo select ./scan/scannedScaffolds.gb -o select
+/home/nw42839/miniconda3/bin/ribo seed ./select/riboSelect_grouped_loci.txt -r ./scan/scannedScaffolds.gb -F ./SRR2064286_1_sub.fastq -R ./SRR2064286_2_sub.fastq --ref_as_contig trusted --cores 4 --memory 24 -z -o seed_trusted
 ```

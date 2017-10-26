@@ -109,19 +109,19 @@ theme_sim <- function(){
 }
 (coliplot<- ggplot(tall[tall$bug=="E. coli",], 
                    aes(x=variable, y=val)) + 
-    geom_boxplot(outlier.colour =  NA,color="grey20", fill="grey65",width=.7)+
+    geom_boxplot(outlier.colour =  NA,color="grey15", fill="grey65",width=.7, lwd=.8)+
     geom_point(position=position_jitter(width=.1, height=.1), shape=1) +
     facet_grid(coverage~tech)+
-    scale_x_discrete(expand=c(.05,.05), breaks=c("Correct", "Incorrect", "Ambiguous"))+
+    scale_x_discrete(expand=c(.05,.05), limits=c("Correct", "Incorrect", "Ambiguous"))+
     scale_y_continuous(expand=c(.01,.01), limits = c(-.2,7.5), breaks = 0:7)+
     theme_sim() +
     labs(y="Count", x=" ",  title=""))
 set.seed(27)
 (klebplot<- ggplot(tall[tall$bug=="K. pneumoneae",], aes(x=variable, y=val)) + 
-    geom_boxplot(outlier.colour =  NA,color="grey20", fill="grey65",width=.7)+
+    geom_boxplot(outlier.colour =  NA,color="grey15", fill="grey65",width=.7, lwd=.8)+
     geom_point(position=position_jitter(width=.1, height=.10), shape=1) +
     facet_grid(coverage~tech)+
-    scale_x_discrete(expand=c(.05,.05))+
+    scale_x_discrete(expand=c(.05,.05), limits=c("Correct", "Incorrect", "Ambiguous"))+
     scale_y_continuous(expand=c(.01,.01), limits = c(-.2,8.5), breaks = 0:8)+
     theme_sim()+
     labs(y="Count", x=" ",  title="")
@@ -131,7 +131,7 @@ set.seed(27)
     geom_boxplot(outlier.colour =  NA, width=.7, alpha=0.6)+
     geom_point(position=position_jitterdodge(jitter.width=.1, jitter.height=.1), shape=1, color="black") +
     facet_grid(bug~coverage)+#, scales = "free_y")+
-    scale_x_discrete(expand=c(.05,.05))+
+    scale_x_discrete(expand=c(.05,.05), limits=c("Correct", "Incorrect", "Ambiguous"))+
     scale_color_discrete(guide="none")+
     scale_y_continuous(expand=c(.01,.01), limits = c(0,8), breaks = 0:8)+
     theme_bw() +

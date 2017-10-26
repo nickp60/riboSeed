@@ -53,8 +53,7 @@ freqs = c(0.0, 0.0025, 0.0050, 0.0075, 0.0100, 0.0150, 0.0200, 0.0250, 0.0500, 0
 str(reportsdf)
 temp_new_table <- read.csv2(
   args$combined_reports, sep="\t", stringsAsFactors = F, header = F, col.names = names)
-# temp_new_table <- read.csv2("~/GitHub/riboSeed/2017-10-09-degenerate_1_to_50/tmp_degen.txt", sep="\t", stringsAsFactors = F, header = F, col.names = names)
- temp_new_table <- read.csv2("~/GitHub/riboSeed/2017-10-degen-results/2017-10-13-combined-trusted-degen.txt", sep="\t", stringsAsFactors = F, header = F, col.names = names)
+# temp_new_table <- read.csv2("~/GitHub/riboSeed/2017-10-degen-results/2017-10-13-combined_reports.txt", sep="\t", stringsAsFactors = F, header = F, col.names = names)
 
 (temp_new_table$freq <- as.numeric(gsub("(.*)/seed_(.*?)/mauve", "\\2", temp_new_table$sourcepath)))
 (temp_new_table$where <- factor(gsub("(.*)_degenerate_output_(.*?)_(.*)", "\\2", temp_new_table$sourcepath)))
@@ -149,7 +148,7 @@ for (freq in freqs){
 line_lin <- ggplot(tall,#[tall$freq != 0, ],
                     aes(x=freq, color=where, y=value))+ 
     annotate("rect", xmin=min(tall$freq), xmax=0.05, ymin=0, ymax=8, 
-             alpha=0.2, fill="grey20", color=NA)+
+             alpha=0.15, fill="purple", color=NA)+
     annotate("text", x=0.025,  y=7.5, label="Intraspecies", size=5)+
     annotate("text", x=0.090,  y=7.5, label="Interspecies", size=5)+
     geom_smooth(size=0.5,
