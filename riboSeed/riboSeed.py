@@ -38,8 +38,6 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 from distutils.version import StrictVersion
 
-import numpy as np
-
 # plotting with mpl is depreciated till I can figure out why
 # it wont work in screen sessions ( see bioconda issue  #6451)
 
@@ -63,7 +61,7 @@ from pyutilsnrw.utils3_5 import set_up_logging, \
     keep_only_first_contig, get_fasta_lengths, \
     file_len, check_version_from_cmd
 
-from .riboSnag import parse_clustered_loci_file, pad_genbank_sequence, \
+from .shared_methods import parse_clustered_loci_file, pad_genbank_sequence, \
     extract_coords_from_locus, add_gb_seqrecords_to_cluster_list
 
 # GLOBALS

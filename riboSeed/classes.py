@@ -165,7 +165,7 @@ class SeedGenome(object):
         """ if the genome is circular (which it is, by default) adjust the
         cluster coordinates and rewrite the reference fasta as padded.
         """
-        from .riboSnag import pad_genbank_sequence
+        from .shared_methods import pad_genbank_sequence
         if circular:
             for clu in self.loci_clusters:
                 clu.padding = pad

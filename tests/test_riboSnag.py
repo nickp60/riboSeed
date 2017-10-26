@@ -15,14 +15,16 @@ from Bio import SeqIO
 
 from pyutilsnrw.utils3_5 import get_genbank_record, combine_contigs, md5
 
-from riboSeed.riboSnag import parse_clustered_loci_file, \
-    extract_coords_from_locus, \
-    stitch_together_target_regions, \
-    pad_genbank_sequence, prepare_prank_cmd, prepare_mafft_cmd,\
+from riboSeed.shared_methods import parse_clustered_loci_file, \
+    pad_genbank_sequence, \
+    extract_coords_from_locus, add_gb_seqrecords_to_cluster_list
+
+from riboSeed.riboSnag import stitch_together_target_regions, \
+    prepare_prank_cmd, prepare_mafft_cmd,\
     calc_Shannon_entropy, calc_entropy_msa,\
     annotate_msa_conensus, plot_scatter_with_anno, get_all_kmers,\
     profile_kmer_occurances, plot_pairwise_least_squares, make_msa, \
-    check_loci_file_not_genbank, add_gb_seqrecords_to_cluster_list
+    check_loci_file_not_genbank
 
 from riboSeed.classes import LociCluster, Locus
 
