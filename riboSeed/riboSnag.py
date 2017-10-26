@@ -21,7 +21,8 @@ import multiprocessing
 
 try:
     import numpy as np
-    import matplotlib as mpl
+    import matplotlib
+    matplotlib.use("Agg")
     from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
     from matplotlib.figure import Figure
     from matplotlib import gridspec
