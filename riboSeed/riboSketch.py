@@ -28,33 +28,33 @@ from pyutilsnrw.utils3_5 import set_up_logging
 
 
 mycolors = {  # pragma: no cover
-    "pinkish": mpl.colors.ColorConverter().to_rgba(
+    "pinkish": matplotlib.colors.ColorConverter().to_rgba(
         "#ff4c05", alpha=1),
-    "redish": mpl.colors.ColorConverter().to_rgba(
+    "redish": matplotlib.colors.ColorConverter().to_rgba(
         "#ff4c05", alpha=1),
-    "yellish": mpl.colors.ColorConverter().to_rgba(
+    "yellish": matplotlib.colors.ColorConverter().to_rgba(
         "#FFFB07", alpha=1),
-    "greenish": mpl.colors.ColorConverter().to_rgba(
+    "greenish": matplotlib.colors.ColorConverter().to_rgba(
         "#04FF08", alpha=1),
-    "bluish": mpl.colors.ColorConverter().to_rgba(
+    "bluish": matplotlib.colors.ColorConverter().to_rgba(
         "#06B9FF", alpha=1),
-    "greyish": mpl.colors.ColorConverter().to_rgba(
+    "greyish": matplotlib.colors.ColorConverter().to_rgba(
         "#7E7F97", alpha=1),
-    "clear": mpl.colors.ColorConverter().to_rgba(
+    "clear": matplotlib.colors.ColorConverter().to_rgba(
         "#FF012F", alpha=0),
 }
 
 
 bgcols = {  # pragma: no cover
-    "purle": mpl.colors.ColorConverter().to_rgba(
+    "purle": matplotlib.colors.ColorConverter().to_rgba(
         "#EB87A3", alpha=0.5),
-    "green": mpl.colors.ColorConverter().to_rgba(
+    "green": matplotlib.colors.ColorConverter().to_rgba(
         "#5EA662", alpha=0.5),
-    "yellow": mpl.colors.ColorConverter().to_rgba(
+    "yellow": matplotlib.colors.ColorConverter().to_rgba(
         "#EBE418", alpha=0.5),
-    "red": mpl.colors.ColorConverter().to_rgba(
+    "red": matplotlib.colors.ColorConverter().to_rgba(
         "#EB7D7D", alpha=0.5),
-    "blue": mpl.colors.ColorConverter().to_rgba(
+    "blue": matplotlib.colors.ColorConverter().to_rgba(
         "#6795A6", alpha=0.5),
 }
 
@@ -227,13 +227,13 @@ def plot_mauve_compare(refgb,
                 (Bs, centers[i + 1] + nudge),  # ignored
             ]
 
-            codes = [mpl.path.Path.MOVETO,
-                     mpl.path.Path.LINETO,
-                     mpl.path.Path.LINETO,
-                     mpl.path.Path.LINETO,
-                     mpl.path.Path.CLOSEPOLY]
+            codes = [matplotlib.path.Path.MOVETO,
+                     matplotlib.path.Path.LINETO,
+                     matplotlib.path.Path.LINETO,
+                     matplotlib.path.Path.LINETO,
+                     matplotlib.path.Path.CLOSEPOLY]
 
-            path = mpl.path.Path(verts, codes)
+            path = matplotlib.path.Path(verts, codes)
 
             patch = patches.PathPatch(path,
                                       facecolor=bgcols.get(unused_cols[0]),
