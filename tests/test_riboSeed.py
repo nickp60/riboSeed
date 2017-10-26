@@ -40,8 +40,7 @@ from riboSeed.riboSeed import \
     convert_fastq_to_fasta, get_fasta_consensus_from_BAM, \
     fiddle_with_spades_exe
 
-from riboSeed.riboSnag import parse_clustered_loci_file
-
+from riboSeed.shared_methods import parse_clustered_loci_file
 
 sys.dont_write_bytecode = True
 logger = logging

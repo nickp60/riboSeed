@@ -13,7 +13,7 @@ from Bio import SeqIO
 
 from riboSeed.riboSeed import SeedGenome, add_coords_to_clusters
 
-from riboSeed.riboSnag import parse_clustered_loci_file
+from riboSeed.shared_methods import parse_clustered_loci_file
 
 
 logger = logging
