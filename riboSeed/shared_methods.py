@@ -18,7 +18,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from .classes import Locus, LociCluster
 
-logger = logging
+logger = logging.getLogger('root')
 
 def parse_clustered_loci_file(filepath, gb_filepath, output_root,
                               circular, padding=1000, logger=None):
@@ -235,12 +235,13 @@ def set_up_logging(verbosity, outfile, name):
         "%H:%M:%S")
     console_err.setFormatter(console_err_format)
     # set some pretty colors, shorten names of loggers to keep lines aligned
+    # sadly, this doesn't jive with log files (casue they cant display the col
     # logging.addLevelName(logging.DEBUG, "\u001b[30m%s\033[1;0m" % "..")
     # logging.addLevelName(logging.INFO,  "\u001b[32m%s\033[1;0m" % "--")
     # logging.addLevelName(logging.WARNING, "\u001b[33m%s\033[1;0m" % "!!")
     # logging.addLevelName(logging.ERROR, "\u001b[31m%s\033[1;0m" % "xx")
     # logging.addLevelName(logging.CRITICAL, "\u001b[31m%s\033[1;0m" % "XX")
-    # logger.addHandler(console_err)
+    logger.addHandler(console_err)
     # create debug file handler and set level to debug
     try:
         logfile_handler = logging.FileHandler(outfile, "w")

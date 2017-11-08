@@ -29,7 +29,7 @@ import jenkspy
 from Bio import SeqIO
 
 from .classes import Locus
-from .riboSeed.shared_methods import set_up_logging
+from .shared_methods import set_up_logging
 from pyutilsnrw.utils3_5 import multisplit
 
 
