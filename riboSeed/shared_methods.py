@@ -10,11 +10,15 @@
 
 # These methods were moved from riboSnag to avoid circular
 # import of matplotlib and other horrors
+import logging
+import sys
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from .classes import Locus, LociCluster
+
+logger = logging
 
 def parse_clustered_loci_file(filepath, gb_filepath, output_root,
                               circular, padding=1000, logger=None):
@@ -204,3 +208,50 @@ def add_gb_seqrecords_to_cluster_list(cluster_list, gb_filepath):
         clu.seq_record = gb_records[clu.sequence_id]
     gb_records.close()
     return cluster_list
+
+
+def set_up_logging(verbosity, outfile, name):
+    """
+    Set up logging a la pyani, with
+    a little help from:
+    https://aykutakin.wordpress.com/2013/08/06/
+        logging-to-console-and-file-in-python/
+    requires logging, os, sys, time
+    and some coloring
+    logs debug level to file, and [verbosity] level to stderr
+    return a logger object
+    """
+    logger = logging.getLogger('root')
+    if (verbosity * 10) not in range(10, 60, 10):
+        raise ValueError('Invalid log level: %s' % verbosity)
+    # logging.basicConfig(level=logging.DEBUG)
+    logger.setLevel(logging.DEBUG)
+    logging.addLevelName(logging.DEBUG,  "DBUG")
+    # create console handler and set level to given verbosity
+    console_err = logging.StreamHandler(sys.stderr)
+    console_err.setLevel(level=(verbosity * 10))
+    console_err_format = logging.Formatter(
+        str("%(asctime)s " + "%(levelname).4s" +" %(message)s"),
+        "%H:%M:%S")
+    console_err.setFormatter(console_err_format)
+    # set some pretty colors, shorten names of loggers to keep lines aligned
+    # logging.addLevelName(logging.DEBUG, "\u001b[30m%s\033[1;0m" % "..")
+    # logging.addLevelName(logging.INFO,  "\u001b[32m%s\033[1;0m" % "--")
+    # logging.addLevelName(logging.WARNING, "\u001b[33m%s\033[1;0m" % "!!")
+    # logging.addLevelName(logging.ERROR, "\u001b[31m%s\033[1;0m" % "xx")
+    # logging.addLevelName(logging.CRITICAL, "\u001b[31m%s\033[1;0m" % "XX")
+    # logger.addHandler(console_err)
+    # create debug file handler and set level to debug
+    try:
+        logfile_handler = logging.FileHandler(outfile, "w")
+        logfile_handler.setLevel(logging.DEBUG)
+        logfile_handler_formatter = \
+            logging.Formatter("%(asctime)s - %(levelname).4s - %(message)s")
+        logfile_handler.setFormatter(logfile_handler_formatter)
+        logger.addHandler(logfile_handler)
+    except:
+        logger.error("Could not open {0} for logging".format(outfile))
+        sys.exit(1)
+    logger.debug("Initializing logger")
+    logger.debug("logging at level {0}".format(verbosity))
+    return logger

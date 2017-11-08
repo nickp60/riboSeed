@@ -20,7 +20,7 @@ import subprocess
 import os
 import traceback
 
-from pyutilsnrw.utils3_5 import set_up_logging
+from .shared_methods import set_up_logging
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 

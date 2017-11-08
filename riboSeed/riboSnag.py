@@ -46,14 +46,14 @@ from collections import defaultdict  # for calculating kmer frequency
 from itertools import product  # for getting all possible kmers
 # from heatmapcluster import heatmapcluster
 
-from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
+from pyutilsnrw.utils3_5 import check_installed_tools,\
     combine_contigs, check_version_from_cmd
 
 from .classes import LociCluster, Locus
 
 from .shared_methods import add_gb_seqrecords_to_cluster_list, \
     extract_coords_from_locus, pad_genbank_sequence, \
-    parse_clustered_loci_file
+    parse_clustered_loci_file, set_up_logging
 
 def get_args():  # pragma: no cover
     """get the arguments as a main parser with subparsers

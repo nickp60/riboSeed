@@ -18,7 +18,7 @@ import subprocess
 import multiprocessing
 import re
 
-from pyutilsnrw.utils3_5 import set_up_logging
+from .shared_methods import set_up_logging
 from argparse import Namespace
 
 from ._version import __version__

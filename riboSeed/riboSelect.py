@@ -29,7 +29,8 @@ import jenkspy
 from Bio import SeqIO
 
 from .classes import Locus
-from pyutilsnrw.utils3_5 import set_up_logging, multisplit
+from .riboSeed.shared_methods import set_up_logging
+from pyutilsnrw.utils3_5 import multisplit
 
 
 def get_args():  # pragma: no cover

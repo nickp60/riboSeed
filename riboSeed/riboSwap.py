@@ -13,7 +13,7 @@ import traceback
 
 from Bio import SeqIO
 
-from pyutilsnrw.utils3_5 import set_up_logging
+from .shared_methods import set_up_logging
 
 # --------------------------- methods --------------------------- #
 

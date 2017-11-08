@@ -23,9 +23,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 
-# need this line for unittesting
-sys.path.append(os.path.join('..', 'riboSeed'))
-from pyutilsnrw.utils3_5 import set_up_logging
+from .shared_methods import set_up_logging
 
 # --------------------------- classes --------------------------- #
 

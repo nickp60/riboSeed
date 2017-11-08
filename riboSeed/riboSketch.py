@@ -24,7 +24,7 @@ import argparse
 import glob
 import subprocess
 
-from pyutilsnrw.utils3_5 import set_up_logging
+from .shared_methods import set_up_logging
 
 
 mycolors = {  # pragma: no cover
