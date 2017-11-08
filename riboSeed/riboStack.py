@@ -58,11 +58,11 @@ def get_args():  # pragma: no cover
                                type=str, required=True)
 
     optional = parser.add_argument_group('optional arguments')
-    optional.add_argument("-n", "--name", dest='name',
+    optional.add_argument("-n", "--n_samples", dest='n_samples',
                           action="store",
-                          help="name to give the contig files; "
-                          "default: infered from file",
-                          type=str)
+                          help="Number of regions to compare rDNA depth to; "
+                          "default: 10",
+                          type=int, default=10)
     optional.add_argument("-i", "--infer", dest='infer',
                           action="store_true",
                           help="If --infer, ignore the name and length " +
@@ -289,7 +289,7 @@ def main(args, logger=None):
         region=rDNA_regions,
         bedtools_exe=bedtools_exe,
         destdir=os.path.join(output_root, "shuffleRegions"),
-        n=10, genome=os.path.join(output_root, "bedtools_genome"))
+        n=args.n_samples, genome=os.path.join(output_root, "bedtools_genome"))
 
     ref_depth_path, sample_depths_paths, samtools_cmds = samtoolsGetDepths(
         samtools_exe=samtools_exe,
@@ -340,5 +340,5 @@ def main(args, logger=None):
         xmax=60, tick=.2, title="samples 1-10", fill=False, logger=logger)
 
     print("Average depth in rDNA regions:\t%d" % mean(ref_depths))
-    print("Average depth in 10 sets of randomly sampled " +
-          "non-rDNA regions:\t%d" % mean(sample_means))
+    print("Average depth in %d sets of randomly sampled " +
+          "non-rDNA regions:\t%d" % (args.n_samples, mean(sample_means)))

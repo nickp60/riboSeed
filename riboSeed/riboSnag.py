@@ -19,21 +19,6 @@ import itertools
 import multiprocessing
 
 
-try:
-    import numpy as np
-    import matplotlib
-    matplotlib.use("Agg")
-    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-    from matplotlib.figure import Figure
-    from matplotlib import gridspec
-    import matplotlib.patches as patches
-    mpl.rc('font', family='sans-serif')
-    PLOT = True
-except Exception as e:  # most likely an ImportError, but Im not taking chances
-    print(e)
-    print("\nlooks like you have some issue with matplotlib.  " +
-          "Classic matplotlib, amirite? Plotting is disabled\n")
-    PLOT = False
 import pandas as pd
 
 from Bio import SeqIO
@@ -1075,6 +1060,23 @@ def run_blast(query_list, ref, name, output, mbdb_exe='', logger=None):
 
 
 def main(args, logger=None):
+    try:
+        import numpy as np
+        import matplotlib
+        matplotlib.use("Agg")
+        from matplotlib.backends.backend_agg import \
+            FigureCanvasAgg as FigureCanvas
+        from matplotlib.figure import Figure
+        from matplotlib import gridspec
+        import matplotlib.patches as patches
+        mpl.rc('font', family='sans-serif')
+        PLOT = True
+    except Exception as e:  # likely an ImportError, but not taking chances
+        print(e)
+        print("\nlooks like you have some issue with matplotlib.  " +
+              "Classic matplotlib, amirite? Plotting is disabled\n")
+        PLOT = False
+
     output_root = os.path.abspath(os.path.expanduser(args.output))
     # Create output directory only if it does not exist
     try:
