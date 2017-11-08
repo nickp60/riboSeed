@@ -18,6 +18,22 @@ import shutil
 import itertools
 import multiprocessing
 
+try:
+    import numpy as np
+    import matplotlib
+    matplotlib.use("Agg")
+    from matplotlib.backends.backend_agg import \
+        FigureCanvasAgg as FigureCanvas
+    from matplotlib.figure import Figure
+    from matplotlib import gridspec
+    import matplotlib.patches as patches
+    matplotlib.rc('font', family='sans-serif')
+    PLOT = True
+except Exception as e:  # likely an ImportError, but not taking chances
+    print(e)
+    print("\nlooks like you have some issue with matplotlib.  " +
+          "Classic matplotlib, amirite? Plotting is disabled\n")
+    PLOT = False
 
 import pandas as pd
 
@@ -35,6 +51,9 @@ from pyutilsnrw.utils3_5 import set_up_logging, check_installed_tools,\
 
 from .classes import LociCluster, Locus
 
+from .shared_methods import add_gb_seqrecords_to_cluster_list, \
+    extract_coords_from_locus, pad_genbank_sequence, \
+    parse_clustered_loci_file
 
 def get_args():  # pragma: no cover
     """get the arguments as a main parser with subparsers
@@ -485,18 +504,18 @@ def plot_scatter_with_anno(data,
              ymin),  # starting y
             anno[1][1] - anno[1][0],  # rel x end
             ymax - ymin,  # rel y end
-            facecolor=mpl.colors.ColorConverter().to_rgba(
+            facecolor=matplotlib.colors.ColorConverter().to_rgba(
                 colors[index], alpha=0.2),
-            edgecolor=mpl.colors.ColorConverter().to_rgba(
+            edgecolor=matplotlib.colors.ColorConverter().to_rgba(
                 colors[index], alpha=0.2))
         rect2 = patches.Rectangle(
             (anno[1][0],  # starting x
              1),  # starting y
             anno[1][1] - anno[1][0],  # rel x end
             cov_max_depth,  # dont -1 beacuse start at 1
-            facecolor=mpl.colors.ColorConverter().to_rgba(
+            facecolor=matplotlib.colors.ColorConverter().to_rgba(
                 colors[index], alpha=0.2),
-            edgecolor=mpl.colors.ColorConverter().to_rgba(
+            edgecolor=matplotlib.colors.ColorConverter().to_rgba(
                 colors[index], alpha=0.2))
         ax1.add_patch(rect1)
         ax2.add_patch(rect2)
@@ -1060,23 +1079,6 @@ def run_blast(query_list, ref, name, output, mbdb_exe='', logger=None):
 
 
 def main(args, logger=None):
-    try:
-        import numpy as np
-        import matplotlib
-        matplotlib.use("Agg")
-        from matplotlib.backends.backend_agg import \
-            FigureCanvasAgg as FigureCanvas
-        from matplotlib.figure import Figure
-        from matplotlib import gridspec
-        import matplotlib.patches as patches
-        mpl.rc('font', family='sans-serif')
-        PLOT = True
-    except Exception as e:  # likely an ImportError, but not taking chances
-        print(e)
-        print("\nlooks like you have some issue with matplotlib.  " +
-              "Classic matplotlib, amirite? Plotting is disabled\n")
-        PLOT = False
-
     output_root = os.path.abspath(os.path.expanduser(args.output))
     # Create output directory only if it does not exist
     try:

@@ -74,6 +74,8 @@ class RiboSimTest(unittest.TestCase):
         self.to_be_removed.append(self.temp_fasta2)
 
     def test_main_integration(self):
+        if os.path.exists(self.results_dir):
+            shutil.rmtree(self.results_dir)
         args = Namespace(output=self.results_dir,
                          fasta=self.fasta,
                          verbosity=2, frequency=.1,

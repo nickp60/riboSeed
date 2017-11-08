@@ -11,8 +11,8 @@ import os
 import unittest
 from Bio import SeqIO
 
+from .context import riboSeed
 from riboSeed.riboSeed import SeedGenome, add_coords_to_clusters
-
 from riboSeed.shared_methods import parse_clustered_loci_file
 
 

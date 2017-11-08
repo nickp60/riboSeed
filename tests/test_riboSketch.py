@@ -136,6 +136,7 @@ class riboSketchTestCase(unittest.TestCase):
             output_prefix=os.path.join(tempout, "PrettyMauve"))
         self.assertEqual(md5(self.ref_png),
                          md5(os.path.join(tempout, "PrettyMauve.png")))
+        self.to_be_removed.append(tempout)
 
     # @unittest.skipIf(not os.path.exists(
     #     os.path.join(
