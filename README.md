@@ -220,6 +220,10 @@ optional arguments:
 
 ## Known Bugs
 
+* You may run into issues where you get an error about "Unable to connect to X server: None" or localhost:N. Sorry about that; any tips would be useful;  a quick glance at the commit history will show I have spent much time trying to resolve it, without any luck.  If you do run into this, try the following:
+  - connect to the machine with an X session (`ssh -X hostname`)
+  - avoid using `gnu screen` if possible, but if you do need to use it, start the `screen` session after ensuring you have a `$DISPLAY` availible through starting the host session with `-X`
+  
 * Submitting `--smalt_scoring` with vastly different scoring schemes usually causes an error.
 
 ## Running Tests
