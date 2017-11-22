@@ -80,8 +80,6 @@ def get_args():  # pragma: no cover
         add_help=False)  # to allow for custom help
     parser.add_argument("clustered_loci_txt", action="store",
                         help="output from riboSelect")
-
-    # taking a hint from http://stackoverflow.com/questions/24180527
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument("-r", "--reference_genbank",
                                dest='reference_genbank',
@@ -95,7 +93,8 @@ def get_args():  # pragma: no cover
                                type=str, required=True)
 
     # had to make this faux "optional" parse so that the named required ones
-    # above get listed first
+    # above get listed aboce the ther args when displaying the help message
+    # read libraries
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("-F", "--fastq1", dest='fastq1', action="store",
                           help="forward fastq reads, can be compressed",
@@ -106,9 +105,16 @@ def get_args():  # pragma: no cover
     optional.add_argument("-S1", "--fastq_single1", dest='fastqS1',
                           action="store",
                           help="single fastq reads", type=str, default=None)
+    # TODO, multiple sing end libraries
     # optional.add_argument("-S2", "--fastq_single2", dest='fastqS2',
     #                       action="store",
     #                       help="single fastq reads", type=str, default=None)
+
+    # parameters for run
+    optional.add_argument("-l", "--flanking_length",
+                          help="length of flanking regions, in bp; " +
+                          "default: %(default)s",
+                          default=1000, type=int, dest="flanking")
     optional.add_argument("-j", "--just_seed", dest='just_seed',
                           action="store_true",
                           default=False,
@@ -119,32 +125,11 @@ def get_args():  # pragma: no cover
                           help="prefix for results files; " +
                           "default: %(default)s",
                           default="riboSeed", type=str)
-    optional.add_argument("-l", "--flanking_length",
-                          help="length of flanking regions, in bp; " +
-                          "default: %(default)s",
-                          default=1000, type=int, dest="flanking")
     optional.add_argument("--mapper", dest='method',
                           action="store", choices=["smalt", "bwa"],
                           help="available mappers: smalt and bwa; " +
                           "default: %(default)s",
                           default='bwa', type=str)
-    optional.add_argument("-c", "--cores", dest='cores', action="store",
-                          default=None, type=int,
-                          help="cores to be used" +
-                          "; default: %(default)s")
-    optional.add_argument("-t", "--threads", dest='threads',
-                          action="store",
-                          default=1, type=int,
-                          choices=[1, 2, 4],
-                          help="if your cores are hyperthreaded, set number" +
-                          " threads to the number of threads per processer." +
-                          "If unsure, see 'cat /proc/cpuinfo' under 'cpu " +
-                          "cores', or 'lscpu' under 'Thread(s) per core'." +
-                          ": %(default)s")
-    optional.add_argument("-m", "--memory", dest='memory', action="store",
-                          default=8, type=int,
-                          help="system memory available" +
-                          "; default: %(default)s")
     optional.add_argument("-k", "--kmers", dest='kmers', action="store",
                           default="21,33,55,77,99,127", type=str,
                           help="kmers used for final assembly" +
@@ -189,6 +174,10 @@ def get_args():  # pragma: no cover
                           help="if assembled contig is smaller than  " +
                           "--min_assembly_len, contig will still be included" +
                           " in assembly; default: inferred")
+    optional.add_argument("--damn_the_torpedos", dest='damn_the_torpedos',
+                          action="store_true",
+                          default=False,
+                          help="Ignore certain errors, full speed ahead!")
     optional.add_argument("--subtract", dest='subtract',
                           action="store_true",
                           default=False,
@@ -285,12 +274,6 @@ def get_args():  # pragma: no cover
                           "This requires knowledge of your chosen mapper's " +
                           "optional arguments. Proceed with caution!  " +
                           "default: %(default)s")
-
-    # # had to make this explicitly to call it a faux optional arg
-    optional.add_argument("-h", "--help",
-                          action="help", default=argparse.SUPPRESS,
-                          help="Displays this help message")
-
     # # TODO  Make these check a config file
     optional.add_argument("--spades_exe", dest="spades_exe",
                           action="store", default="spades.py",
@@ -316,9 +299,30 @@ def get_args():  # pragma: no cover
                           action="store", default="bcftools",
                           help="Path to bcftools executable; " +
                           "default: %(default)s")
+    optional.add_argument("-c", "--cores", dest='cores', action="store",
+                          default=None, type=int,
+                          help="cores to be used" +
+                          "; default: %(default)s")
+    optional.add_argument("-t", "--threads", dest='threads',
+                          action="store",
+                          default=1, type=int,
+                          choices=[1, 2, 4],
+                          help="if your cores are hyperthreaded, set number" +
+                          " threads to the number of threads per processer." +
+                          "If unsure, see 'cat /proc/cpuinfo' under 'cpu " +
+                          "cores', or 'lscpu' under 'Thread(s) per core'." +
+                          ": %(default)s")
+    optional.add_argument("-m", "--memory", dest='memory', action="store",
+                          default=8, type=int,
+                          help="system memory available" +
+                          "; default: %(default)s")
     optional.add_argument('--version', action='version',
                           version='riboSeed {version}'.format(
                               version=__version__))
+    # # had to make this explicitly to call it a faux optional arg
+    optional.add_argument("-h", "--help",
+                          action="help", default=argparse.SUPPRESS,
+                          help="Displays this help message")
     args = parser.parse_args(sys.argv[2:])
     return args
 
@@ -908,8 +912,8 @@ def fiddle_with_spades_exe(spades_exe, logger=None):
         SPADES_VERSION_SUCCESS = True
     except Exception as e:
         SPADES_VERSION_SUCCESS = False
-        logger.info("failed initial attempt to get spades version")
-        logger.info(e)
+        logger.debug("failed initial attempt to get spades version")
+        logger.debug(e)
     if not SPADES_VERSION_SUCCESS:
         # if python 3.5 or 3.6, we should try to use python3.5 explicitly
         # if the user has it
@@ -1072,23 +1076,6 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         clu=clu, iteration=mapping_ob.iteration, logger=logger)
     if cov_exclude_result is not None:
         return cov_exclude_result
-    # ### deal with those excluded from assembly by lack of coverage depth
-    # ###  ie  (coverage_exclusion=True)
-    # if clu.coverage_exclusion is not None:
-    #     assert clu.coverage_exclusion, \
-    #         "this should only be set by the partition_mapping method."
-    #     #  if this is the first iteration, return two
-    #     # Otherwise,  UPDATED: continue with warning
-    #     if mapping_ob.iteration > 0:
-    #         cluster.mappings[-1].assembled_contig = \
-    #             cluster.mappings[-2].assembled_contig
-    #         logger.warning(" the coverage is worryingly low, but we " +
-    #                        "will continue.")
-    #         return 0
-    #     else:
-    #         logger.info("the coverage is worryingly low, and as this " +
-    #                     "is the first iteration, we must discard this contig")
-    #         return 2
     mapping_ob.assembled_contig = os.path.join(
         mapping_ob.assembly_subdir, "contigs.fasta")
     logger.debug("checking for the following file: \n{0}".format(
@@ -1102,7 +1089,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
         return 3
     # by default, we keep only the longest, bestest, most fantastic-est contig
     if keep_best_contig:
-        logger.info("reserving first contig")
+        logger.debug("reserving first contig")
         try:
             keep_only_first_contig(
                 os.path.join(mapping_ob.assembly_subdir, "contigs.fasta"),
@@ -1299,13 +1286,13 @@ def check_kmer_vs_reads(k, readlen, min_diff=2, logger=None):
     new_ks = []
     for i in klist:
         if i > readlen:
-            logger.info("removing %d from list of kmers: exceeds read length",
+            logger.warning("removing %d from list of kmers: exceeds read length",
                         i)
         elif readlen - i <= min_diff:
-            logger.info("removing %d from list of kmers: too close " +
+            logger.warning("removing %d from list of kmers: too close " +
                         "to read length", i)
         elif i % 2 == 0:
-            logger.info("removing %d from list of kmers: must be odd", i)
+            logger.warning("removing %d from list of kmers: must be odd", i)
         else:
             new_ks.append(i)
     return ",".join([str(x) for x in new_ks])
@@ -1469,8 +1456,8 @@ def prepare_next_mapping(cluster, seedGenome, flank,
     #  the mapping. Because both SMALT and BWA use soft-clipping by defualt, we
     #  recover and use the clipped regions
     else:
-        logger.info("using coords from previous iterations 'genome':")
-    logger.info("Coordinates for %s cluster %i:  [%i - %i]",
+        logger.info("using coords from previous iterations 'genome'")
+    logger.debug("Coordinates for %s cluster %i:  [%i - %i]",
                 cluster.seq_record.id,
                 cluster.index,
                 cluster.global_start_coord,
@@ -2347,7 +2334,9 @@ def main(args, logger=None):
         sys.exit(1)
     if args.cores is None:
         args.cores = multiprocessing.cpu_count()
-        logger.info("Using %i cores", args.cores)
+    logger.info("Using %i core(s)", args.cores)
+    logger.info("Using %iGB memory", args.memory)
+    logger.info("Using %i thread(s)", args.threads)
 
     logger.info("checking for installations of all required external tools")
     logger.debug("creating an Exes object")
@@ -2552,7 +2541,7 @@ def main(args, logger=None):
             if seedGenome.this_iteration != 1:
                 # clear out old .sam files to save space
                 if args.clean_temps:
-                    logger.info("removing uneeded file:")
+                    logger.info("removing uneeded files from previous mappings")
                     # delete the read files from the last mapping
                     # dont do this on first iteration cause those be the reads!
                     # and if they aren't backed up you are up a creek and
@@ -2572,7 +2561,7 @@ def main(args, logger=None):
                     inbam=clu.mappings[-1].mapped_bam,
                     logger=logger)
                 if len(mapped_scores) > 200000:
-                    logger.info("Downsampling our plotting data to 20k points")
+                    logger.debug("Downsampling our plotting data to 20k points")
                     mapped_scores = random.sample(mapped_scores, 200000)
                 printPlot(data=mapped_scores, line=score_minimum,
                           ymax=18, xmax=60, tick=.2, fill=True,
@@ -2815,15 +2804,17 @@ def main(args, logger=None):
             subassembly_return_sum = sum([r.get() for r in results])
         # check return codes
         logger.info("Sum of return codes (should be 0):")
-        if subassembly_return_sum == 0:
-            logger.info(subassembly_return_sum)
-        else:
-            logger.warning(
+        logger.info(subassembly_return_sum)
+        if subassembly_return_sum != 0:
+            logger.error(
                 "%d error(s) occurred when converting reads and subassembling with SPAdes!",
                 subassembly_return_sum)
-            logger.warning(
-                "Check the SPAdes and  logs to diagnose, especially if " +
-                "this occurs with more than one subassembly. Continuing")
+            if args.damn_the_torpedos or subassembly_return_sum < 2:
+                logger.error(
+                    "Check the SPAdes and samtools logs to diagnose, especially if " +
+                    "this occurs with more than one subassembly. Continuing")
+            else:
+                sys.exit(1)
 
 
         # evaluate mapping (cant be multiprocessed)
@@ -2988,8 +2979,9 @@ def main(args, logger=None):
     if spades_results_sum != 0:
         logger.error("%d error(s) occurred when running SPAdes!",
                      spades_results_sum)
-        logger.error("Check the spades logs to diagnose.  Exiting (1)")
-        sys.exit(1)
+        if not args.damn_the_torpedos:
+            logger.error("Check the spades logs to diagnose.  Exiting (1)")
+            sys.exit(1)
     if not args.skip_control and quast_reports is not None:
         logger.debug("writing combined quast reports")
         logger.info("Comparing de novo and de fere novo assemblies:")

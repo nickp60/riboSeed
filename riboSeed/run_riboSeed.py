@@ -224,6 +224,10 @@ def get_args():  # pragma: no cover
                           default=8, type=int,
                           help="cores for multiprocessing" +
                           "; default: %(default)s")
+    optional.add_argument("--damn_the_torpedos", dest='damn_the_torpedos',
+                          action="store_true",
+                          default=False,
+                          help="Ignore certain  errors, full speed ahead!")
     optional.add_argument("-t", "--threads", dest='RUN_THREADS',
                           action="store",
                           default=1, type=int,
