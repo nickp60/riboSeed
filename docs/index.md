@@ -8,8 +8,21 @@ redirect_from: "../riboSeed.html"
 
 We have developed a genome assembly preprocessing scheme, riboSeed, that uses the unique regions flanking the ribosomal coding operons. Please give it a shot and let me know how it goes for you! If you love it, please tweet about it to [#riboSeed](https://twitter.com/search?f=tweets&q=%23riboSeed&src=typd"); if you don't like it, please send me a email instead :)
 
+## Preprint
+the riboSeed preprint manuscript can be found on [bioRxiv](http://www.biorxiv.org/content/early/2017/07/05/159798); comments are welcome!
+
+## Documentation
+riboSeed's full documentation can be found at [http://riboseed.readthedocs.io](http://riboseed.readthedocs.io).
+
+## Analysis scripts
+The scripts used in the analyses in riboSeed's preprint can be found on the gitHub page under [scripts](https://github.com/nickp60/riboSeed/tree/master/scripts).
+
+## Validation Datasets
+The script used to create the artificial genomes can be found [here](https://github.com/nickp60/riboSeed/blob/master/scripts/coliSimulation.sh). The GAGE-B datasets can be download from their (website)[http://ccb.jhu.edu/gage_b/index.html]. The accessions for all other genomes used can be found in the supplemental information of the preprint.
+
+
 ## Installation
-Requires python3.5 or above.  Install with `pip install riboSeed`. For required external tools, see the [README](https://github.com/nickp60/riboSeed/blob/master/README.md#installation).
+riboSeed is available via the conda installation ecosystem using `conda install riboseed` (note the lowercase "s"). Alternatively, riboSeed can be installed via pip with `pip install riboSeed`. For required external tools, see the [README](https://github.com/nickp60/riboSeed/blob/master/README.md#installation).
 
 ## Theory
 
@@ -36,7 +49,7 @@ In this [Mauve](http://darlinglab.org/mauve/mauve.html) visualization, we show (
 
 So what does this mean? We conclude that given short read sequencing data of sufficient (<10x) depth and a taxonomically close reference genome possessing sufficiently unique rDNA flanking regions, riboSeed's *de fere novo* assembly can bridge across gaps in a *de novo* assembly caused by repeated rDNAs.  Its not a silver bullet solving all short read assembly problems, but it reliably addresses a single issue affecting nearly all bacterial genome assemblies.
 
-Futher, when used in conjunction with the other genome finishing tools (namely, in a pipeline such as BugBuilder), riboSeed can result in closed genomes.
+Further, when used in conjunction with the other genome finishing tools (namely, in a pipeline such as BugBuilder), riboSeed can result in closed genomes.
 
 
 ## Next Steps

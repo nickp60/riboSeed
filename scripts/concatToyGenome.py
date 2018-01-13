@@ -30,6 +30,9 @@ def get_args():  # pragma: no cover
     optional.add_argument("-n", "--name",
                           help="name for output fasta",
                           default='concatenated_seq', type=str)
+    optional.add_argument("-v", "--verbose",
+                          action="store_true",
+                          help="output verbose status")
 
     args = parser.parse_args()
     return args
@@ -86,7 +89,7 @@ if __name__ == "__main__":
     res = concat_genome(input_dir=args.indir, ext=args.ext,
                         outpath=os.path.join(args.output,
                                              str(args.name + ".fasta")),
-                        verbose=True)
+                        verbose=args.verbose)
     if res == 1:
         print("exiting")
     else:
