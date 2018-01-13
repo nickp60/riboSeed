@@ -9,7 +9,7 @@ redirect_from: "../riboSeed.html"
 We have developed a genome assembly preprocessing scheme, riboSeed, that uses the unique regions flanking the ribosomal coding operons. Please give it a shot and let me know how it goes for you! If you love it, please tweet about it to [#riboSeed](https://twitter.com/search?f=tweets&q=%23riboSeed&src=typd"); if you don't like it, please send me a email instead :)
 
 ## Preprint
-the riboSeed preprint manuscript can be found on [bioRxiv](http://www.biorxiv.org/content/early/2017/07/05/159798); comments are welcome!
+the riboSeed preprint manuscript can be found on [bioRxiv](https://www.biorxiv.org/content/early/2017/07/14/159798); comments are welcome!
 
 ## Documentation
 riboSeed's full documentation can be found at [http://riboseed.readthedocs.io](http://riboseed.readthedocs.io).
