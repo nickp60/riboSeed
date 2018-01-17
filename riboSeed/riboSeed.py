@@ -2652,6 +2652,9 @@ def main(args, logger=None):
                 add_args=args.mapper_args,
                 logger=logger)
         mapping_percentages.append([seedGenome.this_iteration, map_percent])
+        ##
+        # Here we put the logic in for a wee little preliminary assembly to test
+        ##
         # if things go really bad on the first mapping, get out while you can
         if len(score_list) == 0:
             logger.error(

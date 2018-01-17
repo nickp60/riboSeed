@@ -588,7 +588,6 @@ class LociCluster(object):
                  continue_iterating=True, keep_contigs=True):
         # int: unique identifier for cluster
         self.index = next(LociCluster.newid)
-        # self.index = index
         # str: sequence name, usually looks like 'NC_17777373.1' or similar
         self.sequence_id = sequence_id
         # list: hold locus objects for each item in cluster
