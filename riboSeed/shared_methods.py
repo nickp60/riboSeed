@@ -256,3 +256,58 @@ def set_up_logging(verbosity, outfile, name):
     logger.debug("Initializing logger")
     logger.debug("logging at level {0}".format(verbosity))
     return logger
+
+
+def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, threads=1):
+    """ construct a system call to barrnap
+
+    Args:
+        infasta (str): path to fasta file
+        outgff (str): name of gff file to create
+        exe (str): path to system executable for barrnap
+        thresh (float): Proportional length threshold to reject prediction
+        kingdom (str): bac, euk, arc, or mito
+        threads (int): number of threads to use
+    Returns:
+        (str): command
+
+    """
+    assert thresh > 0 and thresh < 1, "Thresh must be between 0 and 1!"
+    if exe.endswith("py"):
+        # ensure running python barrnap uses >3.5
+        pyexe = str(sys.executable + " ")
+    else:
+        pyexe = ""
+    cmd = "{0}{1} -k {2} {3} --reject {4} --threads {5} > {6}".format(
+        pyexe,
+        exe,
+        kingdom,
+        infasta,
+        thresh,
+        threads,
+        outgff
+        )
+    return cmd
+
+
+def test_barrnap_ok(exe):
+    """Ensure barrnap isnt missing perl dependencies if not using py barrnap
+
+    Args:
+        exe (str): path to system executable for barrnap
+    Raises:
+        SystemExit: if we get an error when running barrnap
+    Returns:
+
+    """
+    cmd = "{0} -h".format(exe)
+    result = subprocess.run(cmd,
+                            shell=sys.platform != "win32",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            check=False)
+    if result.returncode == 127:
+        print("It appears that you have barrnap installed, but it lacks " +
+              "certain perl dependecies. Either install those, or install " +
+              "python barrnap from https://github.com/nickp60/barrnap-python")
+        sys.exit(1)

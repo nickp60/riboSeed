@@ -35,6 +35,7 @@ helpmsg = [
     " -stack    compare coverage depth in rDNA regions to rest of genome",
     " -score    score batches of assemblies with BLASTn",
     " -swap     swap contigs from assemblies",
+    " -spec     use assembly graph to speculate number of rDNAS",
     " -config   write out a blank config file to be used with `run`",
     ""
 ]
@@ -66,6 +67,7 @@ def main(args=None):
         "score": "riboScore",
         "sim": "riboSim",
         "swap": "riboSwap",
+        "spec": "riboSpec",
         "config": "make_riboSeed_config"}
     if args[1] not in modules_dict.keys():
         print("Error:" + args[1] +
