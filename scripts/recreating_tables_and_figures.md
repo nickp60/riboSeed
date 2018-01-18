@@ -38,7 +38,9 @@ python3.5 riboSnag.py ./sakai_scan/scannedScaffolds.gb ./sakai_select/riboSelect
 The genomes for the comparison were selected using the selectGenomes.R script under manuscript_results/entropy.  In short, this script gets the list of bacterial genomes assemblies from NCBI, selects the non-contig and non-scaffold ones, and gets 25 randomly selected ones (seeded) from the ftp site.
 
 ```
-Rscript selectGenomes.R assembly_summary.txt ./select_coli_genomes/                                              ```
+Rscript selectGenomes.R assembly_summary.txt ./select_coli_genomes/
+```
+
 unzip all the entries in the genomes dir
 
 ```
@@ -47,7 +49,7 @@ gunzip select_coli_genomes/genomes/
 
 Getting the "first" rDNA was a bit more involved:
 
-the gmbH sequence was obtained from Uniprot
+Manual inspection of the genome showed the first rDNA had a neighboring gene called gmbH. A gmbH sequence was obtained from Uniprot
 ```
 >gmbH
 MAKSVPAIFLDRDGTINVDHGYVHEIDNFEFIDGVIDAMRELKKMGFALVVVTNQSGIA
