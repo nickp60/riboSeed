@@ -28,6 +28,10 @@ try:
     from matplotlib import gridspec
     import matplotlib.patches as patches
     matplotlib.rc('font', family='sans-serif')
+    matplotlib.rcParams['text.usetex'] = True
+    matplotlib.rcParams['text.latex.preamble'] = [r'\usepackage[cm]{sfmath}']
+    matplotlib.rcParams['font.family'] = 'sans-serif'
+    matplotlib.rcParams['font.sans-serif'] = 'cm'
     PLOT = True
 except Exception as e:  # likely an ImportError, but not taking chances
     print(e)
