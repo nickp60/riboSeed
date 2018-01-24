@@ -340,5 +340,5 @@ def main(args, logger=None):
         xmax=60, tick=.2, title="samples 1-10", fill=False, logger=logger)
 
     print("Average depth in rDNA regions:\t%d" % mean(ref_depths))
-    print("Average depth in %d sets of randomly sampled " +
-          "non-rDNA regions:\t%d" % (args.n_samples, mean(sample_means)))
+    print(str("Average depth in %d sets of randomly sampled " +
+              "non-rDNA regions:\t%d") % (args.n_samples, mean(sample_means)))
