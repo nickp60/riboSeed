@@ -12,6 +12,8 @@
 # import of matplotlib and other horrors
 import logging
 import sys
+import multiprocessing
+import subprocess
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord

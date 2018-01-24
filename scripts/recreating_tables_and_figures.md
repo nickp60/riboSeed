@@ -35,7 +35,7 @@ and riboSnag:
 python3.5 riboSnag.py ./sakai_scan/scannedScaffolds.gb ./sakai_select/riboSelect_grouped_loci.txt -o ./sakai_snag_mafft/ --msa_tool mafft -v 1 --title ''
 ```
 ### Compare across Sakai genome
-The genomes for the comparison were selected using the selectGenomes.R script under manuscript_results/entropy.  In short, this script gets the list of bacterial genomes assemblies from NCBI, selects the non-contig and non-scaffold ones, and gets 25 randomly selected ones (seeded) from the ftp site.
+The genomes for the comparison were selected using the selectGenomes.R script (renamed getCompleteGenomeSubset.R, under "scripts" dir) under manuscript_results/entropy.  In short, this script gets the list of bacterial genomes assemblies from NCBI, selects the non-contig and non-scaffold ones, and gets 25 randomly selected ones (seeded) from the ftp site.
 
 ```
 Rscript selectGenomes.R assembly_summary.txt ./select_coli_genomes/

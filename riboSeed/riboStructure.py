@@ -146,7 +146,6 @@ def plot_rDNAs(
         gff_lists,
         featuremin,
         maxlen,
-        aspect=.6,
         breakwidth=40,
         # names=["Position", "Entropy"],
         title="Shannon Entropy by Position",
@@ -163,19 +162,19 @@ def plot_rDNAs(
     max_combined_len = 10000 + maxlen
     fig = Figure()
     FigureCanvas(fig)
-    # gs = gridspec.GridSpec(1, 2, width_ratios=[1.618, 1])
     gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1])
-    # ax1 = fig.add_subplot()
-    # ax2 = fig.add_subplot(gs[1])
     ax = fig.add_subplot(gs[0])
     ax2 = fig.add_subplot(gs[1])#, sharey=ax)
     ax2.get_shared_y_axes().join(ax, ax2)
     ax.set_title(title, y=1.08)
     # set the centers as starting relative to  relheight - (2* codingdepth)
-    relheight = max_combined_len * aspect
-    coding_height = .05 * relheight
+    # and out relative height: assuming max 10Mb genome, 1/10 should be nice
+    relheight = max_combined_len * .5
+    coding_height = .005 * relheight
+    print("coding height" + str(coding_height))
+    # coding_height = 1
     relinner = relheight - (coding_height * 3)
-
+    # define our center lines of the graphs
     centers = []
     for i, gff in enumerate(gff_lists):
         if i == 0:  # first panel
@@ -203,9 +202,6 @@ def plot_rDNAs(
         #     continue
         with open(gff[0][0], "r") as inf:
             recs = list(SeqIO.parse(inf, "fasta"))
-        print(recs)
-        print(sum([len(x.seq) for x in recs]))
-        print(gff[0])
         last_chrom_end = 0
         names.append(",".join([x.id for x in recs]))
         descs.append(",".join([x.description for x in recs]))
@@ -214,7 +210,6 @@ def plot_rDNAs(
             short_name = short_name + "; " + ",".join([x.id for x in recs[1:]])
         short_descs.append(short_name)
         lens.append(",".join([str(len(x.seq)) for x in recs]))
-        print(centers)
         coding_lengths = [len(x.seq) for x in recs]
 
         coding_box = FancyBboxPatch(
@@ -252,16 +247,6 @@ def plot_rDNAs(
         if diff_this_max > 0:
             ax.plot([last_chrom_end + breakwidth, maxlen],
                     [centers[gff_i],centers[gff_i]], color = 'black', linestyle='--', dashes=(2,5))
-            # dash_box = FancyBboxPatch(
-            #     (last_contig_end + breakwidth, centers[i] - coding_height),
-            #     diff_this_max, coding_height * .02,
-            #     boxstyle="round,pad=0,rounding_size=0",
-            #     mutation_aspect=.5,
-            #     # mutation_scale=.5,
-            #     fc="black",
-            #     ec=mycolors['clear']
-            # )
-            # ax.add_patch(dash_box)
 
         previous_end = 0
         for f, seq, prog, feat, start, end, x1, strand, x2, product in gff:
@@ -349,7 +334,7 @@ def plot_rDNAs(
         x.spines["bottom"].set_visible(False)
     fig.tight_layout()
     fig.subplots_adjust(hspace=0)
-    fig.set_size_inches(22, 4 + (1* len(names)))
+    fig.set_size_inches(22, 2 + (.5* len(names)))
     fig.savefig(str(output_prefix + '.png'), bbox_inches='tight', dpi=(200), transparent=True)
     fig.savefig(str(output_prefix + '.pdf'), bbox_inches='tight', dpi=(200))
     return 0
@@ -508,15 +493,11 @@ def main(args, logger=None):
             sequence_lens.append(sum(
                 [len(x.seq) for x in SeqIO.parse(inf, "fasta")]))
     logger.debug("max: %s", max(sequence_lens))
-    print([x[0][0] for x in plot_gff_lists])
-    print(sequence_lens)
-
+    # zip and sort by the sequence length, low to high
     sorted_plot_gff_lists = [x for y, x in sorted(zip(sequence_lens, plot_gff_lists))]
-    print([x[0][0] for x in sorted_plot_gff_lists])
     # for x, y in sequence_lens, plot_mauve_compare
     plot_rDNAs(
         sorted_plot_gff_lists,
-        aspect=.6,
         breakwidth=1000,
         featuremin=1000,
         maxlen=max(sequence_lens),
