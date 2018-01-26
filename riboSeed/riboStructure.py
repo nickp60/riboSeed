@@ -74,6 +74,11 @@ def get_args():  # pragma: no cover
                                "default: %(default)s", default=os.getcwd(),
                                type=str, required=True)
     optional = parser.add_argument_group('optional arguments')
+    optional.add_argument("-g", "--gffdir", dest='gffdir',
+                          help="If used, look here for gff files " +
+                          "corresponding to the sequences rather than " +
+                          "generating with barrnap",
+                          action="store", type=str)
     optional.add_argument("-k", "--kingdom", dest='kingdom',
                           action="store",
                           choices=["bac", "euk", "arc", "mito"],
@@ -149,7 +154,7 @@ def plot_rDNAs(
         breakwidth=40,
         # names=["Position", "Entropy"],
         title="Shannon Entropy by Position",
-        output_prefix="entropy_plot.png"):
+        output_prefix="entropy_plot.png", logger=None):
     """
     plot rDNA positions from a list of genomes
 
@@ -158,7 +163,8 @@ def plot_rDNAs(
     Add a line for each.
 
     """
-    print([x[0][0] for x in gff_lists])
+    logger.debug("sources for datasets for plotting")
+    logger.debug([x[0][0] for x in gff_lists])
     max_combined_len = 10000 + maxlen
     fig = Figure()
     FigureCanvas(fig)
@@ -169,23 +175,18 @@ def plot_rDNAs(
     ax.set_title(title, y=1.08)
     # set the centers as starting relative to  relheight - (2* codingdepth)
     # and out relative height: assuming max 10Mb genome, 1/10 should be nice
-    relheight = max_combined_len * .5
-    coding_height = .005 * relheight
-    print("coding height" + str(coding_height))
-    # coding_height = 1
-    relinner = relheight - (coding_height * 3)
+    ngffs = len(gff_lists)
+    coding_height = 1.35
+    rRNA_height = coding_height / 3
+    print("coding height " + str(coding_height))
+
     # define our center lines of the graphs
-    centers = []
-    for i, gff in enumerate(gff_lists):
-        if i == 0:  # first panel
-            centers.append(relheight - (coding_height * 1.5))
-        elif i == len(gff_lists) - 1: # last panel
-            centers.append(0 + (coding_height * 1.5))
-        else:  # all the other panels
-            centers.append(relheight - ((coding_height * 1.5) +
-                                        (relinner / float(len(gff_lists) - 1))  * i))
+    centers = [x + .5  for x in range(0, (len(gff_lists) * 2) + 1, 2)]
+    centers[-1] = centers[-1] - 1  # bit of a hack to tidy up the spacing
+
+    logger.info(centers)
     xmin, xmax = 0, max_combined_len
-    ymin, ymax = 0, relheight
+    ymin, ymax = 0, ngffs #* len(gff_lists) #* 1.5
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
     # ax.grid(color='r', linestyle='-', linewidth=2)
@@ -198,6 +199,7 @@ def plot_rDNAs(
     print(len(gff_lists))
     names, descs, short_descs, lens = [], [], [], []
     for gff_i, gff in enumerate(gff_lists):
+        logger.info("plotting %i of %i", gff_i + 1, len(gff_lists))
         # if i > 2:
         #     continue
         with open(gff[0][0], "r") as inf:
@@ -209,21 +211,19 @@ def plot_rDNAs(
         if len(recs) > 1:
             short_name = short_name + "; " + ",".join([x.id for x in recs[1:]])
         short_descs.append(short_name)
-        lens.append(",".join([str(len(x.seq)) for x in recs]))
+        # lens.append(",".join([str(len(x.seq)) for x in recs]))
+        lens.append(sum([len(x.seq) for x in recs]))
         coding_lengths = [len(x.seq) for x in recs]
-
-        coding_box = FancyBboxPatch(
-            (last_chrom_end, centers[gff_i] - coding_height / 2),
-            # maxlen, coding_height,
-            sum(coding_lengths),
-            coding_height,
-            # boxstyle="round,pad=0,rounding_size=" + str(centers[i] / 50),
-            mutation_aspect=.5,
-            # mutation_scale=.5,
+        coding_box = patches.Rectangle(
+            (last_chrom_end, # x1
+             centers[gff_i] - (coding_height *.5)), # y1
+            sum(coding_lengths), # x2
+            abs(coding_height), # y2
             fc=mycolors['lightergreyish'],
             ec=mycolors['clear'],
             linewidth=0
         )
+
         ax.add_patch(coding_box)
         # add chrom breaks
         last_chrom_end = last_chrom_end + coding_lengths[0]
@@ -231,12 +231,11 @@ def plot_rDNAs(
             for length_i, length in enumerate(coding_lengths):
                 if length_i == 0:
                     continue
-                buffer_box = FancyBboxPatch(
-                    (last_chrom_end - breakwidth, centers[gff_i] - coding_height),
-                    breakwidth, coding_height * 2,
-                    boxstyle="round,pad=0,rounding_size=0",
-                    mutation_aspect=.5,
-                    # mutation_scale=.5,
+                buffer_box = patches.Rectangle(
+                    (last_chrom_end - breakwidth,
+                     centers[gff_i] - coding_height * .6),
+                    breakwidth,
+                    coding_height * 1.2,
                     fc="black",
                     ec=mycolors['clear']
                 )
@@ -255,32 +254,32 @@ def plot_rDNAs(
                 #Exclude this feature
                 continue
             feat_len = int(end) - int(start)
+            # ------------------------ .5 total
+            # |                      |
+            # ------------------------
+            # |                      |
+            # ------------------------
+            # |                      |
+            # ------------------------   0
             if "16S" in product:
                 color = mycolors['greenish']
                 lencode = featuremin * 40
-                yju =  -coding_height * .33
+                yjust = (2 * coding_height)/3
             elif "23S" in product:
                 color = mycolors['bluish']
                 lencode = featuremin * 60
-                yju = 0 * centers[i]
+                yjust = coding_height/3
             elif "5S" in product:
                 color = mycolors['redish']
                 lencode = featuremin * 20
-                yju = coding_height * .33
+                yjust = 0
             else:
                 continue
-            #
-            # this_start, this_end = start, end
-            # if this_start < previous_end:
-            #     this_start = previous_end
-            #     this_end = (end - start) + this_start
-            anno_box = FancyBboxPatch(
-                (start,
-                 centers[gff_i] + yju - (coding_height * .3 * .5)),
-                lencode, coding_height * .3,
-                # boxstyle="round,pad=0,rounding_size=" + str(feat_len / 2),
-                mutation_aspect=.5,
-                # mutation_scale=.5,
+            anno_box = patches.Rectangle(
+                (start, # x1
+                 centers[gff_i] - (coding_height * .5 ) + yjust ),  # y1
+                lencode, # x2
+                abs(rRNA_height),
                 fc=color,
                 ec="black",
                 alpha=.75,
@@ -293,7 +292,7 @@ def plot_rDNAs(
     green_patch = patches.Patch(color=mycolors['greenish'], label='16S')
     blue_patch = patches.Patch(color=mycolors['bluish'], label='23S')
 
-    ax.legend(bbox_to_anchor=(.25, -0.02, .5, -.102), loc=3,
+    ax.legend(bbox_to_anchor=(.1, -0.05, .9, -.102), loc=3,
               ncol=3, mode="expand", borderaxespad=0.,
               handles=[red_patch, green_patch, blue_patch],
               frameon=False)
@@ -301,12 +300,13 @@ def plot_rDNAs(
     loc = -.1
     for desc_i, desc in enumerate(short_descs):
         ax2.text(loc,    # x location
-                 centers[desc_i] - (nudge * .55),                      # y location
+                 centers[desc_i] - (nudge * .4),                      # y location
                  desc,                          # text first 20 char
                  ha='left', color='black', weight='normal', fontsize=14)
     # label right with lenth
     ax.set_yticklabels(lens, fontsize=14)
-    ax.set_ylabel('Chromosome Length(s)', fontsize=14)
+    # ax.set_yticklabels(centers, fontsize=14)
+    ax.set_ylabel('Total Genome Length (including plasmids)', fontsize=14)
     ax.get_yaxis().set_label_coords(-.15, .5) # left/right, up/down
     ax.yaxis.label.set_color('dimgrey')
     # ax.get_yaxis().set_label_coords(.05, .1)
@@ -334,8 +334,9 @@ def plot_rDNAs(
         x.spines["bottom"].set_visible(False)
     fig.tight_layout()
     fig.subplots_adjust(hspace=0)
-    fig.set_size_inches(22, 2 + (.5* len(names)))
-    fig.savefig(str(output_prefix + '.png'), bbox_inches='tight', dpi=(200), transparent=True)
+    fig.set_size_inches(22, (.75* len(names)))
+    logger.info("writing plots to file")
+    # fig.savefig(str(output_prefix + '.png'), bbox_inches='tight', dpi=(200), transparent=True)
     fig.savefig(str(output_prefix + '.pdf'), bbox_inches='tight', dpi=(200))
     return 0
 
@@ -440,26 +441,37 @@ def main(args, logger=None):
     new_gffs = []
     source_list = []
     plot_gff_lists = []
-    for f in glob(args.dir + os.path.sep + "*.f*a*"):
-        source = os.path.basename(os.path.splitext(f)[0])
-        barrnap_cmd = make_barrnap_cmd(
-            infasta=f,
-            outgff=os.path.join(output_root, "{0}.gff".format(source)),
-            exe=args.barrnap_exe,
-            threads=args.cores,
-            thresh=args.id_thresh,
-            kingdom=args.kingdom)
-        logger.info("running barrnap cmd: %s", barrnap_cmd)
-        subprocess.run(barrnap_cmd,
-                       shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       check=True)
-        new_gff = os.path.join(output_root, "{0}.gff".format(source))
-        new_gffs.append(new_gff)
+    input_fastas = sorted(glob(args.dir + os.path.sep + "*.f*a*"))
+    if args.gffdir is not None:
+        new_gffs = sorted(glob(args.gffdir + os.path.sep + "*.gff"))
+        if len(new_gffs) != len(input_fastas):
+            raise ValueError("number of fastas must match gffs!")
+        for i, gff in enumerate(new_gffs):
+            if os.path.basename(os.path.splitext(gff)[0]) != \
+               os.path.basename(os.path.splitext(input_fastas[i])[0]):
+                raise ValueError("fasta basnames must match gffs!")
+    else: # run with barrnap
+        for f in input_fastas:
+            source = os.path.basename(os.path.splitext(f)[0])
+            barrnap_cmd = make_barrnap_cmd(
+                infasta=f,
+                outgff=os.path.join(output_root, "{0}.gff".format(source)),
+                exe=args.barrnap_exe,
+                threads=args.cores,
+                thresh=args.id_thresh,
+                kingdom=args.kingdom)
+            logger.info("running barrnap cmd: %s", barrnap_cmd)
+            subprocess.run(barrnap_cmd,
+                           shell=sys.platform != "win32",
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           check=True)
+            new_gff = os.path.join(output_root, "{0}.gff".format(source))
+            new_gffs.append(new_gff)
+    for ix, f in enumerate(input_fastas):
     # for i, gfffile in enumerate(new_gffs):
         gff_list = []
-        with open(new_gff, 'r') as g:
+        with open(new_gffs[ix], 'r') as g:
             for idx, line in enumerate(g):
                 if idx == 0:
                     #gets rid of header line
@@ -498,9 +510,10 @@ def main(args, logger=None):
     # for x, y in sequence_lens, plot_mauve_compare
     plot_rDNAs(
         sorted_plot_gff_lists,
-        breakwidth=1000,
+        breakwidth=4000,
         featuremin=1000,
         maxlen=max(sequence_lens),
         # names=["Position", "Entropy"],
         title="Relative rRNA coding sequences",
-        output_prefix=os.path.join(output_root, "entropy_plot.png"))
+        output_prefix=os.path.join(output_root, "rDNA_relative_locations"),
+        logger=logger)
