@@ -1,21 +1,23 @@
-NC_000913.3	NA	Escherichia	coli	MG1655	gmhB	NP_414742.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Simulated
-BA000007.2	NA	Escherichia	coli	Sakai	ECs0202	BAB33625.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Simulated
-CP003200.1	NA	Klebsiella	pneumoniae	HS11286	KPHS_00140	AEW58712.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	
-NC_008570.1	NA	Aeromonas	hydrophila	ATCC7966	AHA_0076	YP_854603.1	Proteobacteria	Gammaproteobacteria	Aeromonadales	GAGE-B
-AE017194.1	NA	Bacillus	cereus	ATCC10987	gyrA	AAS38942.1	Firmicutes	Bacilli	Bacilliales	GAGE-B
-NC_016771.1	NA	Bacillus	cereus	NC7401	BCN_RS00030	WP_001282850.1	Firmicutes	Bacilli	Bacilliales	GAGE-B
-FQ312004.1	NA	Bacteroides	fragilis	638R	BF638R_2759	CBW23254.1	Bacteroidetes	Bacteroidia	Bacteroidales	GAGE-B
-NC_009049.1	NC_009050.1	Rhodobacter 	sphaeroides	ATCC17029	RSPH17029_RS00400	WP_011338940.1	Proteobacteria	Alphaproteobacteria	Rhodobacterales	GAGE-B
-NC_010079.1	NA	Staphylococcus	aureus	TCH1516	USA300HOU_RS02425	WP_000559156.1	Firmicutes	Bacilli	Bacilliales	GAGE-B
-BX571856.1	NA	Staphylococcus	aureus	MRSA252	SAR0479	CAG39501.1	Firmicutes	Bacilli	Bacilliales	GAGE-B
-NC_002505.1	NC_002506.1	Vibrio	cholerae	El tor st N16961	VC0058	NP_229717.1	Proteobacteria	Gammaproteobacteria	Vibrionales	GAGE-B
-CP002914.1	NA	Xanthomonas	axonopodis	Citrumelo	XACM_3784	AEO44028.1	Proteobacteria	Gammaproteobacteria	Xanthomonadales	GAGE-B
-CP015377.1	NA	Pseudomonas	aeruginosa	BAMCPA07-48	A6R75_01940	ANA68941.1	Proteobacteria	Gammaproteobacteria	Pseudomonadaceae	SRR3500543
-NZ_CP017149.1	NA	Pseudomonas	aeruginosa	ATCC15692	BGV84_RS03410	WP_003113167.1	Proteobacteria	Gammaproteobacteria	Pseudomonadaceae	SRR3500543
-NC_016782.1	NA	Corynebacterium	diphtheriae	241	CD241_RS11610	WP_074489391.1	Actinobacteria	 Actinobacteria	Corynebacteriales	SRR4271515
-NC_010287.1	NA	Chlamydia	trachomatis	434/Bu	CTL0108	YP_001654199.1	Chlamydiae	Chlamydiia	Chlamydiales	SRR5942978 
-NC_013511.1	NA	Mycoplasma	hominis	ATCC 23114	MHO_RS01530	WP_012855545.1	Tenericutes	Mollicutes	Mycoplasmatales	ERR1938252 
-AM_180355.1	NA	Clostridium	difficile	630	CD630_00110	CAJ66825.1	Firmicutes	Clostridia	Clostridiales	ERR251735 
-NZ_CP012981.1	NZ_CP012982.1,NZ_CP012983.1	Burkholderia 	cepacia	ATCC 25416	APZ15_RS03960	WP_027788781.1	Proteobacteria	Betaproteobacteria	Burkholderiales	SRR6334321 
-NC_020551.1	NA	Helicobacter	cinaedi	18818 = ATCC BAA-847	HCBAA847_RS00680	WP_002956213.1	Proteobacteria	Epsilonproteobacteria	Campylobacterales	DRR090193 
-NC_008095.1		Myxococcus	xanthus	DK 1622	MXAN_RS01560	WP_011550462.1	 Proteobacteria	Deltaproteobacteria	Myxococcales	SRR4236978
+NC_016782.1	NA	Corynebacterium	diphtheriae	241	CD241_RS11610	WP_074489391.1	Actinobacteria	Actinobacteria	Corynebacteriales	Corynebacteriaceae	SRR4271515	ATCC_700971D-5;NCTC_13129
+FQ312004.1	NA	Bacteroides	fragilis	638R	BF638R_2759	CBW23254.1	Bacteroidetes	Bacteroidia	Bacteroidales	Bacteroidaceae	GAGE-B	HMW_615
+NC_010287.1	NA	Chlamydia	trachomatis	434-Bu	CTL0108	YP_001654199.1	Chlamydiae	Chlamydiia	Chlamydiales	Chlamydiaceae	SRR5942978	Population_1_resistant_to_N-acylated_sulfamethoxazole
+AE017194.1	NA	Bacillus	cereus	ATCC10987	BCE_0006	AAS38942.1	Firmicutes	Bacilli	Bacilliales	Bacillaceae	GAGE-B	VD_118
+NC_016771.1	NA	Bacillus	cereus	NC7401	BCN_RS00030	WP_001282850.1	Firmicutes	Bacilli	Bacilliales	Bacillaceae	GAGE-B	ATCC_10987
+NC_010079.1	NA	Staphylococcus	aureus	TCH1516	USA300HOU_RS02425	WP_000559156.1	Firmicutes	Bacilli	Bacilliales	Staphylococcaceae	GAGE-B	M0927
+BX571856.1	NA	Staphylococcus	aureus	MRSA252	SAR0479	CAG39501.1	Firmicutes	Bacilli	Bacilliales	Staphylococcaceae	UAMS-1	UAMS-1
+AM180355.1	NA	Clostridioides	difficile	630	CD630_00110	CAJ66825.1	Firmicutes	Clostridia	Clostridiales	Peptostreptococcaceae	ERR251735	C00005970
+NC_009049.1	NC_009050.1	Rhodobacter	sphaeroides	ATCC17029	RSPH17029_RS00400	WP_011338940.1	Proteobacteria	Alphaproteobacteria	Rhodobacterales	Rhodobacteraceae	GAGE-B	2.4.1
+NZ_CP012981.1	NZ_CP012982.1,NZ_CP012983.1	Burkholderia	cepacia	ATCC25416	APZ15_RS03960	WP_027788781.1	Proteobacteria	Betaproteobacteria	Burkholderiales	Burkholderiaceae	SRR6334321	DHQP2016-12-119
+NC_008095.1	NA	Myxococcus	xanthus	DK_1622	MXAN_RS01560	WP_011550462.1	Proteobacteria	Deltaproteobacteria	Myxococcales	Myxococcaceae	SRR4236978	DSM_16526
+NC_020555.1	NA	Helicobacter	cinaedi	18818=ATCC_BAA-847	HCBAA847_RS00680	WP_002956213.1	Proteobacteria	Epsilonproteobacteria	Campylobacterales	Helicobacteraceae	DRR090193	MRY12-0051
+NC_008570.1	NA	Aeromonas	hydrophila	ATCC7966	AHA_0076	YP_854603.1	Proteobacteria	Gammaproteobacteria	Aeromonadales	Aeromonadaceae	GAGE-B	SSU
+NC_000913.3	NA	Escherichia	coli	MG1655	b0200	NP_414742.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Enterobacteriaceae	Simulated	
+BA000007.2	NA	Escherichia	coli	Sakai	ECs0202	BAB33625.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Enterobacteriaceae	Simulated	
+CP003200.1	NA	Klebsiella	pneumoniae	HS11286	KPHS_00140	AEW58712.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Enterobacteriaceae	Simulated	
+CP015377.1	NA	Pseudomonas	aeruginosa	BAMCPA07-48	A6R75_01940	ANA68941.1	Proteobacteria	Gammaproteobacteria	Pseudomonadaceae	Pseudomonadaceae	SRR3500543	BAMCPA07-48-HiSeq
+NZ_CP017149.1	NA	Pseudomonas	aeruginosa	ATCC15692	BGV84_RS03410	WP_003113167.1	Proteobacteria	Gammaproteobacteria	Pseudomonadaceae	Pseudomonadaceae	SRR3500543	BAMCPA07-48-HiSeq
+NC_002505.1	NC_002506.1	Vibrio	cholerae	El_tor_st_N16961	VC0058	NP_229717.1	Proteobacteria	Gammaproteobacteria	Vibrionales	Vibrionaceae	GAGE-B	CO_1032(5)
+CP002914.1	NA	Xanthomonas	axonopodis	Citrumelo	XACM_3784	AEO44028.1	Proteobacteria	Gammaproteobacteria	Xanthomonadales	Xanthomonadaceae	GAGE-B	pv._Manihotis_UA_323
+NC_013511.1	NA	Mycoplasma	hominis	ATCC_23114	MHO_RS01530	WP_012855545.1	Tenericutes	Mollicutes	Mycoplasmatales	Mycoplasmataceae	ERR1938252	Australia
+CP009526.1	NA	Methanosarcina	barkeri	Wiesmoor	MSBRW_0056	AKB49309.1	Euryarchaeota	Methanomicrobia	Methanosarcinales	Methanosarcinaceae	SRR2064286	Fusaro_DSMZ804
+CP006933.1	NA	Methanobacterium	formicicum	BRM9	BRM9_0276	AIS31105.1	Euryarchaeota	Methanobacteria	Methanobacteriales	Methanobacteriaceae	DRR017790	JCM10132

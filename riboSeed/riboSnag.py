@@ -27,11 +27,11 @@ try:
     from matplotlib.figure import Figure
     from matplotlib import gridspec
     import matplotlib.patches as patches
-    matplotlib.rc('font', family='sans-serif')
-    matplotlib.rcParams['text.usetex'] = True
-    matplotlib.rcParams['text.latex.preamble'] = [r'\usepackage[cm]{sfmath}']
-    matplotlib.rcParams['font.family'] = 'sans-serif'
-    matplotlib.rcParams['font.sans-serif'] = 'cm'
+    # matplotlib.rc('font', family='sans-serif')
+    # matplotlib.rcParams['text.usetex'] = True
+    # matplotlib.rcParams['text.latex.preamble'] = [r'\usepackage[cm]{sfmath}']
+    # matplotlib.rcParams['font.family'] = 'sans-serif'
+    # matplotlib.rcParams['font.sans-serif'] = 'cm'
     PLOT = True
 except Exception as e:  # likely an ImportError, but not taking chances
     print(e)
@@ -95,6 +95,14 @@ def get_args():  # pragma: no cover
                           "sequences instead of raw sequences;" +
                           "default: %(default)s",
                           default=False, action="store_true", dest="msa_kmers")
+    optional.add_argument("--skip_kmers",
+                          help="Just plot entropy if MSA" +
+                          "default: %(default)s",
+                          default=False, action="store_true", dest="skip_kmers")
+    optional.add_argument("--skip_blast",
+                          help="Skip running BLAST Comparisons" +
+                          "default: %(default)s",
+                          default=False, action="store_true", dest="skip_blast")
     optional.add_argument("-c", "--circular",
                           help="if the genome is known to be circular, and " +
                           "an region of interest (including flanking bits) " +
@@ -255,10 +263,10 @@ def stitch_together_target_regions(cluster,
     seq_with_ns = str(cluster.seq_record.seq[cluster.global_start_coord - 1:
                                              cluster.global_end_coord])
     seq_len = len(seq_with_ns[:])
-    logger.info(seq_len)
+    logger.debug(seq_len)
     # again, plus 1 corrects for 0 index.
     # len("AAAA") = 4 vs AAAA[-1] - AAAA[0] = 3
-    logger.info("\nexp length %i \nact length %i",
+    logger.debug("\nexp length %i \nact length %i",
                 cluster.global_end_coord - cluster.global_start_coord + 1,
                 seq_len)
 
@@ -496,7 +504,9 @@ def plot_scatter_with_anno(data,
     ax1.get_shared_x_axes().join(ax1, ax2)
     colors = ['#ff4c05', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F',
               '#ff4c05', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F']
-    ax1.set_title("Shannon Entropy by Position\n" + title, y=1.08)
+    # ax1.set_title("Shannon Entropy by Position\n" +
+    #               title, y=1.08, fontsize=20)
+    ax1.set_title(title, y=1.08, fontsize=18)
     xmin, xmax = 0, len(data)
     ymin, ymax = -0.1, (max(data) * 1.2)
     ax1.set_xlim([xmin, xmax])
@@ -526,7 +536,7 @@ def plot_scatter_with_anno(data,
         ax1.text((anno[1][0] + anno[1][1]) / 2,    # x location
                  ymax - 0.48 - yjust,                      # y location
                  anno[0][0:20],                          # text first 20 char
-                 ha='center', color='red', weight='bold', fontsize=10)
+                 ha='center', color='red', weight='bold', fontsize=11)
         yjust = yjust * - 1
     ax1.scatter(x=df["Position"], y=df["Entropy"],
                 marker='o', color='black', s=2)
@@ -565,8 +575,8 @@ def plot_scatter_with_anno(data,
     fig.tight_layout()
     fig.subplots_adjust(hspace=0)
     fig.set_size_inches(12, 7.5)
-    fig.savefig(str(output_prefix + '.png'), dpi=(200))
-    fig.savefig(str(output_prefix + '.pdf'), dpi=(200))
+    fig.savefig(str(output_prefix + '.png'), dpi=(300))
+    fig.savefig(str(output_prefix + '.pdf'), dpi=(300))
     return 0
 
 
@@ -637,8 +647,7 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     ax = fig.add_subplot(111)
     #fi, ax = plt.subplots(1, 1)
     lsdf = lsdf_wNA.fillna(value=0)
-    heatmap = ax.pcolormesh(wlsdf,
-                            cmap='Greens')
+    heatmap = ax.pcolormesh(wlsdf, cmap='Greens')
     # put the major ticks at the middle of each cell
     ax.set_yticks(np.arange(wlsdf.shape[0]) + 0.5, minor=False)
     ax.set_xticks(np.arange(wlsdf.shape[1]) + 0.5, minor=False)
@@ -646,14 +655,16 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     ax.invert_yaxis()
     ax.xaxis.tick_top()
     # # Set the labels
-    ax.set_xticklabels(wlsdf.columns.values, minor=False, rotation=90)
-    ax.set_yticklabels(wlsdf.index, minor=False)
+    ax.set_xticklabels([x.replace('_', '-') for x in wlsdf.columns.values],
+                       minor=False, rotation=90)
+    ax.set_yticklabels([x.replace('_', '-') for x in wlsdf.index],
+                       minor=False)
     fig.colorbar(heatmap)  # add colorbar key
     fig.tight_layout()  # pad=0, w_pad=5, h_pad=.0)
     # fig.subplots_adjust(top=0.4, bottom=0.0, hspace=0, wspace=0.3 )
     fig.set_size_inches(8, 8)
-    fig.savefig(str(output_prefix + "heatmap.png"), dpi=(200))
-    fig.savefig(str(output_prefix + "heatmap.pdf"), dpi=(200))
+    fig.savefig(str(output_prefix + "heatmap.png"), dpi=(300))
+    fig.savefig(str(output_prefix + "heatmap.pdf"), dpi=(300))
     ####  plot clustered heatmap
 #    plt.close('all')
 #    plt.figure(1, figsize=(6, 6))
@@ -1141,9 +1152,9 @@ def main(args, logger=None):
     #     genome_records = list(SeqIO.parse(fh, 'genbank'))
     # genome_records_gen = SeqIO.parse(args.genbank_genome, 'genbank')
     regions = []
-    logger.info("clusters:")
+    logger.debug("clusters:")
     for cluster in clusters:
-            logger.info(cluster.__dict__)
+            logger.debug(cluster.__dict__)
     if args.name is None:  # if none given, use date for name (for out files)
         args.name = date
     regions, ref_fasta, region_files = submain(
@@ -1187,21 +1198,22 @@ def main(args, logger=None):
                        check=True)
 
         seq_entropy, names, tseq = calc_entropy_msa(results_path)
-        if args.msa_kmers:
-            with open(results_path, 'r') as resfile:
-                kmer_seqs = list(SeqIO.parse(resfile, "fasta"))
-        else:
-            kmer_seqs = regions
-        counts, names = profile_kmer_occurances(kmer_seqs,
-                                                # alph='atcg-',
-                                                k=5,
-                                                logger=logger)
+        if not args.skip_kmers:
+            if args.msa_kmers:
+                with open(results_path, 'r') as resfile:
+                    kmer_seqs = list(SeqIO.parse(resfile, "fasta"))
+            else:
+                kmer_seqs = regions
+            counts, names = profile_kmer_occurances(kmer_seqs,
+                                                    # alph='atcg-',
+                                                    k=5,
+                                                    logger=logger)
 
-        mca_df = plot_pairwise_least_squares(
-            counts=counts, names_list=names,
-            output_prefix=os.path.join(
-                output_root,
-                "sum_least_squares"))
+            mca_df = plot_pairwise_least_squares(
+                counts=counts, names_list=names,
+                output_prefix=os.path.join(
+                    output_root,
+                    "sum_least_squares"))
         gff, consensus_cov, annos = annotate_msa_conensus(
             tseq_array=tseq,
             pattern='product=(.+?)$',
@@ -1234,6 +1246,7 @@ def main(args, logger=None):
         #     output_prefix=os.path.join(output_root, "entropy_plot"),
         #     consensus=consensus_cov,
         #     tseq=tseq)
-        run_blast(query_list=region_files, ref=ref_fasta,
-                  mbdb_exe=args.makeblastdb_exe, name=args.name,
-                  output=args.output, logger=logger)
+        if not args.skip_blast:
+            run_blast(query_list=region_files, ref=ref_fasta,
+                      mbdb_exe=args.makeblastdb_exe, name=args.name,
+                      output=args.output, logger=logger)
