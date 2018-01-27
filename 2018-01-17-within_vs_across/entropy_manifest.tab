@@ -11,9 +11,9 @@ NZ_CP012981.1	NZ_CP012982.1,NZ_CP012983.1	Burkholderia	cepacia	ATCC25416	APZ15_R
 NC_008095.1	NA	Myxococcus	xanthus	DK_1622	MXAN_RS01560	WP_011550462.1	Proteobacteria	Deltaproteobacteria	Myxococcales	Myxococcaceae	SRR4236978	DSM_16526
 NC_020555.1	NA	Helicobacter	cinaedi	18818=ATCC_BAA-847	HCBAA847_RS00680	WP_002956213.1	Proteobacteria	Epsilonproteobacteria	Campylobacterales	Helicobacteraceae	DRR090193	MRY12-0051
 NC_008570.1	NA	Aeromonas	hydrophila	ATCC7966	AHA_0076	YP_854603.1	Proteobacteria	Gammaproteobacteria	Aeromonadales	Aeromonadaceae	GAGE-B	SSU
-NC_000913.3	NA	Escherichia	coli	MG1655	b0200	NP_414742.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Enterobacteriaceae	Simulated	
-BA000007.2	NA	Escherichia	coli	Sakai	ECs0202	BAB33625.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Enterobacteriaceae	Simulated	
-CP003200.1	NA	Klebsiella	pneumoniae	HS11286	KPHS_00140	AEW58712.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Enterobacteriaceae	Simulated	
+NC_000913.3	NA	Escherichia	coli	MG1655	b0200	NP_414742.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Enterobacteriaceae	Simulated	NA
+BA000007.2	NA	Escherichia	coli	Sakai	ECs0202	BAB33625.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Enterobacteriaceae	Simulated	NA
+CP003200.1	NA	Klebsiella	pneumoniae	HS11286	KPHS_00140	AEW58712.1	Proteobacteria	Gammaproteobacteria	Enterobacterales	Enterobacteriaceae	Simulated	NA
 CP015377.1	NA	Pseudomonas	aeruginosa	BAMCPA07-48	A6R75_01940	ANA68941.1	Proteobacteria	Gammaproteobacteria	Pseudomonadaceae	Pseudomonadaceae	SRR3500543	BAMCPA07-48-HiSeq
 NZ_CP017149.1	NA	Pseudomonas	aeruginosa	ATCC15692	BGV84_RS03410	WP_003113167.1	Proteobacteria	Gammaproteobacteria	Pseudomonadaceae	Pseudomonadaceae	SRR3500543	BAMCPA07-48-HiSeq
 NC_002505.1	NC_002506.1	Vibrio	cholerae	El_tor_st_N16961	VC0058	NP_229717.1	Proteobacteria	Gammaproteobacteria	Vibrionales	Vibrionaceae	GAGE-B	CO_1032(5)

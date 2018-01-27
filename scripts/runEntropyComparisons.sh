@@ -97,7 +97,24 @@ do
     title="$ ${genus} $ $ ${species} $ ${strain}"
     echo "$title"
     ribo snag ./scan_${refacc}/scannedScaffolds.gb ./select_${refacc}/riboSelect_grouped_loci.txt -o ./snag_${refacc}/ --msa_tool mafft -v 3 --title "rDNAs within ${title}" --skip_kmers --skip_blast
-
-
     cd ../
+done < ./entropy_manifest.tab
+
+
+# copy and rename results:
+mkdir results_figs
+counter=1
+while read refacc refother genus species strain gene geneacc phylum order class family sra compstrain
+do
+    echo "Processing $genus $species $strain $geneacc ..."
+    thisdir="${genus}_${species}_${strain}"
+    if [ -d "${thisdir}/snag_${gene}" ]
+    then
+
+	cp ${thisdir}/snag_${refacc}/entropy_plot.png results_figs/${counter}_genome.png
+	cp ${thisdir}/snag_${gene}/entropy_plot.png results_figs/${counter}_gene.png
+	counter=$((counter + 1))
+    else
+	echo "no results found"
+    fi
 done < ./entropy_manifest.tab

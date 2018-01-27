@@ -322,7 +322,7 @@ def plot_rDNAs(
     ax2.xaxis.set_ticks_position('none')
     # ax.tick_params(axis='y', colors='dimgrey')
     ax.tick_params(axis='x', colors='dimgrey')
-
+    ax.xaxis.get_major_formatter().set_scientific(False)
     # set axis labels
     ax.xaxis.label.set_color('black')
 

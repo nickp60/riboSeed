@@ -293,3 +293,27 @@ Then, we ran riboSeed:
 /home/nw42839/miniconda3/bin/ribo select ./scan/scannedScaffolds.gb -o select
 /home/nw42839/miniconda3/bin/ribo seed ./select/riboSelect_grouped_loci.txt -r ./scan/scannedScaffolds.gb -F ./SRR2064286_1_sub.fastq -R ./SRR2064286_2_sub.fastq --ref_as_contig trusted --cores 4 --memory 24 -z -o seed_trusted
 ```
+
+
+## More entropy the suppl figures:
+for generating the entropy figures within and across genomes, we updated things to use a script: runEntropyComparisons.sh.  Its a clunky one, but it works.  It reads the entropy_manifest.tab file, and requires a combined archaeal/bacterial assemblies_summary.txt file from NCBI.  The beginning of the script has comments about how to regenerate that file.  In short, I manually inspected each genome and picked a gene close the the first rDNA operon.  The script picks up to 25 randome genomes of the same genus and species, and runs the analysis outlined above (extract those regions + 10bk up and down, find the rDNAs, extract the rDNAs, allign with mafft, plot).  It also plots the within-genome rDNA entropy for that genome.  We got the sense that the supplementary material was too short, and figured this would lengthen things substantially.  (Just kidding, a reviewer asked).
+
+## The ribo structure analysis
+We found several genomes with strange  rDNA structures, and downloaded them manually from ncbi.  Then, after putting them in a folder called "./2018-01-26-odd_rDNAs/", we ran riboStrcuture:
+
+```
+ribo structure ./2018-01-26-odd_rDNAs/ -o oddballs
+```
+
+as a comparison, because we had the genomes already for the entropy experiment, we copied those all to a new dir:
+
+```
+cp 2018-01-17-within_vs_across/*/ref/*.fasta ./2018-01-27-normal/
+```
+
+and ran ribostructure
+
+
+```
+rm normal/ -r; ribo structure ./2018-01-27-normal/ -o normal
+```
