@@ -25,19 +25,19 @@ helpmsg = [
     "Usage:   ribo <command> [options]",
     "",
     "Available commands:",
-    " -run      execute the pipeline (scan, select, seed, sketch, and score)",
-    " -scan     reannotate rRNAs in a FASTA file",
-    " -select   group rRNA annotations into rDNA operons",
-    " -seed     perform de fere novo assembly",
-    " -snag     extract rDNA regions and plot entropy",
-    " -sim      perform simulations used in manuscript",
-    " -sketch   plot results from a de fere novo assembly",
-    " -stack    compare coverage depth in rDNA regions to rest of genome",
-    " -score    score batches of assemblies with BLASTn",
-    " -swap     swap contigs from assemblies",
-    " -spec     use assembly graph to speculate number of rDNA",
-    " -struct   view the rRNA operon structure across several genomes",
-    " -config   write out a blank config file to be used with `run`",
+    " -run        execute pipeline (scan, select, seed, sketch, and score)",
+    " -scan       reannotate rRNAs in a FASTA file",
+    " -select     group rRNA annotations into rDNA operons",
+    " -seed       perform de fere novo assembly",
+    " -snag       extract rDNA regions and plot entropy",
+    " -sim        perform simulations used in manuscript",
+    " -sketch     plot results from a de fere novo assembly",
+    " -stack      compare coverage depth in rDNA regions to rest of genome",
+    " -score      score batches of assemblies with BLASTn",
+    " -swap       swap contigs from assemblies",
+    " -spec       use assembly graph to speculate number of rDNA",
+    " -structure  view the rRNA operon structure across several genomes",
+    " -config     write out a blank config file to be used with `run`",
     ""
 ]
 
@@ -69,7 +69,7 @@ def main(args=None):
         "sim": "riboSim",
         "swap": "riboSwap",
         "spec": "riboSpec",
-        "struct": "riboStructure",
+        "structure": "riboStructure",
         "config": "make_riboSeed_config"}
     if args[1] not in modules_dict.keys():
         print("Error:" + args[1] +

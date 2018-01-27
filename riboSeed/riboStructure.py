@@ -262,15 +262,15 @@ def plot_rDNAs(
             # |                      |
             # ------------------------   0
             if "16S" in product:
-                color = mycolors['greenish']
+                color = mycolors['redish']
                 lencode = featuremin * 40
                 yjust = (2 * coding_height)/3
             elif "23S" in product:
-                color = mycolors['bluish']
+                color = mycolors['yellish']
                 lencode = featuremin * 60
                 yjust = coding_height/3
             elif "5S" in product:
-                color = mycolors['redish']
+                color = mycolors['greenish']
                 lencode = featuremin * 20
                 yjust = 0
             else:
@@ -288,13 +288,13 @@ def plot_rDNAs(
             ax.add_patch(anno_box)
             # previous_end = this_end
     # add a legend to this mess
-    red_patch = patches.Patch(color=mycolors['redish'], label='5S')
-    green_patch = patches.Patch(color=mycolors['greenish'], label='16S')
-    blue_patch = patches.Patch(color=mycolors['bluish'], label='23S')
+    red_patch = patches.Patch(color=mycolors['redish'], label='16S')
+    yellish_patch = patches.Patch(color=mycolors['yellish'], label='23S')
+    green_patch = patches.Patch(color=mycolors['greenish'], label='5S')
 
-    ax.legend(bbox_to_anchor=(.1, -0.05, .9, -.102), loc=3,
+    ax.legend(bbox_to_anchor=(.1, -0.1, .9, -.102), loc=3,
               ncol=3, mode="expand", borderaxespad=0.,
-              handles=[red_patch, green_patch, blue_patch],
+              handles=[red_patch, yellish_patch, green_patch],
               frameon=False)
     # # for righthad labels
     loc = -.1
