@@ -46,10 +46,10 @@ mycolors = {  # pragma: no cover
 
 
 bgcols = {  # pragma: no cover
-    "purle": matplotlib.colors.ColorConverter().to_rgba(
-        "#EB87A3", alpha=0.5),
+    "purple": matplotlib.colors.ColorConverter().to_rgba(
+        "#B46BF0", alpha=0.5),
     "green": matplotlib.colors.ColorConverter().to_rgba(
-        "#5EA662", alpha=0.5),
+        "#0B9C04", alpha=0.5),
     "yellow": matplotlib.colors.ColorConverter().to_rgba(
         "#EBE418", alpha=0.5),
     "red": matplotlib.colors.ColorConverter().to_rgba(
@@ -211,7 +211,8 @@ def plot_mauve_compare(refgb,
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
     #  plot the color shadings
-    unused_cols = ["red", "green", "yellow", "purple", "red", "blue"]
+    unused_cols = ["green", "purple", "yellow", "blue", "red",
+                   "green", "purple", "yellow", "blue", "red"]
     nudge = coding_height / 2
     patch_list = []
     for i, bblist in enumerate(backbones):
@@ -361,6 +362,7 @@ def main(args, logger=None):
         logger = set_up_logging(verbosity=args.verbosity,
                                 outfile=log_path,
                                 name=__name__)
+    logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
     logger.debug("All settings used:")
     for k, v in sorted(vars(args).items()):
         logger.debug("{0}: {1}".format(k, v))
