@@ -15,11 +15,7 @@ script:
 - nosetests --with-coverage --cover-package=riboSeed tests/ -v
 - ribo run -h
 - ribo scan -h
-
 after_success: coveralls
-
-
-
 jobs:
   include:
     allow_failures:
