@@ -5,6 +5,12 @@ sudo: required
 python:
   - 3.5
   - 3.6
+script:
+  # see https://github.com/travis-ci/travis-ci/issues/2870
+  # I dont want the tests running on all the stages, but
+  # I cant leave the script key empty, so:
+  - echo "Running tests and deploying if all goes well"
+
 jobs:
   include:
     - stage: testing
