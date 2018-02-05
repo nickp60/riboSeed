@@ -6,10 +6,11 @@ python:
   - 3.5
   - 3.6
 script:
-  # see https://github.com/travis-ci/travis-ci/issues/2870
-  # I dont want the tests running on all the stages, but
-  # I cant leave the script key empty, so:
-  - echo "Running tests and deploying if all goes well"
+  - python setup.py install
+  - nosetests --with-coverage --cover-package=riboSeed tests/ -v
+  - ribo run -h
+  - ribo scan -h
+
 
 jobs:
   include:
@@ -17,11 +18,6 @@ jobs:
       install:
         - pip install coveralls
         - pip install -r requirements.txt
-      script:
-        - python setup.py install
-        - nosetests --with-coverage --cover-package=riboSeed tests/ -v
-        - ribo run -h
-        - ribo scan -h
       after_success: coveralls
     - stage: test-deploy
       script: echo "Deploying to TestPyPi"
