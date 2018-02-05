@@ -5,19 +5,18 @@ sudo: required
 python:
   - 3.5
   - 3.6
-install:
-  - pip install coveralls
-  - pip install -r requirements.txt
-script:
-  - python setup.py install
-  - nosetests --with-coverage --cover-package=riboSeed tests/ -v
-  - ribo run -h
-  - ribo scan -h
-
-after_success: coveralls
-
 jobs:
   include:
+    - stage: testing
+      install:
+        - pip install coveralls
+        - pip install -r requirements.txt
+      script:
+        - python setup.py install
+        - nosetests --with-coverage --cover-package=riboSeed tests/ -v
+        - ribo run -h
+        - ribo scan -h
+      after_success: coveralls
     - stage: test-deploy
       script: echo "Deploying to TestPyPi"
       provider: pypi
