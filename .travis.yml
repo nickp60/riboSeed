@@ -17,15 +17,25 @@ script:
 - ribo scan -h
 
 after_success: coveralls
-deploy:
-  - provider: pypi
-    user: NickWaters
-    password:
-      secure: "Efil0FG1aAKjn0OiC37b1ME7GW/WKLclP3ehI7HRVl85EeoYYj0IKsMsvJXoGlMK4oqD/f0wE0tJY8yIDnmljEX6+nRqb4RI6So6VF0boAMeZj6nl+62D1N2yKUbn1Po7iMF8Jd8pK1q+g709MMADp/SOtGtVQoHTlzjHEpS8I+HkIkcDM2i+tPpeS4pKWQh5OHqejZk3hGGE0410k7mjaFrroi41dWzp5qfjAJHbX4CVLch7/GmdIP97VkRr1K7nJdreGnw018+RSs2FL1cZB3nhUqrpFD0IxwusxrOQQw8Q2mM1ypRxfT/9GkxMaFoYQB7oOoQkIkt65QNHEpODFN1T6yaXo9r9P6hBfol7fwMnosNGPKRyZi/9GXvZAE9yFUcwgELWSa2SO65/68f0zAg9gUaUN1m9snXuYRU/ZyJyTx5f1ktxwQLLGF9oJ0azKg/K3VrswwqEn5jcDZXKymapJdsbPBEMBTG2WKNhjA2o7BwrIfhKurhl1BE0NyodNYSV1HyRzwJkTykS0hSjvuJ1BjaJta6IQyBWn2d+MoEL0vcC2bWQ+yb7fzV2p2CPf8+7F69U9ConcuNSmSCpQ0JTGaAIK3bDXgM/kVYZnkfphgmT6vpzxuS0Ygpn5Cqfm9IGEGRhWYFpBtD7yl3kuRC+YBgoqbDcZh34hetOJg="
-    on:
-      tags: true
-  - provider: pypi
-    user: NickWaters
-    server: https://test.pypi.org/legacy/
-    password:
-      secure: "PMsN7MoE95ppMGentNcfsRJX8tBluk4O/EAEP4s4oHLyyC674mwiRH1q24lf1FlMeCDwqy0X7xUucOkDoq6C9awWHIlcODmZmDHDz92JAkAZUcIA6D/102M4ZqhHdPNfCx7G9eB7L/BbU/SZeZa9WNWxsDuAQQ8o5QLhwhXJTB4F5hlwWrggoV0QxCpYrmwToebPairp5ToI+cIuvveXdvw0by2JZr2X1aSq8uqdl17d+taVQwr/wlSqcVj+suPX5MyA6dvRmxxolXC9nQ3g7u7ZK0NDg8dBP4VJzOY0KLLd4WuTJLXlbR7KwguzOwRuvC/xstDAx5cp/fpUZa3t7XtAFVOuOAMVo87diJIXWGFk4hHf5IX4q43EUpIwJdjj8ELd2B2+ZdoBNf4vkSopVHZqgvbF78RmBsi7wwH7Xp9vrlf/daPiAw2VoOdd/zdkwNnrVihwryTibyHY7/f5KIdP60g9VcGHnWF/G5hZNUskip5syAvMIpoa/yRPUbeGM3dTA6QKFqQWkjtFIMFhDo/XQ3YJjYTSNxLtI1XDpGUbYLiO0+k/VmhO29trVsKMRJAvVRldwSa0P44KKXjbzagBkx9IxEM2x+V/aDVNjNcLYE/WYaaEiaw+l9f3RyN+zRBjkbH6sOh+rK9vFHmDW1cEd9NvhGZa2+9aCl1PCG0="
+
+
+
+jobs:
+  include:
+    allow_failures:
+      - stage: test-deploy
+        script: echo "Deploying to TestPyPi"
+        provider: pypi
+        user: NickWaters
+        server: https://test.pypi.org/legacy/
+        password:
+          secure: "PMsN7MoE95ppMGentNcfsRJX8tBluk4O/EAEP4s4oHLyyC674mwiRH1q24lf1FlMeCDwqy0X7xUucOkDoq6C9awWHIlcODmZmDHDz92JAkAZUcIA6D/102M4ZqhHdPNfCx7G9eB7L/BbU/SZeZa9WNWxsDuAQQ8o5QLhwhXJTB4F5hlwWrggoV0QxCpYrmwToebPairp5ToI+cIuvveXdvw0by2JZr2X1aSq8uqdl17d+taVQwr/wlSqcVj+suPX5MyA6dvRmxxolXC9nQ3g7u7ZK0NDg8dBP4VJzOY0KLLd4WuTJLXlbR7KwguzOwRuvC/xstDAx5cp/fpUZa3t7XtAFVOuOAMVo87diJIXWGFk4hHf5IX4q43EUpIwJdjj8ELd2B2+ZdoBNf4vkSopVHZqgvbF78RmBsi7wwH7Xp9vrlf/daPiAw2VoOdd/zdkwNnrVihwryTibyHY7/f5KIdP60g9VcGHnWF/G5hZNUskip5syAvMIpoa/yRPUbeGM3dTA6QKFqQWkjtFIMFhDo/XQ3YJjYTSNxLtI1XDpGUbYLiO0+k/VmhO29trVsKMRJAvVRldwSa0P44KKXjbzagBkx9IxEM2x+V/aDVNjNcLYE/WYaaEiaw+l9f3RyN+zRBjkbH6sOh+rK9vFHmDW1cEd9NvhGZa2+9aCl1PCG0="
+    - stage: deploy
+      script: echo "Deploying to PyPi"
+      deploy:
+        provider: pypi
+        user: NickWaters
+        password:
+          secure: "Efil0FG1aAKjn0OiC37b1ME7GW/WKLclP3ehI7HRVl85EeoYYj0IKsMsvJXoGlMK4oqD/f0wE0tJY8yIDnmljEX6+nRqb4RI6So6VF0boAMeZj6nl+62D1N2yKUbn1Po7iMF8Jd8pK1q+g709MMADp/SOtGtVQoHTlzjHEpS8I+HkIkcDM2i+tPpeS4pKWQh5OHqejZk3hGGE0410k7mjaFrroi41dWzp5qfjAJHbX4CVLch7/GmdIP97VkRr1K7nJdreGnw018+RSs2FL1cZB3nhUqrpFD0IxwusxrOQQw8Q2mM1ypRxfT/9GkxMaFoYQB7oOoQkIkt65QNHEpODFN1T6yaXo9r9P6hBfol7fwMnosNGPKRyZi/9GXvZAE9yFUcwgELWSa2SO65/68f0zAg9gUaUN1m9snXuYRU/ZyJyTx5f1ktxwQLLGF9oJ0azKg/K3VrswwqEn5jcDZXKymapJdsbPBEMBTG2WKNhjA2o7BwrIfhKurhl1BE0NyodNYSV1HyRzwJkTykS0hSjvuJ1BjaJta6IQyBWn2d+MoEL0vcC2bWQ+yb7fzV2p2CPf8+7F69U9ConcuNSmSCpQ0JTGaAIK3bDXgM/kVYZnkfphgmT6vpzxuS0Ygpn5Cqfm9IGEGRhWYFpBtD7yl3kuRC+YBgoqbDcZh34hetOJg="
+        on:
+          tags: true
