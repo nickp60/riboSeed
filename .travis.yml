@@ -1,20 +1,20 @@
 language: python
 os:
-- linux
+  - linux
 sudo: required
 python:
-- '3.5'
-- '3.6'
+  - 3.5
+  - 3.6
 before install:
-- echo "$PATH"
+  - echo "$PATH"
 install:
-- pip install coveralls
-- pip install -r requirements.txt
+  - pip install coveralls
+  - pip install -r requirements.txt
 script:
-- python setup.py install
-- nosetests --with-coverage --cover-package=riboSeed tests/ -v
-- ribo run -h
-- ribo scan -h
+  - python setup.py install
+  - nosetests --with-coverage --cover-package=riboSeed tests/ -v
+  - ribo run -h
+  - ribo scan -h
 after_success: coveralls
 jobs:
   include:
