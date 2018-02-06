@@ -1,12 +1,12 @@
 # Recreating the figures and data used for the manuscript
 
-# Analysis
+<!-- # Analysis -->
 
 
-# Tables
+<!-- # Tables -->
 
 
-# Figures
+<!-- # Figures -->
 ##  WGS history plot
 Raw data can be downloaded from:
  ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prokaryotes.txt

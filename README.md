@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/nickp60/riboSeed.svg?branch=master)](https://travis-ci.org/nickp60/riboSeed)
 [![PyPI version](https://badge.fury.io/py/riboSeed.svg)](https://badge.fury.io/py/riboSeed)
 [![Coverage Status](https://coveralls.io/repos/github/nickp60/riboSeed/badge.svg?branch=master)](https://coveralls.io/github/nickp60/riboSeed?branch=master)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.832131.svg)](https://doi.org/10.5281/zenodo.832131)
+[![DOI](https://zenodo.org/badge/68617544.svg)](https://zenodo.org/badge/latestdoi/68617544)
 [![Code Health](https://landscape.io/github/nickp60/riboSeed/master/landscape.svg?style=flat)](https://landscape.io/github/nickp60/riboSeed/master)
 [![Documentation Status](https://readthedocs.org/projects/riboseed/badge/?version=latest)](http://riboseed.readthedocs.io/en/latest/?badge=latest)
 
@@ -13,6 +13,8 @@ Impatient? See our [Quickstart Guide](./quickstart.md)
 A brief overview of the theory can be found [here](https://nickp60.github.io/riboSeed.html).
 
 Preprint of the riboSeed manuscript can be found [here](http://www.biorxiv.org/content/early/2017/07/14/159798);  comments welcome!
+
+Interested in the figures/tables/analyses in the manuscript?  See the [REAMDE](https://github.com/nickp60/riboSeed/blob/master/scripts/README.md) in the `scripts` dir.
 
 ## Table of Contents
 
@@ -223,7 +225,7 @@ optional arguments:
 * You may run into issues where you get an error about "Unable to connect to X server: None" or localhost:N. Sorry about that; any tips would be useful;  a quick glance at the commit history will show I have spent much time trying to resolve it, without any luck.  If you do run into this, try the following:
   - connect to the machine with an X session (`ssh -X hostname`)
   - avoid using `gnu screen` if possible, but if you do need to use it, start the `screen` session after ensuring you have a `$DISPLAY` availible through starting the host session with `-X`
-  
+
 * Submitting `--smalt_scoring` with vastly different scoring schemes usually causes an error.
 
 ## Running Tests
