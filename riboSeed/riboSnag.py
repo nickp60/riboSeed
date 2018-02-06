@@ -81,7 +81,7 @@ def get_args():  # pragma: no cover
     # above get listed first
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("-n", "--name",
-                          help="rename the contigs with this prefix" +
+                          help="rename the contigs with this prefix; " +
                           # "default: %(default)s",
                           "default: date (YYYYMMDD)",
                           default=None, dest="name",
@@ -107,7 +107,7 @@ def get_args():  # pragma: no cover
                           help="if the genome is known to be circular, and " +
                           "an region of interest (including flanking bits) " +
                           "extends past chromosome end, this extends the " +
-                          "seqence past chromosome origin forward by 5kb; " +
+                          "sequence past chromosome origin forward by 5kb; " +
                           "default: %(default)s",
                           default=False, dest="circular", action="store_true")
     optional.add_argument("-p", "--padding", dest='padding', action="store",
@@ -115,7 +115,7 @@ def get_args():  # pragma: no cover
                           help="if treating as circular, this controls the " +
                           "length of sequence added to the 5' and 3' ends " +
                           "to allow for selecting regions that cross the " +
-                          "chromosom's origin; default: %(default)s")
+                          "chromosome's origin; default: %(default)s")
     optional.add_argument("-v", "--verbosity",
                           dest='verbosity', action="store",
                           default=2, type=int,
@@ -132,13 +132,13 @@ def get_args():  # pragma: no cover
                           default=None,
                           dest="title")
     optional.add_argument("--clobber",
-                          help="overwrite previous output files" +
+                          help="overwrite previous output files; " +
                           "default: %(default)s", action='store_true',
                           default=False, dest="clobber")
     optional.add_argument("--no_revcomp",
                           help="default returns reverse complimented seq " +
                           "if majority of regions on reverse strand. if  " +
-                          "--no_revcomp, this is overwridden" +
+                          "--no_revcomp, this is overwridden; " +
                           "default: %(default)s",
                           action='store_true',
                           default=False, dest="no_revcomp")

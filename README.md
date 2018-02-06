@@ -14,7 +14,7 @@ A brief overview of the theory can be found [here](https://nickp60.github.io/rib
 
 Preprint of the riboSeed manuscript can be found [here](http://www.biorxiv.org/content/early/2017/07/14/159798);  comments welcome!
 
-Interested in the figures/tables/analyses in the manuscript?  See the [REAMDE](https://github.com/nickp60/riboSeed/blob/master/scripts/README.md) in the `scripts` dir.
+Interested in the figures/tables/analyses in the manuscript?  See the [README](https://github.com/nickp60/riboSeed/blob/master/scripts/README.md) in the `scripts` dir.
 
 ## Table of Contents
 
@@ -84,14 +84,14 @@ CM000577.1 FGSG_20075:FGSG_20074
 
 ## 2: *De fere novo* Assembly
 ### `seed`
-`seed` maps reads to a genome and (1) extracts reads mapping to rDNA regions, (2) perfoms subassemblies on each pool of extracted reads to recover the rDNA complete with flanking regions (resulting in a pseudocontig) (3) concatenates a;; pseudocontigs into them into a pseudogenome with 5kb spacers of N's in between, (5) map remaining reads to the pseudogenome, and (6) repeat steps 1-5 for a given number of iterations (default 3 iterations). Finally, riboSeed runs SPAdes assemblied with and without the pseudocontigs and the resulting assemblies are assessed with QUAST.
+`seed` maps reads to a genome and (1) extracts reads mapping to rDNA regions, (2) performs subassemblies on each pool of extracted reads to recover the rDNA complete with flanking regions (resulting in a pseudocontig) (3) concatenates a;; pseudocontigs into them into a pseudogenome with 5kb spacers of N's in between, (5) map remaining reads to the pseudogenome, and (6) repeat steps 1-5 for a given number of iterations (default 3 iterations). Finally, riboSeed runs SPAdes assemblies with and without the pseudocontigs and the resulting assemblies are assessed with QUAST.
 
 #### Output
 
 The results directory will contain a 'final_long_reads' directory with all the pseudocontigs, the mapped fastq files, and `final_de_novo_assembly` and `final_de_fere_novo_assembly` folders, containing the SPAdes results.
 
 ##### NOTE:
-If using a consumer-grade computer, it will be advantagous to run with `-z/--serialize` enabled to run asseblies in serial rather than parallel.
+If using a consumer-grade computer, it will be advantageous to run with `-z/--serialize` enabled to run assemblies in serial rather than parallel.
 
 
 ## Key Parameters
@@ -106,7 +106,7 @@ Results can be tuned by changing several of the default parameters.
 
 * `--min_assembly_len`:  For bacteria, this is about 7000bp, as the rDNA regions for a typical operon of 16S 23S and 5S coding sequences combined usually are about that long.  If you are using non-standard rDNA regions, this should be adjusted to prevent spurious assemblies.
 
-* `--ref_as_contig`:  This can be used to guide how SPAdes treats the long read sequences during the assembly (`trusted` or `untrusted`).  By default, this is infered from mapping percentage (`trusted` if over 85% of reads map to the reference)
+* `--ref_as_contig`:  This can be used to guide how SPAdes treats the long read sequences during the assembly (`trusted` or `untrusted`).  By default, this is inferred from mapping percentage (`trusted` if over 85% of reads map to the reference)
 
 * `--iterations`:  Each iteration typically increases the length of the long read by approximately 5%.
 
@@ -143,7 +143,7 @@ required named arguments:
                         /home/nicholas/GitHub/riboSeed
 
 optional arguments:
-  -n NAME, --name NAME  rename the contigs with this prefixdefault: date
+  -n NAME, --name NAME  rename the contigs with this prefix; default: date
                         (YYYYMMDD)
   -l FLANKING, --flanking_length FLANKING
                         length of flanking regions, in bp; default: 1000
@@ -161,10 +161,10 @@ optional arguments:
   -v VERBOSITY, --verbosity VERBOSITY
                         1 = debug(), 2 = info(), 3 = warning(), 4 = error()
                         and 5 = critical(); default: 2
-  --clobber             overwrite previous output filesdefault: False
+  --clobber             overwrite previous output files default: False
   --no_revcomp          default returns reverse complimented seq if majority
                         of regions on reverse strand. if --no_revcomp, this is
-                        overwriddendefault: False
+                        overwridden; default: False
   --skip_check          Dont bother calculating Shannon Entropy; default:
                         False
   --msa_tool {mafft,prank}
@@ -183,7 +183,7 @@ optional arguments:
 ```
 
 ### `stack`
-Decause assembly using short reads often collases rDNA repeats, it is not uncommon to find a reference genome that has less than the actual number of rDNAs.  riboStack uses `bedtools` and `samtools` to determine the coverage across rDNA regiosn, adn compares that coverage depth to 10 sets of randomly selected non-rDNA regions.  If the number of rDNAs in the reference matches the number of rDNAs in your sequecned isolate, the coverage should be pretty similar. However, if the coverage in your rDNA regions is significantly higher, than there are likely more rDNAs in your sequenced isoalte that there are in the reference, which is something to be aware of.
+Because assembly using short reads often collapses rDNA repeats, it is not uncommon to find a reference genome that has less than the actual number of rDNAs.  riboStack uses `bedtools` and `samtools` to determine the coverage across rDNA regions, and compares that coverage depth to 10 sets of randomly selected non-rDNA regions.  If the number of rDNAs in the reference matches the number of rDNAs in your sequenced isolate, the coverage should be pretty similar. However, if the coverage in your rDNA regions is significantly higher, than there are likely more rDNAs in your sequenced isolate that there are in the reference, which is something to be aware of.
 
 It requires a mapping BAM file and the riboScan output directory as input.
 
