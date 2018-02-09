@@ -109,6 +109,11 @@ tall <- tall %>%
   group_by(where, freq) %>%
   mutate(out= id_outliers(value)) %>% 
   as.data.frame()
+
+sumary_tall <- tall %>%
+  group_by(where, freq) %>%
+  count(value)
+
 str(tall)
 
 labelsdf <- data.frame(x1=c(0,.05, .15), 
@@ -172,6 +177,47 @@ line_lin <- ggplot(tall,#[tall$freq != 0, ],
     labs(y="Correctly-assembled rDNAs", x="Substitution Frequency", title="", 
          # color="Permitted Substitutions")
           color="")
+## oh joy...
+library(ggridges)
+ggplot(tall, aes(x=value, y=factor(freq, levels=unique(freq)), color=where, fill=where)) + geom_density_ridges(alpha=.5) + scale_y_discrete(limits = as.character(rev(unique(tall$freq))))
+
+###################################################
+# For summarized table
+###################################################
+
+sum_line_lin <- ggplot(tall,#[tall$freq != 0, ],
+                   aes(x=freq, color=where, y=value))+ 
+  annotate("rect", xmin=min(tall$freq), xmax=0.05, ymin=0, ymax=8, 
+           alpha=0.15, fill="purple", color=NA)+
+  annotate("text", x=0.025,  y=7.5, label="Intraspecies", size=5)+
+  annotate("text", x=0.090,  y=7.5, label="Interspecies", size=5)+
+  geom_smooth(size=0.5,
+              method="loess", 
+              formula = y ~ x, span=1)+
+  geom_point(data=sumary_tall, aes(size=n, fill=where), shape=21, alpha=.4)+#, position=position_jitter(width = .001, height = .05))+
+  geom_hline(0, yintercept = 0, color="grey20") + 
+  scale_x_continuous(limits = c(0, 0.3), expand=c(0.02, 0), breaks=freqs, labels =labelss)+
+  scale_y_continuous(expand=c(0, 0), limits = c(-0.4, 8), breaks = 0:7)+
+  scale_color_manual(values=c("#FF8000", "#0048AD"))+
+  scale_fill_manual(values=c("#FF8000", "#0048AD"))+
+#  scale_size_continuous(range=c(.25,8)) +
+  scale_size_area(max_size=8, breaks=c(1,25,50,100)) +
+  theme(
+    axis.title = element_text( angle = 0, size=17 ),
+    plot.background = element_blank(),
+    panel.background = element_blank(),
+    legend.position = "bottom",
+    legend.key = element_blank(),
+    # legend.key = element_rect(fill = "transparent", color="transpar"),
+    strip.background = element_rect(fill=NA),
+    strip.text = element_text( angle = 0, face="bold", size=10 ),
+    plot.title = element_text(size=15))+
+  labs(y="Correctly-assembled rDNAs", x="Substitution Frequency", title="",
+       size="", 
+       # color="Permitted Substitutions")
+       color="", fill="")
+
+###################################################
 
 
 #  coord_flip()
@@ -189,3 +235,9 @@ writePlot(
   pl=line_lin, 
   file=paste0(args$out_folder, "degenerate_lineplot"),
   w=8, h=6)
+writePlot(
+  pl=sum_line_lin, 
+  file=paste0(args$out_folder, "degenerate_bubble_lineplot"),
+  w=8, h=6)
+
+
