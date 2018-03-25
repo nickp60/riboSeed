@@ -131,6 +131,11 @@ def get_args():  # pragma: no cover
                           action='store',
                           default=None,
                           dest="title")
+    optional.add_argument('--pubplot',
+                          action="store_true",
+                          # want slightly cleaner figures? Try this for
+                          # bigger fonts, adjusted label spacing, and
+                          help=argparse.SUPPRESS)
     optional.add_argument("--clobber",
                           help="overwrite previous output files; " +
                           "default: %(default)s", action='store_true',
@@ -478,7 +483,7 @@ def plot_scatter_with_anno(data,
                            anno_list,
                            names=["Position", "Entropy"],
                            title="$Strain Name$",
-                           output_prefix="entropy_plot.png"):
+                           output_prefix="entropy_plot.png", pubplot=True):
     """Given annotation coords [feature, [start, end]],
     consensus cov list ['base', coverage_depth],
     entropy values (list) and consensus sequence
@@ -506,12 +511,20 @@ def plot_scatter_with_anno(data,
               '#ff4c05', '#FFFB07', '#04FF08', '#06B9FF', '#6505FF', '#FF012F']
     # ax1.set_title("Shannon Entropy by Position\n" +
     #               title, y=1.08, fontsize=20)
-    ax1.set_title(title, y=1.08, fontsize=18)
+    if pubplot:
+        fontscale = 1.5
+    else:
+        fontscale = 1
+    ax1.set_title(title, y=1.08, fontsize=18 * fontscale)
     xmin, xmax = 0, len(data)
     ymin, ymax = -0.1, (max(data) * 1.2)
     ax1.set_xlim([xmin, xmax])
     ax1.set_ylim([ymin, ymax])
+    if pubplot:
+        # make minimal y labels for coeverage
+        ax2.set_yticks([0, max(df_con["depth"])])
     yjust = -.1
+    # add the highlighted bits sowing where te coding regions are
     for index, anno in enumerate(anno_list):
         rect1 = patches.Rectangle(
             (anno[1][0],  # starting x
@@ -533,23 +546,24 @@ def plot_scatter_with_anno(data,
                 colors[index], alpha=0.2))
         ax1.add_patch(rect1)
         ax2.add_patch(rect2)
-        ax1.text((anno[1][0] + anno[1][1]) / 2,    # x location
-                 ymax - 0.48 - yjust,                      # y location
-                 anno[0][0:20],                          # text first 20 char
-                 ha='center', color='red', weight='bold', fontsize=11)
-        yjust = yjust * - 1
+        if not pubplot:
+            ax1.text((anno[1][0] + anno[1][1]) / 2,    # x location
+                     ymax - 0.48 - yjust,              # y location
+                     anno[0][0:20],                     # text first 20 char
+                     ha='center', color='red', weight='bold', fontsize=11)
+            yjust = yjust * - 1
     ax1.scatter(x=df["Position"], y=df["Entropy"],
                 marker='o', color='black', s=2)
     # add smoothing for kicks
     df["fit"] = savitzky_golay(df["Entropy"].values, 351, 3)  # window size 51, polynomial order 3
     ax1.scatter(x=df["Position"], y=df["fit"], color='red', s=1)
     #
-    ax1.set_ylabel('Shannon Entropy')
-    ax1.get_yaxis().set_label_coords(-.05, 0.5)
+    ax1.set_ylabel('Shannon Entropy', fontsize= 13 * fontscale)
+    ax1.get_yaxis().set_label_coords(-.05, 0.7)
     ax2.set_xlim([xmin, xmax])
-    ax2.invert_yaxis()
-    ax2.set_ylabel('Consensus Coverage')
-    ax2.set_xlabel('Position (bp)')
+    ax2.invert_yaxis()  # we want the bars pointing down
+    ax2.set_ylabel('Consensus Coverage', fontsize= 13 * fontscale)
+    ax2.set_xlabel('Position (bp)', fontsize= 13 * fontscale)
     ax2.get_yaxis().set_label_coords(-.05, 0.5)
     # ax2.set_ylim([1, cov_max_depth + 1]) #, 1])
     ax2.bar(df_con.index, df_con["depth"],
@@ -564,10 +578,10 @@ def plot_scatter_with_anno(data,
     ax.yaxis.set_ticks_position('left')
     ax2.xaxis.set_ticks_position('bottom')
     ax1.xaxis.set_ticks_position('top')
-    ax1.tick_params(axis='y', colors='dimgrey')
-    ax2.tick_params(axis='y', colors='dimgrey')
-    ax1.tick_params(axis='x', colors='dimgrey')
-    ax2.tick_params(axis='x', colors='dimgrey')
+    ax1.tick_params(axis='y', colors='dimgrey', labelsize = 10 * fontscale)
+    ax2.tick_params(axis='y', colors='dimgrey', labelsize = 10 * fontscale)
+    ax1.tick_params(axis='x', colors='dimgrey', labelsize = 10 * fontscale)
+    ax2.tick_params(axis='x', colors='dimgrey', labelsize = 10 * fontscale)
     ax1.yaxis.label.set_color('black')
     ax2.yaxis.label.set_color('black')
     ax1.xaxis.label.set_color('black')
@@ -1239,6 +1253,7 @@ def main(args, logger=None):
             names=["Position", "Entropy"],
             title=args.title,
             anno_list=annos,
+            pubplot=args.pubplot,
             output_prefix=os.path.join(
                 output_root,
                 "entropy_plot"))
