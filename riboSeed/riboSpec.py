@@ -24,6 +24,10 @@ import subprocess
 import argparse
 import multiprocessing
 
+import numpy as np
+import matplotlib.pyplot as plt
+import networkx as nx
+
 from .shared_methods import set_up_logging, make_barrnap_cmd, test_barrnap_ok
 
 
@@ -170,13 +174,123 @@ def parse_fastg(f):
     for node, neighs in node_neighs:
         new_node = make_Node(node)
         if neighs is None:
-            new_node.neighbor_list = None
+            new_node.neighbor_list = []
         else:
             new_node.neighbor_list = [make_Neighbors(x) for x in neighs.split(",")]
         node_list.append(new_node)
 
     return node_list
 
+
+
+from matplotlib import pyplot, patches
+
+
+def draw_adjacency_matrix(G, node_order=None, partitions=[], colors=[]):
+    """
+    - G is a dictionary that can be comnverted to a network graph
+    - node_order (optional) is a list of nodes, where each node in G
+          appears exactly once
+    - partitions is a list of node lists, where each node in G appears
+          in exactly one node list
+    - colors is a list of strings indicating what color each
+          partition should be
+    If partitions is specified, the same number of colors needs to be
+    specified.
+    """
+    # G = nx.Graph(g)
+    adjacency_matrix = G
+    # adjacency_matrix = nx.to_numpy_matrix(G, dtype=np.bool, nodelist=node_order)
+
+    #Plot adjacency matrix in toned-down black and white
+    fig = pyplot.figure(figsize=(4, 4)) # in inches
+    pyplot.imshow(adjacency_matrix,
+                  cmap="Greys",
+                  interpolation="none")
+
+    # The rest is just if you have sorted nodes by a partition and want to
+    # highlight the module boundaries
+    assert len(partitions) == len(colors)
+    ax = pyplot.gca()
+    for partition, color in zip(partitions, colors):
+        current_idx = 0
+        for module in partition:
+            ax.add_patch(patches.Rectangle((current_idx, current_idx),
+                                          len(module), # Width
+                                          len(module), # Height
+                                          facecolor="none",
+                                          edgecolor=color,
+                                          linewidth="1"))
+            current_idx += len(module)
+    fig.savefig("test.pdf")
+
+
+def alt_parse_fastg(f):
+    """parse the headers in a fastg file and return a list of Node objects
+    """
+    node_neighs = []
+    with open(f, "r") as inf:
+        for line in inf:
+            if line.startswith(">"):
+                colons = sum([1 for x in line if x == ":" ])
+                if colons > 1:
+                    sys.stderr.write("multiple ':'s found in line, and can only " +
+                                     "be used to separate nodes from neighbor " +
+                                     "list\n")
+                elif colons == 0:
+                    # orphaned node or terminal node
+                    # sys.stderr.write("Header does not contain a colon!\n")
+                    # jk I couldnt care less about these nodes.
+                    # node_neighs.append([line.strip().split(";")[0], None])
+                    pass
+                else:
+                    # loose the '>' at the beginning and the ';' at the end
+                    node, neigh  = line.strip()[1:-1].split(":")
+                    node_neighs.append([node, neigh.split(",")])
+    print(node_neighs)
+    ## these should be the same length
+    # print(len([x[0] for x in node_neighs]))
+    # print(len(set([x[0] for x in node_neighs])))
+    g = {k:v for k,v in node_neighs}
+    # print([extract_node_len_cov_rc(name[0]) for name in node_neighs])
+
+    keys=sorted(g.keys())
+    size=len(keys)
+    M = [ [0]*size for i in range(size) ]
+
+    """
+    for a, row in g.items() iterates over the key:value entries in dictionary, and for b in row iterates over the values. If we used (a,b), this would have given us all the pairs.
+
+    (keys.index(a), keys.index(b)) But we need the index to assign to the corresponding matrix entry,
+
+    keys=sorted(g.keys()) that's why we extracted and sorted the keys.
+
+    for a,b in... getting the index entries and assigning value 1 or 2 based on diagonal element or not.
+
+    M = [ [0]*size for ... matrix cannot be used before initialization.
+    """
+    for a,b in [(keys.index(a), keys.index(b)) for a, row in g.items() for b in row]:
+        M[a][b] = 2 if (a==b) else 1
+
+    with open("tab.txt", "w") as o:
+        for line in M:
+            o.write("\t".join([str(x) for x in line]) + "\n")
+    draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[])
+    sys.exit()
+    node_list = []
+    for node, neighs in node_neighs:
+        new_node = make_Node(node)
+        if neighs is None:
+            new_node.neighbor_list = []
+        else:
+            new_node.neighbor_list = [make_Neighbors(x) for x in neighs.split(",")]
+        node_list.append(new_node)
+
+    return node_list
+
+# TODO replace the matrix with a adjacency matrix
+# https://stackoverflow.com/questions/37353759/how-do-i-generate-an-adjacency-matrix-of-a-graph-from-a-dictionary-in-python
+# replace pathfinding algo with a matrix traverse rather than this spitshow
 
 def pathfind(node_list, top_parent, parent, prev_path, prev_length,
              path_list, thresh=1000, ignored_nodes=[], found_exit=False, verbose=False):
@@ -354,8 +468,18 @@ def main(args, logger=None):
         # create a assembly graph
         args.assembly_graph = make_prelim_mapping_cmds()
     # make a list of node objects
-    nodes = parse_fastg(f=args.assembly_graph)
+    nodes = alt_parse_fastg(f=args.assembly_graph)
+    print(nodes)
+    sys.exit()
+    # alt nodes
+    dic = {int(x.name): [int(y.name) for y in x.neighbor_list] for x in nodes}
+    print(dic)
+    # for k, v in dic.items():
+    #     print([x.name for x in v])
+    # print({w:[y for y in x if] for (w, x) in dic.items()})
 
+
+    sys.exit(0)
     # run barrnap to find our rDNAs
     barrnap_gff = os.path.join(output_root, "barrnapped.gff")
     barrnap_cmd = make_barrnap_cmd(
@@ -399,7 +523,7 @@ def main(args, logger=None):
         logger.error("Barrnap failed to detect any 16S in the assembly graph")
         raise ValueError
 
-    if not nodes23.count(nodes23[0]) == len(nodes23):
+    if len(nodes23) == 0 or not nodes23.count(nodes23[0]) == len(nodes23):
         logger.error("it appears that there are distinct 23S rDNAs in the " +
                      "assenbly graph; this tracing algorithm is not the best" +
                      "option.  Please review the graph manually to determine" +
@@ -432,7 +556,7 @@ def main(args, logger=None):
         parent=end,
         prev_path=end.name,
         prev_length=0,
-        thresh=1000,
+        thresh=2000,
         ignored_nodes=[node16],
         path_list=[],
         found_exit=False)
