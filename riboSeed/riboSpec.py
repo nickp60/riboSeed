@@ -23,6 +23,7 @@ import re
 import subprocess
 import argparse
 import multiprocessing
+import itertools
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -32,13 +33,17 @@ from .shared_methods import set_up_logging, make_barrnap_cmd, test_barrnap_ok
 
 
 class FastgNode(object):
+    # newid = itertools.count()
+
     def __init__(self, name=None, length=None, cov=None,
                  reverse_complimented=None, neighbor_list=None):
+        # self.index = next(FastgNode.newid)
         self.name = name
         self.length = length
         self.cov = cov
         self.neighbor_list = neighbor_list
         self.reverse_complimented = reverse_complimented
+
     def __str__(self):
         return str("Node: {0}\nNeighbors: {1}\nLength: {2}\nCoverage: " +
                    "{3}\nReverse_Complimented?: {4}").format(
@@ -135,7 +140,7 @@ def extract_node_len_cov_rc(node_name):
 def make_Node(name):
     node_name, length, cov, rc = extract_node_len_cov_rc(name)
     new_node = FastgNode(
-        name=node_name,
+        name=int(node_name),
         length=length,
         cov=cov,
         reverse_complimented = rc
@@ -145,7 +150,7 @@ def make_Node(name):
 def make_Neighbors(neighbor):
     node_name, length, cov, rc = extract_node_len_cov_rc(neighbor)
     new_neigh = FastgNodeNeighbor(
-        name=node_name,
+        name=int(node_name),
         reverse_complimented=rc
     )
     return new_neigh
@@ -248,7 +253,6 @@ def alt_parse_fastg(f):
                     # loose the '>' at the beginning and the ';' at the end
                     node, neigh  = line.strip()[1:-1].split(":")
                     node_neighs.append([node, neigh.split(",")])
-    print(node_neighs)
     ## these should be the same length
     # print(len([x[0] for x in node_neighs]))
     # print(len(set([x[0] for x in node_neighs])))
@@ -273,6 +277,7 @@ def alt_parse_fastg(f):
     for a,b in [(keys.index(a), keys.index(b)) for a, row in g.items() for b in row]:
         M[a][b] = 2 if (a==b) else 1
     node_list = []
+    # make objects for each node and neighbor
     for node, neighs in node_neighs:
         new_node = make_Node(node)
         if neighs is None:
@@ -281,7 +286,14 @@ def alt_parse_fastg(f):
             new_node.neighbor_list = [make_Neighbors(x) for x in neighs]
         node_list.append(new_node)
 
-    return (node_list, M)
+    # make the networkx object
+    DG = nx.DiGraph()
+    for N in node_list:
+        DG.add_node(N.name)
+    for N in node_list:
+        for neigh in N.neighbor_list:
+            DG.add_edge(N.name, neigh.name, rc= neigh.reverse_complimented)
+    return (node_list, M, DG)
 
 # TODO replace the matrix with a adjacency matrix
 # https://stackoverflow.com/questions/37353759/how-do-i-generate-an-adjacency-matrix-of-a-graph-from-a-dictionary-in-python
@@ -463,12 +475,39 @@ def main(args, logger=None):
         # create a assembly graph
         args.assembly_graph = make_prelim_mapping_cmds()
     # make a list of node objects
-    nodes, M = alt_parse_fastg(f=args.assembly_graph)
+    nodes, M, G = alt_parse_fastg(f=args.assembly_graph)
+    #########
+
+    fig = pyplot.figure(figsize=(10, 10)) # in inches
+
+    pos = nx.layout.spring_layout(G)
+
+    node_sizes = [3 for i in range(len(G))]
+    M = G.number_of_edges()
+    edge_colors = range(2, M + 2)
+    edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
+
+    edges = nx.draw_networkx_nodes(G, pos,  node_size=node_sizes, node_color='blue')
+    nodes = nx.draw_networkx_edges(G, pos, node_size=node_sizes, arrowstyle='->',
+                                   arrowsize=10, edge_color=edge_colors,
+                                   with_labels=True,
+                                   edge_cmap=plt.cm.Blues, width=.5)
+    # set alpha value for each edge
+    # for i in range(M):
+    #     edges[i].set_alpha(edge_alphas[i])
+    ax = plt.gca()
+    ax.set_axis_off()
+    fig.savefig("ibetthiswontwork.pdf")
+
+
+
+
+    sys.exit()
+    ########
     draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
     with open(os.path.join(args.output, "tab.txt"), "w") as o:
         for line in M:
             o.write("\t".join([str(x) for x in line]) + "\n")
-
     # alt nodes
     dic = {int(x.name): [int(y.name) for y in x.neighbor_list] for x in nodes}
     print(dic)
@@ -507,7 +546,9 @@ def main(args, logger=None):
     nodes23 = [ extract_node_len_cov_rc(x[0])[0] for x in gff_list if "23S" in x[8]]
     nodes5  = [ extract_node_len_cov_rc(x[0])[0] for x in gff_list if "5S"  in x[8]]
     #
+    color_mask = [x in [str(y) for y in nodes5] for x in range(len(M[0]))]
     print(nodes5)
+    print(color_mask)
     sys.exit(0)
     if not nodes16.count(nodes16[0]) == len(nodes16):
         logger.error("it appears that there are distinct 16S rDNAs in the " +
