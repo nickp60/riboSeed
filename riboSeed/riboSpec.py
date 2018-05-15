@@ -186,7 +186,7 @@ def parse_fastg(f):
 from matplotlib import pyplot, patches
 
 
-def draw_adjacency_matrix(G, node_order=None, partitions=[], colors=[]):
+def draw_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outdir=None):
     """
     - G is a dictionary that can be comnverted to a network graph
     - node_order (optional) is a list of nodes, where each node in G
@@ -222,7 +222,7 @@ def draw_adjacency_matrix(G, node_order=None, partitions=[], colors=[]):
                                           edgecolor=color,
                                           linewidth="1"))
             current_idx += len(module)
-    fig.savefig("test.pdf")
+    fig.savefig(os.path.join(outdir, "test.pdf"))
 
 
 def alt_parse_fastg(f):
@@ -242,6 +242,7 @@ def alt_parse_fastg(f):
                     # sys.stderr.write("Header does not contain a colon!\n")
                     # jk I couldnt care less about these nodes.
                     # node_neighs.append([line.strip().split(";")[0], None])
+                    node_neighs.append([line.strip()[1:-1], []])
                     pass
                 else:
                     # loose the '>' at the beginning and the ';' at the end
@@ -271,22 +272,16 @@ def alt_parse_fastg(f):
     """
     for a,b in [(keys.index(a), keys.index(b)) for a, row in g.items() for b in row]:
         M[a][b] = 2 if (a==b) else 1
-
-    with open("tab.txt", "w") as o:
-        for line in M:
-            o.write("\t".join([str(x) for x in line]) + "\n")
-    draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[])
-    sys.exit()
     node_list = []
     for node, neighs in node_neighs:
         new_node = make_Node(node)
         if neighs is None:
             new_node.neighbor_list = []
         else:
-            new_node.neighbor_list = [make_Neighbors(x) for x in neighs.split(",")]
+            new_node.neighbor_list = [make_Neighbors(x) for x in neighs]
         node_list.append(new_node)
 
-    return node_list
+    return (node_list, M)
 
 # TODO replace the matrix with a adjacency matrix
 # https://stackoverflow.com/questions/37353759/how-do-i-generate-an-adjacency-matrix-of-a-graph-from-a-dictionary-in-python
@@ -468,18 +463,17 @@ def main(args, logger=None):
         # create a assembly graph
         args.assembly_graph = make_prelim_mapping_cmds()
     # make a list of node objects
-    nodes = alt_parse_fastg(f=args.assembly_graph)
-    print(nodes)
-    sys.exit()
+    nodes, M = alt_parse_fastg(f=args.assembly_graph)
+    draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
+    with open(os.path.join(args.output, "tab.txt"), "w") as o:
+        for line in M:
+            o.write("\t".join([str(x) for x in line]) + "\n")
+
     # alt nodes
     dic = {int(x.name): [int(y.name) for y in x.neighbor_list] for x in nodes}
     print(dic)
-    # for k, v in dic.items():
-    #     print([x.name for x in v])
-    # print({w:[y for y in x if] for (w, x) in dic.items()})
 
 
-    sys.exit(0)
     # run barrnap to find our rDNAs
     barrnap_gff = os.path.join(output_root, "barrnapped.gff")
     barrnap_cmd = make_barrnap_cmd(
@@ -513,6 +507,8 @@ def main(args, logger=None):
     nodes23 = [ extract_node_len_cov_rc(x[0])[0] for x in gff_list if "23S" in x[8]]
     nodes5  = [ extract_node_len_cov_rc(x[0])[0] for x in gff_list if "5S"  in x[8]]
     #
+    print(nodes5)
+    sys.exit(0)
     if not nodes16.count(nodes16[0]) == len(nodes16):
         logger.error("it appears that there are distinct 16S rDNAs in the " +
                      "assenbly graph; this tracing algorithm is not the best" +
