@@ -95,6 +95,9 @@ def get_args():  # pragma: no cover
                           "mapping file; "
                           "required if no assembly graph is used",
                           type=str, default=None)
+    optional.add_argument("-n", "--max_nodes", dest='max_nodes', action="store",
+                          help="max number of nodes considered around rDNAs ",
+                          type=int, default=15)
     optional.add_argument("-v", "--verbosity", dest='verbosity',
                           action="store",
                           default=2, type=int, choices=[1, 2, 3, 4, 5],
@@ -498,7 +501,7 @@ def main(args, logger=None):
         outgff=barrnap_gff,
         exe=args.barrnap_exe,
         threads=args.cores,
-        thresh=0.8,
+        thresh=0.1,
         kingdom="bac")
     logger.info("running barrnap cmd: %s", barrnap_cmd)
     subprocess.run(barrnap_cmd,
@@ -543,7 +546,7 @@ def main(args, logger=None):
 
     fig = pyplot.figure(figsize=(10, 10)) # in inches
 
-    pos = nx.layout.spring_layout(G)
+    pos = nx.layout.spring_layout(G, iterations=5)
 
     node_sizes_raw = [h['length'] for g, h in G.nodes.data()]
     maxsize = max(node_sizes_raw)
@@ -552,6 +555,13 @@ def main(args, logger=None):
     node_sizes = [10 + (30 * ((x - minsize)/sizediff)) for x in node_sizes_raw]
     N = G.number_of_nodes()
     M = G.number_of_edges()
+    _G = nx.line_graph(G)
+    _N = _G.number_of_nodes()
+    _M = _G.number_of_edges()
+    print(N)
+    print(M)
+    print(_N)
+    print(_M)
     edge_colors = range(2, M + 2)
     edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
     # print(G.nodes.data())
@@ -567,7 +577,7 @@ def main(args, logger=None):
         
         # node_colors
     nx.draw(G, with_labels=True, linewidths=0, node_size=node_sizes,
-            alpha=0.7, arrows=True, font_size=2,
+            alpha=0.7,  font_size=2, arrows=False,
             node_color=node_colors, edge_color="darkgrey", width=.2)
     # edges = nx.draw_networkx_nodes(G, pos,
     #                                linewidths=0,
@@ -586,6 +596,10 @@ def main(args, logger=None):
     fig.savefig("ibetthiswontwork.pdf")
 
 
+    fig = pyplot.figure(figsize=(10, 10)) # in inches
+    nx.draw(nx.line_graph(G))
+    fig.savefig("ibetthiswontworkeither.pdf")
+    
     sys.exit()
     ########
 
