@@ -27,6 +27,7 @@ import itertools
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import pyplot, patches
 import networkx as nx
 
 from .shared_methods import set_up_logging, make_barrnap_cmd, test_barrnap_ok
@@ -147,6 +148,7 @@ def make_Node(name):
     )
     return new_node
 
+
 def make_Neighbors(neighbor):
     node_name, length, cov, rc = extract_node_len_cov_rc(neighbor)
     new_neigh = FastgNodeNeighbor(
@@ -183,12 +185,7 @@ def parse_fastg(f):
         else:
             new_node.neighbor_list = [make_Neighbors(x) for x in neighs.split(",")]
         node_list.append(new_node)
-
     return node_list
-
-
-
-from matplotlib import pyplot, patches
 
 
 def draw_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outdir=None):
@@ -289,11 +286,18 @@ def alt_parse_fastg(f):
     # make the networkx object
     DG = nx.DiGraph()
     for N in node_list:
-        DG.add_node(N.name)
+        DG.add_node(N.name, cov=N.cov, length=N.length)
     for N in node_list:
         for neigh in N.neighbor_list:
-            DG.add_edge(N.name, neigh.name, rc= neigh.reverse_complimented)
+            if (
+                    (neigh.reverse_complimented and N.reverse_complimented) or
+                    (not neigh.reverse_complimented and not N.reverse_complimented)
+            ):
+                DG.add_edge(N.name, neigh.name)
+            else:
+                DG.add_edge(neigh.name, N.name)
     return (node_list, M, DG)
+
 
 # TODO replace the matrix with a adjacency matrix
 # https://stackoverflow.com/questions/37353759/how-do-i-generate-an-adjacency-matrix-of-a-graph-from-a-dictionary-in-python
@@ -441,6 +445,7 @@ def run_prelim_mapping_cmds(output_root, mapping_sam, samtool_exe, spades_exe, s
                    stderr=subprocess.PIPE,
                    check=True)
 
+    
 def make_simple_header():
     """uyse sed to just get node name from fastg
     sed 's/^[^ ]\(.*\)[:]\(.*\).*$/>\1/' assembly_graph.fastg > renamed.fastg
@@ -476,41 +481,14 @@ def main(args, logger=None):
         args.assembly_graph = make_prelim_mapping_cmds()
     # make a list of node objects
     nodes, M, G = alt_parse_fastg(f=args.assembly_graph)
-    #########
 
-    fig = pyplot.figure(figsize=(10, 10)) # in inches
-
-    pos = nx.layout.spring_layout(G)
-
-    node_sizes = [3 for i in range(len(G))]
-    M = G.number_of_edges()
-    edge_colors = range(2, M + 2)
-    edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
-
-    edges = nx.draw_networkx_nodes(G, pos,  node_size=node_sizes, node_color='blue')
-    nodes = nx.draw_networkx_edges(G, pos, node_size=node_sizes, arrowstyle='->',
-                                   arrowsize=10, edge_color=edge_colors,
-                                   with_labels=True,
-                                   edge_cmap=plt.cm.Blues, width=.5)
-    # set alpha value for each edge
-    # for i in range(M):
-    #     edges[i].set_alpha(edge_alphas[i])
-    ax = plt.gca()
-    ax.set_axis_off()
-    fig.savefig("ibetthiswontwork.pdf")
-
-
-
-
-    sys.exit()
-    ########
-    draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
-    with open(os.path.join(args.output, "tab.txt"), "w") as o:
-        for line in M:
-            o.write("\t".join([str(x) for x in line]) + "\n")
-    # alt nodes
+    # draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
+    # with open(os.path.join(args.output, "tab.txt"), "w") as o:
+    #     for line in M:
+    #         o.write("\t".join([str(x) for x in line]) + "\n")
+    # # alt nodes
     dic = {int(x.name): [int(y.name) for y in x.neighbor_list] for x in nodes}
-    print(dic)
+    # print(dic)
 
 
     # run barrnap to find our rDNAs
@@ -542,13 +520,75 @@ def main(args, logger=None):
     # for gff lines where the product has the nane of the rDNA (16S, 23S, etc),
     #   we extract the node name (usually a number), which is the first thing
     #   returned from the extract_node_len_cov function
-    nodes16 = [ extract_node_len_cov_rc(x[0])[0] for x in gff_list if "16S" in x[8]]
-    nodes23 = [ extract_node_len_cov_rc(x[0])[0] for x in gff_list if "23S" in x[8]]
-    nodes5  = [ extract_node_len_cov_rc(x[0])[0] for x in gff_list if "5S"  in x[8]]
-    #
-    color_mask = [x in [str(y) for y in nodes5] for x in range(len(M[0]))]
+    nodes16, nodes23, nodes5, = [], [], []
+    print(gff_list)
+    for x in gff_list:
+        print(x)
+        if "16S" in x[8]:
+            nodes16.append(int(extract_node_len_cov_rc(x[0])[0]))
+        if "23S" in x[8]:
+            nodes23.append(int(extract_node_len_cov_rc(x[0])[0]))
+        if "5S" in x[8]:
+            nodes5.append(int(extract_node_len_cov_rc(x[0])[0]))
+    print(nodes16)
+    print(nodes23)
     print(nodes5)
-    print(color_mask)
+
+    color_mask = [x in [str(y) for y in nodes5] for x in range(len(M[0]))]
+    # print(nodes5)
+    # print(color_mask)
+
+
+    #########
+
+    fig = pyplot.figure(figsize=(10, 10)) # in inches
+
+    pos = nx.layout.spring_layout(G)
+
+    node_sizes_raw = [h['length'] for g, h in G.nodes.data()]
+    maxsize = max(node_sizes_raw)
+    minsize = min(node_sizes_raw)
+    sizediff = maxsize - minsize
+    node_sizes = [10 + (30 * ((x - minsize)/sizediff)) for x in node_sizes_raw]
+    N = G.number_of_nodes()
+    M = G.number_of_edges()
+    edge_colors = range(2, M + 2)
+    edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
+    # print(G.nodes.data())
+    # print([h for g, h in G.nodes.data()])
+    node_colors = ["lightgrey" for x in range(N)]
+    for i, (g, h) in enumerate(G.nodes.data()):
+        if g in nodes5:
+            node_colors[i] = "blue"
+        if g in nodes16:
+            node_colors[i] = "red"
+        if g in nodes23:
+            node_colors[i] = "green"
+        
+        # node_colors
+    nx.draw(G, with_labels=True, linewidths=0, node_size=node_sizes,
+            alpha=0.7, arrows=True, font_size=2,
+            node_color=node_colors, edge_color="darkgrey", width=.2)
+    # edges = nx.draw_networkx_nodes(G, pos,
+    #                                linewidths=0,
+    #                                with_labels=True,
+    #                                node_size=node_sizes,
+    #                                node_color=node_colors)
+    # nodes = nx.draw_networkx_edges(G, pos, node_size=node_sizes, arrowstyle='->',
+    #                                arrowsize=5, edge_color="darkgrey",
+    #                                with_labels=True,
+    #                                edge_cmap=plt.cm.Blues, width=.3)
+    # set alpha value for each edge
+    # for i in range(M):
+    #     edges[i].set_alpha(edge_alphas[i])
+    ax = plt.gca()
+    ax.set_axis_off()
+    fig.savefig("ibetthiswontwork.pdf")
+
+
+    sys.exit()
+    ########
+
     sys.exit(0)
     if not nodes16.count(nodes16[0]) == len(nodes16):
         logger.error("it appears that there are distinct 16S rDNAs in the " +
