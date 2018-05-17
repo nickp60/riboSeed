@@ -448,7 +448,7 @@ def run_prelim_mapping_cmds(output_root, mapping_sam, samtool_exe, spades_exe, s
                    stderr=subprocess.PIPE,
                    check=True)
 
-    
+
 def make_simple_header():
     """uyse sed to just get node name from fastg
     sed 's/^[^ ]\(.*\)[:]\(.*\).*$/>\1/' assembly_graph.fastg > renamed.fastg
@@ -562,6 +562,7 @@ def main(args, logger=None):
     print(M)
     print(_N)
     print(_M)
+    print([y for y in _G.edges.data()])
     edge_colors = range(2, M + 2)
     edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
     # print(G.nodes.data())
@@ -574,7 +575,7 @@ def main(args, logger=None):
             node_colors[i] = "red"
         if g in nodes23:
             node_colors[i] = "green"
-        
+
         # node_colors
     nx.draw(G, with_labels=True, linewidths=0, node_size=node_sizes,
             alpha=0.7,  font_size=2, arrows=False,
@@ -597,9 +598,11 @@ def main(args, logger=None):
 
 
     fig = pyplot.figure(figsize=(10, 10)) # in inches
-    nx.draw(nx.line_graph(G))
+    nx.draw(nx.line_graph(G), with_labels=True, linewidths=0, node_size=node_sizes,
+            alpha=0.7,  font_size=2, arrows=False,
+            node_color=node_colors, edge_color="darkgrey", width=.2)
     fig.savefig("ibetthiswontworkeither.pdf")
-    
+
     sys.exit()
     ########
 
