@@ -23,14 +23,13 @@ import re
 import subprocess
 import argparse
 import multiprocessing
-import itertools
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import pyplot, patches
 import networkx as nx
 
-from .shared_methods import set_up_logging, make_barrnap_cmd, test_barrnap_ok
+from .shared_methods import set_up_logging, make_barrnap_cmd
 
 
 class FastgNode(object):
@@ -56,10 +55,12 @@ class FastgNode(object):
                        str(self.reverse_complimented)
                    )
 
+
 class FastgNodeNeighbor(object):
-    def __init__(self, name=None,reverse_complimented=None):
+    def __init__(self, name=None, reverse_complimented=None):
         self.name = name
         self.reverse_complimented = reverse_complimented
+
     def __str__(self):
         return "NeighborNode: {0}\nReverse_Complimented?: {1}".format(
             self.name,
@@ -70,7 +71,8 @@ class FastgNodeNeighbor(object):
 def get_args():  # pragma: no cover
     """
     """
-    parser = argparse.ArgumentParser(prog="ribo spec",
+    parser = argparse.ArgumentParser(
+        prog="ribo spec",
         description="Given either an assembly graph or a mapping file " +
         "and reference, determine whether the number of rDNAs appears " +
         "to match the reference",
@@ -147,7 +149,7 @@ def make_Node(name):
         name=int(node_name),
         length=length,
         cov=cov,
-        reverse_complimented = rc
+        reverse_complimented=rc
     )
     return new_node
 
@@ -251,12 +253,12 @@ def alt_parse_fastg(f):
                     pass
                 else:
                     # loose the '>' at the beginning and the ';' at the end
-                    node, neigh  = line.strip()[1:-1].split(":")
+                    node, neigh = line.strip()[1:-1].split(":")
                     node_neighs.append([node, neigh.split(",")])
     ## these should be the same length
     # print(len([x[0] for x in node_neighs]))
     # print(len(set([x[0] for x in node_neighs])))
-    g = {k:v for k,v in node_neighs}
+    g = {k: v for k, v in node_neighs}
     # print([extract_node_len_cov_rc(name[0]) for name in node_neighs])
 
     keys=sorted(g.keys())
@@ -325,11 +327,11 @@ def pathfind(node_list, top_parent, parent, prev_path, prev_length,
     # look for both forward and rc matches
     parent_opposite_strand = [x for x in node_list if x.name == parent.name and x.reverse_complimented != parent.reverse_complimented][0]
     poss_f = [x for x in parent.neighbor_list if
-              x.name not in prev_path.split(":") and
-              x.name not in ignored_nodes]
+              str(x.name) not in prev_path.split(":") and
+              str(x.name) not in ignored_nodes]
     poss_rc = [x for x in parent_opposite_strand.neighbor_list if
-               x.name not in prev_path.split(":") and
-               x.name not in ignored_nodes]
+               str(x.name) not in prev_path.split(":") and
+               str(x.name) not in ignored_nodes]
     # this ensures we only get single direction hits from the topmost parent
     if parent == top_parent:
         possible_neighbors = poss_f
@@ -338,7 +340,7 @@ def pathfind(node_list, top_parent, parent, prev_path, prev_length,
     if verbose:
         print("Prev: " + prev_path)
         print("Prev_len: " + str(prev_length))
-        print("Poss:" + " ".join([x.name for x in possible_neighbors]))
+        print("Poss:" + " ".join([str(x.name) for x in possible_neighbors]))
 
     for node in possible_neighbors:
         # here we assume only one hit
@@ -357,7 +359,7 @@ def pathfind(node_list, top_parent, parent, prev_path, prev_length,
                 this_node.name,
                 str(this_node.reverse_complimented)))
         this_length = prev_length + this_node.length
-        this_path = prev_path + ":" + this_node.name
+        this_path = prev_path + ":" + str(this_node.name)
         # are we outside the zone of flanking similarity? usually 1kb?
         # and have we hit a decent stretch of sequence? one node longer than
         #   3x a tRNA, or about 270
@@ -485,11 +487,11 @@ def main(args, logger=None):
     # make a list of node objects
     nodes, M, G = alt_parse_fastg(f=args.assembly_graph)
 
-    # draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
-    # with open(os.path.join(args.output, "tab.txt"), "w") as o:
-    #     for line in M:
-    #         o.write("\t".join([str(x) for x in line]) + "\n")
-    # # alt nodes
+    draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
+    with open(os.path.join(args.output, "tab.txt"), "w") as o:
+        for line in M:
+            o.write("\t".join([str(x) for x in line]) + "\n")
+    # alt nodes
     dic = {int(x.name): [int(y.name) for y in x.neighbor_list] for x in nodes}
     # print(dic)
 
@@ -537,11 +539,26 @@ def main(args, logger=None):
     print(nodes23)
     print(nodes5)
 
-    color_mask = [x in [str(y) for y in nodes5] for x in range(len(M[0]))]
     # print(nodes5)
     # print(color_mask)
+    ########  Reduce this graph
+    oldG = G
+    valid_nodes = []
+    max_depth = 15
 
+    def neighborhood(G, node, n):
+        path_lengths = nx.single_source_dijkstra_path_length(G, node)
+        return [node for node, length in path_lengths.items()
+                if length == n]
+    # for root in set([element for l in [nodes16, nodes5, nodes23] for element in l]):
+    #     depth_left = max_depth
+    #     nodes_visited = []
+    #     while depth_left !=0:
+    #         for node in all_neighbors(G, root):
 
+    #             if node in
+    print(neighborhood(G, nodes16[0], 1))
+    sys.exit()
     #########
 
     fig = pyplot.figure(figsize=(10, 10)) # in inches
@@ -562,11 +579,11 @@ def main(args, logger=None):
     print(M)
     print(_N)
     print(_M)
-    print([y for y in _G.edges.data()])
     edge_colors = range(2, M + 2)
     edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
     # print(G.nodes.data())
     # print([h for g, h in G.nodes.data()])
+
     node_colors = ["lightgrey" for x in range(N)]
     for i, (g, h) in enumerate(G.nodes.data()):
         if g in nodes5:
@@ -575,7 +592,15 @@ def main(args, logger=None):
             node_colors[i] = "red"
         if g in nodes23:
             node_colors[i] = "green"
-
+    _edge_colors = ["lightgrey" for x in range(_M)]
+    for i, (to, frm, vals) in enumerate(_G.edges.data()):
+        x = [element for tupl in (to, frm) for element in tupl]
+        if len(set(x).intersection(nodes5)) > 0:
+            _edge_colors[i] = "blue"
+        if len(set(x).intersection(nodes16)) > 0:
+            _edge_colors[i] = "red"
+        if len(set(x).intersection(nodes23)) > 0:
+            _edge_colors[i] = "green"
         # node_colors
     nx.draw(G, with_labels=True, linewidths=0, node_size=node_sizes,
             alpha=0.7,  font_size=2, arrows=False,
@@ -600,13 +625,11 @@ def main(args, logger=None):
     fig = pyplot.figure(figsize=(10, 10)) # in inches
     nx.draw(nx.line_graph(G), with_labels=True, linewidths=0, node_size=node_sizes,
             alpha=0.7,  font_size=2, arrows=False,
-            node_color=node_colors, edge_color="darkgrey", width=.2)
+            node_color="black", edge_color=_edge_colors, width=.2)
     fig.savefig("ibetthiswontworkeither.pdf")
 
-    sys.exit()
     ########
 
-    sys.exit(0)
     if not nodes16.count(nodes16[0]) == len(nodes16):
         logger.error("it appears that there are distinct 16S rDNAs in the " +
                      "assenbly graph; this tracing algorithm is not the best" +
@@ -638,7 +661,7 @@ def main(args, logger=None):
         node_list=nodes,
         top_parent=start,
         parent=start,
-        prev_path=start.name,
+        prev_path=str(start.name),
         prev_length=0,
         thresh=1000,
         ignored_nodes=[node23],
@@ -648,7 +671,7 @@ def main(args, logger=None):
         node_list=nodes,
         top_parent=end,
         parent=end,
-        prev_path=end.name,
+        prev_path=str(end.name),
         prev_length=0,
         thresh=2000,
         ignored_nodes=[node16],
