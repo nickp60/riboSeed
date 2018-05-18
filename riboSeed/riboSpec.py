@@ -528,51 +528,35 @@ outpath, outpath2):
             node_color="black", edge_color=_edge_colors, width=.2)
     fig.savefig(outpath2)
 
-
-def find_inclusive_paths_within_cutoff(source, node, lengths, paths, cutoff,
-                                       interior_nodes, border_nodes):
+def return_if_interior_node(source, node, lengths, paths, cutoff,
+                            interior_nodes, border_nodes):
     """ return tuple of (valid_node, IS_BORDER)
 
     See docstring for neighborhood_by_length for greater detail
 
     """
-    print(node)
-    if node in interior_nodes or node in border_nodes:
-        # we have already been down this root, no need to redo
-        return (None, None)
     if lengths[node] > cutoff:
-        # if len(paths[node]) == 0:  % this is only the case for the target node, not nodes connedted to the target
-        for p in paths[node]:
-            if p in interior_nodes:
-                print("found border node %s " % node)
-                return (node, True)
-            else:
-                for subnode in paths[node]:
-                    # screw recursion, I'm not getting any younger
-                    if subnode in interior_nodes:
-                        return(node, True)
-                    else:
-                        return(None, None)
-                    # print("for subnode %s of  %s" %(subnode ,node))
-                    # valid, IS_BORDER = find_inclusive_paths_within_cutoff(
-                    #     source=source,
-                    #     node=subnode,
-                    #     lengths=lengths,
-                    #     paths=paths,
-                    #     cutoff=cutoff,
-                    #     interior_nodes=interior_nodes,
-                    #     border_nodes=border_nodes)
-                    # if valid is not None:
-                    #     if not IS_BORDER:
-                    #     # ie, if the node beneath is an interior node that we haven;t found yet
-                    #         return(node, True)
-                    #     else:
-                    #         return(valid, False)
-                    # # else:
-                    # #     return(None, None)
+        return (None, None)
     else:
         print("found interior node: %s" %node)
         return (node, False)
+
+
+def return_if_border_node(node, paths, interior_nodes):
+    """ return tuple of (valid_node, IS_BORDER)
+
+    See docstring for neighborhood_by_length for greater detail
+
+    """
+    IS_BORDER = False
+    for p in paths[node]:
+        if p in interior_nodes:
+            IS_BORDER = True
+    if IS_BORDER:
+        print("found border node %s " % node)
+        return (node, True)
+    else:
+        return (None, True)
 
 
 def neighborhood_by_n(G, node, n):
@@ -597,16 +581,10 @@ def neighborhood_by_length(G, source, cutoff=20000):
     # print(path_lengths)
     interior_nodes = [source]
     border_nodes = []
-    for iteration in (1,2):
-        # first iteration ensure we find all interior nodes
     for n, p in path_nodes.items():
-        # if n != 104: # for debugging
-        #     continue
-        if n > 150:
-            continue
         if n == source:
             continue
-        included_node, is_border = find_inclusive_paths_within_cutoff(
+        included_node, is_border = return_if_interior_node(
             source=source,
             node=n,
             lengths=path_lengths,
@@ -616,10 +594,18 @@ def neighborhood_by_length(G, source, cutoff=20000):
             border_nodes=border_nodes)
         # included_node will be None if we have already dealt with it
         if included_node is not None:
-            if is_border:
-                border_nodes.append(included_node)
-            else:
                 interior_nodes.append(included_node)
+
+    for n, p in path_nodes.items():
+        if n == source or n in interior_nodes:
+            continue
+        included_node, is_border = return_if_border_node(
+            node=n,
+            paths=path_nodes,
+            interior_nodes=interior_nodes)
+        # included_node will be None if we have already dealt with it
+        if included_node is not None:
+                border_nodes.append(included_node)
 
     print(interior_nodes)
     print(border_nodes)
