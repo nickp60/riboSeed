@@ -23,6 +23,7 @@ import re
 import subprocess
 import argparse
 import multiprocessing
+from copy import deepcopy
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -156,7 +157,7 @@ def make_Node(name):
 
 def make_Neighbors(neighbor):
     node_name, length, cov, rc = extract_node_len_cov_rc(neighbor)
-    new_neigh = FastgNodeNeighbor(
+    new_neigh = FastgNode(
         name=int(node_name),
         reverse_complimented=rc
     )
@@ -285,7 +286,7 @@ def alt_parse_fastg(f):
         if neighs is None:
             new_node.neighbor_list = []
         else:
-            new_node.neighbor_list = [make_Neighbors(x) for x in neighs]
+            new_node.neighbor_list = [make_Node(x) for x in neighs]
         node_list.append(new_node)
 
     # make the networkx object
@@ -294,13 +295,15 @@ def alt_parse_fastg(f):
         DG.add_node(N.name, cov=N.cov, length=N.length)
     for N in node_list:
         for neigh in N.neighbor_list:
-            if (
-                    (neigh.reverse_complimented and N.reverse_complimented) or
-                    (not neigh.reverse_complimented and not N.reverse_complimented)
-            ):
-                DG.add_edge(N.name, neigh.name)
-            else:
-                DG.add_edge(neigh.name, N.name)
+            # if (
+            #         (neigh.reverse_complimented and N.reverse_complimented) or
+            #         (not neigh.reverse_complimented and not N.reverse_complimented)
+            # ):
+            DG.add_weighted_edges_from([(N.name, neigh.name, neigh.length)])
+                # DG.add_edge(N.name, neigh.name)
+            # else:
+            #     DG.add_weighted_edges_from([(neigh.name, N.name, N.length)])
+                # DG.add_edge(neigh.name, N.name)
     return (node_list, M, DG)
 
 
@@ -458,6 +461,79 @@ def make_simple_header():
     pass
 
 
+
+def plot_G(G,         nodes5,
+        nodes16,
+        nodes23,
+outpath, outpath2):
+    fig = pyplot.figure(figsize=(10, 10)) # in inches
+    pos = nx.layout.spring_layout(G, iterations=5)
+    node_sizes_raw = [h['length'] for g, h in G.nodes.data()]
+    maxsize = max(node_sizes_raw)
+    minsize = min(node_sizes_raw)
+    sizediff = maxsize - minsize
+    node_sizes = [10 + (30 * ((x - minsize)/sizediff)) for x in node_sizes_raw]
+    N = G.number_of_nodes()
+    M = G.number_of_edges()
+    _G = nx.line_graph(G)
+    _N = _G.number_of_nodes()
+    _M = _G.number_of_edges()
+    print(N)
+    print(M)
+    print(_N)
+    print(_M)
+    edge_colors = range(2, M + 2)
+    edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
+    # print(G.nodes.data())
+    # print([h for g, h in G.nodes.data()])
+
+    node_colors = ["lightgrey" for x in range(N)]
+    for i, (g, h) in enumerate(G.nodes.data()):
+        if g in nodes5:
+            node_colors[i] = "blue"
+        if g in nodes16:
+            node_colors[i] = "red"
+        if g in nodes23:
+            node_colors[i] = "green"
+    _edge_colors = ["lightgrey" for x in range(_M)]
+    for i, (to, frm, vals) in enumerate(_G.edges.data()):
+        x = [element for tupl in (to, frm) for element in tupl]
+        if len(set(x).intersection(nodes5)) > 0:
+            _edge_colors[i] = "blue"
+        if len(set(x).intersection(nodes16)) > 0:
+            _edge_colors[i] = "red"
+        if len(set(x).intersection(nodes23)) > 0:
+            _edge_colors[i] = "green"
+        # node_colors
+    nx.draw(G, with_labels=True, linewidths=0, node_size=node_sizes,
+            alpha=0.7,  font_size=2, arrows=False,
+            node_color=node_colors, edge_color="darkgrey", width=.2)
+    # edges = nx.draw_networkx_nodes(G, pos,
+    #                                linewidths=0,
+    #                                with_labels=True,
+    #                                node_size=node_sizes,
+    #                                node_color=node_colors)
+    # nodes = nx.draw_networkx_edges(G, pos, node_size=node_sizes, arrowstyle='->',
+    #                                arrowsize=5, edge_color="darkgrey",
+    #                                with_labels=True,
+    #                                edge_cmap=plt.cm.Blues, width=.3)
+    # set alpha value for each edge
+    # for i in range(M):
+    #     edges[i].set_alpha(edge_alphas[i])
+    ax = plt.gca()
+    ax.set_axis_off()
+    fig.savefig(outpath)
+
+
+    fig = pyplot.figure(figsize=(10, 10)) # in inches
+    nx.draw(nx.line_graph(G), with_labels=True, linewidths=0, node_size=node_sizes,
+            alpha=0.7,  font_size=2, arrows=False,
+            node_color="black", edge_color=_edge_colors, width=.2)
+    fig.savefig(outpath2)
+
+
+
+
 def main(args, logger=None):
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
@@ -542,14 +618,39 @@ def main(args, logger=None):
     # print(nodes5)
     # print(color_mask)
     ########  Reduce this graph
-    oldG = G
+    oldG = deepcopy(G)
     valid_nodes = []
     max_depth = 15
 
-    def neighborhood(G, node, n):
+    def find_nodes_whose_path_includes_cutoff(node, lengths, paths, cutoff):
+        """ returnt he name of the last nodes to condider given a cutoff
+        lengths and paths are the dictionaries returned by networkx's
+        dijkstra_predecessor_and_distance
+        """
+        if lengths[node] > cutoff:
+            if len(paths[node]) == 0:
+                # its fine, its just a big contigs we dont have to check subnodes
+                return node
+            else:
+                for subnode in paths[node]:
+                    if path_length[node] > cutoff:
+                        pass
+        else:
+            return node
+
+    def neighborhood_by_n(G, node, n):
         path_lengths = nx.single_source_dijkstra_path_length(G, node)
         return [node for node, length in path_lengths.items()
                 if length == n]
+    def neighborhood_by_length(G, node, cutoff=20000):
+        # we need to filter out those
+        border_paths = nx.single_source_dijkstra_path_length(G, node, cutoff=cutoff)
+        unneeded_nodes = []
+        path_nodes, path_length = nx.dijkstra_predecessor_and_distance(G, node)
+        for node, path in path_nodes.items():
+            pass
+        sys.exit()
+        return [node for node, length in path_lengths.items()]
     # for root in set([element for l in [nodes16, nodes5, nodes23] for element in l]):
     #     depth_left = max_depth
     #     nodes_visited = []
@@ -557,79 +658,32 @@ def main(args, logger=None):
     #         for node in all_neighbors(G, root):
 
     #             if node in
-    print(neighborhood(G, nodes16[0], 1))
-    sys.exit()
+    valid_nodes.extend(neighborhood_by_length(G, nodes16[0], cutoff=1000))
+    print(len(set(valid_nodes)))
+    bad_nodes = set(G.nodes).symmetric_difference(set(valid_nodes))
+    print(len(G.nodes))
+    print(len(bad_nodes))
+    for node in bad_nodes:
+        G.remove_node(node)
     #########
-
-    fig = pyplot.figure(figsize=(10, 10)) # in inches
-
-    pos = nx.layout.spring_layout(G, iterations=5)
-
-    node_sizes_raw = [h['length'] for g, h in G.nodes.data()]
-    maxsize = max(node_sizes_raw)
-    minsize = min(node_sizes_raw)
-    sizediff = maxsize - minsize
-    node_sizes = [10 + (30 * ((x - minsize)/sizediff)) for x in node_sizes_raw]
-    N = G.number_of_nodes()
-    M = G.number_of_edges()
-    _G = nx.line_graph(G)
-    _N = _G.number_of_nodes()
-    _M = _G.number_of_edges()
-    print(N)
-    print(M)
-    print(_N)
-    print(_M)
-    edge_colors = range(2, M + 2)
-    edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
-    # print(G.nodes.data())
-    # print([h for g, h in G.nodes.data()])
-
-    node_colors = ["lightgrey" for x in range(N)]
-    for i, (g, h) in enumerate(G.nodes.data()):
-        if g in nodes5:
-            node_colors[i] = "blue"
-        if g in nodes16:
-            node_colors[i] = "red"
-        if g in nodes23:
-            node_colors[i] = "green"
-    _edge_colors = ["lightgrey" for x in range(_M)]
-    for i, (to, frm, vals) in enumerate(_G.edges.data()):
-        x = [element for tupl in (to, frm) for element in tupl]
-        if len(set(x).intersection(nodes5)) > 0:
-            _edge_colors[i] = "blue"
-        if len(set(x).intersection(nodes16)) > 0:
-            _edge_colors[i] = "red"
-        if len(set(x).intersection(nodes23)) > 0:
-            _edge_colors[i] = "green"
-        # node_colors
-    nx.draw(G, with_labels=True, linewidths=0, node_size=node_sizes,
-            alpha=0.7,  font_size=2, arrows=False,
-            node_color=node_colors, edge_color="darkgrey", width=.2)
-    # edges = nx.draw_networkx_nodes(G, pos,
-    #                                linewidths=0,
-    #                                with_labels=True,
-    #                                node_size=node_sizes,
-    #                                node_color=node_colors)
-    # nodes = nx.draw_networkx_edges(G, pos, node_size=node_sizes, arrowstyle='->',
-    #                                arrowsize=5, edge_color="darkgrey",
-    #                                with_labels=True,
-    #                                edge_cmap=plt.cm.Blues, width=.3)
-    # set alpha value for each edge
-    # for i in range(M):
-    #     edges[i].set_alpha(edge_alphas[i])
-    ax = plt.gca()
-    ax.set_axis_off()
-    fig.savefig("ibetthiswontwork.pdf")
-
-
-    fig = pyplot.figure(figsize=(10, 10)) # in inches
-    nx.draw(nx.line_graph(G), with_labels=True, linewidths=0, node_size=node_sizes,
-            alpha=0.7,  font_size=2, arrows=False,
-            node_color="black", edge_color=_edge_colors, width=.2)
-    fig.savefig("ibetthiswontworkeither.pdf")
-
+    plot_G(
+        G,
+        nodes5,
+        nodes16,
+        nodes23,
+        outpath=os.path.join(args.output, "test_G.pdf"),
+        outpath2=os.path.join(args.output, "test_G_linegraph.pdf"),
+    )
+    plot_G(
+        oldG,
+        nodes5,
+        nodes16,
+        nodes23,
+        outpath=os.path.join(args.output, "test_oldG.pdf"),
+        outpath2=os.path.join(args.output, "test_oldG_linegraph.pdf"),
+    )
     ########
-
+    sys.exit()
     if not nodes16.count(nodes16[0]) == len(nodes16):
         logger.error("it appears that there are distinct 16S rDNAs in the " +
                      "assenbly graph; this tracing algorithm is not the best" +
