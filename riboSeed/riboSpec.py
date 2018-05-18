@@ -295,11 +295,8 @@ def alt_parse_fastg(f):
         DG.add_node(N.name, cov=N.cov, length=N.length)
     for N in node_list:
         for neigh in N.neighbor_list:
-            # if (
-            #         (neigh.reverse_complimented and N.reverse_complimented) or
-            #         (not neigh.reverse_complimented and not N.reverse_complimented)
-            # ):
-            DG.add_weighted_edges_from([(N.name, neigh.name, neigh.length)])
+            # if not N.reverse_complimented:
+                DG.add_weighted_edges_from([(N.name, neigh.name, neigh.length)])
                 # DG.add_edge(N.name, neigh.name)
             # else:
             #     DG.add_weighted_edges_from([(neigh.name, N.name, N.length)])
@@ -506,7 +503,7 @@ outpath, outpath2):
             _edge_colors[i] = "green"
         # node_colors
     nx.draw(G, with_labels=True, linewidths=0, node_size=node_sizes,
-            alpha=0.7,  font_size=2, arrows=False,
+            alpha=0.7,  font_size=2, arrows=True,
             node_color=node_colors, edge_color="darkgrey", width=.2)
     # edges = nx.draw_networkx_nodes(G, pos,
     #                                linewidths=0,
@@ -532,6 +529,101 @@ outpath, outpath2):
     fig.savefig(outpath2)
 
 
+def find_inclusive_paths_within_cutoff(source, node, lengths, paths, cutoff,
+                                       interior_nodes, border_nodes):
+    """ return tuple of (valid_node, IS_BORDER)
+
+    See docstring for neighborhood_by_length for greater detail
+
+    """
+    print(node)
+    if node in interior_nodes or node in border_nodes:
+        # we have already been down this root, no need to redo
+        return (None, None)
+    if lengths[node] > cutoff:
+        # if len(paths[node]) == 0:  % this is only the case for the target node, not nodes connedted to the target
+        for p in paths[node]:
+            if p in interior_nodes:
+                print("found border node %s " % node)
+                return (node, True)
+            else:
+                for subnode in paths[node]:
+                    # screw recursion, I'm not getting any younger
+                    if subnode in interior_nodes:
+                        return(node, True)
+                    else:
+                        return(None, None)
+                    # print("for subnode %s of  %s" %(subnode ,node))
+                    # valid, IS_BORDER = find_inclusive_paths_within_cutoff(
+                    #     source=source,
+                    #     node=subnode,
+                    #     lengths=lengths,
+                    #     paths=paths,
+                    #     cutoff=cutoff,
+                    #     interior_nodes=interior_nodes,
+                    #     border_nodes=border_nodes)
+                    # if valid is not None:
+                    #     if not IS_BORDER:
+                    #     # ie, if the node beneath is an interior node that we haven;t found yet
+                    #         return(node, True)
+                    #     else:
+                    #         return(valid, False)
+                    # # else:
+                    # #     return(None, None)
+    else:
+        print("found interior node: %s" %node)
+        return (node, False)
+
+
+def neighborhood_by_n(G, node, n):
+    path_lengths = nx.single_source_dijkstra_path_length(G, node)
+    return [node for node, length in path_lengths.items()
+            if length == n]
+
+
+def neighborhood_by_length(G, source, cutoff=20000):
+    """
+    I needed a way to see if a given node was within a certain distance from a source node by the shortest path.  This could be done with the dijkstra_predecessor_and_distance function, but that rejects any path >= the cutoff, whereas I need to retain the ones where the cutoff occurs within the path too.  So this takes a list of ALL the paths and their lengths (from  the dictionaries returned by networkx's dijkstra_predecessor_and_distance used without a cutoff), and then recursivly iterates through the network.
+
+    for each node in the paths returned by dijkstra_predecessor_and_distance,
+    we run through the find_inclusive_paths_within_cutoff method, calls nodes
+    as either being interior (ie, within the cutoff), or on the border
+    (ie, the edge included the cutoff)
+
+    """
+    path_nodes, path_lengths = nx.dijkstra_predecessor_and_distance(G, source)
+    # print(nx.single_source_dijkstra_path_length(G, source))
+    # print(path_nodes)
+    # print(path_lengths)
+    interior_nodes = [source]
+    border_nodes = []
+    for iteration in (1,2):
+        # first iteration ensure we find all interior nodes
+    for n, p in path_nodes.items():
+        # if n != 104: # for debugging
+        #     continue
+        if n > 150:
+            continue
+        if n == source:
+            continue
+        included_node, is_border = find_inclusive_paths_within_cutoff(
+            source=source,
+            node=n,
+            lengths=path_lengths,
+            paths=path_nodes,
+            cutoff=cutoff,
+            interior_nodes=interior_nodes,
+            border_nodes=border_nodes)
+        # included_node will be None if we have already dealt with it
+        if included_node is not None:
+            if is_border:
+                border_nodes.append(included_node)
+            else:
+                interior_nodes.append(included_node)
+
+    print(interior_nodes)
+    print(border_nodes)
+    return (interior_nodes, border_nodes)
 
 
 def main(args, logger=None):
@@ -619,46 +711,15 @@ def main(args, logger=None):
     # print(color_mask)
     ########  Reduce this graph
     oldG = deepcopy(G)
-    valid_nodes = []
-    max_depth = 15
+    interior_nodes = []
+    border_nodes = []
+    # max_depth = 15
 
-    def find_nodes_whose_path_includes_cutoff(node, lengths, paths, cutoff):
-        """ returnt he name of the last nodes to condider given a cutoff
-        lengths and paths are the dictionaries returned by networkx's
-        dijkstra_predecessor_and_distance
-        """
-        if lengths[node] > cutoff:
-            if len(paths[node]) == 0:
-                # its fine, its just a big contigs we dont have to check subnodes
-                return node
-            else:
-                for subnode in paths[node]:
-                    if path_length[node] > cutoff:
-                        pass
-        else:
-            return node
+    interior, border = neighborhood_by_length(G, nodes16[0], cutoff=1000)
+    interior_nodes.extend(interior)
+    border_nodes.extend(border)
+    valid_nodes = [x for y in [interior_nodes, border_nodes] for x in y]
 
-    def neighborhood_by_n(G, node, n):
-        path_lengths = nx.single_source_dijkstra_path_length(G, node)
-        return [node for node, length in path_lengths.items()
-                if length == n]
-    def neighborhood_by_length(G, node, cutoff=20000):
-        # we need to filter out those
-        border_paths = nx.single_source_dijkstra_path_length(G, node, cutoff=cutoff)
-        unneeded_nodes = []
-        path_nodes, path_length = nx.dijkstra_predecessor_and_distance(G, node)
-        for node, path in path_nodes.items():
-            pass
-        sys.exit()
-        return [node for node, length in path_lengths.items()]
-    # for root in set([element for l in [nodes16, nodes5, nodes23] for element in l]):
-    #     depth_left = max_depth
-    #     nodes_visited = []
-    #     while depth_left !=0:
-    #         for node in all_neighbors(G, root):
-
-    #             if node in
-    valid_nodes.extend(neighborhood_by_length(G, nodes16[0], cutoff=1000))
     print(len(set(valid_nodes)))
     bad_nodes = set(G.nodes).symmetric_difference(set(valid_nodes))
     print(len(G.nodes))
