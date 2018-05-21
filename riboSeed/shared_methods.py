@@ -280,7 +280,7 @@ def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, evalue=1e-06, thread
         pyexe = str(sys.executable + " ")
     else:
         pyexe = ""
-    cmd = "{0}{1} -k {2} {3} --reject {4} --threads {5} --evalue {7} > {6}".format(
+    cmd = "{0}{1} -k {2} {3} --reject {4} --threads {5} --evalue {6} > {7}".format(
         pyexe,
         exe,
         kingdom,

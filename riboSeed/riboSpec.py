@@ -299,16 +299,17 @@ def alt_parse_fastg(f):
     for N in node_list:
         for neigh in N.neighbor_list:
             # if not N.reverse_complimented:
-                DG.add_weighted_edges_from([(N.name, neigh.name, neigh.length)])
-                # DG.add_edge(N.name, neigh.name)
+            DG.add_weighted_edges_from([(N.name, neigh.name, neigh.length)])
+            # DG.add_edge(N.name, neigh.name)
             # else:
             #     DG.add_weighted_edges_from([(neigh.name, N.name, N.length)])
-                # DG.add_edge(neigh.name, N.name)
+            # DG.add_edge(neigh.name, N.name)
     return (node_list, M, DG)
 
 
 def pathfind(node_list, top_parent, parent, prev_path, prev_length,
-             path_list, thresh=1000, ignored_nodes=[], found_exit=False, verbose=False):
+             path_list, thresh=1000, ignored_nodes=[], found_exit=False,
+             verbose=False):
     """Returns possible exit paths from an exit node
 
     Given a list of all nodes, a starting node (top_parent), and information
@@ -529,8 +530,7 @@ def plot_G(
             node_color="black", edge_color=_edge_colors, width=.2)
     fig.savefig(outpath2)
 
-def return_if_interior_node(source, node, lengths, paths, cutoff,
-                            interior_nodes, border_nodes):
+def return_if_interior_node(node, lengths, cutoff, verbose=False):
     """ return tuple of (valid_node, IS_BORDER)
 
     See docstring for neighborhood_by_length for greater detail
@@ -539,7 +539,8 @@ def return_if_interior_node(source, node, lengths, paths, cutoff,
     if lengths[node] > cutoff:
         return (None, None)
     else:
-        print("found interior node: %s" %node)
+        if verbose:
+            print("found interior node: %s" %node)
         return (node, False)
 
 
@@ -586,13 +587,9 @@ def neighborhood_by_length(G, source, cutoff=20000):
         if n == source:
             continue
         included_node, is_border = return_if_interior_node(
-            source=source,
             node=n,
             lengths=path_lengths,
-            paths=path_nodes,
-            cutoff=cutoff,
-            interior_nodes=interior_nodes,
-            border_nodes=border_nodes)
+            cutoff=cutoff)
         # included_node will be None if we have already dealt with it
         if included_node is not None:
                 interior_nodes.append(included_node)
@@ -625,7 +622,7 @@ def make_gff_list(gffpath):
     return gff_list
 
 
-def find_rRNA_from_gffs(gff):
+def find_rRNA_from_gffs(gff_list):
     """
     this is a bit convoluted
     for gff lines where the product has the nane of the rDNA (16S, 23S, etc),
@@ -642,6 +639,7 @@ def find_rRNA_from_gffs(gff):
             nodes23.append(int(extract_node_len_cov_rc(x[0])[0]))
         if "5S" in x[8]:
             nodes5.append(int(extract_node_len_cov_rc(x[0])[0]))
+    nodes16, nodes23, nodes5 = set(nodes16), set(nodes23), set(nodes5)
     print("16s nodes:")
     print(nodes16)
     print("23s nodes:")
@@ -699,7 +697,7 @@ def main(args, logger=None):
         outgff=barrnap_gff,
         exe=args.barrnap_exe,
         threads=args.cores,
-        thresh=0.5,
+        thresh=0.8,
         evalue=1e-06,
         kingdom="bac")
     barrnap_cmd_partial = make_barrnap_cmd(
@@ -711,8 +709,8 @@ def main(args, logger=None):
         evalue=1,
         kingdom="bac")
     for cmd in [barrnap_cmd, barrnap_cmd_partial]:
-        logger.info("running barrnap cmd: %s", barrnap_cmd)
-        subprocess.run(barrnap_cmd,
+        logger.info("running barrnap cmd: %s", cmd)
+        subprocess.run(cmd,
                        shell=sys.platform != "win32",
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE,
@@ -723,18 +721,23 @@ def main(args, logger=None):
     gff_list_partial = make_gff_list(barrnap_gff_partial)
     logger.debug(gff_list_partial)
 
-    solid16, solid23, solid5 = find_rRNA_from_gffs(barrnap_gff)
-    partial16, partial23, partial5 = find_rRNA_from_gffs(barrnap_gff_partial)
+    solid16, solid23, solid5 = find_rRNA_from_gffs(gff_list)
+    partial16, partial23, partial5 = find_rRNA_from_gffs(gff_list_partial)
 
-    ########  Reduce this graph
+    if len(solid16) > 1:
+        print("more than one full 16S contig found")
+
+
+
+
+    ########  Reduce this graph to all nodes within 10kb if the ribosomal region
     oldG = deepcopy(G)
     interior_nodes = []
     border_nodes = []
-    # max_depth = 15
-
-    interior, border = neighborhood_by_length(G, nodes16[0], cutoff=10000)
-    interior_nodes.extend(interior)
-    border_nodes.extend(border)
+    for i in solid16:
+        interior, border = neighborhood_by_length(G, i, cutoff=10000)
+        interior_nodes.extend(interior)
+        border_nodes.extend(border)
     valid_nodes = [x for y in [interior_nodes, border_nodes] for x in y]
 
     print(len(set(valid_nodes)))
@@ -746,17 +749,17 @@ def main(args, logger=None):
     #########
     plot_G(
         G,
-        nodes5,
-        nodes16,
-        nodes23,
+        solid5,
+        solid16,
+        solid23,
         outpath=os.path.join(args.output, "test_G.pdf"),
         outpath2=os.path.join(args.output, "test_G_linegraph.pdf"),
     )
     plot_G(
         oldG,
-        nodes5,
-        nodes16,
-        nodes23,
+        solid5,
+        solid16,
+        solid23,
         outpath=os.path.join(args.output, "test_oldG.pdf"),
         outpath2=os.path.join(args.output, "test_oldG_linegraph.pdf"),
     )
