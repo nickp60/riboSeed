@@ -194,9 +194,32 @@ def parse_fastg(f):
     return node_list
 
 
+def make_adjacency_matrix(g):
+    """ Make an adjacency matrix from a dict of node: [neighbors] pairs
+    """
+    keys=sorted(g.keys())
+    size=len(keys)
+    M = [ [0]*size for i in range(size) ]
+
+    """
+    for a, row in g.items() iterates over the key:value entries in dictionary, and for b in row iterates over the values. If we used (a,b), this would have given us all the pairs.
+
+    (keys.index(a), keys.index(b)) But we need the index to assign to the corresponding matrix entry,
+
+    keys=sorted(g.keys()) that's why we extracted and sorted the keys.
+
+    for a,b in... getting the index entries and assigning value 1 or 2 based on diagonal element or not.
+
+    M = [ [0]*size for ... matrix cannot be used before initialization.
+    """
+    for a,b in [(keys.index(a), keys.index(b)) for a, row in g.items() for b in row]:
+        M[a][b] = 2 if (a==b) else 1
+    return M
+
+
 def draw_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outdir=None):
     """
-    - G is a dictionary that can be comnverted to a network graph
+    - G is an adjacency matrix
     - node_order (optional) is a list of nodes, where each node in G
           appears exactly once
     - partitions is a list of node lists, where each node in G appears
@@ -206,13 +229,9 @@ def draw_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outdir=N
     If partitions is specified, the same number of colors needs to be
     specified.
     """
-    # G = nx.Graph(g)
-    adjacency_matrix = G
-    # adjacency_matrix = nx.to_numpy_matrix(G, dtype=np.bool, nodelist=node_order)
-
     #Plot adjacency matrix in toned-down black and white
     fig = pyplot.figure(figsize=(4, 4)) # in inches
-    pyplot.imshow(adjacency_matrix,
+    pyplot.imshow(G,
                   cmap="Greys",
                   interpolation="none")
 
@@ -261,24 +280,8 @@ def alt_parse_fastg(f):
     # print(len(set([x[0] for x in node_neighs])))
     g = {k: v for k, v in node_neighs}
     # print([extract_node_len_cov_rc(name[0]) for name in node_neighs])
+    M = make_adjacency_matrix(g)
 
-    keys=sorted(g.keys())
-    size=len(keys)
-    M = [ [0]*size for i in range(size) ]
-
-    """
-    for a, row in g.items() iterates over the key:value entries in dictionary, and for b in row iterates over the values. If we used (a,b), this would have given us all the pairs.
-
-    (keys.index(a), keys.index(b)) But we need the index to assign to the corresponding matrix entry,
-
-    keys=sorted(g.keys()) that's why we extracted and sorted the keys.
-
-    for a,b in... getting the index entries and assigning value 1 or 2 based on diagonal element or not.
-
-    M = [ [0]*size for ... matrix cannot be used before initialization.
-    """
-    for a,b in [(keys.index(a), keys.index(b)) for a, row in g.items() for b in row]:
-        M[a][b] = 2 if (a==b) else 1
     node_list = []
     # make objects for each node and neighbor
     for node, neighs in node_neighs:
@@ -303,10 +306,6 @@ def alt_parse_fastg(f):
                 # DG.add_edge(neigh.name, N.name)
     return (node_list, M, DG)
 
-
-# TODO replace the matrix with a adjacency matrix
-# https://stackoverflow.com/questions/37353759/how-do-i-generate-an-adjacency-matrix-of-a-graph-from-a-dictionary-in-python
-# replace pathfinding algo with a matrix traverse rather than this spitshow
 
 def pathfind(node_list, top_parent, parent, prev_path, prev_length,
              path_list, thresh=1000, ignored_nodes=[], found_exit=False, verbose=False):
@@ -459,10 +458,12 @@ def make_simple_header():
 
 
 
-def plot_G(G,         nodes5,
+def plot_G(
+        G,
+        nodes5,
         nodes16,
         nodes23,
-outpath, outpath2):
+        outpath, outpath2):
     fig = pyplot.figure(figsize=(10, 10)) # in inches
     pos = nx.layout.spring_layout(G, iterations=5)
     node_sizes_raw = [h['length'] for g, h in G.nodes.data()]
@@ -487,18 +488,18 @@ outpath, outpath2):
     node_colors = ["lightgrey" for x in range(N)]
     for i, (g, h) in enumerate(G.nodes.data()):
         if g in nodes5:
-            node_colors[i] = "blue"
-        if g in nodes16:
             node_colors[i] = "red"
+        if g in nodes16:
+            node_colors[i] = "blue"
         if g in nodes23:
             node_colors[i] = "green"
     _edge_colors = ["lightgrey" for x in range(_M)]
     for i, (to, frm, vals) in enumerate(_G.edges.data()):
         x = [element for tupl in (to, frm) for element in tupl]
         if len(set(x).intersection(nodes5)) > 0:
-            _edge_colors[i] = "blue"
-        if len(set(x).intersection(nodes16)) > 0:
             _edge_colors[i] = "red"
+        if len(set(x).intersection(nodes16)) > 0:
+            _edge_colors[i] = "blue"
         if len(set(x).intersection(nodes23)) > 0:
             _edge_colors[i] = "green"
         # node_colors
@@ -612,6 +613,44 @@ def neighborhood_by_length(G, source, cutoff=20000):
     return (interior_nodes, border_nodes)
 
 
+def make_gff_list(gffpath):
+    gff_list = []
+    with open(gffpath, 'r') as g:
+        for idx, line in enumerate(g):
+            if idx == 0:
+                #gets rid of header line
+                pass
+            else:
+                gff_list.append(line.strip().split("\t"))
+    return gff_list
+
+
+def find_rRNA_from_gffs(gff):
+    """
+    this is a bit convoluted
+    for gff lines where the product has the nane of the rDNA (16S, 23S, etc),
+      we extract the node name (usually a number), which is the first thing
+      returned from the extract_node_len_cov function
+    """
+    nodes16, nodes23, nodes5, = [], [], []
+    print(gff_list)
+    for x in gff_list:
+        print(x)
+        if "16S" in x[8]:
+            nodes16.append(int(extract_node_len_cov_rc(x[0])[0]))
+        if "23S" in x[8]:
+            nodes23.append(int(extract_node_len_cov_rc(x[0])[0]))
+        if "5S" in x[8]:
+            nodes5.append(int(extract_node_len_cov_rc(x[0])[0]))
+    print("16s nodes:")
+    print(nodes16)
+    print("23s nodes:")
+    print(nodes23)
+    print("5s nodes:")
+    print(nodes5)
+    return(nodes16, nodes23, nodes5)
+
+
 def main(args, logger=None):
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
@@ -642,66 +681,58 @@ def main(args, logger=None):
     nodes, M, G = alt_parse_fastg(f=args.assembly_graph)
 
     draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
+    #  write out the adjacency matrix
     with open(os.path.join(args.output, "tab.txt"), "w") as o:
         for line in M:
             o.write("\t".join([str(x) for x in line]) + "\n")
     # alt nodes
     dic = {int(x.name): [int(y.name) for y in x.neighbor_list] for x in nodes}
-    # print(dic)
 
 
-    # run barrnap to find our rDNAs
-    barrnap_gff = os.path.join(output_root, "barrnapped.gff")
+    # run barrnap to find our rDNAs; first time trhough is to find "full" -
+    # length genes, and the second run with the relaxed thresholds is for
+    # finding partial genes
+    barrnap_gff = os.path.join(output_root, "strict_barrnapped.gff")
+    barrnap_gff_partial = os.path.join(output_root, "partial_barrnapped.gff")
     barrnap_cmd = make_barrnap_cmd(
         infasta=args.assembly_graph,
         outgff=barrnap_gff,
         exe=args.barrnap_exe,
         threads=args.cores,
-        thresh=0.1,
+        thresh=0.5,
+        evalue=1e-06,
         kingdom="bac")
-    logger.info("running barrnap cmd: %s", barrnap_cmd)
-    subprocess.run(barrnap_cmd,
-                   shell=sys.platform != "win32",
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE,
-                   check=True)
+    barrnap_cmd_partial = make_barrnap_cmd(
+        infasta=args.assembly_graph,
+        outgff=barrnap_gff_partial,
+        exe=args.barrnap_exe,
+        threads=args.cores,
+        thresh=0.1,
+        evalue=1,
+        kingdom="bac")
+    for cmd in [barrnap_cmd, barrnap_cmd_partial]:
+        logger.info("running barrnap cmd: %s", barrnap_cmd)
+        subprocess.run(barrnap_cmd,
+                       shell=sys.platform != "win32",
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE,
+                       check=True)
     # determine which ones are our 16s, 23s, and 5s nodes
-    gff_list = []
-    with open(barrnap_gff, 'r') as g:
-        for idx, line in enumerate(g):
-            if idx == 0:
-                #gets rid of header line
-                pass
-            else:
-                gff_list.append(line.strip().split("\t"))
+    gff_list = make_gff_list(barrnap_gff)
     logger.debug(gff_list)
-    # this is a bit convoluted
-    # for gff lines where the product has the nane of the rDNA (16S, 23S, etc),
-    #   we extract the node name (usually a number), which is the first thing
-    #   returned from the extract_node_len_cov function
-    nodes16, nodes23, nodes5, = [], [], []
-    print(gff_list)
-    for x in gff_list:
-        print(x)
-        if "16S" in x[8]:
-            nodes16.append(int(extract_node_len_cov_rc(x[0])[0]))
-        if "23S" in x[8]:
-            nodes23.append(int(extract_node_len_cov_rc(x[0])[0]))
-        if "5S" in x[8]:
-            nodes5.append(int(extract_node_len_cov_rc(x[0])[0]))
-    print(nodes16)
-    print(nodes23)
-    print(nodes5)
+    gff_list_partial = make_gff_list(barrnap_gff_partial)
+    logger.debug(gff_list_partial)
 
-    # print(nodes5)
-    # print(color_mask)
+    solid16, solid23, solid5 = find_rRNA_from_gffs(barrnap_gff)
+    partial16, partial23, partial5 = find_rRNA_from_gffs(barrnap_gff_partial)
+
     ########  Reduce this graph
     oldG = deepcopy(G)
     interior_nodes = []
     border_nodes = []
     # max_depth = 15
 
-    interior, border = neighborhood_by_length(G, nodes16[0], cutoff=1000)
+    interior, border = neighborhood_by_length(G, nodes16[0], cutoff=10000)
     interior_nodes.extend(interior)
     border_nodes.extend(border)
     valid_nodes = [x for y in [interior_nodes, border_nodes] for x in y]

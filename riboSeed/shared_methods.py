@@ -260,7 +260,7 @@ def set_up_logging(verbosity, outfile, name):
     return logger
 
 
-def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, threads=1):
+def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, evalue=1e-06, threads=1):
     """ construct a system call to barrnap
 
     Args:
@@ -280,13 +280,14 @@ def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, threads=1):
         pyexe = str(sys.executable + " ")
     else:
         pyexe = ""
-    cmd = "{0}{1} -k {2} {3} --reject {4} --threads {5} > {6}".format(
+    cmd = "{0}{1} -k {2} {3} --reject {4} --threads {5} --evalue {7} > {6}".format(
         pyexe,
         exe,
         kingdom,
         infasta,
         thresh,
         threads,
+        evalue,
         outgff
         )
     return cmd
