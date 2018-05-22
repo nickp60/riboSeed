@@ -726,16 +726,19 @@ def main(args, logger=None):
 
     if len(solid16) > 1:
         print("more than one full 16S contig found")
+    if len(solid23) > 1:
+        print("more than one full 23S contig found")
 
 
 
 
-    ########  Reduce this graph to all nodes within 10kb if the ribosomal region
+
+    ########  Reduce this graph to all nodes within 20kb if the ribosomal region
     oldG = deepcopy(G)
     interior_nodes = []
     border_nodes = []
     for i in solid16:
-        interior, border = neighborhood_by_length(G, i, cutoff=10000)
+        interior, border = neighborhood_by_length(G, i, cutoff=20000)
         interior_nodes.extend(interior)
         border_nodes.extend(border)
     valid_nodes = [x for y in [interior_nodes, border_nodes] for x in y]
@@ -755,6 +758,8 @@ def main(args, logger=None):
         outpath=os.path.join(args.output, "test_G.pdf"),
         outpath2=os.path.join(args.output, "test_G_linegraph.pdf"),
     )
+    ###
+    ###
     plot_G(
         oldG,
         solid5,
