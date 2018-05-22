@@ -16,7 +16,7 @@ This module is designed to
 
 
 """
-
+DEBUG = True
 import sys
 import os
 import re
@@ -67,6 +67,12 @@ class FastgNodeNeighbor(object):
             self.name,
             "Yes" if self.reverse_complimented else "No"
         )
+
+
+
+partial_list = [["EDGE_128_length_64_cov_224.111':EDGE_130_length_113_cov_395.017;", 'barrnap:0.7', 'rRNA', '2', '62', '0.00025', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_128_length_64_cov_224.111:EDGE_246_length_232_cov_51.2034,EDGE_326_length_102_cov_132.553';", 'barrnap:0.7', 'rRNA', '3', '63', '0.00025', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_129_length_111_cov_224.071':EDGE_130_length_113_cov_395.017;", 'barrnap:0.7', 'rRNA', '49', '109', '8.3e-05', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_129_length_111_cov_224.071:EDGE_363_length_3027_cov_329.236';", 'barrnap:0.7', 'rRNA', '3', '63', '8.3e-05', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_130_length_113_cov_395.017':EDGE_128_length_64_cov_224.111,EDGE_129_length_111_cov_224.071;", 'barrnap:0.7', 'rRNA', '11', '112', '1.3e-09', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ['EDGE_130_length_113_cov_395.017:EDGE_332_length_56_cov_246,EDGE_333_length_99_cov_156.886;', 'barrnap:0.7', 'rRNA', '2', '103', '1.3e-09', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ["EDGE_245_length_1702_cov_344.636':EDGE_136_length_238_cov_185.197',EDGE_244_length_141_cov_128.326;", 'barrnap:0.7', 'rRNA', '16', '1553', '0', '-', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ['EDGE_245_length_1702_cov_344.636:EDGE_289_length_61_cov_160.167,EDGE_290_length_90_cov_217;', 'barrnap:0.7', 'rRNA', '150', '1687', '0', '+', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ["EDGE_246_length_232_cov_51.2034':EDGE_128_length_64_cov_224.111';", 'barrnap:0.7', 'rRNA', '179', '232', '0.0033', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_246_length_232_cov_51.2034:EDGE_332_length_56_cov_246';", 'barrnap:0.7', 'rRNA', '1', '54', '0.0033', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_326_length_102_cov_132.553':EDGE_363_length_3027_cov_329.236';", 'barrnap:0.7', 'rRNA', '1', '54', '0.0045', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_326_length_102_cov_132.553:EDGE_128_length_64_cov_224.111';", 'barrnap:0.7', 'rRNA', '49', '102', '0.0045', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236':EDGE_362_length_57_cov_268.5,EDGE_398_length_98_cov_95.6977';", 'barrnap:0.7', 'rRNA', '105', '3005', '0', '-', '.', 'Name=23S_rRNA;product=23S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236:EDGE_129_length_111_cov_224.071',EDGE_326_length_102_cov_132.553;", 'barrnap:0.7', 'rRNA', '23', '2923', '0', '+', '.', 'Name=23S_rRNA;product=23S ribosomal RNA']]
+
+strict_list = [["EDGE_130_length_113_cov_395.017':EDGE_128_length_64_cov_224.111,EDGE_129_length_111_cov_224.071;", 'barrnap:0.7', 'rRNA', '11', '112', '1.3e-09', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ['EDGE_130_length_113_cov_395.017:EDGE_332_length_56_cov_246,EDGE_333_length_99_cov_156.886;', 'barrnap:0.7', 'rRNA', '2', '103', '1.3e-09', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ["EDGE_245_length_1702_cov_344.636':EDGE_136_length_238_cov_185.197',EDGE_244_length_141_cov_128.326;", 'barrnap:0.7', 'rRNA', '16', '1553', '0', '-', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ['EDGE_245_length_1702_cov_344.636:EDGE_289_length_61_cov_160.167,EDGE_290_length_90_cov_217;', 'barrnap:0.7', 'rRNA', '150', '1687', '0', '+', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236':EDGE_362_length_57_cov_268.5,EDGE_398_length_98_cov_95.6977';", 'barrnap:0.7', 'rRNA', '105', '3005', '0', '-', '.', 'Name=23S_rRNA;product=23S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236:EDGE_129_length_111_cov_224.071',EDGE_326_length_102_cov_132.553;", 'barrnap:0.7', 'rRNA', '23', '2923', '0', '+', '.', 'Name=23S_rRNA;product=23S ribosomal RNA']]
 
 
 def get_args():  # pragma: no cover
@@ -622,7 +628,7 @@ def make_gff_list(gffpath):
     return gff_list
 
 
-def find_rRNA_from_gffs(gff_list):
+def find_rRNA_from_gffs(gff_list, partial=False):
     """
     this is a bit convoluted
     for gff lines where the product has the nane of the rDNA (16S, 23S, etc),
@@ -632,14 +638,15 @@ def find_rRNA_from_gffs(gff_list):
     nodes16, nodes23, nodes5, = [], [], []
     print(gff_list)
     for x in gff_list:
-        print(x)
+        if ("partial" in x[8] and not partial):
+            continue
         if "16S" in x[8]:
             nodes16.append(int(extract_node_len_cov_rc(x[0])[0]))
         if "23S" in x[8]:
             nodes23.append(int(extract_node_len_cov_rc(x[0])[0]))
         if "5S" in x[8]:
             nodes5.append(int(extract_node_len_cov_rc(x[0])[0]))
-    nodes16, nodes23, nodes5 = set(nodes16), set(nodes23), set(nodes5)
+    nodes16, nodes23, nodes5 = list(set(nodes16)), list(set(nodes23)), list(set(nodes5))
     print("16s nodes:")
     print(nodes16)
     print("23s nodes:")
@@ -647,6 +654,29 @@ def find_rRNA_from_gffs(gff_list):
     print("5s nodes:")
     print(nodes5)
     return(nodes16, nodes23, nodes5)
+
+
+
+# def coalesce(G,node1,node2):
+#     """Performs Briggs coalescing. Takes in the graph and two nodes.
+#     Returns 1 if unable to coalesce, 0 otherwise.
+#     https://stackoverflow.com/questions/17483022
+#     """
+#     if node1 in G.neighbors(node2) or node2 in G.neighbors(node1):
+#         print "Cannot coalesce. Node",node1,"and node",node2,"share an edge"
+#         return 1
+#     elif G.degree(node1)+G.degree(node2) >= k:
+#         print "Cannot coalesce. Combined degree of",node1,"and",node2,"\
+# is",G.degree(node1)+G.degree(node2),"which is too high for k =",k
+#         return 1
+#     else:
+#         newedge = []
+#         for i in range(len(G.neighbors(node2))):
+#             newedge.append((node1 , G.neighbors(node2)[i]))
+#         G.add_edges_from(newedge)
+#         G.remove_node(node2)
+#         nx.relabel_nodes(G, {node1:node1+node2},copy=False)
+#     return 0
 
 
 def main(args, logger=None):
@@ -705,25 +735,46 @@ def main(args, logger=None):
         outgff=barrnap_gff_partial,
         exe=args.barrnap_exe,
         threads=args.cores,
-        thresh=0.1,
+        thresh=0.3,
         evalue=1,
         kingdom="bac")
-    for cmd in [barrnap_cmd, barrnap_cmd_partial]:
-        logger.info("running barrnap cmd: %s", cmd)
-        subprocess.run(cmd,
-                       shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       check=True)
-    # determine which ones are our 16s, 23s, and 5s nodes
-    gff_list = make_gff_list(barrnap_gff)
-    logger.debug(gff_list)
-    gff_list_partial = make_gff_list(barrnap_gff_partial)
-    logger.debug(gff_list_partial)
+    if DEBUG:
+        gff_list = partial_list
+        gff_list_partial = strict_list
+    else:
+        for cmd in [barrnap_cmd, barrnap_cmd_partial]:
+            logger.info("running barrnap cmd: %s", cmd)
+            subprocess.run(cmd,
+                           shell=sys.platform != "win32",
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           check=True)
+        # determine which ones are our 16s, 23s, and 5s nodes
+        gff_list = make_gff_list(barrnap_gff)
+        logger.debug(gff_list)
+        gff_list_partial = make_gff_list(barrnap_gff_partial)
+        logger.debug(gff_list_partial)
 
-    solid16, solid23, solid5 = find_rRNA_from_gffs(gff_list)
-    partial16, partial23, partial5 = find_rRNA_from_gffs(gff_list_partial)
-
+    solid16, solid23, solid5 = find_rRNA_from_gffs(gff_list, partial=False)
+    partial16, partial23, partial5 = find_rRNA_from_gffs(gff_list_partial, partial=True)
+    partial16 = [x for x in partial16 if x not in solid16]
+    partial23 = [x for x in partial23 if x not in solid23]
+    partial5 = [x for x in partial5 if x not in solid5]
+    rrnas = {
+        "16S": {
+            "partial": partial16,
+            "solid": solid16
+        },
+        "23S": {
+            "partial": partial23,
+            "solid": solid23
+        },
+        "5S": {
+            "partial": partial5,
+            "solid": solid5
+        }
+    }
+    print(rrnas)
     if len(solid16) > 1:
         print("more than one full 16S contig found")
     if len(solid23) > 1:
@@ -733,12 +784,53 @@ def main(args, logger=None):
 
 
 
-    ########  Reduce this graph to all nodes within 20kb if the ribosomal region
     oldG = deepcopy(G)
+
+
+    ################
+    collapsed = []
+    for k, vals in rrnas.items():
+        print("checking for collapsable %s nodes" %k)
+        these_collapsed = []
+        if len(vals["partial"]) == 0:
+            continue
+        # check if partial node neighbors true node
+        # print(vals)
+        for part in vals["partial"]:
+            # print("partial: %i" %part)
+            for solid in vals["solid"]:
+                if part in G.neighbors(solid):
+                    # print(G.edges(solid))
+                    for d in G.edges(part):
+                        if d[1] != solid and d[1] not in G.neighbors(solid):
+                            G.add_edge(solid , d[1])
+                    G.remove_node(part)
+                    these_collapsed.append(part)
+                    # print(G.edges(solid))
+        print("removed %i nodes:" % len(these_collapsed))
+        print(these_collapsed)
+        collapsed.extend(these_collapsed)
+
+    # plot_G(
+    #     G,
+    #     solid5,
+    #     solid16,
+    #     solid23,
+    #     outpath=os.path.join(args.output, "test_post_collapse_G.pdf"),
+    #     outpath2=os.path.join(args.output, "test_post_collapse_G_linegraph.pdf"),
+    # )
+
+
+
+    ########  Reduce this graph to all nodes within 20kb if a 16S region
     interior_nodes = []
     border_nodes = []
     for i in solid16:
-        interior, border = neighborhood_by_length(G, i, cutoff=20000)
+        interior, border = neighborhood_by_length(G, i, cutoff=2000)
+        interior_nodes.extend(interior)
+        border_nodes.extend(border)
+    for i in solid23:
+        interior, border = neighborhood_by_length(G, i, cutoff=2000)
         interior_nodes.extend(interior)
         border_nodes.extend(border)
     valid_nodes = [x for y in [interior_nodes, border_nodes] for x in y]
@@ -749,48 +841,96 @@ def main(args, logger=None):
     print(len(bad_nodes))
     for node in bad_nodes:
         G.remove_node(node)
-    #########
-    plot_G(
-        G,
-        solid5,
-        solid16,
-        solid23,
-        outpath=os.path.join(args.output, "test_G.pdf"),
-        outpath2=os.path.join(args.output, "test_G_linegraph.pdf"),
-    )
+    # plot_G(
+    #     G,
+    #     solid5,
+    #     solid16,
+    #     solid23,
+    #     outpath=os.path.join(args.output, "test_G.pdf"),
+    #     outpath2=os.path.join(args.output, "test_G_linegraph.pdf"),
+    # )
+
+
+    #######   Collapse shtuff between the 16S and 23S, if its less than say 2kb
+    # for k, vals in rrnas.items():
+    #     print("checking for collapsable %s nodes" %k)
+    #     these_collapsed = []
+    #     if len(vals["partial"]) == 0:
+    #         continue
+    #     # chekc if partial node neighbors true node
+    #     # print(vals)
+    #     for part in vals["partial"]:
+    #         # print("partial: %i" %part)
+    connector_paths = []
+    for node16 in rrnas["16S"]["solid"]:
+        for node23 in rrnas["23S"]["solid"]:
+            connector_paths.extend(
+                nx.all_simple_paths(G, node16, node23, cutoff=500)
+            )
+    print("number of connector paths: %i" %len(connector_paths))
+    # count the paths going out from the 16S
+    out_paths = []
+    print([G.out_degree(g) for g in G.nodes])
+    tips = [node for node in G.nodes() if G.out_degree(node) == 1]
+    print("tips:")
+    print(tips)
+    for node16 in rrnas["16S"]["solid"]:
+        for tip in tips:
+            out_paths.extend(nx.all_simple_paths(G, node16, tip))
+    print("number of out paths: %i" %len(out_paths))
+    for path in connector_paths:
+        l = len(path)
+        for opath in out_paths:
+            if path == opath[0:l]:
+                out_paths.remove(opath)
+    print("number of filtered out paths: %i" %len(out_paths))
+    print("23S outpaths")
+    print("number of connector paths: %i" %len(connector_paths))
+    # count the paths going out from the 16S
+    out_paths_23 = []
+    for node23 in rrnas["23S"]["solid"]:
+        for tip in tips:
+            out_paths_23.extend(nx.all_simple_paths(G, node23, tip))
+    print("number of 23S out paths: %i" %len(out_paths_23))
+    for path in connector_paths:
+        l = len(path)
+        rpath = list(reversed(path))
+        for opath in out_paths_23:
+            if 245 in opath:
+            # if rpath == opath[-l: ]:
+                out_paths_23.remove(opath)
+    print("number of 23S filtered out paths: %i" %len(out_paths_23))
+
+
     ###
-    ###
-    plot_G(
-        oldG,
-        solid5,
-        solid16,
-        solid23,
-        outpath=os.path.join(args.output, "test_oldG.pdf"),
-        outpath2=os.path.join(args.output, "test_oldG_linegraph.pdf"),
-    )
+    # plot_G(
+    #     oldG,
+    #     solid5,
+    #     solid16,
+    #     solid23,
+    #     outpath=os.path.join(args.output, "test_oldG.pdf"),
+    #     outpath2=os.path.join(args.output, "test_oldG_linegraph.pdf"),
+    # )
     ########
-    sys.exit()
-    if not nodes16.count(nodes16[0]) == len(nodes16):
+    if len(rrnas["16S"]["solid"]) >  1:
         logger.error("it appears that there are distinct 16S rDNAs in the " +
                      "assenbly graph; this tracing algorithm is not the best" +
                      "option.  Please review the graph manually to determine" +
                      "probable number of rDNAs")
         raise ValueError
-    elif len(nodes16) < 1:
-        logger.error("Barrnap failed to detect any 16S in the assembly graph")
+    elif len(rrnas["16S"]["solid"]) < 1:
+        logger.error("Barrnap failed to detect any full 16S in the assembly graph")
         raise ValueError
 
-    if len(nodes23) == 0 or not nodes23.count(nodes23[0]) == len(nodes23):
+    if len(rrnas["23S"]["solid"]) > 1:
         logger.error("it appears that there are distinct 23S rDNAs in the " +
                      "assenbly graph; this tracing algorithm is not the best" +
                      "option.  Please review the graph manually to determine" +
                      "probable number of rDNAs")
         raise ValueError
-    elif len(nodes23) < 1:
+    elif len(rrnas["23S"]["solid"]) < 1:
         logger.error("Barrnap failed to detect any 23S in the assembly graph")
         raise ValueError
-    node16 = nodes16[0]
-    node23 = nodes23[0]
 
     # now, we set out start nodes to be 16S and end to be 23S
     start = [x for x in nodes if x.name == node16 and  x.reverse_complimented ][0]
