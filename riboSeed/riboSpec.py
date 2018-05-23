@@ -16,9 +16,10 @@ This module is designed to
 
 
 """
+DEBUG = False
 DEBUG = True
 PLOT = False
-PLOT = True
+# PLOT = True
 import sys
 import os
 import re
@@ -308,10 +309,11 @@ def alt_parse_fastg(f):
         for neigh in N.neighbor_list:
             # if not N.reverse_complimented:
             DG.add_weighted_edges_from([(N.name, neigh.name, neigh.length)])
+            # DG.add_weighted_edges_from([( neigh.name, N.name, neigh.length)])
             # DG.add_edge(N.name, neigh.name)
             # else:
             #     DG.add_weighted_edges_from([(neigh.name, N.name, N.length)])
-            # DG.add_edge(neigh.name, N.name)
+            DG.add_edge(neigh.name, N.name)
     return (node_list, M, DG)
 
 
@@ -538,35 +540,35 @@ def plot_G(
             node_color="black", edge_color=_edge_colors, width=.2)
     fig.savefig(outpath2)
 
-def return_if_interior_node(node, lengths, cutoff, verbose=False):
-    """ return tuple of (valid_node, IS_BORDER)
+# def return_if_interior_node(node, lengths, cutoff, verbose=False):
+#     """ return tuple of (valid_node, IS_BORDER)
 
-    See docstring for neighborhood_by_length for greater detail
+#     See docstring for neighborhood_by_length for greater detail
 
-    """
-    if lengths[node] > cutoff:
-        return (None, None)
-    else:
-        if verbose:
-            print("found interior node: %s" %node)
-        return (node, False)
+#     """
+#     if lengths[node] > cutoff:
+#         return (None, None)
+#     else:
+#         if verbose:
+#             print("found interior node: %s" %node)
+#         return (node, False)
 
 
-def return_if_border_node(node, paths, interior_nodes):
-    """ return tuple of (valid_node, IS_BORDER)
+# def return_if_border_node(node, paths, interior_nodes):
+#     """ return tuple of (valid_node, IS_BORDER)
 
-    See docstring for neighborhood_by_length for greater detail
+#     See docstring for neighborhood_by_length for greater detail
 
-    """
-    IS_BORDER = False
-    for p in paths[node]:
-        if p in interior_nodes:
-            IS_BORDER = True
-    if IS_BORDER:
-        print("found border node %s " % node)
-        return (node, True)
-    else:
-        return (None, True)
+#     """
+#     IS_BORDER = False
+#     for p in paths[node]:
+#         if p in interior_nodes:
+#             IS_BORDER = True
+#     if IS_BORDER:
+#         print("found border node %s " % node)
+#         return (node, True)
+#     else:
+#         return (None, True)
 
 
 def neighborhood_by_n(G, node, n):
@@ -595,6 +597,8 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     paths_dict = nx.single_source_dijkstra(G, source)[1]
     # print(paths_dict)
     for target, path_to in paths_dict.items():
+        # print(target)
+        # print(path_to)
         path_len = 0
         if len(set(path_to).intersection(set(ignored_nodes))) > 0:
             continue
@@ -672,28 +676,6 @@ def find_rRNA_from_gffs(gff_list, partial=False):
 
 
 
-# def coalesce(G,node1,node2):
-#     """Performs Briggs coalescing. Takes in the graph and two nodes.
-#     Returns 1 if unable to coalesce, 0 otherwise.
-#     https://stackoverflow.com/questions/17483022
-#     """
-#     if node1 in G.neighbors(node2) or node2 in G.neighbors(node1):
-#         print "Cannot coalesce. Node",node1,"and node",node2,"share an edge"
-#         return 1
-#     elif G.degree(node1)+G.degree(node2) >= k:
-#         print "Cannot coalesce. Combined degree of",node1,"and",node2,"\
-# is",G.degree(node1)+G.degree(node2),"which is too high for k =",k
-#         return 1
-#     else:
-#         newedge = []
-#         for i in range(len(G.neighbors(node2))):
-#             newedge.append((node1 , G.neighbors(node2)[i]))
-#         G.add_edges_from(newedge)
-#         G.remove_node(node2)
-#         nx.relabel_nodes(G, {node1:node1+node2},copy=False)
-#     return 0
-
-
 def main(args, logger=None):
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
@@ -751,7 +733,7 @@ def main(args, logger=None):
         exe=args.barrnap_exe,
         threads=args.cores,
         thresh=0.1,
-        evalue=1,
+        evalue=10,
         kingdom="bac")
     if DEBUG:
         gff_list = strict_list
@@ -816,22 +798,29 @@ def main(args, logger=None):
         for part in vals["partial"]:
             # print("partial: %i" %part)
             for solid in vals["solid"]:
+                # solidlen = dict(G.nodes(solid))['length']
                 if part in G.neighbors(solid):
                     # print(G.edges(solid))
                     for d in G.edges(part):
                         if d[1] != solid and d[1] not in G.neighbors(solid):
-                            print(d)
-                            partial_to_next_weight = G.get_edge_data(d[0],d[1])["weight"]
-                            print(partial_to_next_weight)
-                            solid_to_partial_weight = G.get_edge_data(solid, d[0])["weight"]
-                            print(solid_to_partial_weight)
-                            G.add_edge(solid , d[1], weight = solid_to_partial_weight + partial_to_next_weight)
+                            # print(d)
+                            # partial_to_next_weight = G.get_edge_data(d[0],d[1])["weight"]
+                            # print(partial_to_next_weight)
+                            # solid_to_partial_weight = G.get_edge_data(solid, d[0])["weight"]
+                            # print(solid_to_partial_weight)
+                            G.add_edge(solid , d[1])
+                            G.add_edge(d[1], solid)
                     G.remove_node(part)
                     these_collapsed.append(part)
         # print(G.get_edge_data(solid, d[1]))
         print("removed %i nodes:" % len(these_collapsed))
         print(these_collapsed)
+        print(dict(G.nodes(data=True))[solid])
+        print(solid)
+        print([x for x in G.neighbors(solid)])
+
         collapsed.extend(these_collapsed)
+
     if PLOT:
         plot_G(
             G,
@@ -846,12 +835,6 @@ def main(args, logger=None):
     interior_nodes = []
     border_nodes = []
     for i in solid16:
-        # print(i)
-        # print([x for x in G.neighbors(i)])
-        # first = max(x for x in G.neighbors(i))
-        # len_16S = G.get_edge_data(i, first)
-        # print([G.get_edge_data(i, x) for x in G.neighbors(i)])
-        # print(len_16S)
         interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=solid23)
         interior_nodes.extend(interior)
         border_nodes.extend(border)
@@ -879,15 +862,6 @@ def main(args, logger=None):
 
 
     #######   Collapse shtuff between the 16S and 23S, if its less than say 2kb
-    # for k, vals in rrnas.items():
-    #     print("checking for collapsable %s nodes" %k)
-    #     these_collapsed = []
-    #     if len(vals["partial"]) == 0:
-    #         continue
-    #     # chekc if partial node neighbors true node
-    #     # print(vals)
-    #     for part in vals["partial"]:
-    #         # print("partial: %i" %part)
     connector_paths = []
     for node16 in rrnas["16S"]["solid"]:
         for node23 in rrnas["23S"]["solid"]:
@@ -896,21 +870,25 @@ def main(args, logger=None):
             )
     print("number of connector paths: %i" %len(connector_paths))
     # count the paths going out from the 16S
-    out_paths = []
+    out_paths_16 = []
     print([G.out_degree(g) for g in G.nodes])
     tips = [node for node in G.nodes() if G.out_degree(node) == 1]
     print("tips:")
     print(tips)
     for node16 in rrnas["16S"]["solid"]:
         for tip in tips:
-            out_paths.extend(nx.all_simple_paths(G, node16, tip))
-    print("number of out paths: %i" %len(out_paths))
+            out_paths_16.extend(nx.all_simple_paths(G, node16, tip))
+    print("number of out paths: %i" %len(out_paths_16))
     for path in connector_paths:
         l = len(path)
-        for opath in out_paths:
-            if path == opath[0:l]:
-                out_paths.remove(opath)
-    print("number of filtered out paths: %i" %len(out_paths))
+        for opath in out_paths_16:
+            if path == opath[:l] or len(set(solid23).intersection(opath)) > 0:
+                out_paths_16.remove(opath)
+    print("number of filtered out paths: %i" %len(out_paths_16))
+    for i in out_paths_16:
+        print(i)
+
+
     print("23S outpaths")
     print("number of connector paths: %i" %len(connector_paths))
     # count the paths going out from the 16S
@@ -922,9 +900,8 @@ def main(args, logger=None):
     for path in connector_paths:
         l = len(path)
         rpath = list(reversed(path))
-        for opath in out_paths_23:
-            if 245 in opath:
-            # if rpath == opath[-l: ]:
+        for i, opath in enumerate(out_paths_23):
+            if rpath == opath[:l] or len(set(solid16).intersection(opath)) > 0:
                 out_paths_23.remove(opath)
     print("number of 23S filtered out paths: %i" %len(out_paths_23))
     for i in out_paths_23:
