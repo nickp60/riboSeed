@@ -17,6 +17,8 @@ This module is designed to
 
 """
 DEBUG = True
+PLOT = False
+# PLOT = True
 import sys
 import os
 import re
@@ -735,12 +737,12 @@ def main(args, logger=None):
         outgff=barrnap_gff_partial,
         exe=args.barrnap_exe,
         threads=args.cores,
-        thresh=0.3,
+        thresh=0.1,
         evalue=1,
         kingdom="bac")
     if DEBUG:
-        gff_list = partial_list
-        gff_list_partial = strict_list
+        gff_list = strict_list
+        gff_list_partial = partial_list
     else:
         for cmd in [barrnap_cmd, barrnap_cmd_partial]:
             logger.info("running barrnap cmd: %s", cmd)
@@ -788,7 +790,9 @@ def main(args, logger=None):
 
 
     ################
+    # collapse nodes where partial loci neighbor full-length
     collapsed = []
+    print(rrnas)
     for k, vals in rrnas.items():
         print("checking for collapsable %s nodes" %k)
         these_collapsed = []
@@ -803,22 +807,27 @@ def main(args, logger=None):
                     # print(G.edges(solid))
                     for d in G.edges(part):
                         if d[1] != solid and d[1] not in G.neighbors(solid):
-                            G.add_edge(solid , d[1])
+                            print(d)
+                            partial_to_next_weight = G.get_edge_data(d[0],d[1])["weight"]
+                            print(partial_to_next_weight)
+                            solid_to_partial_weight = G.get_edge_data(solid, d[0])["weight"]
+                            print(solid_to_partial_weight)
+                            G.add_edge(solid , d[1], weight = solid_to_partial_weight + partial_to_next_weight)
                     G.remove_node(part)
                     these_collapsed.append(part)
-                    # print(G.edges(solid))
+        print(G.get_edge_data(solid, d[1]))
         print("removed %i nodes:" % len(these_collapsed))
         print(these_collapsed)
         collapsed.extend(these_collapsed)
-
-    # plot_G(
-    #     G,
-    #     solid5,
-    #     solid16,
-    #     solid23,
-    #     outpath=os.path.join(args.output, "test_post_collapse_G.pdf"),
-    #     outpath2=os.path.join(args.output, "test_post_collapse_G_linegraph.pdf"),
-    # )
+    if PLOT:
+        plot_G(
+            G,
+            solid5,
+            solid16,
+            solid23,
+            outpath=os.path.join(args.output, "test_post_collapse_G.pdf"),
+            outpath2=os.path.join(args.output, "test_post_collapse_G_linegraph.pdf"),
+        )
 
 
 
@@ -826,7 +835,14 @@ def main(args, logger=None):
     interior_nodes = []
     border_nodes = []
     for i in solid16:
-        interior, border = neighborhood_by_length(G, i, cutoff=2000)
+        print(i)
+        print([x for x in G.neighbors(i)])
+        first = max(x for x in G.neighbors(i))
+        len_16S = G.get_edge_data(i, first)
+        print([G.get_edge_data(i, x) for x in G.neighbors(i)])
+        print(len_16S)
+        sys.exit()
+        interior, border = neighborhood_by_length(G, i, cutoff=1000 + nodes[solid].weight)
         interior_nodes.extend(interior)
         border_nodes.extend(border)
     for i in solid23:
@@ -841,14 +857,15 @@ def main(args, logger=None):
     print(len(bad_nodes))
     for node in bad_nodes:
         G.remove_node(node)
-    # plot_G(
-    #     G,
-    #     solid5,
-    #     solid16,
-    #     solid23,
-    #     outpath=os.path.join(args.output, "test_G.pdf"),
-    #     outpath2=os.path.join(args.output, "test_G_linegraph.pdf"),
-    # )
+    if PLOT:
+        plot_G(
+            G,
+            solid5,
+            solid16,
+            solid23,
+            outpath=os.path.join(args.output, "test_post_reduction_G.pdf"),
+            outpath2=os.path.join(args.output, "test_post_reduction_G_linegraph.pdf"),
+        )
 
 
     #######   Collapse shtuff between the 16S and 23S, if its less than say 2kb
@@ -900,6 +917,8 @@ def main(args, logger=None):
             # if rpath == opath[-l: ]:
                 out_paths_23.remove(opath)
     print("number of 23S filtered out paths: %i" %len(out_paths_23))
+    for i in out_paths_23:
+        print(i)
 
 
     ###
@@ -912,6 +931,7 @@ def main(args, logger=None):
     #     outpath2=os.path.join(args.output, "test_oldG_linegraph.pdf"),
     # )
     ########
+    sys.exit()
     if len(rrnas["16S"]["solid"]) >  1:
         logger.error("it appears that there are distinct 16S rDNAs in the " +
                      "assenbly graph; this tracing algorithm is not the best" +
