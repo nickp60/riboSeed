@@ -18,7 +18,7 @@ This module is designed to
 """
 DEBUG = True
 PLOT = False
-# PLOT = True
+PLOT = True
 import sys
 import os
 import re
@@ -575,7 +575,7 @@ def neighborhood_by_n(G, node, n):
             if length == n]
 
 
-def neighborhood_by_length(G, source, cutoff=20000):
+def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     """
     I needed a way to see if a given node was within a certain distance from a source node by the shortest path.  This could be done with the dijkstra_predecessor_and_distance function, but that rejects any path >= the cutoff, whereas I need to retain the ones where the cutoff occurs within the path too.  So this takes a list of ALL the paths and their lengths (from  the dictionaries returned by networkx's dijkstra_predecessor_and_distance used without a cutoff), and then recursivly iterates through the network.
 
@@ -585,37 +585,50 @@ def neighborhood_by_length(G, source, cutoff=20000):
     (ie, the edge included the cutoff)
 
     """
-    path_nodes, path_lengths = nx.dijkstra_predecessor_and_distance(G, source)
     # print(nx.single_source_dijkstra_path_length(G, source))
     # print(path_nodes)
     # print(path_lengths)
     interior_nodes = [source]
     border_nodes = []
-    for n, p in path_nodes.items():
-        if n == source:
+    nodesDict = dict(G.nodes(data=True))
+    # sys.exit()
+    paths_dict = nx.single_source_dijkstra(G, source)[1]
+    # print(paths_dict)
+    for target, path_to in paths_dict.items():
+        path_len = 0
+        if len(set(path_to).intersection(set(ignored_nodes))) > 0:
             continue
-        included_node, is_border = return_if_interior_node(
-            node=n,
-            lengths=path_lengths,
-            cutoff=cutoff)
-        # included_node will be None if we have already dealt with it
-        if included_node is not None:
-                interior_nodes.append(included_node)
+        for i, node in enumerate(path_to):
+            if i > 0:
+                path_len = path_len + nodesDict[node]['length']
+                if path_len > cutoff:
+                    border_nodes.append(node)
+                    break
+                elif path_len < cutoff:
+                    interior_nodes.append(node)
+                else:
+                    pass
+    #     included_node, is_border = return_if_interior_node(
+    #         node=n,
+    #         lengths=path_lengths,
+    #         cutoff=cutoff)
+    #     # included_node will be None if we have already dealt with it
+    #     if included_node is not None:
+    #             interior_nodes.append(included_node)
 
-    for n, p in path_nodes.items():
-        if n == source or n in interior_nodes:
-            continue
-        included_node, is_border = return_if_border_node(
-            node=n,
-            paths=path_nodes,
-            interior_nodes=interior_nodes)
-        # included_node will be None if we have already dealt with it
-        if included_node is not None:
-                border_nodes.append(included_node)
-
-    print(interior_nodes)
-    print(border_nodes)
-    return (interior_nodes, border_nodes)
+    # for n, p in path_nodes.items():
+    #     if n == source or n in interior_nodes:
+    #         continue
+    #     included_node, is_border = return_if_border_node(
+    #         node=n,
+    #         paths=path_nodes,
+    #         interior_nodes=interior_nodes)
+    #     # included_node will be None if we have already dealt with it
+    #     if included_node is not None:
+    #             border_nodes.append(included_node)
+    # print(set(interior_nodes))
+    # print(set(border_nodes))
+    return (set(interior_nodes), set(border_nodes))
 
 
 def make_gff_list(gffpath):
@@ -815,7 +828,7 @@ def main(args, logger=None):
                             G.add_edge(solid , d[1], weight = solid_to_partial_weight + partial_to_next_weight)
                     G.remove_node(part)
                     these_collapsed.append(part)
-        print(G.get_edge_data(solid, d[1]))
+        # print(G.get_edge_data(solid, d[1]))
         print("removed %i nodes:" % len(these_collapsed))
         print(these_collapsed)
         collapsed.extend(these_collapsed)
@@ -829,24 +842,21 @@ def main(args, logger=None):
             outpath2=os.path.join(args.output, "test_post_collapse_G_linegraph.pdf"),
         )
 
-
-
     ########  Reduce this graph to all nodes within 20kb if a 16S region
     interior_nodes = []
     border_nodes = []
     for i in solid16:
-        print(i)
-        print([x for x in G.neighbors(i)])
-        first = max(x for x in G.neighbors(i))
-        len_16S = G.get_edge_data(i, first)
-        print([G.get_edge_data(i, x) for x in G.neighbors(i)])
-        print(len_16S)
-        sys.exit()
-        interior, border = neighborhood_by_length(G, i, cutoff=1000 + nodes[solid].weight)
+        # print(i)
+        # print([x for x in G.neighbors(i)])
+        # first = max(x for x in G.neighbors(i))
+        # len_16S = G.get_edge_data(i, first)
+        # print([G.get_edge_data(i, x) for x in G.neighbors(i)])
+        # print(len_16S)
+        interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=solid23)
         interior_nodes.extend(interior)
         border_nodes.extend(border)
     for i in solid23:
-        interior, border = neighborhood_by_length(G, i, cutoff=2000)
+        interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=solid16)
         interior_nodes.extend(interior)
         border_nodes.extend(border)
     valid_nodes = [x for y in [interior_nodes, border_nodes] for x in y]
