@@ -17,7 +17,7 @@ This module is designed to
 
 """
 DEBUG = False
-DEBUG = True
+# DEBUG = True
 PLOT = False
 # PLOT = True
 import sys
@@ -882,13 +882,15 @@ def main(args, logger=None):
     interior_nodes = []
     border_nodes = []
     for i in solid16:
-        interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=solid23)
+        interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=solid5 if solid5 != solid16 else [])
         interior_nodes.extend(interior)
         border_nodes.extend(border)
-    for i in solid23:
-        interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=solid16)
-        interior_nodes.extend(interior)
-        border_nodes.extend(border)
+    if solid16 != solid23:
+        for i in solid23:
+            interior, border = neighborhood_by_length(
+                G, i, cutoff=1000, ignored_nodes=solid16)
+            interior_nodes.extend(interior)
+            border_nodes.extend(border)
     valid_nodes = [x for y in [interior_nodes, border_nodes] for x in y]
 
     print(len(set(valid_nodes)))
@@ -919,6 +921,7 @@ def main(args, logger=None):
     # count the paths going out from the 16S
     out_paths_16 = []
     # tips will have an out-degree of 1
+    print([G.out_degree(node) for node in G.nodes()])
     tips = [node for node in G.nodes() if G.out_degree(node) == 1]
     print("tips:")
     print(tips)
