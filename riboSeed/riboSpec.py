@@ -879,7 +879,14 @@ def main(args, logger=None):
 
     oldG = deepcopy(G)
 
-
+    # get the depths of the big contigs
+    depths_of_big_nodes, ave_depth_big_node = get_depth_of_big_nodes(
+        G, threshold=4000, plot=PLOT)
+    if PLOT or True:
+        make_silly_boxplot(
+            vals=depths_of_big_nodes,
+            outpath=os.path.join(output_root, "depths_of_big_nodes.pdf")
+        )
     ################
     # collapse nodes where partial loci neighbor full-length
     collapsed = []
@@ -1022,44 +1029,71 @@ def main(args, logger=None):
                 outpath2=os.path.join(args.output, "line_graph_tiny%s.pdf" %region),
             )
 
-    G = G16
-    # count the paths going out from the 16S
-    out_paths_16 = []
-    # tips will have an out-degree of 0 on this reduced graph
-    print([G.out_degree(node) for node in G.nodes()])
-    tips = [node for node in G.nodes() if G.out_degree(node) == 0]
-    print("tips:")
-    print(tips)
-    for node16 in rrnas["16S"]["solid"]:
-        for tip in tips:
-            out_paths_16.extend(nx.all_simple_paths(G, node16, tip))
-    print("number of out paths: %i" %len(out_paths_16))
-    for path in connector_paths:
-        l = len(path)
-        for opath in out_paths_16:
-            if path == opath[:l] or len(set(solid23).intersection(opath)) > 0:
-                out_paths_16.remove(opath)
-    print("number of filtered out paths: %i" %len(out_paths_16))
-    for i in out_paths_16:
-        print(i)
+        # count the paths going out from the 16S/23S
+        out_paths_region = []
+        # tips will have an out-degree of 0 on this reduced graph
+        print([g.out_degree(node) for node in g.nodes()])
+        tips = [node for node in g.nodes() if g.out_degree(node) == 0]
+        print("tips:")
+        print(tips)
+        for noderegion in rrnas[region]["solid"]:
+            for tip in tips:
+                out_paths_region.extend(nx.all_simple_paths(G, noderegion, tip))
+        print("number of out paths to: %i" %(region, len(out_paths_region)))
+        # for path in connector_paths:
+        #     l = len(path)
+        #     for opath in out_paths_region:
+        #         if path == opath[:l] or len(set(solid23).intersection(opath)) > 0:
+        #             out_paths_region.remove(opath)
+        # print("number of filtered out paths: %i" %len(out_paths_region))
+        for i in out_paths_region:
+            print(i)
+        all_region_path_nodes = [x for y in out_paths_region for x in y]
+        set_region_path_nodes_normalized_depth = {}
+        for i in set(all_region_path_nodes):
+            # print(all_16S_path_nodes.count(i))
+            set_region_path_nodes_normalized_depth[i] = nodes_data[i]['cov'] / all_region_path_nodes.count(i)
 
-    print("23S outpaths")
-    print("number of connector paths: %i" %len(connector_paths))
-    # count the paths going out from the 16S
-    out_paths_23 = []
-    for node23 in rrnas["23S"]["solid"]:
-        for tip in tips:
-            out_paths_23.extend(nx.all_simple_paths(G, node23, tip))
-    print("number of 23S out paths: %i" %len(out_paths_23))
-    for path in connector_paths:
-        l = len(path)
-        rpath = list(reversed(path))
-        for i, opath in enumerate(out_paths_23):
-            if rpath == opath[:l] or len(set(solid16).intersection(opath)) > 0:
-                out_paths_23.remove(opath)
-    print("number of 23S filtered out paths: %i" %len(out_paths_23))
-    for i in out_paths_23:
-        print(i)
+        if PLOT or True:
+            make_silly_boxplot(
+                vals=[x for x in set_region_path_nodes_normalized_depth.values()],
+                outpath=os.path.join(output_root, "normalized_depths_of_%s_nodes.pdf" % region)
+            )
+            # print(all_16S_path_nodes)
+        print("determining the depths of the %s paths" % region)
+        all_region_path_depths = []
+        for i, path in enumerate(out_paths_region):
+            sublist = []
+            for node in path:
+                # print(nodes_data[node])
+                sublist.append(set_region_path_nodes_normalized_depth[node])
+            all_region_path_depths.append(sublist)
+        if PLOT or True:
+            make_silly_boxplot(
+                vals=all_region_path_depths,
+                outpath=os.path.join(output_root, "normalized_depths_of_%s_exiting_paths.pdf" % region),
+                title= "Path Depths %s"  % region,
+                yline=ave_depth_big_node,
+            )
+
+    sys.exit()
+    # print("23S outpaths")
+    # print("number of connector paths: %i" %len(connector_paths))
+    # # count the paths going out from the 16S
+    # out_paths_23 = []
+    # for node23 in rrnas["23S"]["solid"]:
+    #     for tip in tips:
+    #         out_paths_23.extend(nx.all_simple_paths(G, node23, tip))
+    # print("number of 23S out paths: %i" %len(out_paths_23))
+    # for path in connector_paths:
+    #     l = len(path)
+    #     rpath = list(reversed(path))
+    #     for i, opath in enumerate(out_paths_23):
+    #         if rpath == opath[:l] or len(set(solid16).intersection(opath)) > 0:
+    #             out_paths_23.remove(opath)
+    # print("number of 23S filtered out paths: %i" %len(out_paths_23))
+    # for i in out_paths_23:
+    #     print(i)
 
 
 
@@ -1073,41 +1107,9 @@ def main(args, logger=None):
     #     outpath2=os.path.join(args.output, "test_oldG_linegraph.pdf"),
     # )
     ########
-    depths_of_big_nodes, ave_depth_big_node = get_depth_of_big_nodes(
-        G, threshold=4000, plot=PLOT)
-    if PLOT or True:
-        make_silly_boxplot(
-            vals=depths_of_big_nodes,
-            outpath=os.path.join(output_root, "depths_of_big_nodes.pdf")
-        )
 
 
 
-    all_16S_path_nodes = [x for y in out_paths_16 for x in y]
-    set_16S_path_nodes_normalized_depth = {}
-    for i in set(all_16S_path_nodes):
-        # print(all_16S_path_nodes.count(i))
-        set_16S_path_nodes_normalized_depth[i] = nodes_data[i]['cov'] / all_16S_path_nodes.count(i)
-    all_23S_path_nodes = [x for y in out_paths_23 for x in y]
-    set_23S_path_nodes_normalized_depth = {}
-    for i in set(all_23S_path_nodes):
-        # print(all_16S_path_nodes.count(i))
-        set_23S_path_nodes_normalized_depth[i] = nodes_data[i]['cov'] / all_23S_path_nodes.count(i)
-    # print(set_16S_path_nodes_depth)
-    if PLOT or True:
-        make_silly_boxplot(
-            vals=[x for x in set_16S_path_nodes_normalized_depth.values()],
-            outpath=os.path.join(output_root, "normalized_depths_of_16S_nodes.pdf")
-        )
-    # print(all_16S_path_nodes)
-    print("determining the depths of the 16S paths")
-    all_16S_path_depths = []
-    for i, path in enumerate(out_paths_16):
-        sublist = []
-        for node in path:
-            # print(nodes_data[node])
-            sublist.append(set_16S_path_nodes_normalized_depth[node])
-        all_16S_path_depths.append(sublist)
     print("determining the depths of the 23S paths")
     all_23S_path_depths = []
     for i, path in enumerate(out_paths_23):
