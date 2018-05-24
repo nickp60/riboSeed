@@ -23,6 +23,7 @@ PLOT = False
 import sys
 import os
 import re
+import random
 import subprocess
 import argparse
 import multiprocessing
@@ -468,7 +469,6 @@ def make_simple_header():
     pass
 
 
-
 def plot_G(
         G,
         nodes5,
@@ -675,6 +675,53 @@ def find_rRNA_from_gffs(gff_list, partial=False):
     return(nodes16, nodes23, nodes5)
 
 
+def get_depth_of_big_nodes(G, threshold=5000, plot=False):
+    nodes_dict = dict(G.nodes(data=True))
+    lengths = []
+    depths = []
+    prods = []
+    for node, data in nodes_dict.items():
+        if data['length'] > threshold:
+            depths.append(data['cov'])
+            lengths.append(data['length'])
+    for i, l in enumerate(lengths):
+        prods.append(depths[i] * l)
+    totlen = sum(lengths)
+    ave = sum([x for x in prods]) /totlen
+    print("Total length of nodes passing threshold: %i" % totlen)
+    print("Average depth of contigs greater %i is %f" %(threshold, ave))
+    return(depths, ave)
+
+
+def make_silly_boxplot(vals, outpath, names=None, title="", yline=None):
+    fig = pyplot.figure(figsize=(6, 6)) # in inches
+    # ax = pyplot.axes()
+    if isinstance(vals[0], list):
+        # pyplot.hold(True)
+        # for i, group in enumerate(vals):
+        #     bp = plt.boxplot(group, 0, 'rs', 1, positions=[i])
+        # if names is not None:
+        #     assert len(names) == len(vals), \
+        #         "number of names does not equal number of sets!"
+        #     ax.set_xticklabels(Names)
+        # ax.set_xticks(list(range(0, len(vals))))
+        plt.boxplot(vals, 0, 'rs', 1)
+        for i, data in enumerate(vals) :
+            for d in data:
+                plt.scatter(x=i + 1 + random.uniform(-.2, .2),
+                            y=d + random.uniform(-.3, .3),
+                            alpha=.3)
+    else:
+        plt.boxplot(vals, 0, 'rs', 1)
+        for d in vals:
+            plt.scatter(x=1 + random.uniform(-.2, .2),
+                        y=d + random.uniform(-.3, .3),
+                        alpha=.3)
+    if yline is not None:
+        plt.axhline(yline, color="green"),
+    plt.title(title)
+    fig.savefig(outpath)
+
 
 def main(args, logger=None):
     output_root = os.path.abspath(os.path.expanduser(args.output))
@@ -871,7 +918,7 @@ def main(args, logger=None):
     print("number of connector paths: %i" %len(connector_paths))
     # count the paths going out from the 16S
     out_paths_16 = []
-    print([G.out_degree(g) for g in G.nodes])
+    # tips will have an out-degree of 1
     tips = [node for node in G.nodes() if G.out_degree(node) == 1]
     print("tips:")
     print(tips)
@@ -888,7 +935,7 @@ def main(args, logger=None):
     for i in out_paths_16:
         print(i)
 
-
+    nodes_data = dict(G.nodes(data=True))
     print("23S outpaths")
     print("number of connector paths: %i" %len(connector_paths))
     # count the paths going out from the 16S
@@ -908,6 +955,7 @@ def main(args, logger=None):
         print(i)
 
 
+
     ###
     # plot_G(
     #     oldG,
@@ -918,7 +966,66 @@ def main(args, logger=None):
     #     outpath2=os.path.join(args.output, "test_oldG_linegraph.pdf"),
     # )
     ########
+    depths_of_big_nodes, ave_depth_big_node = get_depth_of_big_nodes(
+        G, threshold=1000, plot=PLOT)
+    if PLOT or True:
+        make_silly_boxplot(
+            vals=depths_of_big_nodes,
+            outpath=os.path.join(output_root, "depths_of_big_nodes.pdf")
+        )
+
+
+
+    all_16S_path_nodes = [x for y in out_paths_16 for x in y]
+    set_16S_path_nodes_normalized_depth = {}
+    for i in set(all_16S_path_nodes):
+        # print(all_16S_path_nodes.count(i))
+        set_16S_path_nodes_normalized_depth[i] = nodes_data[i]['cov'] / all_16S_path_nodes.count(i)
+    all_23S_path_nodes = [x for y in out_paths_23 for x in y]
+    set_23S_path_nodes_normalized_depth = {}
+    for i in set(all_23S_path_nodes):
+        # print(all_16S_path_nodes.count(i))
+        set_23S_path_nodes_normalized_depth[i] = nodes_data[i]['cov'] / all_23S_path_nodes.count(i)
+    # print(set_16S_path_nodes_depth)
+    if PLOT or True:
+        make_silly_boxplot(
+            vals=[x for x in set_16S_path_nodes_normalized_depth.values()],
+            outpath=os.path.join(output_root, "normalized_depths_of_16S_nodes.pdf")
+        )
+    # print(all_16S_path_nodes)
+    print("determining the depths of the 16S paths")
+    all_16S_path_depths = []
+    for i, path in enumerate(out_paths_16):
+        sublist = []
+        for node in path:
+            # print(nodes_data[node])
+            sublist.append(set_16S_path_nodes_normalized_depth[node])
+        all_16S_path_depths.append(sublist)
+    print("determining the depths of the 23S paths")
+    all_23S_path_depths = []
+    for i, path in enumerate(out_paths_23):
+        sublist = []
+        for node in path:
+            # print(nodes_data[node])
+            sublist.append(set_23S_path_nodes_normalized_depth[node])
+        all_23S_path_depths.append(sublist)
+    print(set_23S_path_nodes_normalized_depth)
+    if PLOT or True:
+        make_silly_boxplot(
+            vals=all_16S_path_depths,
+            outpath=os.path.join(output_root, "normalized_depths_of_16S_exiting_paths.pdf"),
+            title= "hahshhsfnakjdv",
+            yline=ave_depth_big_node,
+        )
+        make_silly_boxplot(
+            vals=all_23S_path_depths,
+            outpath=os.path.join(output_root, "normalized_depths_of_23S_exiting_paths.pdf"),
+            title= "hahshhsfnakjdv",
+            yline=ave_depth_big_node,
+        )
+
     sys.exit()
+
     if len(rrnas["16S"]["solid"]) >  1:
         logger.error("it appears that there are distinct 16S rDNAs in the " +
                      "assenbly graph; this tracing algorithm is not the best" +
