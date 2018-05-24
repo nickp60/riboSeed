@@ -91,7 +91,7 @@ class riboSeedTestCase(unittest.TestCase):
         cmd1 = make_barrnap_cmd(infasta="test.fasta", outgff="test.gff",
                                 exe="barrnap.exe", thresh=.2, kingdom='euk')
         ref_cmd1 = str("barrnap.exe -k euk test.fasta --reject 0.2 --threads" +
-                       " 1 > test.gff")
+                       " 1 --evalue 1e-06 > test.gff")
         self.assertEqual(cmd1, ref_cmd1)
 
     def test_fail_barrnap_exe_main(self):

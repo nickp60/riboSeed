@@ -24,6 +24,7 @@ import sys
 import os
 import re
 import random
+import math
 import subprocess
 import argparse
 import multiprocessing
@@ -306,15 +307,6 @@ def alt_parse_fastg(f):
     DG = nx.DiGraph()
     for N in node_list:
         DG.add_node(N.name, cov=N.cov, length=N.length)
-    for N in node_list:
-        for neigh in N.neighbor_list:
-            # if not N.reverse_complimented:
-            DG.add_weighted_edges_from([(N.name, neigh.name, neigh.length)])
-            # DG.add_weighted_edges_from([( neigh.name, N.name, neigh.length)])
-            # DG.add_edge(N.name, neigh.name)
-            # else:
-            #     DG.add_weighted_edges_from([(neigh.name, N.name, N.length)])
-            DG.add_edge(neigh.name, N.name)
     return (node_list, M, DG)
 
 
@@ -680,16 +672,25 @@ def get_depth_of_big_nodes(G, threshold=5000, plot=False):
     lengths = []
     depths = []
     prods = []
+    stupid_normalized_list = []
     for node, data in nodes_dict.items():
         if data['length'] > threshold:
             depths.append(data['cov'])
             lengths.append(data['length'])
     for i, l in enumerate(lengths):
         prods.append(depths[i] * l)
+        # this is to get stats from incorporating some notion of weight
+        stupid_normalized_list.extend([depths[i] for x in range(math.ceil(l/1000))])
+    # print("normalized:")
+    # print(stupid_normalized_list)
     totlen = sum(lengths)
     ave = sum([x for x in prods]) /totlen
     print("Total length of nodes passing threshold: %i" % totlen)
     print("Average depth of contigs greater %i is %f" %(threshold, ave))
+    for quart in [.25, .5, .75]:
+        print("%i th quartile: %f" %  \
+              (quart * 100, percentile(stupid_normalized_list,quart)))
+
     return(depths, ave)
 
 
@@ -708,19 +709,59 @@ def make_silly_boxplot(vals, outpath, names=None, title="", yline=None):
         plt.boxplot(vals, 0, 'rs', 1)
         for i, data in enumerate(vals) :
             for d in data:
-                plt.scatter(x=i + 1 + random.uniform(-.2, .2),
-                            y=d + random.uniform(-.3, .3),
+                plt.scatter(x=i + 1 + random.uniform(-.1, .2),
+                            y=d + random.uniform(-.2, .2),
                             alpha=.3)
     else:
         plt.boxplot(vals, 0, 'rs', 1)
         for d in vals:
-            plt.scatter(x=1 + random.uniform(-.2, .2),
-                        y=d + random.uniform(-.3, .3),
+            plt.scatter(x=1 + random.uniform(-.1, .1),
+                        y=d + random.uniform(-.2, .2),
                         alpha=.3)
     if yline is not None:
         plt.axhline(yline, color="green"),
     plt.title(title)
     fig.savefig(outpath)
+
+
+def percentile(N, percent, key=lambda x:x):
+    """
+    Find the percentile of a list of values.
+
+    # borrowed from http://code.activestate.com/recipes/511478-finding-the-percentile-of-the-values/
+    @parameter N - is a list of values.
+    @parameter percent - a float value from 0.0 to 1.0.
+    @parameter key - optional key function to compute value from each element of N.
+
+    @return - the percentile of the values
+    """
+    N.sort()
+    if not N:
+        return None
+    k = (len(N)-1) * percent
+    f = math.floor(k)
+    c = math.ceil(k)
+    if f == c:
+        return key(N[int(k)])
+    d0 = key(N[int(f)]) * (c-k)
+    d1 = key(N[int(c)]) * (k-f)
+    return d0+d1
+
+
+def populate_subgraph_from_source(g, root, node_list, counter):
+    print(counter)
+    for neigh in root.neighbor_list:
+        for node in node_list:
+            if node.name == neigh.name and \
+               node.reverse_complimented == neigh.reverse_complimented and \
+               node.name not in g.nodes():
+                g.add_node(node.name, cov=node.cov, length=node.length)
+                g.add_edge(root.name, node.name)
+                populate_subgraph_from_source(
+                    g=g,
+                    root=node,
+                    node_list=node_list,
+                    counter=counter + 1)
 
 
 def main(args, logger=None):
@@ -749,8 +790,12 @@ def main(args, logger=None):
             sys.exit(1)
         # create a assembly graph
         args.assembly_graph = make_prelim_mapping_cmds()
-    # make a list of node objects
-    nodes, M, G = alt_parse_fastg(f=args.assembly_graph)
+    # make a list of node objects, a adjacency matrix M, and a DiGRaph object G
+    node_list, M, G = alt_parse_fastg(f=args.assembly_graph)
+
+
+
+
 
     draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
     #  write out the adjacency matrix
@@ -758,7 +803,7 @@ def main(args, logger=None):
         for line in M:
             o.write("\t".join([str(x) for x in line]) + "\n")
     # alt nodes
-    dic = {int(x.name): [int(y.name) for y in x.neighbor_list] for x in nodes}
+    dic = {int(x.name): [int(y.name) for y in x.neighbor_list] for x in node_list}
 
 
     # run barrnap to find our rDNAs; first time trhough is to find "full" -
@@ -823,9 +868,13 @@ def main(args, logger=None):
         print("more than one full 16S contig found")
     if len(solid23) > 1:
         print("more than one full 23S contig found")
+    # this holds the {data} of the nodes keyed by their name
+    nodes_data = dict(G.nodes(data=True))
 
-
-
+    # add temporary edges; later we will weight them and redo the directionality if needed
+    for node in node_list:
+        for neigh in node.neighbor_list:
+            G.add_edge(neigh.name, node.name)
 
 
     oldG = deepcopy(G)
@@ -910,7 +959,7 @@ def main(args, logger=None):
         )
 
 
-    #######   Collapse shtuff between the 16S and 23S, if its less than say 2kb
+    #######   identify paths between the 16S and 23S, if its less than say 500bp
     connector_paths = []
     for node16 in rrnas["16S"]["solid"]:
         for node23 in rrnas["23S"]["solid"]:
@@ -918,11 +967,67 @@ def main(args, logger=None):
                 nx.all_simple_paths(G, node16, node23, cutoff=500)
             )
     print("number of connector paths: %i" %len(connector_paths))
+
+
+    #####################################################################################
+    """
+    So at this point, we have a poor implementation of the directionality of the graph, which we will need in a minute for path finding.  What we will do here is make a brand new subgraph for both the 5' and 3' regions of the operpn.
+    lets try to add some edges to our graph  First we need to identify our center. For simple instaces (which is all we handle for now), there are two scenarios:
+    1) 1 clearly defined cluster, where the three genes are all on one contig.
+    2) 1 clearly defined contig for each gene.
+    in all cases, we set the center of the graph to be the end of the 16S gene.  WE assume that they are both pointing in the same direction.  If that is not the case, we have a problem.
+
+    .         center/break
+    .           *
+    ========|16S| ==|23S|=|5S|=================
+    <-----------  ----------------------->
+    in both these cases, we take the sma e approach.  Look for paths from (reverse complimented) 16S and from 23S
+    """
+    subset_node_list = []
+    for n in node_list:
+        if n.name in G.nodes():
+            subset_node_list.append(n)
+    subgraphs = {}
+    for region in ["16S", "23S"]:
+    # if solid16 == solid23 and len(solid16) == 1:
+    #     print("16S and 23S seem to be co-located on one single contig: %s" %
+    #           solid16[0])
+        g = nx.DiGraph()
+        REV = False
+        # lets check the gff to see if the 16S is a positive or a negative hit:
+        for line in gff_list:
+            if region in line[8]:
+                print(line)
+                if line[6] == "-":
+                    REV = True
+                break
+        node_region_data = extract_node_len_cov_rc(line[0].split(":")[0])
+        init_node = None
+        for N in subset_node_list:
+            if N.name == int(node_region_data[0]) and N.reverse_complimented == REV:
+                init_node = N
+        if init_node is None:
+            raise ValueError("node note found to initiate recursive subtree construction")
+        g.add_node(int(node_region_data[0]), cov=int(node_region_data[2]), length=int(node_region_data[1]))
+        populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
+
+    #####################################################################################
+        if PLOT:
+            plot_G(
+                g,
+                solid5,
+                solid16,
+                solid23,
+                outpath=os.path.join(args.output, "tiny%s.pdf" % region),
+                outpath2=os.path.join(args.output, "line_graph_tiny%s.pdf" %region),
+            )
+
+    G = G16
     # count the paths going out from the 16S
     out_paths_16 = []
-    # tips will have an out-degree of 1
+    # tips will have an out-degree of 0 on this reduced graph
     print([G.out_degree(node) for node in G.nodes()])
-    tips = [node for node in G.nodes() if G.out_degree(node) == 1]
+    tips = [node for node in G.nodes() if G.out_degree(node) == 0]
     print("tips:")
     print(tips)
     for node16 in rrnas["16S"]["solid"]:
@@ -938,7 +1043,6 @@ def main(args, logger=None):
     for i in out_paths_16:
         print(i)
 
-    nodes_data = dict(G.nodes(data=True))
     print("23S outpaths")
     print("number of connector paths: %i" %len(connector_paths))
     # count the paths going out from the 16S
@@ -970,7 +1074,7 @@ def main(args, logger=None):
     # )
     ########
     depths_of_big_nodes, ave_depth_big_node = get_depth_of_big_nodes(
-        G, threshold=1000, plot=PLOT)
+        G, threshold=4000, plot=PLOT)
     if PLOT or True:
         make_silly_boxplot(
             vals=depths_of_big_nodes,
@@ -1050,12 +1154,12 @@ def main(args, logger=None):
         raise ValueError
 
     # now, we set out start nodes to be 16S and end to be 23S
-    start = [x for x in nodes if x.name == node16 and  x.reverse_complimented ][0]
+    start = [x for x in node_list if x.name == node16 and  x.reverse_complimented ][0]
     logger.info("16S node: %s", start)
-    end = [x for x in nodes if x.name == node23 and not x.reverse_complimented ][0]
+    end = [x for x in node_list if x.name == node23 and not x.reverse_complimented ][0]
     logger.info("23S node: %s", end)
     s = pathfind(
-        node_list=nodes,
+        node_list=node_list,
         top_parent=start,
         parent=start,
         prev_path=str(start.name),
@@ -1065,7 +1169,7 @@ def main(args, logger=None):
         path_list=[],
         found_exit=False)
     e = pathfind(
-        node_list=nodes,
+        node_list=node_list,
         top_parent=end,
         parent=end,
         prev_path=str(end.name),
