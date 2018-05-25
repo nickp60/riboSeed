@@ -83,7 +83,7 @@ class RiboSpecTest(unittest.TestCase):
         print(DG.edges.data())
         print( "------------------------------------------")
         # print(nx.dijkstra_predecessor_and_distance(DG, 4))
-        incl, border = rs.neighborhood_by_length(DG, source=4, cutoff=10)
+        # incl, border = rs.neighborhood_by_length(DG, source=4, cutoff=10)
 
     def tearDown(self):
         """

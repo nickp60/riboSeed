@@ -12,10 +12,9 @@ Created on Wed Jan 17 14:44:30 2018
 
 We have developed a scheme by which to predict the number of rDNAs in a
  genome based on an assembly graph created by spades.
-This module is designed to
-
 
 """
+
 DEBUG = False
 # DEBUG = True
 PLOT = False
@@ -31,7 +30,6 @@ import multiprocessing
 from copy import deepcopy
 
 import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib import pyplot, patches
 import networkx as nx
 
@@ -523,7 +521,7 @@ def plot_G(
     # set alpha value for each edge
     # for i in range(M):
     #     edges[i].set_alpha(edge_alphas[i])
-    ax = plt.gca()
+    ax = pyplot.gca()
     ax.set_axis_off()
     fig.savefig(outpath)
 
@@ -568,32 +566,10 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
             if i > 0: # ignore source
                 path_len = path_len + nodesDict[node]['length']
                 if path_len > cutoff:
-                    print(node)
-                    print("AHSHAHS")
                     border_nodes.append(node)
                     break
                 else:
                     interior_nodes.append(node)
-    #     included_node, is_border = return_if_interior_node(
-    #         node=n,
-    #         lengths=path_lengths,
-    #         cutoff=cutoff)
-    #     # included_node will be None if we have already dealt with it
-    #     if included_node is not None:
-    #             interior_nodes.append(included_node)
-
-    # for n, p in path_nodes.items():
-    #     if n == source or n in interior_nodes:
-    #         continue
-    #     included_node, is_border = return_if_border_node(
-    #         node=n,
-    #         paths=path_nodes,
-    #         interior_nodes=interior_nodes)
-    #     # included_node will be None if we have already dealt with it
-    #     if included_node is not None:
-    #             border_nodes.append(included_node)
-    # print(set(interior_nodes))
-    # print(set(border_nodes))
     return (set(interior_nodes), set(border_nodes))
 
 
@@ -637,7 +613,7 @@ def find_rRNA_from_gffs(gff_list, partial=False):
     return(nodes16, nodes23, nodes5)
 
 
-def get_depth_of_big_nodes(G, threshold=5000, plot=False):
+def get_depth_of_big_nodes(G, threshold=5000):
     nodes_dict = dict(G.nodes(data=True))
     lengths = []
     depths = []
@@ -676,21 +652,21 @@ def make_silly_boxplot(vals, outpath, names=None, title="", yline=None):
         #         "number of names does not equal number of sets!"
         #     ax.set_xticklabels(Names)
         # ax.set_xticks(list(range(0, len(vals))))
-        plt.boxplot(vals, 0, 'rs', 1)
+        pyplot.boxplot(vals, 0, 'rs', 1)
         for i, data in enumerate(vals) :
             for d in data:
-                plt.scatter(x=i + 1 + random.uniform(-.1, .2),
-                            y=d + random.uniform(-.2, .2),
-                            alpha=.3)
+                pyplot.scatter(x=i + 1 + random.uniform(-.1, .2),
+                               y=d + random.uniform(-.2, .2),
+                               alpha=.3)
     else:
-        plt.boxplot(vals, 0, 'rs', 1)
+        pyplot.boxplot(vals, 0, 'rs', 1)
         for d in vals:
-            plt.scatter(x=1 + random.uniform(-.1, .1),
+            pyplot.scatter(x=1 + random.uniform(-.1, .1),
                         y=d + random.uniform(-.2, .2),
                         alpha=.3)
     if yline is not None:
-        plt.axhline(yline, color="green"),
-    plt.title(title)
+        pyplot.axhline(yline, color="green"),
+    pyplot.title(title)
     fig.savefig(outpath)
 
 
@@ -751,14 +727,6 @@ def reverse_populate_subgraph_from_source(g, root, node_list, counter):
             continue
         # and each of thats node's neighbors
         for neigh in node.neighbor_list:
-            # print(neigh)
-            # if neigh.name == root.name:
-            #     print("neigh")
-            #     print(neigh)
-            #     print(neigh.reverse_complimented)
-            #     print(root.reverse_complimented)
-            #     if neigh.reverse_complimented == root.reverse_complimented:
-            #         print("comped")
             # that list our root as its neighbor (with right orientation)
             if neigh.name == root.name and \
                neigh.reverse_complimented == root.reverse_complimented:
@@ -772,6 +740,29 @@ def reverse_populate_subgraph_from_source(g, root, node_list, counter):
                     root=node,
                     node_list=node_list,
                     counter=counter + 1)
+
+
+def make_rRNAs_dict(gff_list, gff_list_partial):
+    solid16, solid23, solid5 = find_rRNA_from_gffs(gff_list, partial=False)
+    partial16, partial23, partial5 = find_rRNA_from_gffs(gff_list_partial, partial=True)
+    partial16 = [x for x in partial16 if x not in solid16]
+    partial23 = [x for x in partial23 if x not in solid23]
+    partial5  = [x for x in partial5 if x not in solid5]
+    rrnas = {
+        "16S": {
+            "partial": partial16,
+            "solid": solid16
+        },
+        "23S": {
+            "partial": partial23,
+            "solid": solid23
+        },
+        "5S": {
+            "partial": partial5,
+            "solid": solid5
+        }
+    }
+    return rrnas
 
 
 def main(args, logger=None):
@@ -803,11 +794,8 @@ def main(args, logger=None):
     # make a list of node objects, a adjacency matrix M, and a DiGRaph object G
     node_list, M, G = alt_parse_fastg(f=args.assembly_graph)
 
-
-
-
-
-    draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
+    if PLOT:
+        draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
     #  write out the adjacency matrix
     with open(os.path.join(args.output, "tab.txt"), "w") as o:
         for line in M:
@@ -854,30 +842,32 @@ def main(args, logger=None):
         gff_list_partial = make_gff_list(barrnap_gff_partial)
         logger.debug(gff_list_partial)
 
-    solid16, solid23, solid5 = find_rRNA_from_gffs(gff_list, partial=False)
-    partial16, partial23, partial5 = find_rRNA_from_gffs(gff_list_partial, partial=True)
-    partial16 = [x for x in partial16 if x not in solid16]
-    partial23 = [x for x in partial23 if x not in solid23]
-    partial5 = [x for x in partial5 if x not in solid5]
-    rrnas = {
-        "16S": {
-            "partial": partial16,
-            "solid": solid16
-        },
-        "23S": {
-            "partial": partial23,
-            "solid": solid23
-        },
-        "5S": {
-            "partial": partial5,
-            "solid": solid5
-        }
-    }
-    print(rrnas)
-    if len(solid16) > 1:
-        print("more than one full 16S contig found")
-    if len(solid23) > 1:
-        print("more than one full 23S contig found")
+    # dict  of {gene: {partial: [nodes]; solid: [nodes]}}has keys of gense, where the value are dict
+    rrnas = make_rRNAs_dict(gff_list, gff_list_partial)
+    logger.debug(rrnas)
+
+
+    if len(rrnas["16S"]["solid"]) >  1:
+        logger.error("it appears that there are distinct 16S rDNAs in the " +
+                     "assenbly graph; this tracing algorithm is not the best" +
+                     "option.  Please review the graph manually to determine" +
+                     "probable number of rDNAs")
+        raise ValueError
+    elif len(rrnas["16S"]["solid"]) < 1:
+        logger.error("Barrnap failed to detect any full 16S in the assembly graph")
+        raise ValueError
+
+    if len(rrnas["23S"]["solid"]) > 1:
+        logger.error("it appears that there are distinct 23S rDNAs in the " +
+                     "assenbly graph; this tracing algorithm is not the best" +
+                     "option.  Please review the graph manually to determine" +
+                     "probable number of rDNAs")
+        raise ValueError
+    elif len(rrnas["23S"]["solid"]) < 1:
+        logger.error("Barrnap failed to detect any 23S in the assembly graph")
+        raise ValueError
+
+
     # this holds the {data} of the nodes keyed by their name
     nodes_data = dict(G.nodes(data=True))
 
@@ -891,7 +881,7 @@ def main(args, logger=None):
 
     # get the depths of the big contigs
     depths_of_big_nodes, ave_depth_big_node = get_depth_of_big_nodes(
-        G, threshold=4000, plot=PLOT)
+        G, threshold=4000)
     if PLOT or True:
         make_silly_boxplot(
             vals=depths_of_big_nodes,
@@ -920,34 +910,15 @@ def main(args, logger=None):
                         #############################################3
                             """ these lines cause problems later on
                             """
-                            # G.add_edge(solid , d[1])
-                            # G.add_edge(d[1], solid)
+                            G.add_edge(solid , d[1])
+                            G.add_edge(d[1], solid)
                     # G.remove_node(part)
                         #############################################3
                     these_collapsed.append(part)
-        # print(G.get_edge_data(solid, d[1]))
 
         collapsed.extend(these_collapsed)
-    print("marked  %i nodes for collapsing:" % len(collapsed))
-    print(collapsed)
-    # for coll_node in collapsed:
-    #     tmp_neighs = []
-    #     for node in nodes_list:
-    #         if node == coll_node:
-    #             tmp_neighs = node.neighbor_list
-
-
-    #         for neigh in node.neighbors_list:
-    print(G.nodes())
-    if PLOT:
-        plot_G(
-            G,
-            solid5,
-            solid16,
-            solid23,
-            outpath=os.path.join(args.output, "test_post_collapse_G.pdf"),
-            outpath2=os.path.join(args.output, "test_post_collapse_G_linegraph.pdf"),
-        )
+    logger.info("marked %i nodes for collapsing:", len(collapsed))
+    logger.info(collapsed)
 
     ########  Reduce this graph to all nodes within 20kb if a 16S region
     interior_nodes = []
@@ -956,17 +927,17 @@ def main(args, logger=None):
     #     interior, border = neighborhood_by_length(G, i, cutoff=4500, ignored_nodes=[])
     #     interior_nodes.extend(interior)
     #     border_nodes.extend(border)
-    for i in solid16:
+    for i in rrnas["16S"]["solid"]:
         interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=[])
         print("16S neighbors")
         print(interior)
         print(border)
         interior_nodes.extend(interior)
         border_nodes.extend(border)
-    if solid16 != solid23:
-        for i in solid23:
+    if rrnas["16S"]["solid"] != rrnas["23S"]["solid"]:
+        for i in rrnas["23S"]["solid"]:
             interior, border = neighborhood_by_length(
-                G, i, cutoff=1000, ignored_nodes=solid16)
+                G, i, cutoff=1000, ignored_nodes=rrnas["16S"]["solid"])
             print(interior)
             print(border)
             interior_nodes.extend(interior)
@@ -980,9 +951,9 @@ def main(args, logger=None):
     if PLOT:
         plot_G(
             G,
-            solid5,
-            solid16,
-            solid23,
+            rrnas["5S"]["solid"],
+            rrnas["16S"]["solid"],
+            rrnas["23S"]["solid"],
             outpath=os.path.join(args.output, "test_post_reduction_G.pdf"),
             outpath2=os.path.join(args.output, "test_post_reduction_G_linegraph.pdf"),
         )
@@ -1057,9 +1028,7 @@ def main(args, logger=None):
         else:
             print("geting reverse recursive path")
             reverse_populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
-    # sys.exit()
-    # #####################################################################################
-    # if True:
+
         print("nodes in %s subgraph" %region)
         print(g.nodes())
 
@@ -1068,9 +1037,9 @@ def main(args, logger=None):
             print("plotting reconstructed tree from %s node  %s" % (region, init_node.name))
             plot_G(
                 g,
-                solid5,
-                solid16,
-                solid23,
+                rrnas["5S"]["solid"],
+                rrnas["16S"]["solid"],
+                rrnas["23S"]["solid"],
                 outpath=os.path.join(args.output, "tiny%s.pdf" % region),
                 outpath2=os.path.join(args.output, "line_graph_tiny%s.pdf" %region),
             )
@@ -1090,7 +1059,6 @@ def main(args, logger=None):
 
 
         ####  remember the collaping tstuff we figured out before?  Lets remove those collapsable nodes from the paths now, and get rid of redundant paths.  We also take this opportunity to filter out paths that include tips not at the tip.  It happens, somehow...
-        print(collapsed)
         for path in out_paths_region_raw:
             new_path = []
             internal_tip = False
@@ -1139,62 +1107,16 @@ def main(args, logger=None):
                 title= "Path Depths %s"  % region,
                 yline=ave_depth_big_node,
             )
+        subgraphs[region] = {
+            "raw_paths": out_paths_region_raw,
+            "filtered_paths": out_paths_region
+        }
 
-    sys.exit()
 
-    if len(rrnas["16S"]["solid"]) >  1:
-        logger.error("it appears that there are distinct 16S rDNAs in the " +
-                     "assenbly graph; this tracing algorithm is not the best" +
-                     "option.  Please review the graph manually to determine" +
-                     "probable number of rDNAs")
-        raise ValueError
-    elif len(rrnas["16S"]["solid"]) < 1:
-        logger.error("Barrnap failed to detect any full 16S in the assembly graph")
-        raise ValueError
-
-    if len(rrnas["23S"]["solid"]) > 1:
-        logger.error("it appears that there are distinct 23S rDNAs in the " +
-                     "assenbly graph; this tracing algorithm is not the best" +
-                     "option.  Please review the graph manually to determine" +
-                     "probable number of rDNAs")
-        raise ValueError
-    elif len(rrnas["23S"]["solid"]) < 1:
-        logger.error("Barrnap failed to detect any 23S in the assembly graph")
-        raise ValueError
-
-    # now, we set out start nodes to be 16S and end to be 23S
-    start = [x for x in node_list if x.name == node16 and  x.reverse_complimented ][0]
-    logger.info("16S node: %s", start)
-    end = [x for x in node_list if x.name == node23 and not x.reverse_complimented ][0]
-    logger.info("23S node: %s", end)
-    s = pathfind(
-        node_list=node_list,
-        top_parent=start,
-        parent=start,
-        prev_path=str(start.name),
-        prev_length=0,
-        thresh=1000,
-        ignored_nodes=[node23],
-        path_list=[],
-        found_exit=False)
-    e = pathfind(
-        node_list=node_list,
-        top_parent=end,
-        parent=end,
-        prev_path=str(end.name),
-        prev_length=0,
-        thresh=2000,
-        ignored_nodes=[node16],
-        path_list=[],
-        found_exit=False)
-    logger.info("Unique possible paths exiting the 16S rDNA: \n\t{0}".format(
-        "\n\t".join(s)))
-    logger.info("Unique possible paths exiting the 16S rDNA: \n\t{0}".format(
-        "\n\t".join(e)))
 
     # interpret results
-    n_upstream = len(s)
-    n_downstream = len(e)
+    n_upstream = len(subgraphs["16S"]["filtered_paths"])
+    n_downstream = len(subgraphs["23S"]["filtered_paths"])
     logger.info("Paths leading to rDNA operon: %i", n_upstream)
     logger.info("Paths exiting  rDNA operon: %i", n_downstream)
     if n_upstream == n_downstream:
