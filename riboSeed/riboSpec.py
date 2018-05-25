@@ -17,7 +17,7 @@ We have developed a scheme by which to predict the number of rDNAs in a
 
 DEBUG = False
 # DEBUG = True
-PLOT = False
+# PLOT = False
 # PLOT = True
 import sys
 import os
@@ -29,9 +29,19 @@ import argparse
 import multiprocessing
 from copy import deepcopy
 
+
+try:
+    from matplotlib import pyplot, patches
+    PLOT = True
+except Exception as e:  # likely an ImportError, but not taking chances
+    print(e)
+    print("\nlooks like you have some issue with matplotlib.  " +
+          "Classic matplotlib, amirite? Plotting is disabled\n")
+    PLOT = False
+
 import numpy as np
-from matplotlib import pyplot, patches
 import networkx as nx
+
 
 from .shared_methods import set_up_logging, make_barrnap_cmd
 
@@ -62,19 +72,6 @@ class FastgNode(object):
                    )
 
 
-class FastgNodeNeighbor(object):
-    def __init__(self, name=None, reverse_complimented=None):
-        self.name = name
-        self.reverse_complimented = reverse_complimented
-
-    def __str__(self):
-        return "NeighborNode: {0}\nReverse_Complimented?: {1}".format(
-            self.name,
-            "Yes" if self.reverse_complimented else "No"
-        )
-
-
-
 partial_list = [["EDGE_128_length_64_cov_224.111':EDGE_130_length_113_cov_395.017;", 'barrnap:0.7', 'rRNA', '2', '62', '0.00025', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_128_length_64_cov_224.111:EDGE_246_length_232_cov_51.2034,EDGE_326_length_102_cov_132.553';", 'barrnap:0.7', 'rRNA', '3', '63', '0.00025', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_129_length_111_cov_224.071':EDGE_130_length_113_cov_395.017;", 'barrnap:0.7', 'rRNA', '49', '109', '8.3e-05', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_129_length_111_cov_224.071:EDGE_363_length_3027_cov_329.236';", 'barrnap:0.7', 'rRNA', '3', '63', '8.3e-05', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_130_length_113_cov_395.017':EDGE_128_length_64_cov_224.111,EDGE_129_length_111_cov_224.071;", 'barrnap:0.7', 'rRNA', '11', '112', '1.3e-09', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ['EDGE_130_length_113_cov_395.017:EDGE_332_length_56_cov_246,EDGE_333_length_99_cov_156.886;', 'barrnap:0.7', 'rRNA', '2', '103', '1.3e-09', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ["EDGE_245_length_1702_cov_344.636':EDGE_136_length_238_cov_185.197',EDGE_244_length_141_cov_128.326;", 'barrnap:0.7', 'rRNA', '16', '1553', '0', '-', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ['EDGE_245_length_1702_cov_344.636:EDGE_289_length_61_cov_160.167,EDGE_290_length_90_cov_217;', 'barrnap:0.7', 'rRNA', '150', '1687', '0', '+', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ["EDGE_246_length_232_cov_51.2034':EDGE_128_length_64_cov_224.111';", 'barrnap:0.7', 'rRNA', '179', '232', '0.0033', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_246_length_232_cov_51.2034:EDGE_332_length_56_cov_246';", 'barrnap:0.7', 'rRNA', '1', '54', '0.0033', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_326_length_102_cov_132.553':EDGE_363_length_3027_cov_329.236';", 'barrnap:0.7', 'rRNA', '1', '54', '0.0045', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_326_length_102_cov_132.553:EDGE_128_length_64_cov_224.111';", 'barrnap:0.7', 'rRNA', '49', '102', '0.0045', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236':EDGE_362_length_57_cov_268.5,EDGE_398_length_98_cov_95.6977';", 'barrnap:0.7', 'rRNA', '105', '3005', '0', '-', '.', 'Name=23S_rRNA;product=23S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236:EDGE_129_length_111_cov_224.071',EDGE_326_length_102_cov_132.553;", 'barrnap:0.7', 'rRNA', '23', '2923', '0', '+', '.', 'Name=23S_rRNA;product=23S ribosomal RNA']]
 
 strict_list = [["EDGE_130_length_113_cov_395.017':EDGE_128_length_64_cov_224.111,EDGE_129_length_111_cov_224.071;", 'barrnap:0.7', 'rRNA', '11', '112', '1.3e-09', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ['EDGE_130_length_113_cov_395.017:EDGE_332_length_56_cov_246,EDGE_333_length_99_cov_156.886;', 'barrnap:0.7', 'rRNA', '2', '103', '1.3e-09', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ["EDGE_245_length_1702_cov_344.636':EDGE_136_length_238_cov_185.197',EDGE_244_length_141_cov_128.326;", 'barrnap:0.7', 'rRNA', '16', '1553', '0', '-', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ['EDGE_245_length_1702_cov_344.636:EDGE_289_length_61_cov_160.167,EDGE_290_length_90_cov_217;', 'barrnap:0.7', 'rRNA', '150', '1687', '0', '+', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236':EDGE_362_length_57_cov_268.5,EDGE_398_length_98_cov_95.6977';", 'barrnap:0.7', 'rRNA', '105', '3005', '0', '-', '.', 'Name=23S_rRNA;product=23S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236:EDGE_129_length_111_cov_224.071',EDGE_326_length_102_cov_132.553;", 'barrnap:0.7', 'rRNA', '23', '2923', '0', '+', '.', 'Name=23S_rRNA;product=23S ribosomal RNA']]
@@ -90,28 +87,30 @@ def get_args():  # pragma: no cover
         "to match the reference",
         add_help=False)  # to allow for custom help
     requiredNamed = parser.add_argument_group('required named arguments')
-    requiredNamed.add_argument("-o", "--output", dest='output', action="store",
-                               help="output directory; " +
-                               "default: %(default)s", default=os.getcwd(),
-                               type=str, required=True)
+    requiredNamed.add_argument(
+        "-o", "--output", dest='output', action="store",
+        help="output directory; " +
+        "default: %(default)s", default=os.getcwd(),
+        type=str, required=True)
+    requiredNamed.add_argument(
+        "-g", "--assemgly_graph",
+        dest='assembly_graph',
+        action="store", default='', type=str,
+        help="fastg assembly graph from SPAdes",
+        required=True)
     optional = parser.add_argument_group('optional arguments')
-    optional.add_argument("-g", "--assemgly_graph",
-                          dest='assembly_graph',
-                          action="store", default='', type=str,
-                          help="fastg assembly graph from SPAdes",
-                          required=False)
-    optional.add_argument("-b", "--bam", dest='mapping_bam', action="store",
-                          help="indexed mapping file of reads to the " +
-                          "reference; required if no assembly graph is used",
-                          type=str, default=None)
-    optional.add_argument("-r", "--reference", dest='reference', action="store",
-                          help="the same reference fasta used to generate " +
-                          "mapping file; "
-                          "required if no assembly graph is used",
-                          type=str, default=None)
-    optional.add_argument("-n", "--max_nodes", dest='max_nodes', action="store",
-                          help="max number of nodes considered around rDNAs ",
-                          type=int, default=15)
+    # optional.add_argument("-b", "--bam", dest='mapping_bam', action="store",
+    #                       help="indexed mapping file of reads to the " +
+    #                       "reference; required if no assembly graph is used",
+    #                       type=str, default=None)
+    # optional.add_argument("-r", "--reference", dest='reference', action="store",
+    #                       help="the same reference fasta used to generate " +
+    #                       "mapping file; "
+    #                       "required if no assembly graph is used",
+    #                       type=str, default=None)
+    optional.add_argument("--plot_graphs", dest='plot_graphs',
+                          help="draw the network graphs ",
+                          action="store_true")
     optional.add_argument("-v", "--verbosity", dest='verbosity',
                           action="store",
                           default=2, type=int, choices=[1, 2, 3, 4, 5],
@@ -121,14 +120,14 @@ def get_args():  # pragma: no cover
                           "4 = error() and 5 = critical(); " +
                           "default: %(default)s")
     # # TODO  Make these check a config file
-    optional.add_argument("--spades_exe", dest="spades_exe",
-                          action="store", default="spades.py",
-                          help="Path to SPAdes executable; " +
-                          "default: %(default)s")
-    optional.add_argument("--samtools_exe", dest="samtools_exe",
-                          action="store", default="samtools",
-                          help="Path to samtools executable; " +
-                          "default: %(default)s")
+    # optional.add_argument("--spades_exe", dest="spades_exe",
+    #                       action="store", default="spades.py",
+    #                       help="Path to SPAdes executable; " +
+    #                       "default: %(default)s")
+    # optional.add_argument("--samtools_exe", dest="samtools_exe",
+    #                       action="store", default="samtools",
+    #                       help="Path to samtools executable; " +
+    #                       "default: %(default)s")
     optional.add_argument("--barrnap_exe", dest="barrnap_exe",
                           action="store", default="barrnap",
                           help="Path to barrnap executable;" +
@@ -176,36 +175,6 @@ def make_Neighbors(neighbor):
     return new_neigh
 
 
-def parse_fastg(f):
-    """parse the headers in a fastg file and return a list of Node objects
-    """
-    node_neighs = []
-    with open(f, "r") as inf:
-        for line in inf:
-            if line.startswith(">"):
-                colons = sum([1 for x in line if x == ":" ])
-                if colons > 1:
-                    sys.stderr.write("multiple ':'s found in line, and can only " +
-                                     "be used to separate nodes from neighbor " +
-                                     "list\n")
-                elif colons == 0:
-                    # orphaned node or terminal node
-                    # sys.stderr.write("Header does not contain a colon!\n")
-                    node_neighs.append([line.strip().split(";")[0], None])
-                else:
-                    node_neighs.append(line.strip().split(":"))
-
-    node_list = []
-    for node, neighs in node_neighs:
-        new_node = make_Node(node)
-        if neighs is None:
-            new_node.neighbor_list = []
-        else:
-            new_node.neighbor_list = [make_Neighbors(x) for x in neighs.split(",")]
-        node_list.append(new_node)
-    return node_list
-
-
 def make_adjacency_matrix(g):
     """ Make an adjacency matrix from a dict of node: [neighbors] pairs
     """
@@ -229,7 +198,7 @@ def make_adjacency_matrix(g):
     return M
 
 
-def draw_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outdir=None):
+def plot_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outpath=None):
     """
     - G is an adjacency matrix
     - node_order (optional) is a list of nodes, where each node in G
@@ -261,10 +230,10 @@ def draw_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outdir=N
                                           edgecolor=color,
                                           linewidth="1"))
             current_idx += len(module)
-    fig.savefig(os.path.join(outdir, "test.pdf"))
+    fig.savefig(outpath)
 
 
-def alt_parse_fastg(f):
+def parse_fastg(f):
     """parse the headers in a fastg file and return a list of Node objects
     """
     node_neighs = []
@@ -310,155 +279,77 @@ def alt_parse_fastg(f):
     return (node_list, M, DG)
 
 
-def pathfind(node_list, top_parent, parent, prev_path, prev_length,
-             path_list, thresh=1000, ignored_nodes=[], found_exit=False,
-             verbose=False):
-    """Returns possible exit paths from an exit node
+# def run_prelim_mapping_cmds(output_root, mapping_sam, samtool_exe, spades_exe, seedGenome, k, logger):
+#     """ make commands to extract all reads mapping to flanking regions
 
-    Given a list of all nodes, a starting node (top_parent), and information
-    about any previous paths and their lengths, we recursivly trace the tree to
-    find all the paths that meet a set of criteria
+#     we haven't partitioned yet, but we want to do a pre-assembly of this
+#     partition in order to detect possile rDNA differences from the reference
 
-    1.  they originate unidirectionally from the starting node (just the
-        forward or reverse compliment)
-    2.  They pass through one region we deem to not be a tRNA, called exiting
-    3.  Any nodes that could be within the 1000base pair threshold for flanking
-        differentiation are considered
-    4.  They dont pass through ignored_nodes, which alows us to set the directionality
-        (ie, paths from the 16S cant pass through a 23S)
-    """
-    # look for both forward and rc matches
-    parent_opposite_strand = [x for x in node_list if x.name == parent.name and x.reverse_complimented != parent.reverse_complimented][0]
-    poss_f = [x for x in parent.neighbor_list if
-              str(x.name) not in prev_path.split(":") and
-              str(x.name) not in ignored_nodes]
-    poss_rc = [x for x in parent_opposite_strand.neighbor_list if
-               str(x.name) not in prev_path.split(":") and
-               str(x.name) not in ignored_nodes]
-    # this ensures we only get single direction hits from the topmost parent
-    if parent == top_parent:
-        possible_neighbors = poss_f
-    else:
-        possible_neighbors = poss_f + poss_rc
-    if verbose:
-        print("Prev: " + prev_path)
-        print("Prev_len: " + str(prev_length))
-        print("Poss:" + " ".join([str(x.name) for x in possible_neighbors]))
+#     """
+#     region_list = [
+#         "{0}:{1}-{2}".format(x.sequence_id,
+#                              x.global_start_coord,
+#                              x.global_end_coord) for x in seedGenome.loci_clusters]
+#     logger.debug("regions to extract for the prelim mapping:\n%s",
+#                  "\n".join([x for x in region]))
+#     cmds = []
+#     # make a directory to contain results of this analysis
+#     this_dir = os.path.join(output_root, "prelim")
+#     os.makedirs(this_dir)
+#     output_sam = os.path.join(this_dir, "rDNA_reads.sam")
+#     output_f = os.path.join(this_dir, "rDNA_reads_1.fastq")
+#     output_r = os.path.join(this_dir, "rDNA_reads_2.fastq")
+#     output_s = os.path.join(this_dir, "rDNA_reads_s.fastq")
+#     # make a smatools command to extract all to a single fastq
+#     samtools_cmd = "{0} view -h {1} {2} > {3}".format(
+#         samtools_exe,
+#         mapping_sam,
+#         " ".join(regions_list),
+#         output_sam)
+#     samfastq_cmd = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
+#         samtools_exe,
+#         mapping_sam,
+#         output_f,
+#         output_r,
+#         output_s)
+#     logger.debug("running commands to get reads mapping to any rDNA region")
+#     for cmd in [samtools_cmd, samfastq_cmd]:
+#         logger.debug(cmd)
+#         subprocess.run(cmd,
+#                        shell=sys.platform != "win32",
+#                        stdout=subprocess.PIPE,
+#                        stderr=subprocess.PIPE,
+#                        check=True)
+#     # ensure we dont have any empty files; construct library design
+#     lib_count = 1
+#     read_libraries = ""
+#     for f in [output_f, output_r, output_s]:
+#         if os.path.getsize(f) > 0:
+#             read_libraries = read_libraries + " --s" + str(lib_count) + " " + f
+#             lib_count = lib_count + 1
 
-    for node in possible_neighbors:
-        # here we assume only one hit
-        try:
-            this_node = [x for x in node_list if x.name == node.name and x.reverse_complimented == node.reverse_complimented][0]
-        except IndexError:
-            for i in node_list:
-                print("\n")
-                print(i)
-            print(node_list)
-
-        if this_node.length > 250:
-            found_exit = True
-        if verbose:
-            print("This: {0} RC: {1}".format(
-                this_node.name,
-                str(this_node.reverse_complimented)))
-        this_length = prev_length + this_node.length
-        this_path = prev_path + ":" + str(this_node.name)
-        # are we outside the zone of flanking similarity? usually 1kb?
-        # and have we hit a decent stretch of sequence? one node longer than
-        #   3x a tRNA, or about 270
-        if this_length >= thresh and found_exit:
-            if this_path in path_list:
-                pass
-            else:
-                path_list.append(this_path)
-        else:
-            # further in, further in!
-            # we dont capture the return list because unless this is
-            # the last time, its incomplete
-            pathfind(
-                node_list=node_list,
-                top_parent=top_parent,
-                parent=this_node,
-                prev_path=this_path,
-                prev_length=this_length,
-                path_list=path_list,
-                found_exit=found_exit,
-                thresh=thresh,
-                verbose=verbose)
-    return path_list
+#     # make spades commands to run the assembly with a given k
+#     spades_cmd = str(
+#         "{0} --only-assembler --cov-cutoff off --sc --careful -k=21,33 " +
+#         "{1} -o {2}"
+#     ).format(
+#         spades_exe,
+#         read_libraries,
+#         os.path.join(this_dir, "assembly"))
+#     logger.debug("running commands rDNA-mapping reads")
+#     logger.debug(spades_cmd)
+#     subprocess.run(spades_cmd,
+#                    shell=sys.platform != "win32",
+#                    stdout=subprocess.PIPE,
+#                    stderr=subprocess.PIPE,
+#                    check=True)
 
 
-def run_prelim_mapping_cmds(output_root, mapping_sam, samtool_exe, spades_exe, seedGenome, k, logger):
-    """ make commands to extract all reads mapping to flanking regions
-
-    we haven't partitioned yet, but we want to do a pre-assembly of this
-    partition in order to detect possile rDNA differences from the reference
-
-    """
-    region_list = [
-        "{0}:{1}-{2}".format(x.sequence_id,
-                             x.global_start_coord,
-                             x.global_end_coord) for x in seedGenome.loci_clusters]
-    logger.debug("regions to extract for the prelim mapping:\n%s",
-                 "\n".join([x for x in region]))
-    cmds = []
-    # make a directory to contain results of this analysis
-    this_dir = os.path.join(output_root, "prelim")
-    os.makedirs(this_dir)
-    output_sam = os.path.join(this_dir, "rDNA_reads.sam")
-    output_f = os.path.join(this_dir, "rDNA_reads_1.fastq")
-    output_r = os.path.join(this_dir, "rDNA_reads_2.fastq")
-    output_s = os.path.join(this_dir, "rDNA_reads_s.fastq")
-    # make a smatools command to extract all to a single fastq
-    samtools_cmd = "{0} view -h {1} {2} > {3}".format(
-        samtools_exe,
-        mapping_sam,
-        " ".join(regions_list),
-        output_sam)
-    samfastq_cmd = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
-        samtools_exe,
-        mapping_sam,
-        output_f,
-        output_r,
-        output_s)
-    logger.debug("running commands to get reads mapping to any rDNA region")
-    for cmd in [samtools_cmd, samfastq_cmd]:
-        logger.debug(cmd)
-        subprocess.run(cmd,
-                       shell=sys.platform != "win32",
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,
-                       check=True)
-    # ensure we dont have any empty files; construct library design
-    lib_count = 1
-    read_libraries = ""
-    for f in [output_f, output_r, output_s]:
-        if os.path.getsize(f) > 0:
-            read_libraries = read_libraries + " --s" + str(lib_count) + " " + f
-            lib_count = lib_count + 1
-
-    # make spades commands to run the assembly with a given k
-    spades_cmd = str(
-        "{0} --only-assembler --cov-cutoff off --sc --careful -k=21,33 " +
-        "{1} -o {2}"
-    ).format(
-        spades_exe,
-        read_libraries,
-        os.path.join(this_dir, "assembly"))
-    logger.debug("running commands rDNA-mapping reads")
-    logger.debug(spades_cmd)
-    subprocess.run(spades_cmd,
-                   shell=sys.platform != "win32",
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE,
-                   check=True)
-
-
-def make_simple_header():
-    """uyse sed to just get node name from fastg
-    sed 's/^[^ ]\(.*\)[:]\(.*\).*$/>\1/' assembly_graph.fastg > renamed.fastg
-    """
-    pass
+# def make_simple_header():
+#     """uyse sed to just get node name from fastg
+#     sed 's/^[^ ]\(.*\)[:]\(.*\).*$/>\1/' assembly_graph.fastg > renamed.fastg
+#     """
+#     pass
 
 
 def plot_G(
@@ -642,17 +533,14 @@ def get_depth_of_big_nodes(G, threshold=5000):
 
 def make_silly_boxplot(vals, outpath, names=None, title="", yline=None):
     fig = pyplot.figure(figsize=(6, 6)) # in inches
-    # ax = pyplot.axes()
+    ax = pyplot.axes()
     if isinstance(vals[0], list):
-        # pyplot.hold(True)
-        # for i, group in enumerate(vals):
-        #     bp = plt.boxplot(group, 0, 'rs', 1, positions=[i])
-        # if names is not None:
-        #     assert len(names) == len(vals), \
-        #         "number of names does not equal number of sets!"
-        #     ax.set_xticklabels(Names)
-        # ax.set_xticks(list(range(0, len(vals))))
         pyplot.boxplot(vals, 0, 'rs', 1)
+        if names is not None:
+            assert len(names) == len(vals), \
+                "number of names does not equal number of sets!"
+            ax.set_xticklabels(names)
+
         for i, data in enumerate(vals) :
             for d in data:
                 pyplot.scatter(x=i + 1 + random.uniform(-.1, .2),
@@ -684,19 +572,20 @@ def percentile(N, percent, key=lambda x:x):
     N.sort()
     if not N:
         return None
-    k = (len(N)-1) * percent
+    k = (len(N) - 1) * percent
     f = math.floor(k)
     c = math.ceil(k)
     if f == c:
         return key(N[int(k)])
-    d0 = key(N[int(f)]) * (c-k)
-    d1 = key(N[int(c)]) * (k-f)
-    return d0+d1
+    d0 = key(N[int(f)]) * (c - k)
+    d1 = key(N[int(c)]) * (k - f)
+    return d0 + d1
 
 
-def populate_subgraph_from_source(g, root, node_list, counter):
+def populate_subgraph_from_source(g, root, node_list, counter, debug=False):
     # counter for dbugging
-    print(counter)
+    if debug:
+        print("populating recursion depth %i" % counter)
     # starting from node, examit its neighbors
     for neigh in root.neighbor_list:
         # find that node in the node_list by
@@ -716,9 +605,10 @@ def populate_subgraph_from_source(g, root, node_list, counter):
                     counter=counter + 1)
 
 
-def reverse_populate_subgraph_from_source(g, root, node_list, counter):
+def reverse_populate_subgraph_from_source(g, root, node_list, counter, debug=False):
     # counter for dbugging
-    print("populating rev recursion depth %i" % counter)
+    if debug:
+        print("populating rev recursion depth %i" % counter)
     # print(root)
     # look through all nodes
     for node in node_list:
@@ -765,6 +655,36 @@ def make_rRNAs_dict(gff_list, gff_list_partial):
     return rrnas
 
 
+def check_rrnas_dict(rrnas):
+    if len(rrnas["16S"]["solid"]) >  1:
+        logger.error("it appears that there are distinct 16S rDNAs in the " +
+                     "assenbly graph; this tracing algorithm is not the best" +
+                     "option.  Please review the graph manually to determine" +
+                     "probable number of rDNAs")
+        raise ValueError
+    elif len(rrnas["16S"]["solid"]) < 1:
+        logger.error("Barrnap failed to detect any full 16S in the assembly graph")
+        raise ValueError
+
+    if len(rrnas["23S"]["solid"]) > 1:
+        logger.error("it appears that there are distinct 23S rDNAs in the " +
+                     "assenbly graph; this tracing algorithm is not the best" +
+                     "option.  Please review the graph manually to determine" +
+                     "probable number of rDNAs")
+        raise ValueError
+    elif len(rrnas["23S"]["solid"]) < 1:
+        logger.error("Barrnap failed to detect any 23S in the assembly graph")
+        raise ValueError
+
+
+def remove_duplicate_nested_lists(l):
+    """ removes duplicates from nested integer lists
+    """
+    uniq = set(tuple(x) for x in l)
+    L = [ list(x) for x in uniq ]
+    return L
+
+
 def main(args, logger=None):
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
@@ -784,18 +704,14 @@ def main(args, logger=None):
         logger.debug("%s: %s", k, str(v))
     if args.cores is None:
         args.cores = multiprocessing.cpu_count()
-    if args.assembly_graph is None:
-        if args.reference is None and args.sam is None:
-            logger.error("No assembly graph provided, we must create one; " +
-                         "a SAM file and a reference FASTA is required")
-            sys.exit(1)
-        # create a assembly graph
-        args.assembly_graph = make_prelim_mapping_cmds()
+
     # make a list of node objects, a adjacency matrix M, and a DiGRaph object G
-    node_list, M, G = alt_parse_fastg(f=args.assembly_graph)
+    node_list, M, G = parse_fastg(f=args.assembly_graph)
 
     if PLOT:
-        draw_adjacency_matrix(M, node_order=None, partitions=[], colors=[], outdir=args.output)
+        plot_adjacency_matrix(
+            M, node_order=None, partitions=[], colors=[],
+            outpath=os.path.join(output_root, "full_adjacency_matrix.pdf"))
     #  write out the adjacency matrix
     with open(os.path.join(args.output, "tab.txt"), "w") as o:
         for line in M:
@@ -845,28 +761,7 @@ def main(args, logger=None):
     # dict  of {gene: {partial: [nodes]; solid: [nodes]}}has keys of gense, where the value are dict
     rrnas = make_rRNAs_dict(gff_list, gff_list_partial)
     logger.debug(rrnas)
-
-
-    if len(rrnas["16S"]["solid"]) >  1:
-        logger.error("it appears that there are distinct 16S rDNAs in the " +
-                     "assenbly graph; this tracing algorithm is not the best" +
-                     "option.  Please review the graph manually to determine" +
-                     "probable number of rDNAs")
-        raise ValueError
-    elif len(rrnas["16S"]["solid"]) < 1:
-        logger.error("Barrnap failed to detect any full 16S in the assembly graph")
-        raise ValueError
-
-    if len(rrnas["23S"]["solid"]) > 1:
-        logger.error("it appears that there are distinct 23S rDNAs in the " +
-                     "assenbly graph; this tracing algorithm is not the best" +
-                     "option.  Please review the graph manually to determine" +
-                     "probable number of rDNAs")
-        raise ValueError
-    elif len(rrnas["23S"]["solid"]) < 1:
-        logger.error("Barrnap failed to detect any 23S in the assembly graph")
-        raise ValueError
-
+    check_rrnas_dict(rrnas)
 
     # this holds the {data} of the nodes keyed by their name
     nodes_data = dict(G.nodes(data=True))
@@ -876,21 +771,21 @@ def main(args, logger=None):
         for neigh in node.neighbor_list:
             G.add_edge(neigh.name, node.name)
 
-
-    oldG = deepcopy(G)
-
     # get the depths of the big contigs
+    depths_of_all_nodes, ave_depth_all_node = get_depth_of_big_nodes(
+        G, threshold=0)
     depths_of_big_nodes, ave_depth_big_node = get_depth_of_big_nodes(
         G, threshold=4000)
-    if PLOT or True:
+    if PLOT:
         make_silly_boxplot(
-            vals=depths_of_big_nodes,
-            outpath=os.path.join(output_root, "depths_of_big_nodes.pdf")
+            vals=[depths_of_all_nodes, depths_of_big_nodes],
+            names=["All nodes", "Nodes > 4kb"],
+            title="Depths of Nodes in Assembly Graph",
+            outpath=os.path.join(output_root, "average_node_depths.pdf")
         )
     ########################################################################
     # collapse nodes where partial loci neighbor full-length
     collapsed = []
-    print(rrnas)
     for k, vals in rrnas.items():
         print("checking for collapsable %s nodes" %k)
         these_collapsed = []
@@ -908,7 +803,7 @@ def main(args, logger=None):
                         if d[1] != solid and d[1] not in G.neighbors(solid):
                             # make a bi-directional graph for now
                         #############################################3
-                            """ these lines cause problems later on
+                            """ can we remake the node_list object to reflect these changes?
                             """
                             G.add_edge(solid , d[1])
                             G.add_edge(d[1], solid)
@@ -923,10 +818,6 @@ def main(args, logger=None):
     ########  Reduce this graph to all nodes within 20kb if a 16S region
     interior_nodes = []
     border_nodes = []
-    # for i in solid23:
-    #     interior, border = neighborhood_by_length(G, i, cutoff=4500, ignored_nodes=[])
-    #     interior_nodes.extend(interior)
-    #     border_nodes.extend(border)
     for i in rrnas["16S"]["solid"]:
         interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=[])
         print("16S neighbors")
@@ -948,7 +839,7 @@ def main(args, logger=None):
     print("removing %i of %i nodes that aren't near rDNA" %(len(bad_nodes), len(G.nodes)))
     for node in bad_nodes:
         G.remove_node(node)
-    if PLOT:
+    if PLOT and args.plot_graphs:
         plot_G(
             G,
             rrnas["5S"]["solid"],
@@ -970,32 +861,36 @@ def main(args, logger=None):
 
     #####################################################################################
     """
-    So at this point, we have a poor implementation of the directionality of the graph, which we will need in a minute for path finding.  What we will do here is make a brand new subgraph for both the 5' and 3' regions of the operpn.
-    lets try to add some edges to our graph  First we need to identify our center. For simple instaces (which is all we handle for now), there are two scenarios:
+    So at this point, we have a poor implementation of the directionality of
+    the graph, which we will need in a minute for path finding.  What we
+    will do here is make a brand new subgraph for both the 5' and 3' regions
+    of the operpn.
+
+    lets try to add some edges to our graph  First we need to identify our
+    center. For simple instaces (which is all we handle for now), there are
+    two scenarios:
     1) 1 clearly defined cluster, where the three genes are all on one contig.
     2) 1 clearly defined contig for each gene.
-    in all cases, we set the center of the graph to be the end of the 16S gene.  WE assume that they are both pointing in the same direction.  If that is not the case, we have a problem.
+
+    In all cases, we set the center of the graph to be the end of the 16S
+    gene.  We assume that they are both pointing in the same direction.
+    If that is not the case, we have a problem.
 
     .         center/break
     .           *
     ========|16S| ==|23S|=|5S|=================
     <-----------  ----------------------->
-    in both these cases, we take the sma e approach.  Look for paths from (reverse complimented) 16S and from 23S
+    in both these cases, we take the same approach.  Look for paths from
+    (reverse complimented) 16S and from 23S
     """
+
     subset_node_list = []
     for n in node_list:
         if n.name in G.nodes():
             subset_node_list.append(n)
     subgraphs = {}
 
-    # we need to keep track of the strand for the 16S, and use the oposite for 23S.  This keeps the paths pointing out
-    rev_16S = False
-
     for region in ["16S", "23S"]:
-    # if solid16 == solid23 and len(solid16) == 1:
-    #     print("16S and 23S seem to be co-located on one single contig: %s" %
-    #           solid16[0])
-        g = nx.DiGraph()
         REV = False
         # lets check the gff to see if the 16S is a positive or a negative hit:
         for line in gff_list:
@@ -1003,62 +898,80 @@ def main(args, logger=None):
                 print(line)
                 if line[6] == "-":
                     REV = True
-                    # # set the polarity for 16S
-                    # if region == "16S":
-                    #     rev_16S = True
-                    # else:
-                    #     pass
                 break
         # whos on first?
+        # all this does is to make sure we take the oposite path from
+        # the 16S nodes
         reverse_compliment_now = REV if region == "16S" else not REV
         node_region_data = extract_node_len_cov_rc(line[0].split(":")[0])
-        # print(region)
-        # print(node_region_data)
-        # print(reverse_compliment_now)
+
+        # retrieve the starting node (16S or 23S) from the list of nodes,
+        # making sure we get the one with the correct orientation
         init_node = None
         for N in subset_node_list:
             if N.name == int(node_region_data[0]) and N.reverse_complimented ==  REV:
                 init_node = N
-                # print(init_node)
         if init_node is None:
             raise ValueError("node note found to initiate recursive subtree construction")
+        logger.debug("Initial node")
+        logger.debug(init_node)
+
+        # add this initial node to a brand new DiGraph
+        g = nx.DiGraph()
         g.add_node(int(node_region_data[0]), cov=int(node_region_data[2]), length=int(node_region_data[1]))
+
+        # here is the path tracing algorithm.
+        # We get all paths leading to the 16S, or all the paths away from 23S
         if region == "16S":
             populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
         else:
-            print("geting reverse recursive path")
             reverse_populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
 
-        print("nodes in %s subgraph" %region)
-        print(g.nodes())
+        logger.debug("nodes in %s subgraph", region)
+        logger.debug(g.nodes())
 
 
-        if PLOT or True:
-            print("plotting reconstructed tree from %s node  %s" % (region, init_node.name))
+        if PLOT and args.plot_graphs:
+            logger.info("plotting reconstructed tree from %s node  %s" %\
+                        (region, init_node.name))
             plot_G(
                 g,
                 rrnas["5S"]["solid"],
                 rrnas["16S"]["solid"],
                 rrnas["23S"]["solid"],
                 outpath=os.path.join(args.output, "tiny%s.pdf" % region),
-                outpath2=os.path.join(args.output, "line_graph_tiny%s.pdf" %region),
+                outpath2=os.path.join(
+                    args.output, "line_graph_tiny%s.pdf" %region),
             )
+        if PLOT:
+            plot_adjacency_matrix(
+                make_adjacency_matrix(nx.convert.to_dict_of_dicts(g)), node_order=None,
+                partitions=[], colors=[],
+                outpath=os.path.join(
+                    args.output,
+                    "%s_subgraph_adjacency_matrix.pdf" % region))
 
         # count the paths going out from the 16S/23S
         out_paths_region_raw = []
+        out_paths_region_sans_collapsed = []
         out_paths_region = []
-        # tips will have an out-degree of 0 on this reduced graph
-        print([g.out_degree(node) for node in g.nodes()])
+
+        logger.debug("tips will have an out-degree of 0 on this reduced graph")
+        logger.debug([g.out_degree(node) for node in g.nodes()])
         tips = [node for node in g.nodes() if g.out_degree(node) == 0]
-        print("tips:")
-        print(tips)
+        logger.debug("tips of subgraph:")
+        logger.debug(tips)
         for noderegion in rrnas[region]["solid"]:
             for tip in tips:
-                out_paths_region_raw.extend(nx.all_simple_paths(G, noderegion, tip))
-        print("number of out paths to %s: %i" %(region, len(out_paths_region_raw)))
+                out_paths_region_raw.extend(nx.all_simple_paths(g, noderegion, tip))
+        logger.info("number of raw paths to %s: %i" %(region, len(out_paths_region_raw)))
 
-
-        ####  remember the collaping tstuff we figured out before?  Lets remove those collapsable nodes from the paths now, and get rid of redundant paths.  We also take this opportunity to filter out paths that include tips not at the tip.  It happens, somehow...
+        """
+        remember the collaping stuff we figured out before?  Lets remove
+        those collapsable nodes from the paths now, and get rid of
+        redundant paths.  We also take this opportunity to filter out
+        paths that include tips not at the tip.  It happens, somehow...
+        """
         for path in out_paths_region_raw:
             new_path = []
             internal_tip = False
@@ -1067,51 +980,75 @@ def main(args, logger=None):
                     new_path.append(i)
             # here we only add it the path doesnt contain tips (excluding the last item)
             for tip in tips:
-                if tip in path[0: len(path)-1]:
+                if tip in path[0: len(path) - 1]:
                     internal_tip = True
                 else:
                     pass
             if not internal_tip:
-                out_paths_region.append(new_path)
+                out_paths_region_sans_collapsed.append(new_path)
+
         # filter out duplicated paths:
-        uniq = set(tuple(x) for x in out_paths_region)
-        out_paths_region = [ list(x) for x in uniq ]
-        print("Removed %i paths that contained collapsable nodes" % \
-              (len(out_paths_region_raw) - len(out_paths_region)))
+        out_paths_region_sans_collapsed = remove_duplicate_nested_lists(
+            out_paths_region_sans_collapsed)
+        # now we have filtered, and some paths might not be long enough. Others, if the graph is cyclical, will be too long.  here, we trim and filter!
+        for path in out_paths_region_sans_collapsed:
+            filtered_path = [path[0]]
+            filtered_length = 0
+            internal_tip = False
+            # skip first node, our root (either 16S or 23S)
+            for i, node in enumerate(path):
+                if i > 0:
+                    node_length = nodes_data[node]["length"]
+                    filtered_length = filtered_length + node_length
+                    filtered_path.append(node)
+                    if filtered_length > 1000:
+                        break
+            # if path does indeed pass the threshold
+            if filtered_length > 1000:
+                out_paths_region.append(filtered_path)
+
+        # filter out duplicated paths, again:
+        out_paths_region = remove_duplicate_nested_lists(out_paths_region)
+
+        logger.debug(
+            "Removed %i paths that contained collapsable nodes, etc" % \
+            (len(out_paths_region_raw) - len(out_paths_region)))
+        logger.info("%s Paths:\n", region)
         for i in out_paths_region:
-            print(i)
+            logger.info(i)
+
         all_region_path_nodes = [x for y in out_paths_region for x in y]
         set_region_path_nodes_normalized_depth = {}
         for i in set(all_region_path_nodes):
-            # print(all_16S_path_nodes.count(i))
             set_region_path_nodes_normalized_depth[i] = nodes_data[i]['cov'] / all_region_path_nodes.count(i)
 
-        if PLOT or True:
+        if PLOT:
             make_silly_boxplot(
                 vals=[x for x in set_region_path_nodes_normalized_depth.values()],
-                outpath=os.path.join(output_root, "normalized_depths_of_%s_nodes.pdf" % region)
+                outpath=os.path.join(output_root, "normalized_depths_of_%s_nodes.pdf" % region),
+                title= "Normalized depths of nodes connected to %s"  % region,
+                yline=ave_depth_big_node,
             )
-            # print(all_16S_path_nodes)
-        print("determining the depths of the %s paths" % region)
+
+        logger.debug("determining the depths of the %s paths" % region)
         all_region_path_depths = []
         for i, path in enumerate(out_paths_region):
             sublist = []
             for node in path:
-                # print(nodes_data[node])
                 sublist.append(set_region_path_nodes_normalized_depth[node])
             all_region_path_depths.append(sublist)
-        if PLOT or True:
+        if PLOT:
             make_silly_boxplot(
                 vals=all_region_path_depths,
                 outpath=os.path.join(output_root, "normalized_depths_of_%s_exiting_paths.pdf" % region),
-                title= "Path Depths %s"  % region,
+                title= "Depths of paths connected to %s" % region,
                 yline=ave_depth_big_node,
             )
         subgraphs[region] = {
             "raw_paths": out_paths_region_raw,
-            "filtered_paths": out_paths_region
+            "filtered_paths": out_paths_region,
+            "graph": g
         }
-
 
 
     # interpret results
