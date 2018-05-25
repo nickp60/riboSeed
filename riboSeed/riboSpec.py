@@ -279,79 +279,6 @@ def parse_fastg(f):
     return (node_list, M, DG)
 
 
-# def run_prelim_mapping_cmds(output_root, mapping_sam, samtool_exe, spades_exe, seedGenome, k, logger):
-#     """ make commands to extract all reads mapping to flanking regions
-
-#     we haven't partitioned yet, but we want to do a pre-assembly of this
-#     partition in order to detect possile rDNA differences from the reference
-
-#     """
-#     region_list = [
-#         "{0}:{1}-{2}".format(x.sequence_id,
-#                              x.global_start_coord,
-#                              x.global_end_coord) for x in seedGenome.loci_clusters]
-#     logger.debug("regions to extract for the prelim mapping:\n%s",
-#                  "\n".join([x for x in region]))
-#     cmds = []
-#     # make a directory to contain results of this analysis
-#     this_dir = os.path.join(output_root, "prelim")
-#     os.makedirs(this_dir)
-#     output_sam = os.path.join(this_dir, "rDNA_reads.sam")
-#     output_f = os.path.join(this_dir, "rDNA_reads_1.fastq")
-#     output_r = os.path.join(this_dir, "rDNA_reads_2.fastq")
-#     output_s = os.path.join(this_dir, "rDNA_reads_s.fastq")
-#     # make a smatools command to extract all to a single fastq
-#     samtools_cmd = "{0} view -h {1} {2} > {3}".format(
-#         samtools_exe,
-#         mapping_sam,
-#         " ".join(regions_list),
-#         output_sam)
-#     samfastq_cmd = "{0} fastq {1} -1 {2} -2 {3} -s {4}".format(
-#         samtools_exe,
-#         mapping_sam,
-#         output_f,
-#         output_r,
-#         output_s)
-#     logger.debug("running commands to get reads mapping to any rDNA region")
-#     for cmd in [samtools_cmd, samfastq_cmd]:
-#         logger.debug(cmd)
-#         subprocess.run(cmd,
-#                        shell=sys.platform != "win32",
-#                        stdout=subprocess.PIPE,
-#                        stderr=subprocess.PIPE,
-#                        check=True)
-#     # ensure we dont have any empty files; construct library design
-#     lib_count = 1
-#     read_libraries = ""
-#     for f in [output_f, output_r, output_s]:
-#         if os.path.getsize(f) > 0:
-#             read_libraries = read_libraries + " --s" + str(lib_count) + " " + f
-#             lib_count = lib_count + 1
-
-#     # make spades commands to run the assembly with a given k
-#     spades_cmd = str(
-#         "{0} --only-assembler --cov-cutoff off --sc --careful -k=21,33 " +
-#         "{1} -o {2}"
-#     ).format(
-#         spades_exe,
-#         read_libraries,
-#         os.path.join(this_dir, "assembly"))
-#     logger.debug("running commands rDNA-mapping reads")
-#     logger.debug(spades_cmd)
-#     subprocess.run(spades_cmd,
-#                    shell=sys.platform != "win32",
-#                    stdout=subprocess.PIPE,
-#                    stderr=subprocess.PIPE,
-#                    check=True)
-
-
-# def make_simple_header():
-#     """uyse sed to just get node name from fastg
-#     sed 's/^[^ ]\(.*\)[:]\(.*\).*$/>\1/' assembly_graph.fastg > renamed.fastg
-#     """
-#     pass
-
-
 def plot_G(
         G,
         nodes5,
@@ -376,8 +303,6 @@ def plot_G(
     print(_M)
     edge_colors = range(2, M + 2)
     edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
-    # print(G.nodes.data())
-    # print([h for g, h in G.nodes.data()])
 
     node_colors = ["lightgrey" for x in range(N)]
     for i, (g, h) in enumerate(G.nodes.data()):
@@ -400,18 +325,6 @@ def plot_G(
     nx.draw(G, with_labels=True, linewidths=0, node_size=node_sizes,
             alpha=0.7,  font_size=2, arrows=True,
             node_color=node_colors, edge_color="darkgrey", width=.2)
-    # edges = nx.draw_networkx_nodes(G, pos,
-    #                                linewidths=0,
-    #                                with_labels=True,
-    #                                node_size=node_sizes,
-    #                                node_color=node_colors)
-    # nodes = nx.draw_networkx_edges(G, pos, node_size=node_sizes, arrowstyle='->',
-    #                                arrowsize=5, edge_color="darkgrey",
-    #                                with_labels=True,
-    #                                edge_cmap=plt.cm.Blues, width=.3)
-    # set alpha value for each edge
-    # for i in range(M):
-    #     edges[i].set_alpha(edge_alphas[i])
     ax = pyplot.gca()
     ax.set_axis_off()
     fig.savefig(outpath)
@@ -655,7 +568,7 @@ def make_rRNAs_dict(gff_list, gff_list_partial):
     return rrnas
 
 
-def check_rrnas_dict(rrnas):
+def check_rrnas_dict(rrnas, logger=None):
     if len(rrnas["16S"]["solid"]) >  1:
         logger.error("it appears that there are distinct 16S rDNAs in the " +
                      "assenbly graph; this tracing algorithm is not the best" +
@@ -761,7 +674,7 @@ def main(args, logger=None):
     # dict  of {gene: {partial: [nodes]; solid: [nodes]}}has keys of gense, where the value are dict
     rrnas = make_rRNAs_dict(gff_list, gff_list_partial)
     logger.debug(rrnas)
-    check_rrnas_dict(rrnas)
+    check_rrnas_dict(rrnas, logger=logger)
 
     # this holds the {data} of the nodes keyed by their name
     nodes_data = dict(G.nodes(data=True))
