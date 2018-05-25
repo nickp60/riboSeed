@@ -42,23 +42,25 @@ class FastgNode(object):
     # newid = itertools.count()
 
     def __init__(self, name=None, length=None, cov=None,
-                 reverse_complimented=None, neighbor_list=None):
+                 reverse_complimented=None, neighbor_list=None, raw=None):
         # self.index = next(FastgNode.newid)
         self.name = name
         self.length = length
         self.cov = cov
         self.neighbor_list = neighbor_list
         self.reverse_complimented = reverse_complimented
+        self.raw = raw
 
     def __str__(self):
         return str("Node: {0}\nNeighbors: {1}\nLength: {2}\nCoverage: " +
-                   "{3}\nReverse_Complimented?: {4}").format(
+                   "{3}\nReverse_Complimented?: {4}\nRaw: {5} ").format(
                        self.name,
                        "None" if self.neighbor_list is None else
                            ",".join([str(x.name) for x in self.neighbor_list]),
                        "None" if self.length is None else self.length,
                        "None" if self.cov is None else self.cov,
-                       str(self.reverse_complimented)
+                       str(self.reverse_complimented),
+                       "None" if self.raw is None else self.raw,
                    )
 
 
@@ -161,7 +163,8 @@ def make_Node(name):
         name=int(node_name),
         length=length,
         cov=cov,
-        reverse_complimented=rc
+        reverse_complimented=rc,
+        raw=name
     )
     return new_node
 
@@ -302,7 +305,6 @@ def alt_parse_fastg(f):
         else:
             new_node.neighbor_list = [make_Node(x) for x in neighs]
         node_list.append(new_node)
-
     # make the networkx object
     DG = nx.DiGraph()
     for N in node_list:
@@ -532,36 +534,6 @@ def plot_G(
             node_color="black", edge_color=_edge_colors, width=.2)
     fig.savefig(outpath2)
 
-# def return_if_interior_node(node, lengths, cutoff, verbose=False):
-#     """ return tuple of (valid_node, IS_BORDER)
-
-#     See docstring for neighborhood_by_length for greater detail
-
-#     """
-#     if lengths[node] > cutoff:
-#         return (None, None)
-#     else:
-#         if verbose:
-#             print("found interior node: %s" %node)
-#         return (node, False)
-
-
-# def return_if_border_node(node, paths, interior_nodes):
-#     """ return tuple of (valid_node, IS_BORDER)
-
-#     See docstring for neighborhood_by_length for greater detail
-
-#     """
-#     IS_BORDER = False
-#     for p in paths[node]:
-#         if p in interior_nodes:
-#             IS_BORDER = True
-#     if IS_BORDER:
-#         print("found border node %s " % node)
-#         return (node, True)
-#     else:
-#         return (None, True)
-
 
 def neighborhood_by_n(G, node, n):
     path_lengths = nx.single_source_dijkstra_path_length(G, node)
@@ -585,25 +557,23 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     interior_nodes = [source]
     border_nodes = []
     nodesDict = dict(G.nodes(data=True))
-    # sys.exit()
-    paths_dict = nx.single_source_dijkstra(G, source)[1]
-    # print(paths_dict)
-    for target, path_to in paths_dict.items():
+    paths_dict = nx.single_source_dijkstra(G, source)
+    for target, path_to in paths_dict[1].items():
         # print(target)
         # print(path_to)
         path_len = 0
         if len(set(path_to).intersection(set(ignored_nodes))) > 0:
             continue
         for i, node in enumerate(path_to):
-            if i > 0:
+            if i > 0: # ignore source
                 path_len = path_len + nodesDict[node]['length']
                 if path_len > cutoff:
+                    print(node)
+                    print("AHSHAHS")
                     border_nodes.append(node)
                     break
-                elif path_len < cutoff:
-                    interior_nodes.append(node)
                 else:
-                    pass
+                    interior_nodes.append(node)
     #     included_node, is_border = return_if_interior_node(
     #         node=n,
     #         lengths=path_lengths,
@@ -749,15 +719,55 @@ def percentile(N, percent, key=lambda x:x):
 
 
 def populate_subgraph_from_source(g, root, node_list, counter):
+    # counter for dbugging
     print(counter)
+    # starting from node, examit its neighbors
     for neigh in root.neighbor_list:
+        # find that node in the node_list by
         for node in node_list:
+            # ...checking name and orientation same, and not already in graph
             if node.name == neigh.name and \
                node.reverse_complimented == neigh.reverse_complimented and \
                node.name not in g.nodes():
+                # if found, add that node and the appropriate edges
                 g.add_node(node.name, cov=node.cov, length=node.length)
                 g.add_edge(root.name, node.name)
+                # rinse and repeat
                 populate_subgraph_from_source(
+                    g=g,
+                    root=node,
+                    node_list=node_list,
+                    counter=counter + 1)
+
+
+def reverse_populate_subgraph_from_source(g, root, node_list, counter):
+    # counter for dbugging
+    print("populating rev recursion depth %i" % counter)
+    # print(root)
+    # look through all nodes
+    for node in node_list:
+        # print(node.name)
+        if node.name in g.nodes():
+            continue
+        # and each of thats node's neighbors
+        for neigh in node.neighbor_list:
+            # print(neigh)
+            # if neigh.name == root.name:
+            #     print("neigh")
+            #     print(neigh)
+            #     print(neigh.reverse_complimented)
+            #     print(root.reverse_complimented)
+            #     if neigh.reverse_complimented == root.reverse_complimented:
+            #         print("comped")
+            # that list our root as its neighbor (with right orientation)
+            if neigh.name == root.name and \
+               neigh.reverse_complimented == root.reverse_complimented:
+                g.add_node(node.name, cov=node.cov, length=node.length)
+                # we want to build the directionality opposite what it is
+                # currently, so we make the nodes going from the root to the node
+                g.add_edge(root.name, node.name)
+                # rinse and repeat
+                reverse_populate_subgraph_from_source(
                     g=g,
                     root=node,
                     node_list=node_list,
@@ -887,7 +897,7 @@ def main(args, logger=None):
             vals=depths_of_big_nodes,
             outpath=os.path.join(output_root, "depths_of_big_nodes.pdf")
         )
-    ################
+    ########################################################################
     # collapse nodes where partial loci neighbor full-length
     collapsed = []
     print(rrnas)
@@ -906,24 +916,29 @@ def main(args, logger=None):
                     # print(G.edges(solid))
                     for d in G.edges(part):
                         if d[1] != solid and d[1] not in G.neighbors(solid):
-                            # print(d)
-                            # partial_to_next_weight = G.get_edge_data(d[0],d[1])["weight"]
-                            # print(partial_to_next_weight)
-                            # solid_to_partial_weight = G.get_edge_data(solid, d[0])["weight"]
-                            # print(solid_to_partial_weight)
-                            G.add_edge(solid , d[1])
-                            G.add_edge(d[1], solid)
-                    G.remove_node(part)
+                            # make a bi-directional graph for now
+                        #############################################3
+                            """ these lines cause problems later on
+                            """
+                            # G.add_edge(solid , d[1])
+                            # G.add_edge(d[1], solid)
+                    # G.remove_node(part)
+                        #############################################3
                     these_collapsed.append(part)
         # print(G.get_edge_data(solid, d[1]))
-        print("removed %i nodes:" % len(these_collapsed))
-        print(these_collapsed)
-        print(dict(G.nodes(data=True))[solid])
-        print(solid)
-        print([x for x in G.neighbors(solid)])
 
         collapsed.extend(these_collapsed)
+    print("marked  %i nodes for collapsing:" % len(collapsed))
+    print(collapsed)
+    # for coll_node in collapsed:
+    #     tmp_neighs = []
+    #     for node in nodes_list:
+    #         if node == coll_node:
+    #             tmp_neighs = node.neighbor_list
 
+
+    #         for neigh in node.neighbors_list:
+    print(G.nodes())
     if PLOT:
         plot_G(
             G,
@@ -937,22 +952,29 @@ def main(args, logger=None):
     ########  Reduce this graph to all nodes within 20kb if a 16S region
     interior_nodes = []
     border_nodes = []
+    # for i in solid23:
+    #     interior, border = neighborhood_by_length(G, i, cutoff=4500, ignored_nodes=[])
+    #     interior_nodes.extend(interior)
+    #     border_nodes.extend(border)
     for i in solid16:
-        interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=solid5 if solid5 != solid16 else [])
+        interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=[])
+        print("16S neighbors")
+        print(interior)
+        print(border)
         interior_nodes.extend(interior)
         border_nodes.extend(border)
     if solid16 != solid23:
         for i in solid23:
             interior, border = neighborhood_by_length(
                 G, i, cutoff=1000, ignored_nodes=solid16)
+            print(interior)
+            print(border)
             interior_nodes.extend(interior)
             border_nodes.extend(border)
     valid_nodes = [x for y in [interior_nodes, border_nodes] for x in y]
-
     print(len(set(valid_nodes)))
     bad_nodes = set(G.nodes).symmetric_difference(set(valid_nodes))
-    print(len(G.nodes))
-    print(len(bad_nodes))
+    print("removing %i of %i nodes that aren't near rDNA" %(len(bad_nodes), len(G.nodes)))
     for node in bad_nodes:
         G.remove_node(node)
     if PLOT:
@@ -965,15 +987,14 @@ def main(args, logger=None):
             outpath2=os.path.join(args.output, "test_post_reduction_G_linegraph.pdf"),
         )
 
-
     #######   identify paths between the 16S and 23S, if its less than say 500bp
-    connector_paths = []
-    for node16 in rrnas["16S"]["solid"]:
-        for node23 in rrnas["23S"]["solid"]:
-            connector_paths.extend(
-                nx.all_simple_paths(G, node16, node23, cutoff=500)
-            )
-    print("number of connector paths: %i" %len(connector_paths))
+    # connector_paths = []
+    # for node16 in rrnas["16S"]["solid"]:
+    #     for node23 in rrnas["23S"]["solid"]:
+    #         connector_paths.extend(
+    #             nx.all_simple_paths(G, node16, node23, cutoff=500)
+    #         )
+    # print("number of connector paths: %i" %len(connector_paths))
 
 
     #####################################################################################
@@ -995,6 +1016,10 @@ def main(args, logger=None):
         if n.name in G.nodes():
             subset_node_list.append(n)
     subgraphs = {}
+
+    # we need to keep track of the strand for the 16S, and use the oposite for 23S.  This keeps the paths pointing out
+    rev_16S = False
+
     for region in ["16S", "23S"]:
     # if solid16 == solid23 and len(solid16) == 1:
     #     print("16S and 23S seem to be co-located on one single contig: %s" %
@@ -1007,19 +1032,40 @@ def main(args, logger=None):
                 print(line)
                 if line[6] == "-":
                     REV = True
+                    # # set the polarity for 16S
+                    # if region == "16S":
+                    #     rev_16S = True
+                    # else:
+                    #     pass
                 break
+        # whos on first?
+        reverse_compliment_now = REV if region == "16S" else not REV
         node_region_data = extract_node_len_cov_rc(line[0].split(":")[0])
+        # print(region)
+        # print(node_region_data)
+        # print(reverse_compliment_now)
         init_node = None
         for N in subset_node_list:
-            if N.name == int(node_region_data[0]) and N.reverse_complimented == REV:
+            if N.name == int(node_region_data[0]) and N.reverse_complimented ==  REV:
                 init_node = N
+                # print(init_node)
         if init_node is None:
             raise ValueError("node note found to initiate recursive subtree construction")
         g.add_node(int(node_region_data[0]), cov=int(node_region_data[2]), length=int(node_region_data[1]))
-        populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
+        if region == "16S":
+            populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
+        else:
+            print("geting reverse recursive path")
+            reverse_populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
+    # sys.exit()
+    # #####################################################################################
+    # if True:
+        print("nodes in %s subgraph" %region)
+        print(g.nodes())
 
-    #####################################################################################
-        if PLOT:
+
+        if PLOT or True:
+            print("plotting reconstructed tree from %s node  %s" % (region, init_node.name))
             plot_G(
                 g,
                 solid5,
@@ -1030,6 +1076,7 @@ def main(args, logger=None):
             )
 
         # count the paths going out from the 16S/23S
+        out_paths_region_raw = []
         out_paths_region = []
         # tips will have an out-degree of 0 on this reduced graph
         print([g.out_degree(node) for node in g.nodes()])
@@ -1038,14 +1085,31 @@ def main(args, logger=None):
         print(tips)
         for noderegion in rrnas[region]["solid"]:
             for tip in tips:
-                out_paths_region.extend(nx.all_simple_paths(G, noderegion, tip))
-        print("number of out paths to: %i" %(region, len(out_paths_region)))
-        # for path in connector_paths:
-        #     l = len(path)
-        #     for opath in out_paths_region:
-        #         if path == opath[:l] or len(set(solid23).intersection(opath)) > 0:
-        #             out_paths_region.remove(opath)
-        # print("number of filtered out paths: %i" %len(out_paths_region))
+                out_paths_region_raw.extend(nx.all_simple_paths(G, noderegion, tip))
+        print("number of out paths to %s: %i" %(region, len(out_paths_region_raw)))
+
+
+        ####  remember the collaping tstuff we figured out before?  Lets remove those collapsable nodes from the paths now, and get rid of redundant paths.  We also take this opportunity to filter out paths that include tips not at the tip.  It happens, somehow...
+        print(collapsed)
+        for path in out_paths_region_raw:
+            new_path = []
+            internal_tip = False
+            for i in path:
+                if i not in collapsed:
+                    new_path.append(i)
+            # here we only add it the path doesnt contain tips (excluding the last item)
+            for tip in tips:
+                if tip in path[0: len(path)-1]:
+                    internal_tip = True
+                else:
+                    pass
+            if not internal_tip:
+                out_paths_region.append(new_path)
+        # filter out duplicated paths:
+        uniq = set(tuple(x) for x in out_paths_region)
+        out_paths_region = [ list(x) for x in uniq ]
+        print("Removed %i paths that contained collapsable nodes" % \
+              (len(out_paths_region_raw) - len(out_paths_region)))
         for i in out_paths_region:
             print(i)
         all_region_path_nodes = [x for y in out_paths_region for x in y]
@@ -1075,63 +1139,6 @@ def main(args, logger=None):
                 title= "Path Depths %s"  % region,
                 yline=ave_depth_big_node,
             )
-
-    sys.exit()
-    # print("23S outpaths")
-    # print("number of connector paths: %i" %len(connector_paths))
-    # # count the paths going out from the 16S
-    # out_paths_23 = []
-    # for node23 in rrnas["23S"]["solid"]:
-    #     for tip in tips:
-    #         out_paths_23.extend(nx.all_simple_paths(G, node23, tip))
-    # print("number of 23S out paths: %i" %len(out_paths_23))
-    # for path in connector_paths:
-    #     l = len(path)
-    #     rpath = list(reversed(path))
-    #     for i, opath in enumerate(out_paths_23):
-    #         if rpath == opath[:l] or len(set(solid16).intersection(opath)) > 0:
-    #             out_paths_23.remove(opath)
-    # print("number of 23S filtered out paths: %i" %len(out_paths_23))
-    # for i in out_paths_23:
-    #     print(i)
-
-
-
-    ###
-    # plot_G(
-    #     oldG,
-    #     solid5,
-    #     solid16,
-    #     solid23,
-    #     outpath=os.path.join(args.output, "test_oldG.pdf"),
-    #     outpath2=os.path.join(args.output, "test_oldG_linegraph.pdf"),
-    # )
-    ########
-
-
-
-    print("determining the depths of the 23S paths")
-    all_23S_path_depths = []
-    for i, path in enumerate(out_paths_23):
-        sublist = []
-        for node in path:
-            # print(nodes_data[node])
-            sublist.append(set_23S_path_nodes_normalized_depth[node])
-        all_23S_path_depths.append(sublist)
-    print(set_23S_path_nodes_normalized_depth)
-    if PLOT or True:
-        make_silly_boxplot(
-            vals=all_16S_path_depths,
-            outpath=os.path.join(output_root, "normalized_depths_of_16S_exiting_paths.pdf"),
-            title= "hahshhsfnakjdv",
-            yline=ave_depth_big_node,
-        )
-        make_silly_boxplot(
-            vals=all_23S_path_depths,
-            outpath=os.path.join(output_root, "normalized_depths_of_23S_exiting_paths.pdf"),
-            title= "hahshhsfnakjdv",
-            yline=ave_depth_big_node,
-        )
 
     sys.exit()
 
