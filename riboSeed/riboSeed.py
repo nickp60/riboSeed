@@ -738,8 +738,17 @@ def map_to_genome_ref_bwa(mapping_ob, ngsLib, cores,
                                             samtools_exe=samtools_exe)
     logger.info(str("Combined mapped reads: " + combined_map_string))
     # extract overall percentage as a float
-    map_percentage = float(combined_map_string.split("(")[1].split("%")[0])
-
+    try:
+        map_perc_string = combined_map_string.split("(")[1].split("%")[0]
+        map_percentage = float(map_perc_string)
+    except ValueError:
+        logger.error("Error mapping reads with bwa; line: %s:", map_perc_string)
+        if map_perc_string == "N/A : N/A)":
+            raise ValueError(
+                "Error during mapping reads to reference; please examine " +
+                "the sam/bam files. This could be to using a extremely " +
+                "divergent reference or (more likely) using a library that "+
+                " is not FR oriented. Consider running as a single library")
     # check min score
     if score_minimum is not None:
         score_min = score_minimum

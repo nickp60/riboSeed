@@ -397,6 +397,7 @@ def main(args):
         flanking=conf.RUN_FLANKING,
         method=conf.SEED_MAP_METHOD,
         iterations=conf.RUN_ITERATIONS,
+        damn_the_torpedos=conf.damn_the_torpedos,
         cores=conf.RUN_CORES,
         threads=conf.RUN_THREADS,
         memory=conf.RUN_MEMORY,
@@ -443,7 +444,15 @@ def main(args):
         blast_full=False,
         verbosity=conf.SCORE_VERBOSITY)
 
-
+    # So we dont get too far ahead of outselves")
+    logger.info("\nCheck all the argumentss provided\n")
+    rscan.get_args(scan_args)
+    rselect.get_args(select_args)
+    rseed.get_args(seed_args)
+    rsketch.get_args(sketch_args)
+    rscore.get_args(score_args)
+    
+    
     logger.info("\nrunning riboScan\n")
     rscan.main(scan_args, logger)
     if conf.RUN_CLUSTER_FILE is not None:
