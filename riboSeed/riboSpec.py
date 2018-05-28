@@ -437,14 +437,19 @@ def get_depth_of_big_nodes(G, threshold=5000):
     ave = sum([x for x in prods]) /totlen
     print("Total length of nodes passing threshold: %i" % totlen)
     print("Average depth of contigs greater %i is %f" %(threshold, ave))
+    quarts = []
     for quart in [.25, .5, .75]:
+        q = percentile(stupid_normalized_list,quart)
         print("%i th quartile: %f" %  \
-              (quart * 100, percentile(stupid_normalized_list,quart)))
-
-    return(depths, ave)
+              (quart * 100, q))
+        quarts.append(q)
+    return(depths, ave, quarts)
 
 
 def make_silly_boxplot(vals, outpath, names=None, title="", yline=None):
+    """
+    yline can either be an number or a tuple: (25%, 50%, 75% quartiles)
+    """
     fig = pyplot.figure(figsize=(6, 6)) # in inches
     ax = pyplot.axes()
     if isinstance(vals[0], list):
@@ -466,7 +471,15 @@ def make_silly_boxplot(vals, outpath, names=None, title="", yline=None):
                         y=d + random.uniform(-.2, .2),
                         alpha=.3)
     if yline is not None:
-        pyplot.axhline(yline, color="green"),
+        if isinstance(yline, tuple):
+            print(yline)
+            assert len(yline)== 3,\
+                "yline must either be a single number or a 3-lenght tuple"
+            pyplot.axhline(yline[0], color="green", linestyle="--"),
+            pyplot.axhline(yline[1], color="green"),
+            pyplot.axhline(yline[2], color="green", linestyle="--"),
+        else:
+            pyplot.axhline(yline, color="green"),
     pyplot.title(title)
     fig.savefig(outpath)
 
@@ -685,9 +698,9 @@ def main(args, logger=None):
             G.add_edge(neigh.name, node.name)
 
     # get the depths of the big contigs
-    depths_of_all_nodes, ave_depth_all_node = get_depth_of_big_nodes(
+    depths_of_all_nodes, ave_depth_all_node, qs_all = get_depth_of_big_nodes(
         G, threshold=0)
-    depths_of_big_nodes, ave_depth_big_node = get_depth_of_big_nodes(
+    depths_of_big_nodes, ave_depth_big_node, qs_big = get_depth_of_big_nodes(
         G, threshold=4000)
     if PLOT:
         make_silly_boxplot(
@@ -696,6 +709,7 @@ def main(args, logger=None):
             title="Depths of Nodes in Assembly Graph",
             outpath=os.path.join(output_root, "average_node_depths.pdf")
         )
+
     ########################################################################
     # collapse nodes where partial loci neighbor full-length
     collapsed = []
@@ -939,8 +953,8 @@ def main(args, logger=None):
             make_silly_boxplot(
                 vals=[x for x in set_region_path_nodes_normalized_depth.values()],
                 outpath=os.path.join(output_root, "normalized_depths_of_%s_nodes.pdf" % region),
-                title= "Normalized depths of nodes connected to %s"  % region,
-                yline=ave_depth_big_node,
+                title= "Normalized depths of nodes connected to %s" % region,
+                yline=(qs_big[0], ave_depth_big_node, qs_big[2])
             )
 
         logger.debug("determining the depths of the %s paths" % region)
@@ -955,7 +969,7 @@ def main(args, logger=None):
                 vals=all_region_path_depths,
                 outpath=os.path.join(output_root, "normalized_depths_of_%s_exiting_paths.pdf" % region),
                 title= "Depths of paths connected to %s" % region,
-                yline=ave_depth_big_node,
+                yline=(qs_big[0], ave_depth_big_node, qs_big[2])
             )
         subgraphs[region] = {
             "raw_paths": out_paths_region_raw,

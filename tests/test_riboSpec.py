@@ -31,19 +31,7 @@ class RiboSpecTest(unittest.TestCase):
     """
     def setUp(self):
         self.results_dir = os.path.join(os.path.dirname(__file__),
-                                        "output_riboSim_tests")
-        self.fasta = os.path.join(
-            os.path.dirname(__file__),
-            "references", "riboSim_references", "original.fasta")
-        self.temp_fasta = os.path.join(
-            os.path.dirname(__file__),
-            "references", "riboSim_references", "new.fasta")
-        self.temp_fasta2 = os.path.join(
-            os.path.dirname(__file__),
-            "references", "riboSim_references", "new2.fasta")
-        self.mut_fasta = os.path.join(
-            os.path.dirname(__file__),
-            "references", "riboSim_references", "mutated_ten_seed_27.fasta")
+                                        "output_riboSpec_tests")
         self.to_be_removed = []
 
     def test_graph(self):
