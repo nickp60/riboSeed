@@ -591,6 +591,11 @@ def filter_bam_AS(inbam, outsam, score, logger=None):
             pass
     bam.close()
     logger.debug("Reads after filtering: %i", written)
+    # if no reads pass the filtering score
+    if written == 0:
+        raise ValueError("No reads pass the filtering score! This commonly happens with " +
+                         "short (<65bp) reads. Try rerunning with a decreased --score_min" +
+                         " argument|")
     if notag != 0:
         logger.debug("Reads lacking alignment score: %i", notag)
     return score_list
