@@ -444,13 +444,14 @@ def main(args):
         blast_full=False,
         verbosity=conf.SCORE_VERBOSITY)
 
-    # So we dont get too far ahead of outselves")
-    logger.info("\nCheck all the argumentss provided\n")
-    rscan.get_args(scan_args)
-    rselect.get_args(select_args)
-    rseed.get_args(seed_args)
-    rsketch.get_args(sketch_args)
-    rscore.get_args(score_args)
+    # TODO:
+    # # So we dont get too far ahead of outselves")
+    # logger.info("\nCheck all the argumentss provided\n")
+    # rscan.get_args(scan_args)
+    # rselect.get_args(select_args)
+    # rseed.get_args(seed_args)
+    # rsketch.get_args(sketch_args)
+    # rscore.get_args(score_args)
     
     
     logger.info("\nrunning riboScan\n")
