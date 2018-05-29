@@ -23,7 +23,7 @@ from pyutilsnrw.utils3_5 import combine_contigs
 from .shared_methods import set_up_logging
 
 
-def get_args():  # pragma: no cover
+def get_args(test_args):  # pragma: no cover
     parser = argparse.ArgumentParser(prog="ribo score",
         description="This does some simple blasting to detect correctness " +
         "of riboSeed results")
@@ -63,7 +63,10 @@ def get_args():  # pragma: no cover
                         "default: %(default)s")
     # parser.add_argument("-t", "--blast_type",
     #                     help="blastn or tblastx", default="tblastx")
-    args = parser.parse_args(sys.argv[2:])
+    if test_args is None:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args(test_args)
     return(args)
 
 

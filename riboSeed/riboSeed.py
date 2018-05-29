@@ -69,7 +69,7 @@ from .shared_methods import parse_clustered_loci_file, pad_genbank_sequence, \
 SAMTOOLS_MIN_VERSION = '1.3.1'
 
 
-def get_args():  # pragma: no cover
+def get_args(test_args):  # pragma: no cover
     """
     """
     parser = argparse.ArgumentParser(prog="ribo seed",
@@ -120,12 +120,12 @@ def get_args():  # pragma: no cover
                           default=False,
                           help="Don't do an assembly, just generate the long" +
                           " read 'seeds'; default: %(default)s")
-    optional.add_argument("-n", "--experiment_name", dest='exp_name',
+    optional.add_argument("-n", "--experiment_name", dest='experiment_name',
                           action="store",
                           help="prefix for results files; " +
                           "default: %(default)s",
                           default="riboSeed", type=str)
-    optional.add_argument("--mapper", dest='method',
+    optional.add_argument("--mapper", dest='mapper',
                           action="store", choices=["smalt", "bwa"],
                           help="available mappers: smalt and bwa; " +
                           "default: %(default)s",
@@ -323,7 +323,10 @@ def get_args():  # pragma: no cover
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
-    args = parser.parse_args(sys.argv[2:])
+    if test_args is None:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args(test_args)
     return args
 
 
@@ -2173,7 +2176,7 @@ def define_score_minimum(args, readlen, iteration, logger):
     if not args.score_min:
         # This makes it such that score minimum is now more stringent
         # with each mapping.  Too campy? probably.
-        if args.method == 'smalt':
+        if args.mapper == 'smalt':
             scaling_factor = 1.0 - (
                 1.0 / (2.0 + float(iteration)))
             score_minimum = int(readlen * scaling_factor)
@@ -2181,7 +2184,7 @@ def define_score_minimum(args, readlen, iteration, logger):
                 "Mapping with min_score of %f2 (%f2 of read length, %f2)",
                 scaling_factor, score_minimum, readlen)
         else:
-            assert args.method == 'bwa', "must be either smalt or bwa"
+            assert args.mapper == 'bwa', "must be either smalt or bwa"
             logger.debug("using the default minimum score for BWA")
             score_minimum = None
     else:
@@ -2362,7 +2365,7 @@ def main(args, logger=None):
                         smalt=args.smalt_exe,
                         quast=args.quast_exe,
                         bcftools=args.bcftools_exe,
-                        method=args.method)
+                        method=args.mapper)
         sys_exes.python = sys_exes.check_spades_python_version(logger=logger)
     except Exception as e:
         logger.error(e)
@@ -2392,7 +2395,7 @@ def main(args, logger=None):
         logger.error("Cannot use samtools 1.5! see samtools github issue #726")
         sys.exit(1)
     # check bambamc is installed proper if using smalt
-    if args.method == "smalt":
+    if args.mapper == "smalt":
         logger.info("SMALT is the selected mapper")
         test_smalt_cmds = get_smalt_full_install_cmds(smalt_exe=sys_exes.smalt,
                                                       logger=logger)
@@ -2451,7 +2454,7 @@ def main(args, logger=None):
     seedGenome.master_ngs_ob = NgsLib(
         name="master",
         master=True,
-        make_dist=args.method == "smalt",
+        make_dist=args.mapper == "smalt",
         readF=args.fastq1,
         readR=args.fastq2,
         readS0=args.fastqS1,
@@ -2635,7 +2638,7 @@ def main(args, logger=None):
         # Run commands to map to the genome
         # the exe argument is Exes.mapper because that is what is checked
         # during object instantiation
-        if args.method == "smalt":
+        if args.mapper == "smalt":
             # # get rid of bwa mapper default args
             # if args.mapper_args == '-L 0,0 -U 0':
             #     args.mapper_args =
@@ -2652,7 +2655,7 @@ def main(args, logger=None):
                 scoring="match=1,subst=-4,gapopen=-4,gapext=-3",
                 logger=logger)
         else:
-            assert args.method == "bwa", "must be either bwa or smalt"
+            assert args.mapper == "bwa", "must be either bwa or smalt"
             map_percent, score_list, score_minimum = map_to_genome_ref_bwa(
                 mapping_ob=seedGenome.iter_mapping_list[
                     seedGenome.this_iteration],
@@ -2686,7 +2689,7 @@ def main(args, logger=None):
         #   provided via commandline
         if seedGenome.this_iteration == 0:
             # do info for smalt mapping
-            if args.method == "bwa":
+            if args.mapper == "bwa":
                 fig_dir = os.path.join(output_root, "figs")
                 os.makedirs(fig_dir)
                 # either use defined min or use the same heuristic as mapping
@@ -3015,7 +3018,7 @@ def main(args, logger=None):
             logger.error(e)
     # make dir for easy downloading from cluster
     copy_to_handy_dir(outdir=os.path.join(output_root, "mauve"),
-                      pre=args.exp_name,
+                      pre=args.experiment_name,
                       ref_gb=args.reference_genbank,
                       skip_control=args.skip_control,
                       seedGenome=seedGenome,

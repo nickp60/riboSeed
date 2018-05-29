@@ -32,8 +32,7 @@ def get_args():  # pragma: no cover
 
 
 def make_config_header():
-    hashbang = ["#!/usr/bin/env python3",
-                "#-*- coding: utf-8 -*-"]
+    hashbang = []
     copy_header = [
         "# Copyright 2017, National University of Ireland and The James Hutton Insitute",
         "# Author: Nicholas Waters",

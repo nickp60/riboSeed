@@ -59,7 +59,7 @@ bgcols = {  # pragma: no cover
 }
 
 
-def get_args():  # pragma: no cover
+def get_args(test_args):  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
     """
@@ -106,7 +106,10 @@ def get_args():  # pragma: no cover
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
-    args = parser.parse_args(sys.argv[2:])
+    if test_args is None:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args(test_args)
     return args
 
 

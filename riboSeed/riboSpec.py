@@ -31,6 +31,9 @@ from copy import deepcopy
 
 
 try:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
     from matplotlib import pyplot, patches
     PLOT = True
 except Exception as e:  # likely an ImportError, but not taking chances
@@ -47,8 +50,6 @@ from .shared_methods import set_up_logging, make_barrnap_cmd
 
 
 class FastgNode(object):
-    # newid = itertools.count()
-
     def __init__(self, name=None, length=None, cov=None,
                  reverse_complimented=None, neighbor_list=None, raw=None):
         # self.index = next(FastgNode.newid)
@@ -70,11 +71,6 @@ class FastgNode(object):
                        str(self.reverse_complimented),
                        "None" if self.raw is None else self.raw,
                    )
-
-
-partial_list = [["EDGE_128_length_64_cov_224.111':EDGE_130_length_113_cov_395.017;", 'barrnap:0.7', 'rRNA', '2', '62', '0.00025', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_128_length_64_cov_224.111:EDGE_246_length_232_cov_51.2034,EDGE_326_length_102_cov_132.553';", 'barrnap:0.7', 'rRNA', '3', '63', '0.00025', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_129_length_111_cov_224.071':EDGE_130_length_113_cov_395.017;", 'barrnap:0.7', 'rRNA', '49', '109', '8.3e-05', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_129_length_111_cov_224.071:EDGE_363_length_3027_cov_329.236';", 'barrnap:0.7', 'rRNA', '3', '63', '8.3e-05', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 51 percent of the 5S ribosomal RNA'], ["EDGE_130_length_113_cov_395.017':EDGE_128_length_64_cov_224.111,EDGE_129_length_111_cov_224.071;", 'barrnap:0.7', 'rRNA', '11', '112', '1.3e-09', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ['EDGE_130_length_113_cov_395.017:EDGE_332_length_56_cov_246,EDGE_333_length_99_cov_156.886;', 'barrnap:0.7', 'rRNA', '2', '103', '1.3e-09', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ["EDGE_245_length_1702_cov_344.636':EDGE_136_length_238_cov_185.197',EDGE_244_length_141_cov_128.326;", 'barrnap:0.7', 'rRNA', '16', '1553', '0', '-', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ['EDGE_245_length_1702_cov_344.636:EDGE_289_length_61_cov_160.167,EDGE_290_length_90_cov_217;', 'barrnap:0.7', 'rRNA', '150', '1687', '0', '+', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ["EDGE_246_length_232_cov_51.2034':EDGE_128_length_64_cov_224.111';", 'barrnap:0.7', 'rRNA', '179', '232', '0.0033', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_246_length_232_cov_51.2034:EDGE_332_length_56_cov_246';", 'barrnap:0.7', 'rRNA', '1', '54', '0.0033', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_326_length_102_cov_132.553':EDGE_363_length_3027_cov_329.236';", 'barrnap:0.7', 'rRNA', '1', '54', '0.0045', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_326_length_102_cov_132.553:EDGE_128_length_64_cov_224.111';", 'barrnap:0.7', 'rRNA', '49', '102', '0.0045', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA (partial);note=aligned only 45 percent of the 5S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236':EDGE_362_length_57_cov_268.5,EDGE_398_length_98_cov_95.6977';", 'barrnap:0.7', 'rRNA', '105', '3005', '0', '-', '.', 'Name=23S_rRNA;product=23S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236:EDGE_129_length_111_cov_224.071',EDGE_326_length_102_cov_132.553;", 'barrnap:0.7', 'rRNA', '23', '2923', '0', '+', '.', 'Name=23S_rRNA;product=23S ribosomal RNA']]
-
-strict_list = [["EDGE_130_length_113_cov_395.017':EDGE_128_length_64_cov_224.111,EDGE_129_length_111_cov_224.071;", 'barrnap:0.7', 'rRNA', '11', '112', '1.3e-09', '-', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ['EDGE_130_length_113_cov_395.017:EDGE_332_length_56_cov_246,EDGE_333_length_99_cov_156.886;', 'barrnap:0.7', 'rRNA', '2', '103', '1.3e-09', '+', '.', 'Name=5S_rRNA;product=5S ribosomal RNA'], ["EDGE_245_length_1702_cov_344.636':EDGE_136_length_238_cov_185.197',EDGE_244_length_141_cov_128.326;", 'barrnap:0.7', 'rRNA', '16', '1553', '0', '-', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ['EDGE_245_length_1702_cov_344.636:EDGE_289_length_61_cov_160.167,EDGE_290_length_90_cov_217;', 'barrnap:0.7', 'rRNA', '150', '1687', '0', '+', '.', 'Name=16S_rRNA;product=16S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236':EDGE_362_length_57_cov_268.5,EDGE_398_length_98_cov_95.6977';", 'barrnap:0.7', 'rRNA', '105', '3005', '0', '-', '.', 'Name=23S_rRNA;product=23S ribosomal RNA'], ["EDGE_363_length_3027_cov_329.236:EDGE_129_length_111_cov_224.071',EDGE_326_length_102_cov_132.553;", 'barrnap:0.7', 'rRNA', '23', '2923', '0', '+', '.', 'Name=23S_rRNA;product=23S ribosomal RNA']]
 
 
 def get_args():  # pragma: no cover
@@ -99,15 +95,6 @@ def get_args():  # pragma: no cover
         help="fastg assembly graph from SPAdes",
         required=True)
     optional = parser.add_argument_group('optional arguments')
-    # optional.add_argument("-b", "--bam", dest='mapping_bam', action="store",
-    #                       help="indexed mapping file of reads to the " +
-    #                       "reference; required if no assembly graph is used",
-    #                       type=str, default=None)
-    # optional.add_argument("-r", "--reference", dest='reference', action="store",
-    #                       help="the same reference fasta used to generate " +
-    #                       "mapping file; "
-    #                       "required if no assembly graph is used",
-    #                       type=str, default=None)
     optional.add_argument("--plot_graphs", dest='plot_graphs',
                           help="draw the network graphs ",
                           action="store_true")
@@ -119,15 +106,6 @@ def get_args():  # pragma: no cover
                           " 1 = debug(), 2 = info(), 3 = warning(), " +
                           "4 = error() and 5 = critical(); " +
                           "default: %(default)s")
-    # # TODO  Make these check a config file
-    # optional.add_argument("--spades_exe", dest="spades_exe",
-    #                       action="store", default="spades.py",
-    #                       help="Path to SPAdes executable; " +
-    #                       "default: %(default)s")
-    # optional.add_argument("--samtools_exe", dest="samtools_exe",
-    #                       action="store", default="samtools",
-    #                       help="Path to samtools executable; " +
-    #                       "default: %(default)s")
     optional.add_argument("--barrnap_exe", dest="barrnap_exe",
                           action="store", default="barrnap",
                           help="Path to barrnap executable;" +
@@ -667,22 +645,18 @@ def main(args, logger=None):
         thresh=0.1,
         evalue=10,
         kingdom="bac")
-    if DEBUG:
-        gff_list = strict_list
-        gff_list_partial = partial_list
-    else:
-        for cmd in [barrnap_cmd, barrnap_cmd_partial]:
-            logger.info("running barrnap cmd: %s", cmd)
-            subprocess.run(cmd,
-                           shell=sys.platform != "win32",
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE,
-                           check=True)
-        # determine which ones are our 16s, 23s, and 5s nodes
-        gff_list = make_gff_list(barrnap_gff)
-        logger.debug(gff_list)
-        gff_list_partial = make_gff_list(barrnap_gff_partial)
-        logger.debug(gff_list_partial)
+    for cmd in [barrnap_cmd, barrnap_cmd_partial]:
+        logger.info("running barrnap cmd: %s", cmd)
+        subprocess.run(cmd,
+                       shell=sys.platform != "win32",
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE,
+                       check=True)
+    # determine which ones are our 16s, 23s, and 5s nodes
+    gff_list = make_gff_list(barrnap_gff)
+    logger.debug(gff_list)
+    gff_list_partial = make_gff_list(barrnap_gff_partial)
+    logger.debug(gff_list_partial)
 
     # dict  of {gene: {partial: [nodes]; solid: [nodes]}}has keys of gense, where the value are dict
     rrnas = make_rRNAs_dict(gff_list, gff_list_partial)

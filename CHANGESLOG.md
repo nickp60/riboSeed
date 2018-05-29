@@ -1,6 +1,12 @@
 #  The Change Log
 This is a bit overdue, but better better Nate than lever, right?
 ----
+
+## 0.4.52
+- added checking for args when using `ribo sun`
+- fix dtt issues
+
+
 ## 0.3.0
 ### Features
 - added filters to halt subassembly of contigs with poor coverage

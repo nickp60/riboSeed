@@ -33,7 +33,7 @@ from .shared_methods import set_up_logging
 from pyutilsnrw.utils3_5 import multisplit
 
 
-def get_args():  # pragma: no cover
+def get_args(test_args=None):  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
     """
@@ -82,7 +82,10 @@ def get_args():  # pragma: no cover
                           "default: %(default)s")
     optional.add_argument("--debug", dest="debug", action="store_true",
                           help="Enable debug messages", default=False)
-    args = parser.parse_args(sys.argv[2:])
+    if test_args is None:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args(test_args)
     return args
 
 

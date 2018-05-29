@@ -26,7 +26,8 @@ from . import riboScan as rscan
 from . import riboSelect as rsel
 from . import riboSeed as rseed
 from . import riboScore as rscore
-# note that we import sketch later in case of matplotlib gotchas
+# import this here in case there are issues with mpl''s X windows
+from . import riboSketch as rsketch
 from . import make_riboSeed_config as mrc
 
 
@@ -310,6 +311,30 @@ def new_log_for_diff(logfile_path):
                 outlog.write(splitline)
 
 
+def simulate_args_from_namespace(n, positional=[]):
+    """ check an argparse namespace against a module's get_args method.
+    Ideally, there would be something built in to argparse, but no such luck.
+    This tries to reconstruct the arg list that argparse.parse_args would expect
+    """
+    arg_list = [[k, v] for k, v in sorted(vars(n).items())]
+    argparse_formatted_list = []
+    for l in arg_list:
+        ####  deal with flag arguments (store true/false)
+        if l[1] == True:
+            argparse_formatted_list.append("--{}".format(l[0]))
+        elif l[1] == False or l[1] is None:
+            pass  # dont add this arg
+        # add positional argments
+        elif l[0] in positional:
+            argparse_formatted_list.append(str(l[0]))
+        # add the named arguments
+        else:
+            argparse_formatted_list.append("--{}".format(l[0]))
+            argparse_formatted_list.append(str(l[1]))
+    return argparse_formatted_list
+        
+
+                
 def main(args):
     # set up output directory and logging
     output_root = os.path.abspath(os.path.expanduser(args.RUN_OUTPUT))
@@ -392,10 +417,10 @@ def main(args):
         fastqS1=conf.RUN_FASTQS1,
         just_seed=conf.RUN_JUST_SEED,
         min_flank_depth=conf.RUN_MIN_FLANKING_DEPTH,
-        exp_name=experiment_name,
+        experiment_name=experiment_name,
         clean_temps=conf.RUN_CLEAN_TEMPS,
         flanking=conf.RUN_FLANKING,
-        method=conf.SEED_MAP_METHOD,
+        mapper=conf.SEED_MAP_METHOD,
         iterations=conf.RUN_ITERATIONS,
         damn_the_torpedos=conf.damn_the_torpedos,
         cores=conf.RUN_CORES,
@@ -445,14 +470,19 @@ def main(args):
         verbosity=conf.SCORE_VERBOSITY)
 
     # TODO:
-    # # So we dont get too far ahead of outselves")
-    # logger.info("\nCheck all the argumentss provided\n")
-    # rscan.get_args(scan_args)
+    # So we dont get too far ahead of outselves")
+    logger.info("\nCheck all the argumentss provided\n")
+
+    rscan.get_args(simulate_args_from_namespace(scan_args, positional=["contigs"]))
+    rsel.get_args(simulate_args_from_namespace(select_args, positional=["genbank_genome"]))
+    rseed.get_args(simulate_args_from_namespace(seed_args, positional=["clustered_loci_txt"]))
+    rsketch.get_args(simulate_args_from_namespace(sketch_args, positional=["indir"]))
+    rscore.get_args(simulate_args_from_namespace(score_args, positional=["indir"]))
     # rselect.get_args(select_args)
     # rseed.get_args(seed_args)
     # rsketch.get_args(sketch_args)
-    # rscore.get_args(score_args)
-    
+    # rscore.get_args(score_args)s
+    sys.exit()
     
     logger.info("\nrunning riboScan\n")
     rscan.main(scan_args, logger)
@@ -465,17 +495,15 @@ def main(args):
         rsel.main(select_args, logger)
     logger.info("\nrunning riboSeed\n")
     rseed.main(seed_args, logger)
-    # if conf.RUN_SKETCH:
-    #     # import this here in case there are issues with mpl''s X windows
-    #     from . import riboSketch as rsketch
-    #     if conf.MAUVE_JAR is not None:
-    #         logger.info("\nrunning riboSketch\n")
-    #         rsketch.main(sketch_args, logger=logger)
-    #     else:
-    #         logger.info(
-    #             "Skipping riboSketch: no Mauve.jar found. To fix, " +
-    #             "add the path to Mauve.jar in the config file from this " +
-    #             "run, and re-run with -c path/to/config.py")
+    if conf.RUN_SKETCH:
+        if conf.MAUVE_JAR is not None:
+            logger.info("\nrunning riboSketch\n")
+            rsketch.main(sketch_args, logger=logger)
+        else:
+            logger.info(
+                "Skipping riboSketch: no Mauve.jar found. To fix, " +
+                "add the path to Mauve.jar in the config file from this " +
+                "run, and re-run with -c path/to/config.py")
     if conf.RUN_SCORE:
         if conf.BLAST_EXE is not None:
             logger.info("\nrunning riboScore\n")
