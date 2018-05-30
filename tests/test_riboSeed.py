@@ -881,7 +881,7 @@ class riboSeedShallow(unittest.TestCase):
                                    serialize=False, logger=logger))
 
     def test_define_score_minimum_smalt(self):
-        testargs = Namespace(method="smalt",
+        testargs = Namespace(mapper="smalt",
                              score_min=None)
         score_minimum = define_score_minimum(
             args=testargs, iteration=0,
@@ -889,7 +889,7 @@ class riboSeedShallow(unittest.TestCase):
         self.assertEqual(score_minimum, 50)
 
     def test_define_score_minimum_bwa(self):
-        testargs = Namespace(method="bwa",
+        testargs = Namespace(mapper="bwa",
                              score_min=None)
         score_minimum = define_score_minimum(
             args=testargs, iteration=0,
@@ -897,7 +897,7 @@ class riboSeedShallow(unittest.TestCase):
         self.assertEqual(score_minimum, None)
 
     def test_define_score_minimum_explicit(self):
-        testargs = Namespace(method="smalt",
+        testargs = Namespace(mapper="smalt",
                              score_min=33)
         score_minimum = define_score_minimum(
             args=testargs, iteration=0,
@@ -905,7 +905,7 @@ class riboSeedShallow(unittest.TestCase):
         self.assertEqual(score_minimum, 33)
 
     def test_define_score_minimum_badmapper(self):
-        testargs = Namespace(method="cartography",
+        testargs = Namespace(mapper="cartography",
                              score_min=None)
         with self.assertRaises(AssertionError):
             score_minimum = define_score_minimum(
@@ -913,7 +913,7 @@ class riboSeedShallow(unittest.TestCase):
                 readlen=100, logger=logger)
 
     def test_define_score_minimum_badmin(self):
-        testargs = Namespace(method="bwa",
+        testargs = Namespace(mapper="bwa",
                              score_min=101)
         with self.assertRaises(ValueError):
             score_minimum = define_score_minimum(
