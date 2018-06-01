@@ -321,6 +321,19 @@ def neighborhood_by_n(G, node, n):
             if length == n]
 
 
+def get_nodes_weight_instead_of_edges(u, v, d):
+    print(u)
+    print(v)
+    print(d)
+    # ie from  https://stackoverflow.com/questions/49136427/
+    # node_u_wt = G.nodes[u].get('node_weight', 1)
+    node_v_wt = G.nodes[v].get('length', 1)
+    # edge_wt = d.get('weight', 1)
+    return node_v_wt
+
+
+
+
 def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     """
     I needed a way to see if a given node was within a certain distance from a source node by the shortest path.  This could be done with the dijkstra_predecessor_and_distance function, but that rejects any path >= the cutoff, whereas I need to retain the ones where the cutoff occurs within the path too.  So this takes a list of ALL the paths and their lengths (from  the dictionaries returned by networkx's dijkstra_predecessor_and_distance used without a cutoff), and then recursivly iterates through the network.
@@ -337,12 +350,22 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     interior_nodes = [source]
     border_nodes = []
     nodesDict = dict(G.nodes(data=True))
-    paths_dict = nx.single_source_dijkstra(G, source)
-    for target, path_to in paths_dict[1].items():
-        # print(target)
-        # print(path_to)
+    # changed this from dijkstra path because that was getting the shortes path by number of intermnediate nodes.  We can only weight nodes, not edges, so this was problematic
+    paths_dict = {}
+    # first, use single_source_dij to get all connected nodes.
+    get_node_weight = lambda u,v,d: G.node[v].get('length', 0)
+
+    targets_path = nx.single_source_dijkstra(G, source, weight=get_node_weight)[0]
+    with open("tmp_paths.txt", "w") as out:
+        for target, path_to in paths_dict.items():
+            out.write(str(target) + "     " + " ".join([str(x) for x in path_to]) + "\n")
+    sys.exit()
+    if 0:
         path_len = 0
+        # ignore paths that travel through the "bad places"
         if len(set(path_to).intersection(set(ignored_nodes))) > 0:
+            # print("ignoring path")
+            # print(path_to)                  
             continue
         for i, node in enumerate(path_to):
             if i > 0: # ignore source
@@ -352,6 +375,9 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
                     break
                 else:
                     interior_nodes.append(node)
+        print(path_to)
+        print(path_len)
+    sys.exit()
     return (set(interior_nodes), set(border_nodes))
 
 
@@ -721,8 +747,9 @@ def main(args, logger=None):
     border_nodes = []
     for i in rrnas["16S"]["solid"]:
         interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=[])
-        print("16S neighbors")
+        print("16S node %i (close) neighbors", i)
         print(interior)
+        print("16S node %i (border) neighbors", i)
         print(border)
         interior_nodes.extend(interior)
         border_nodes.extend(border)
@@ -730,7 +757,9 @@ def main(args, logger=None):
         for i in rrnas["23S"]["solid"]:
             interior, border = neighborhood_by_length(
                 G, i, cutoff=1000, ignored_nodes=rrnas["16S"]["solid"])
+            print("23S node %i (close) neighbors", i)
             print(interior)
+            print("23S node %i (border) neighbors", i)
             print(border)
             interior_nodes.extend(interior)
             border_nodes.extend(border)
