@@ -355,17 +355,18 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     # first, use single_source_dij to get all connected nodes.
     get_node_weight = lambda u,v,d: G.node[v].get('length', 0)
 
-    targets_path = nx.single_source_dijkstra(G, source, weight=get_node_weight)[0]
-    with open("tmp_paths.txt", "w") as out:
-        for target, path_to in paths_dict.items():
-            out.write(str(target) + "     " + " ".join([str(x) for x in path_to]) + "\n")
-    sys.exit()
-    if 0:
+    targets_path = nx.single_source_dijkstra(G, source, weight=get_node_weight)[1]
+    for target, path_to in targets_path.items():
+    #         print(target)
+    #         print(path_to)
+    #         out.write(str(target) + "     " + " ".join([str(x) for x in path_to]) + "\n")
+    # sys.exit()
+    # if 0:
         path_len = 0
         # ignore paths that travel through the "bad places"
         if len(set(path_to).intersection(set(ignored_nodes))) > 0:
             # print("ignoring path")
-            # print(path_to)                  
+            # print(path_to)
             continue
         for i, node in enumerate(path_to):
             if i > 0: # ignore source
@@ -375,9 +376,9 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
                     break
                 else:
                     interior_nodes.append(node)
-        print(path_to)
-        print(path_len)
-    sys.exit()
+        # print(path_to)
+        # print(path_len)
+    # sys.exit()
     return (set(interior_nodes), set(border_nodes))
 
 
@@ -636,13 +637,15 @@ def main(args, logger=None):
         args.cores = multiprocessing.cpu_count()
 
     # make a list of node objects, a adjacency matrix M, and a DiGRaph object G
+    logger.info("Reading assembly graph")
     node_list, M, G = parse_fastg(f=args.assembly_graph)
 
     if PLOT:
         plot_adjacency_matrix(
             M, node_order=None, partitions=[], colors=[],
             outpath=os.path.join(output_root, "full_adjacency_matrix.pdf"))
-    #  write out the adjacency matrix
+    logger.info("Writing out adjacency graph")
+
     with open(os.path.join(args.output, "tab.txt"), "w") as o:
         for line in M:
             o.write("\t".join([str(x) for x in line]) + "\n")
