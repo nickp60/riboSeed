@@ -321,19 +321,6 @@ def neighborhood_by_n(G, node, n):
             if length == n]
 
 
-def get_nodes_weight_instead_of_edges(u, v, d):
-    print(u)
-    print(v)
-    print(d)
-    # ie from  https://stackoverflow.com/questions/49136427/
-    # node_u_wt = G.nodes[u].get('node_weight', 1)
-    node_v_wt = G.nodes[v].get('length', 1)
-    # edge_wt = d.get('weight', 1)
-    return node_v_wt
-
-
-
-
 def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     """
     I needed a way to see if a given node was within a certain distance from a source node by the shortest path.  This could be done with the dijkstra_predecessor_and_distance function, but that rejects any path >= the cutoff, whereas I need to retain the ones where the cutoff occurs within the path too.  So this takes a list of ALL the paths and their lengths (from  the dictionaries returned by networkx's dijkstra_predecessor_and_distance used without a cutoff), and then recursivly iterates through the network.
