@@ -32,6 +32,16 @@ class RiboSpecTest(unittest.TestCase):
     def setUp(self):
         self.results_dir = os.path.join(os.path.dirname(__file__),
                                         "output_riboSpec_tests")
+        self.ref_dir = os.path.join(
+            os.path.dirname(__file__), "references", "")
+        self.spec_ref_dir = os.path.join(
+            os.path.dirname(__file__),
+            "references",
+            "riboSpec_references", "")
+        self.spades_dir = os.path.join(
+            os.path.dirname(__file__),
+            "references",
+            "riboSpec_references", "spades_test", "")
         self.to_be_removed = []
 
     def test_graph(self):
@@ -72,6 +82,11 @@ class RiboSpecTest(unittest.TestCase):
         print( "------------------------------------------")
         # print(nx.dijkstra_predecessor_and_distance(DG, 4))
         # incl, border = rs.neighborhood_by_length(DG, source=4, cutoff=10)
+
+
+    def test_spades_parse(self):
+        t = rs.get_fastgs_from_spades_dir(self.spades_dir)
+        print(t)
 
     def tearDown(self):
         """

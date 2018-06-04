@@ -24,6 +24,7 @@ import os
 import re
 import random
 import math
+import glob
 import subprocess
 import argparse
 import multiprocessing
@@ -92,7 +93,9 @@ def get_args():  # pragma: no cover
         "-g", "--assemgly_graph",
         dest='assembly_graph',
         action="store", default='', type=str,
-        help="fastg assembly graph from SPAdes",
+        help="fastg assembly graph from SPAdes or a SPAdes output directory." +
+        " If the latter, riboSpec will be run on both the final assembly " +
+        "graph, and the intermidiate graphs for each k-mer.",
         required=True)
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("--plot_graphs", dest='plot_graphs',
@@ -603,29 +606,10 @@ def remove_duplicate_nested_lists(l):
     return L
 
 
-def main(args, logger=None):
-    output_root = os.path.abspath(os.path.expanduser(args.output))
-    try:
-        os.makedirs(output_root, exist_ok=False)
-    except OSError:
-        print("Output directory already exists; exiting...")
-        sys.exit(1)
-    log_path = os.path.join(output_root, "riboSpec.log")
-    if logger is None:
-        logger = set_up_logging(verbosity=args.verbosity,
-                                outfile=log_path,
-                                name=__name__)
-
-    logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
-    logger.debug("All settings used:")
-    for k, v in sorted(vars(args).items()):
-        logger.debug("%s: %s", k, str(v))
-    if args.cores is None:
-        args.cores = multiprocessing.cpu_count()
-
+def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     # make a list of node objects, a adjacency matrix M, and a DiGRaph object G
-    logger.info("Reading assembly graph")
-    node_list, M, G = parse_fastg(f=args.assembly_graph)
+    logger.info("Reading assembly graph: %s", fastg)
+    node_list, M, G = parse_fastg(f=fastg)
 
     if PLOT:
         plot_adjacency_matrix(
@@ -646,7 +630,7 @@ def main(args, logger=None):
     barrnap_gff = os.path.join(output_root, "strict_barrnapped.gff")
     barrnap_gff_partial = os.path.join(output_root, "partial_barrnapped.gff")
     barrnap_cmd = make_barrnap_cmd(
-        infasta=args.assembly_graph,
+        infasta=fastg,
         outgff=barrnap_gff,
         exe=args.barrnap_exe,
         threads=args.cores,
@@ -654,7 +638,7 @@ def main(args, logger=None):
         evalue=1e-06,
         kingdom="bac")
     barrnap_cmd_partial = make_barrnap_cmd(
-        infasta=args.assembly_graph,
+        infasta=fastg,
         outgff=barrnap_gff_partial,
         exe=args.barrnap_exe,
         threads=args.cores,
@@ -974,10 +958,94 @@ def main(args, logger=None):
     # interpret results
     n_upstream = len(subgraphs["16S"]["filtered_paths"])
     n_downstream = len(subgraphs["23S"]["filtered_paths"])
+    conclusive = "N"
     logger.info("Paths leading to rDNA operon: %i", n_upstream)
     logger.info("Paths exiting  rDNA operon: %i", n_downstream)
     if n_upstream == n_downstream:
         logger.info("This indicates that there are at least %i rDNAs present",
                     n_upstream)
+        conclusive = "Y"
     else:
         logger.info("inconclusive results")
+    # write out results to tidy file.  we are appending in case we have
+    # multiple files.  The columns are file_path, n_in, n_out,
+    # conclusive_or_not
+    outfile = os.path.join(output_root, "riboSpec_results.tab")
+    with open(outfile, "a") as o:
+        o.write(
+            "{fastg}\t{which_k}\t{n_upstream}\t{n_downstream}\t{conclusive}\n".format(
+            **locals()))
+
+
+def get_fastgs_from_spades_dir(d):
+    """ get he paths to the assembly graphs in a spades output dir.
+    There will be one for the main output in the root of the directory,
+    and then one in each of the subdirectories for the different kmer
+    assemblies (ie ./root/K21/assembly_graph.fastg).
+
+    Returns the path to the main assembly graph and a dict of subgraphs,
+    {21: "/path/to/k21/assembly_graph.fastg, ...}
+
+    """
+    main_g = os.path.join(d, "assembly_graph.fastg")
+    assert os.path.exists(main_g), "assembly_graph.fastg not found in  %s" % d
+    # this is silly, but compute time is cheap and
+    # me-figuring-out-how-to-easily-get-k-from-filepath time is not cheap.
+    max_k = 151
+    ks = []
+    for k in range(1,max_k + 1, 2):
+        if len(glob.glob(os.path.join(d, "K" + str(k), ""))) != 0:
+            ks.append(str(k))
+        # k_dirs = glob.glob(os.path.join(d, "K\d*/"))
+    ks_dict = {"final": main_g}
+    for k in ks:
+        k_path = os.path.join(d, "K" + k, "assembly_graph.fastg")
+        assert os.path.exists(k_path), "%s not found"  % k_path
+        ks_dict[k] = k_path
+    return ks_dict
+
+
+def main(args, logger=None):
+    output_root = os.path.abspath(os.path.expanduser(args.output))
+    try:
+        os.makedirs(output_root, exist_ok=False)
+    except OSError:
+        print("Output directory already exists; exiting...")
+        sys.exit(1)
+    log_path = os.path.join(output_root, "riboSpec.log")
+    if logger is None:
+        logger = set_up_logging(verbosity=args.verbosity,
+                                outfile=log_path,
+                                name=__name__)
+
+    logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
+    logger.debug("All settings used:")
+    for k, v in sorted(vars(args).items()):
+        logger.debug("%s: %s", k, str(v))
+    if args.cores is None:
+        args.cores = multiprocessing.cpu_count()
+
+    # check if handling a single output
+    if os.path.isdir(args.assembly_graph):
+        fastg_dict = get_fastgs_from_spades_dir(args.assembly_graph)
+        logger.info("Determining rRNA operon paths for each of the following fastgs:")
+        # these two for loops are not combined cause I wanna see the
+        # input files from the get go
+        for k,v in fastg_dict.items():
+            logger.info(v)
+        for k,v in fastg_dict.items():
+            process_assembly_graph(
+                args=args,
+                fastg=v,
+                output_root=output_root,
+                PLOT=PLOT,
+                which_k=k,
+                logger=logger)
+    else:
+        process_assembly_graph(
+            args=args,
+            fastg=args.assembly_graph,
+            output_root=output_root,
+            PLOT=PLOT,
+            which_k="final",
+            logger=logger)

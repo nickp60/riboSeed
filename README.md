@@ -222,11 +222,30 @@ optional arguments:
 
 ## Known Bugs
 
-* You may run into issues where you get an error about "Unable to connect to X server: None" or localhost:N. Sorry about that; any tips would be useful;  a quick glance at the commit history will show I have spent much time trying to resolve it, without any luck.  If you do run into this, try the following:
+### X server
+
+You may run into issues where you get an error about "Unable to connect to X server: None" or localhost:N. Sorry about that; any tips would be useful;  a quick glance at the commit history will show I have spent much time trying to resolve it, without any luck.  If you do run into this, try the following:
   - connect to the machine with an X session (`ssh -X hostname`)
   - avoid using `gnu screen` if possible, but if you do need to use it, start the `screen` session after ensuring you have a `$DISPLAY` availible through starting the host session with `-X`
 
-* Submitting `--smalt_scoring` with vastly different scoring schemes usually causes an error.
+### Pysam on MacOS
+If you are on MacOS, you may run into an issue with Pysam.
+```
+ImportError: dlopen(/Users/nicholas/miniconda3/envs/ribo/lib/python3.5/site-packages/pysam/libchtslib.cpython-35m-darwin.so, 2): Library not loaded: @rpath/liblzma.5.dylib
+  Referenced from: /Users/nicholas/miniconda3/envs/ribo/lib/libhts.2.dylib
+  Reason: Incompatible library version: libhts.2.dylib requires version 8.0.0 or later, but liblzma.5.dylib provides version 6.0.0
+```
+In this case, try installing by first making a conda env with the `environment.yaml` file, and then installing riboSeed from pip.
+```
+conda env create -y environment.yaml
+source activate ribo
+pip install riboSeed
+```
+
+If you run into malloc issues similar to https://github.com/ablab/spades/issues/9, we recommend running in a VM.
+
+### smalt scoring
+Submitting `--smalt_scoring` with vastly different scoring schemes usually causes an error.
 
 ## Running Tests
 
