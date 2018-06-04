@@ -35,7 +35,7 @@ helpmsg = [
     " -stack      compare coverage depth in rDNA regions to rest of genome",
     " -score      score batches of assemblies with BLASTn",
     " -swap       swap contigs from assemblies",
-    " -spec       use assembly graph to speculate number of rDNA",
+    " -spec       use assembly graph to speculate number of rDNAs",
     " -structure  view the rRNA operon structure across several genomes",
     " -config     write out a blank config file to be used with `run`",
     ""

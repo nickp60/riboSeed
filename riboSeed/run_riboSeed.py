@@ -320,9 +320,10 @@ def simulate_args_from_namespace(n, positional=[]):
     argparse_formatted_list = []
     for l in arg_list:
         ####  deal with flag arguments (store true/false)
-        if l[1] == True:
+        # we check against the value being 1/0, as that is also true/false
+        if l[1] is True :
             argparse_formatted_list.append("--{}".format(l[0]))
-        elif l[1] == False or l[1] is None:
+        elif l[1] is False or l[1] is None:
             pass  # dont add this arg
         # add positional argments
         elif l[0] in positional:
@@ -332,9 +333,9 @@ def simulate_args_from_namespace(n, positional=[]):
             argparse_formatted_list.append("--{}".format(l[0]))
             argparse_formatted_list.append(str(l[1]))
     return argparse_formatted_list
-        
 
-                
+
+
 def main(args):
     # set up output directory and logging
     output_root = os.path.abspath(os.path.expanduser(args.RUN_OUTPUT))
@@ -471,7 +472,7 @@ def main(args):
 
     # TODO:
     # So we dont get too far ahead of outselves")
-    logger.info("\nCheck all the argumentss provided\n")
+    logger.info("\nCheck all the arguments provided\n")
 
     rscan.get_args(simulate_args_from_namespace(scan_args, positional=["contigs"]))
     rsel.get_args(simulate_args_from_namespace(select_args, positional=["genbank_genome"]))
@@ -482,8 +483,7 @@ def main(args):
     # rseed.get_args(seed_args)
     # rsketch.get_args(sketch_args)
     # rscore.get_args(score_args)s
-    sys.exit()
-    
+
     logger.info("\nrunning riboScan\n")
     rscan.main(scan_args, logger)
     if conf.RUN_CLUSTER_FILE is not None:
