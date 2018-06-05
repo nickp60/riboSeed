@@ -109,6 +109,10 @@ def get_args():  # pragma: no cover
                           " 1 = debug(), 2 = info(), 3 = warning(), " +
                           "4 = error() and 5 = critical(); " +
                           "default: %(default)s")
+    optional.add_argument("-m", "--min_contig_len", dest="min_contig_len",
+                          action="store", default=75,
+                          help="Contigs under this length will be collapsed;" +
+                          " default: %(default)s")
     optional.add_argument("--barrnap_exe", dest="barrnap_exe",
                           action="store", default="barrnap",
                           help="Path to barrnap executable;" +
@@ -703,7 +707,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
                     for d in G.edges(part):
                         if d[1] != solid and d[1] not in G.neighbors(solid):
                             # make a bi-directional graph for now
-                        #############################################3
+                            #############################################3
                             """ can we remake the node_list object to reflect these changes?
                             """
                             G.add_edge(solid , d[1])
@@ -713,8 +717,18 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
                     these_collapsed.append(part)
 
         collapsed.extend(these_collapsed)
-    logger.info("marked %i nodes for collapsing:", len(collapsed))
+
+    logger.info("marked %i partial nodes for collapsing:", len(collapsed))
     logger.info(collapsed)
+
+
+    # remove short nodes
+    logger.info("Removing nodes shorter than '-m' arg")
+    for node in G.nodes():
+        if nodes_data[node]["length"] < args.min_contig_len:
+            logger.debug("removing short node %s")
+            collapsed.append(node)
+
 
     ########  Reduce this graph to all nodes within 20kb if a 16S region
     interior_nodes = []
@@ -833,6 +847,18 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
 
         logger.debug("nodes in %s subgraph", region)
         logger.debug(g.nodes())
+
+        # detect tandem repeats:
+        TANDEM = False
+        if region == "16S":
+            # if the any 23S nodes are in the graph, we may have a tandem repeat
+            if (
+                    len(set(g.nodes()).intersection(set(rrnas["23S"]["solid"]))) > 0 or
+                    len(set(g.nodes()).intersection(set(rrnas["23S"]["partial"]))) > 0
+            ):
+                TANDEM = True
+            else:
+                logger.debug("no tandem repeats detected")
 
 
         if PLOT and args.plot_graphs:
