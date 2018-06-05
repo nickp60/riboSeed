@@ -807,7 +807,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
         if n.name in G.nodes():
             subset_node_list.append(n)
     subgraphs = {}
-
+    ANY_TANDEM = "N"
     for region in ["16S", "23S"]:
         REV = False
         # lets check the gff to see if the 16S is a positive or a negative hit:
@@ -849,14 +849,22 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
         logger.debug(g.nodes())
 
         # detect tandem repeats:
-        TANDEM = False
         if region == "16S":
             # if the any 23S nodes are in the graph, we may have a tandem repeat
             if (
                     len(set(g.nodes()).intersection(set(rrnas["23S"]["solid"]))) > 0 or
                     len(set(g.nodes()).intersection(set(rrnas["23S"]["partial"]))) > 0
             ):
-                TANDEM = True
+                ANY_TANDEM = "Y"
+            else:
+                logger.debug("no tandem repeats detected")
+        elif region == "23S":
+            # if the any 16S nodes are in the graph, we may have a tandem repeat
+            if (
+                    len(set(g.nodes()).intersection(set(rrnas["16S"]["solid"]))) > 0 or
+                    len(set(g.nodes()).intersection(set(rrnas["16S"]["partial"]))) > 0
+            ):
+                ANY_TANDEM = "Y"
             else:
                 logger.debug("no tandem repeats detected")
 
@@ -995,11 +1003,11 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
         logger.info("inconclusive results")
     # write out results to tidy file.  we are appending in case we have
     # multiple files.  The columns are file_path, n_in, n_out,
-    # conclusive_or_not
+    # conclusive_or_not, any_tandem_repeats
     outfile = os.path.join(output_root, "riboSpec_results.tab")
     with open(outfile, "a") as o:
         o.write(
-            "{fastg}\t{which_k}\t{n_upstream}\t{n_downstream}\t{conclusive}\n".format(
+            "{fastg}\t{which_k}\t{n_upstream}\t{n_downstream}\t{conclusive}\t{ANY_TANDEM}\n".format(
             **locals()))
 
 
