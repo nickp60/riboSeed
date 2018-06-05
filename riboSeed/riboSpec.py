@@ -581,25 +581,41 @@ def make_rRNAs_dict(gff_list, gff_list_partial):
 
 
 def check_rrnas_dict(rrnas, logger=None):
+    """ this detects which rRNAs we have a solid location for, and 
+    therefore which ones to check for path
+
+    Returns:
+        returns tuple of two Bools, for whether to check 16S, 23S, or both
+    """
+    RUN_16S, RUN_23S = True, True
     if len(rrnas["16S"]["solid"]) >  1:
-        logger.error("it appears that there are distinct 16S rDNAs in the " +
-                     "assenbly graph; this tracing algorithm is not the best" +
-                     "option.  Please review the graph manually to determine" +
-                     "probable number of rDNAs")
+        logger.error(
+            "it appears that there multiple distinct 16S rDNAs in the " +
+            "assenbly graph; this tracing algorithm is not the best" +
+            "option.  Please review the graph manually to determine" +
+            "probable number of rDNAs")
         raise ValueError
     elif len(rrnas["16S"]["solid"]) < 1:
         logger.error("Barrnap failed to detect any full 16S in the assembly graph")
-        raise ValueError
-
+        # raise ValueError
+        RUN_16S = False
     if len(rrnas["23S"]["solid"]) > 1:
-        logger.error("it appears that there are distinct 23S rDNAs in the " +
-                     "assenbly graph; this tracing algorithm is not the best" +
-                     "option.  Please review the graph manually to determine" +
-                     "probable number of rDNAs")
-        raise ValueError
+        logger.error(
+            "it appears that there are distinct 23S rDNAs in the " +
+            "assenbly graph; this tracing algorithm is not the best" +
+            "option.  Please review the graph manually to determine" +
+            "probable number of rDNAs")
+        # raise ValueError
     elif len(rrnas["23S"]["solid"]) < 1:
         logger.error("Barrnap failed to detect any 23S in the assembly graph")
-        raise ValueError
+        # raise ValueError
+        RUN_23S = False
+    # if not RUN_23S and not RUN_16S:
+    #     logger.error("No full rRNAs found in assembly; exiting")
+    #     raise ValueError
+    return (RUN_16S, RUN_23S)
+        
+        
 
 
 def remove_duplicate_nested_lists(l):
@@ -665,7 +681,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     # dict  of {gene: {partial: [nodes]; solid: [nodes]}}has keys of gense, where the value are dict
     rrnas = make_rRNAs_dict(gff_list, gff_list_partial)
     logger.debug(rrnas)
-    check_rrnas_dict(rrnas, logger=logger)
+    RUN_16S, RUN_23S = check_rrnas_dict(rrnas, logger=logger)
 
     # this holds the {data} of the nodes keyed by their name
     nodes_data = dict(G.nodes(data=True))
@@ -809,8 +825,21 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     subgraphs = {}
     ANY_TANDEM = "N"
     for region in ["16S", "23S"]:
+        if (
+                (region == "16S" and not RUN_16S) or
+                (region == "23S" and not RUN_23S)
+        ):
+            logger.info("Skipping proccessing %s nodes", region)
+            subgraphs[region] = {
+                "raw_paths": [],
+                "filtered_paths": [],
+                "graph": None
+            }
+            continue
+
         REV = False
         # lets check the gff to see if the 16S is a positive or a negative hit:
+        
         for line in gff_list:
             if region in line[8]:
                 print(line)
