@@ -260,7 +260,7 @@ def parse_fastg(f):
     # make the networkx object
     DG = nx.DiGraph()
     for N in node_list:
-        DG.add_node(N.name, cov=N.cov, length=N.length)
+        DG.add_node(N.name, cov=N.cov, length=N.length, raw=N.raw)
     return (node_list, M, DG)
 
 
@@ -432,15 +432,15 @@ def get_depth_of_big_nodes(G, threshold=5000):
         stupid_normalized_list.extend([depths[i] for x in range(math.ceil(l/1000))])
     # print("normalized:")
     # print(stupid_normalized_list)
-    totlen = sum(lengths)
-    ave = sum([x for x in prods]) /totlen
-    print("Total length of nodes passing threshold: %i" % totlen)
-    print("Average depth of contigs greater %i is %f" %(threshold, ave))
+    # totlen = sum(lengths)
+    # ave = sum([x for x in prods]) /totlen
+    # print("Total length of nodes passing threshold: %i" % totlen)
+    # print("Average depth of contigs greater %i is %f" %(threshold, ave))
     quarts = []
     for quart in [.25, .5, .75]:
         q = percentile(stupid_normalized_list,quart)
-        print("%i th quartile: %f" %  \
-              (quart * 100, q))
+        # print("%i th quartile: %f" %  \
+        #       (quart * 100, q))
         quarts.append(q)
     return(depths, ave, quarts)
 
@@ -520,7 +520,7 @@ def populate_subgraph_from_source(g, root, node_list, counter, debug=False):
                node.reverse_complimented == neigh.reverse_complimented and \
                node.name not in g.nodes():
                 # if found, add that node and the appropriate edges
-                g.add_node(node.name, cov=node.cov, length=node.length)
+                g.add_node(node.name, cov=node.cov, length=node.length, raw=node.raw)
                 g.add_edge(root.name, node.name)
                 # rinse and repeat
                 populate_subgraph_from_source(
@@ -545,7 +545,7 @@ def reverse_populate_subgraph_from_source(g, root, node_list, counter, debug=Fal
             # that list our root as its neighbor (with right orientation)
             if neigh.name == root.name and \
                neigh.reverse_complimented == root.reverse_complimented:
-                g.add_node(node.name, cov=node.cov, length=node.length)
+                g.add_node(node.name, cov=node.cov, length=node.length, raw=node.raw)
                 # we want to build the directionality opposite what it is
                 # currently, so we make the nodes going from the root to the node
                 g.add_edge(root.name, node.name)
@@ -581,7 +581,7 @@ def make_rRNAs_dict(gff_list, gff_list_partial):
 
 
 def check_rrnas_dict(rrnas, logger=None):
-    """ this detects which rRNAs we have a solid location for, and 
+    """ this detects which rRNAs we have a solid location for, and
     therefore which ones to check for path
 
     Returns:
@@ -594,7 +594,7 @@ def check_rrnas_dict(rrnas, logger=None):
             "assenbly graph; this tracing algorithm is not the best" +
             "option.  Please review the graph manually to determine" +
             "probable number of rDNAs")
-        raise ValueError
+        # raise ValueError
     elif len(rrnas["16S"]["solid"]) < 1:
         logger.error("Barrnap failed to detect any full 16S in the assembly graph")
         # raise ValueError
@@ -614,9 +614,6 @@ def check_rrnas_dict(rrnas, logger=None):
     #     logger.error("No full rRNAs found in assembly; exiting")
     #     raise ValueError
     return (RUN_16S, RUN_23S)
-        
-        
-
 
 def remove_duplicate_nested_lists(l):
     """ removes duplicates from nested integer lists
@@ -742,7 +739,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     logger.info("Removing nodes shorter than '-m' arg")
     for node in G.nodes():
         if nodes_data[node]["length"] < args.min_contig_len:
-            logger.debug("removing short node %s")
+            logger.debug("removing short node %s", node)
             collapsed.append(node)
 
 
@@ -825,219 +822,223 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     subgraphs = {}
     ANY_TANDEM = "N"
     for region in ["16S", "23S"]:
-        if (
-                (region == "16S" and not RUN_16S) or
-                (region == "23S" and not RUN_23S)
-        ):
-            logger.info("Skipping proccessing %s nodes", region)
-            subgraphs[region] = {
-                "raw_paths": [],
-                "filtered_paths": [],
-                "graph": None
-            }
-            continue
-
-        REV = False
-        # lets check the gff to see if the 16S is a positive or a negative hit:
-        
-        for line in gff_list:
-            if region in line[8]:
-                print(line)
-                if line[6] == "-":
-                    REV = True
-                break
-        # whos on first?
-        # all this does is to make sure we take the oposite path from
-        # the 16S nodes
-        reverse_compliment_now = REV if region == "16S" else not REV
-        node_region_data = extract_node_len_cov_rc(line[0].split(":")[0])
-
-        # retrieve the starting node (16S or 23S) from the list of nodes,
-        # making sure we get the one with the correct orientation
-        init_node = None
-        for N in subset_node_list:
-            if N.name == int(node_region_data[0]) and N.reverse_complimented ==  REV:
-                init_node = N
-        if init_node is None:
-            raise ValueError("node note found to initiate recursive subtree construction")
-        logger.debug("Initial node")
-        logger.debug(init_node)
-
-        # add this initial node to a brand new DiGraph
-        g = nx.DiGraph()
-        g.add_node(int(node_region_data[0]), cov=int(node_region_data[2]), length=int(node_region_data[1]))
-
-        # here is the path tracing algorithm.
-        # We get all paths leading to the 16S, or all the paths away from 23S
-        if region == "16S":
-            populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
-        else:
-            reverse_populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
-
-        logger.debug("nodes in %s subgraph", region)
-        logger.debug(g.nodes())
-
-        # detect tandem repeats:
-        if region == "16S":
-            # if the any 23S nodes are in the graph, we may have a tandem repeat
+        counter = 0
+        for idx, region_node in enumerate(rrnas[region]['solid']):
+            subgraph_name = "{}_{}".format(region, counter)
+            counter = counter + 1
             if (
-                    len(set(g.nodes()).intersection(set(rrnas["23S"]["solid"]))) > 0 or
-                    len(set(g.nodes()).intersection(set(rrnas["23S"]["partial"]))) > 0
+                    (region == "16S" and not RUN_16S) or
+                    (region == "23S" and not RUN_23S)
             ):
-                ANY_TANDEM = "Y"
+                logger.info("Skipping proccessing %s nodes", region)
+                subgraphs[subgraph_name] = {
+                    "raw_paths": [],
+                    "filtered_paths": [],
+                    "graph": None
+                }
+                continue
+
+            REV = False
+            # lets check the gff to see if the 16S is a positive or a negative hit:
+            node = nodes_data[region_node]
+            for line in gff_list:
+                # identify the line with matching region and full_node_name
+                if region in line[8] and node['raw'] in line[0].split(":")[0]:
+                    if line[6] == "-":
+                        REV = True
+                    break
+            # whos on first?
+            # all this does is to make sure we take the oposite path from
+            # the 16S nodes
+            reverse_compliment_now = REV if region == "16S" else not REV
+
+            # retrieve the starting node (16S or 23S) from the list of nodes,
+            # making sure we get the one with the correct orientation
+            init_node = None
+            for N in subset_node_list:
+                if N.name == region_node and N.reverse_complimented ==  REV:
+                    init_node = N
+            if init_node is None:
+                raise ValueError("no initial node found to initiate recursive subtree construction")
+            logger.debug("Initial node")
+            logger.debug(init_node)
+
+            # add this initial node to a brand new DiGraph
+            g = nx.DiGraph()
+            g.add_node(init_node.name, cov=init_node.cov, length=init_node.length, raw=init_node.raw)
+            print(g.nodes(data=True))
+            # here is the path tracing algorithm.
+            # We get all paths leading to the 16S, or all the paths away from 23S
+            if region == "16S":
+                populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
             else:
-                logger.debug("no tandem repeats detected")
-        elif region == "23S":
-            # if the any 16S nodes are in the graph, we may have a tandem repeat
-            if (
-                    len(set(g.nodes()).intersection(set(rrnas["16S"]["solid"]))) > 0 or
-                    len(set(g.nodes()).intersection(set(rrnas["16S"]["partial"]))) > 0
-            ):
-                ANY_TANDEM = "Y"
-            else:
-                logger.debug("no tandem repeats detected")
+                reverse_populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
 
+            logger.debug("nodes in %s subgraph", subgraph_name)
+            logger.debug(g.nodes())
 
-        if PLOT and args.plot_graphs:
-            logger.info("plotting reconstructed tree from %s node  %s" %\
-                        (region, init_node.name))
-            plot_G(
-                g,
-                rrnas["5S"]["solid"],
-                rrnas["16S"]["solid"],
-                rrnas["23S"]["solid"],
-                outpath=os.path.join(args.output, "tiny%s.pdf" % region),
-                outpath2=os.path.join(
-                    args.output, "line_graph_tiny%s.pdf" %region),
-            )
-        if PLOT:
-            plot_adjacency_matrix(
-                make_adjacency_matrix(nx.convert.to_dict_of_dicts(g)), node_order=None,
-                partitions=[], colors=[],
-                outpath=os.path.join(
-                    args.output,
-                    "%s_subgraph_adjacency_matrix.pdf" % region))
-
-        # count the paths going out from the 16S/23S
-        out_paths_region_raw = []
-        out_paths_region_sans_collapsed = []
-        out_paths_region = []
-
-        logger.debug("tips will have an out-degree of 0 on this reduced graph")
-        logger.debug([g.out_degree(node) for node in g.nodes()])
-        tips = [node for node in g.nodes() if g.out_degree(node) == 0]
-        logger.debug("tips of subgraph:")
-        logger.debug(tips)
-        for noderegion in rrnas[region]["solid"]:
-            for tip in tips:
-                out_paths_region_raw.extend(nx.all_simple_paths(g, noderegion, tip))
-        logger.info("number of raw paths to %s: %i" %(region, len(out_paths_region_raw)))
-
-        """
-        remember the collaping stuff we figured out before?  Lets remove
-        those collapsable nodes from the paths now, and get rid of
-        redundant paths.  We also take this opportunity to filter out
-        paths that include tips not at the tip.  It happens, somehow...
-        """
-        for path in out_paths_region_raw:
-            new_path = []
-            internal_tip = False
-            for i in path:
-                if i not in collapsed:
-                    new_path.append(i)
-            # here we only add it the path doesnt contain tips (excluding the last item)
-            for tip in tips:
-                if tip in path[0: len(path) - 1]:
-                    internal_tip = True
+            # detect tandem repeats:
+            if region == "16S":
+                # if the any 23S nodes are in the graph, we may have a tandem repeat
+                if (
+                        len(set(g.nodes()).intersection(set(rrnas["23S"]["solid"]))) > 0 or
+                        len(set(g.nodes()).intersection(set(rrnas["23S"]["partial"]))) > 0
+                ):
+                    ANY_TANDEM = "Y"
                 else:
-                    pass
-            if not internal_tip:
-                out_paths_region_sans_collapsed.append(new_path)
-
-        # filter out duplicated paths:
-        out_paths_region_sans_collapsed = remove_duplicate_nested_lists(
-            out_paths_region_sans_collapsed)
-        # now we have filtered, and some paths might not be long enough. Others, if the graph is cyclical, will be too long.  here, we trim and filter!
-        for path in out_paths_region_sans_collapsed:
-            filtered_path = [path[0]]
-            filtered_length = 0
-            internal_tip = False
-            # skip first node, our root (either 16S or 23S)
-            for i, node in enumerate(path):
-                if i > 0:
-                    node_length = nodes_data[node]["length"]
-                    filtered_length = filtered_length + node_length
-                    filtered_path.append(node)
-                    if filtered_length > 1000:
-                        break
-            # if path does indeed pass the threshold
-            if filtered_length > 1000:
-                out_paths_region.append(filtered_path)
-
-        # filter out duplicated paths, again:
-        out_paths_region = remove_duplicate_nested_lists(out_paths_region)
-
-        logger.debug(
-            "Removed %i paths that contained collapsable nodes, etc" % \
-            (len(out_paths_region_raw) - len(out_paths_region)))
-        logger.info("%s Paths:\n", region)
-        for i in out_paths_region:
-            logger.info(i)
-
-        all_region_path_nodes = [x for y in out_paths_region for x in y]
-        set_region_path_nodes_normalized_depth = {}
-        for i in set(all_region_path_nodes):
-            set_region_path_nodes_normalized_depth[i] = nodes_data[i]['cov'] / all_region_path_nodes.count(i)
-
-        if PLOT:
-            make_silly_boxplot(
-                vals=[x for x in set_region_path_nodes_normalized_depth.values()],
-                outpath=os.path.join(output_root, "normalized_depths_of_%s_nodes.pdf" % region),
-                title= "Normalized depths of nodes connected to %s" % region,
-                yline=(qs_big[0], ave_depth_big_node, qs_big[2])
-            )
-
-        logger.debug("determining the depths of the %s paths" % region)
-        all_region_path_depths = []
-        for i, path in enumerate(out_paths_region):
-            sublist = []
-            for node in path:
-                sublist.append(set_region_path_nodes_normalized_depth[node])
-            all_region_path_depths.append(sublist)
-        if PLOT:
-            make_silly_boxplot(
-                vals=all_region_path_depths,
-                outpath=os.path.join(output_root, "normalized_depths_of_%s_exiting_paths.pdf" % region),
-                title= "Depths of paths connected to %s" % region,
-                yline=(qs_big[0], ave_depth_big_node, qs_big[2])
-            )
-        subgraphs[region] = {
-            "raw_paths": out_paths_region_raw,
-            "filtered_paths": out_paths_region,
-            "graph": g
-        }
+                    logger.debug("no tandem repeats detected")
+            elif region == "23S":
+                # if the any 16S nodes are in the graph, we may have a tandem repeat
+                if (
+                        len(set(g.nodes()).intersection(set(rrnas["16S"]["solid"]))) > 0 or
+                        len(set(g.nodes()).intersection(set(rrnas["16S"]["partial"]))) > 0
+                ):
+                    ANY_TANDEM = "Y"
+                else:
+                    logger.debug("no tandem repeats detected")
 
 
-    # interpret results
-    n_upstream = len(subgraphs["16S"]["filtered_paths"])
-    n_downstream = len(subgraphs["23S"]["filtered_paths"])
-    conclusive = "N"
-    logger.info("Paths leading to rDNA operon: %i", n_upstream)
-    logger.info("Paths exiting  rDNA operon: %i", n_downstream)
-    if n_upstream == n_downstream:
-        logger.info("This indicates that there are at least %i rDNAs present",
-                    n_upstream)
-        conclusive = "Y"
-    else:
-        logger.info("inconclusive results")
-    # write out results to tidy file.  we are appending in case we have
-    # multiple files.  The columns are file_path, n_in, n_out,
-    # conclusive_or_not, any_tandem_repeats
-    outfile = os.path.join(output_root, "riboSpec_results.tab")
-    with open(outfile, "a") as o:
-        o.write(
-            "{fastg}\t{which_k}\t{n_upstream}\t{n_downstream}\t{conclusive}\t{ANY_TANDEM}\n".format(
-            **locals()))
+            if PLOT and args.plot_graphs:
+                logger.info("plotting reconstructed tree from %s %s node  %s" %\
+                            (subgraph_name, init_node.name))
+                plot_G(
+                    g,
+                    rrnas["5S"]["solid"],
+                    rrnas["16S"]["solid"],
+                    rrnas["23S"]["solid"],
+                    outpath=os.path.join(args.output, "subgraph_%s.pdf" % subgraph_name),
+                    outpath2=os.path.join(
+                        args.output, "line_subgraph_%s.pdf" % subgraph_name),
+                )
+            if PLOT:
+                plot_adjacency_matrix(
+                    make_adjacency_matrix(nx.convert.to_dict_of_dicts(g)), node_order=None,
+                    partitions=[], colors=[],
+                    outpath=os.path.join(
+                        args.output,
+                        "%s_subgraph_adjacency_matrix.pdf" % subgraph_name))
+
+            # count the paths going out from the 16S/23S
+            out_paths_region_raw = []
+            out_paths_region_sans_collapsed = []
+            out_paths_region = []
+
+            logger.debug("tips will have an out-degree of 0 on this reduced graph")
+            logger.debug([g.out_degree(node) for node in g.nodes()])
+            tips = [node for node in g.nodes() if g.out_degree(node) == 0]
+            logger.debug("tips of subgraph:")
+            logger.debug(tips)
+            # for noderegion in rrnas[region]["solid"]:
+            for tip in tips:
+                out_paths_region_raw.extend(nx.all_simple_paths(g, region_node, tip))
+            logger.info("number of raw paths to %s: %i" %(subgraph_name, len(out_paths_region_raw)))
+
+            """
+            remember the collaping stuff we figured out before?  Lets remove
+            those collapsable nodes from the paths now, and get rid of
+            redundant paths.  We also take this opportunity to filter out
+            paths that include tips not at the tip.  It happens, somehow...
+            """
+            for path in out_paths_region_raw:
+                new_path = []
+                internal_tip = False
+                for i in path:
+                    if i not in collapsed:
+                        new_path.append(i)
+                # here we only add it the path doesnt contain tips (excluding the last item)
+                for tip in tips:
+                    if tip in path[0: len(path) - 1]:
+                        internal_tip = True
+                    else:
+                        pass
+                if not internal_tip:
+                    out_paths_region_sans_collapsed.append(new_path)
+
+            # filter out duplicated paths:
+            out_paths_region_sans_collapsed = remove_duplicate_nested_lists(
+                out_paths_region_sans_collapsed)
+            # now we have filtered, and some paths might not be long enough. Others, if the graph is cyclical, will be too long.  here, we trim and filter!
+            for path in out_paths_region_sans_collapsed:
+                filtered_path = [path[0]]
+                filtered_length = 0
+                internal_tip = False
+                # skip first node, our root (either 16S or 23S)
+                for i, node in enumerate(path):
+                    if i > 0:
+                        node_length = nodes_data[node]["length"]
+                        filtered_length = filtered_length + node_length
+                        filtered_path.append(node)
+                        if filtered_length > 1000:
+                            break
+                # if path does indeed pass the threshold
+                if filtered_length > 1000:
+                    out_paths_region.append(filtered_path)
+
+            # filter out duplicated paths, again:
+            out_paths_region = remove_duplicate_nested_lists(out_paths_region)
+
+            logger.debug(
+                "Removed %i paths that contained collapsable nodes, etc" % \
+                (len(out_paths_region_raw) - len(out_paths_region)))
+            logger.info("%s Paths:\n", subgraph_name)
+            for i in out_paths_region:
+                logger.info(i)
+
+            all_region_path_nodes = [x for y in out_paths_region for x in y]
+            set_region_path_nodes_normalized_depth = {}
+            for i in set(all_region_path_nodes):
+                set_region_path_nodes_normalized_depth[i] = nodes_data[i]['cov'] / all_region_path_nodes.count(i)
+
+            if PLOT and len(set_region_path_nodes_normalized_depth.values()) > 1:
+                make_silly_boxplot(
+                    vals=[x for x in set_region_path_nodes_normalized_depth.values()],
+                    outpath=os.path.join(output_root, "normalized_depths_of_%s_nodes.pdf" % subgraph_name),
+                    title= "Normalized depths of nodes connected to %s" % subgraph_name,
+                    yline=(qs_big[0], ave_depth_big_node, qs_big[2])
+                )
+
+            logger.debug("determining the depths of the %s paths" % subgraph_name)
+            all_region_path_depths = []
+            for i, path in enumerate(out_paths_region):
+                sublist = []
+                for node in path:
+                    sublist.append(set_region_path_nodes_normalized_depth[node])
+                all_region_path_depths.append(sublist)
+            if PLOT and len(all_region_path_depths) > 1:
+                make_silly_boxplot(
+                    vals=all_region_path_depths,
+                    outpath=os.path.join(output_root, "normalized_depths_of_%s_exiting_paths.pdf" % subgraph_name),
+                    title= "Depths of paths connected to %s" % subgraph_name,
+                    yline=(qs_big[0], ave_depth_big_node, qs_big[2])
+                )
+            subgraphs[subgraph_name] = {
+                "raw_paths": out_paths_region_raw,
+                "filtered_paths": out_paths_region,
+                "graph": g
+            }
+
+            n_upstream = len(subgraphs[subgraph_name]["filtered_paths"])
+
+            # interpret results
+            # n_upstream = len(subgraphs[subgraph_name]["filtered_paths"])
+            # n_downstream = len(subgraphs[subgraph_name]["filtered_paths"])
+            # conclusive = "N"
+            # logger.info("Paths leading to rDNA operon: %i", n_upstream)
+            # logger.info("Paths exiting  rDNA operon: %i", n_downstream)
+            # if n_upstream == n_downstream:
+            #     logger.info("This indicates that there are at least %i rDNAs present",
+            #                 n_upstream)
+            #     conclusive = "Y"
+            # else:
+            #     logger.info("inconclusive results")
+            # write out results to tidy file.  we are appending in case we have
+            # multiple files.  The columns are file_path, k, which_subgraph, n_paths_out,
+            # conclusive_or_not, any_tandem_repeats
+            outfile = os.path.join(output_root, "riboSpec_results.tab")
+            with open(outfile, "a") as o:
+                o.write(
+                    "{fastg}\t{which_k}\t{subgraph_name}\t{n_upstream}\t\t{ANY_TANDEM}\n".format(
+                    **locals()))
 
 
 def get_fastgs_from_spades_dir(d):
