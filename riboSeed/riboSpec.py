@@ -16,6 +16,48 @@ We have developed a scheme by which to predict the number of rDNAs in a
 """
 
 DEBUG = False
+
+
+
+######
+# The following makes profiling some of the operations easier.
+# This will be removed before riboSeed v1.0.0
+####
+if DEBUG:
+    from line_profiler import LineProfiler
+
+    def do_profile(follow=[]):
+        def inner(func):
+            def profiled_func(*args, **kwargs):
+                try:
+                    profiler = LineProfiler()
+                    profiler.add_function(func)
+                    for f in follow:
+                        profiler.add_function(f)
+                    profiler.enable_by_count()
+                    return func(*args, **kwargs)
+                finally:
+                    profiler.print_stats()
+            return profiled_func
+        return inner
+
+else:
+    def do_profile(follow=[]):
+        "Helpful if you accidentally leave in production!"
+        def inner(func):
+            def nothing(*args, **kwargs):
+                return func(*args, **kwargs)
+            return nothing
+        return inner
+
+
+
+
+
+
+
+
+
 # DEBUG = True
 # PLOT = False
 # PLOT = True
@@ -121,6 +163,10 @@ def get_args():  # pragma: no cover
                           default=None, type=int,
                           help="cores to be used" +
                           "; default: %(default)s")
+    optional.add_argument("-x", "--make_adjacency_matrix",
+                          dest='MAKE_ADJACENCY_MATRIX', action="store_true",
+                          help="generate and plot an adjacency matrix" +
+                          "; default: %(default)s")
     # # had to make this explicitly to call it a faux optional arg
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
@@ -225,7 +271,8 @@ def parse_fastg(f):
     with open(f, "r") as inf:
         for line in inf:
             if line.startswith(">"):
-                colons = sum([1 for x in line if x == ":" ])
+                colons = line.count(":")
+                # colons = sum([1 for x in line if x == ":" ])
                 if colons > 1:
                     sys.stderr.write("multiple ':'s found in line, and can only " +
                                      "be used to separate nodes from neighbor " +
@@ -246,7 +293,6 @@ def parse_fastg(f):
     # print(len(set([x[0] for x in node_neighs])))
     g = {k: v for k, v in node_neighs}
     # print([extract_node_len_cov_rc(name[0]) for name in node_neighs])
-    M = make_adjacency_matrix(g)
 
     node_list = []
     # make objects for each node and neighbor
@@ -261,7 +307,7 @@ def parse_fastg(f):
     DG = nx.DiGraph()
     for N in node_list:
         DG.add_node(N.name, cov=N.cov, length=N.length, raw=N.raw)
-    return (node_list, M, DG)
+    return (node_list, g, DG)
 
 
 def plot_G(
@@ -432,8 +478,8 @@ def get_depth_of_big_nodes(G, threshold=5000):
         stupid_normalized_list.extend([depths[i] for x in range(math.ceil(l/1000))])
     # print("normalized:")
     # print(stupid_normalized_list)
-    # totlen = sum(lengths)
-    # ave = sum([x for x in prods]) /totlen
+    totlen = sum(lengths)
+    ave = sum([x for x in prods]) /totlen
     # print("Total length of nodes passing threshold: %i" % totlen)
     # print("Average depth of contigs greater %i is %f" %(threshold, ave))
     quarts = []
@@ -623,20 +669,21 @@ def remove_duplicate_nested_lists(l):
     return L
 
 
+@do_profile(follow=[make_silly_boxplot])
 def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     # make a list of node objects, a adjacency matrix M, and a DiGRaph object G
     logger.info("Reading assembly graph: %s", fastg)
-    node_list, M, G = parse_fastg(f=fastg)
+    node_list, G_dict, G = parse_fastg(f=fastg)
 
-    if PLOT:
+    if PLOT and args.MAKE_ADJACENCY_MATRIX:
+        M = make_adjacency_matrix(g)
         plot_adjacency_matrix(
             M, node_order=None, partitions=[], colors=[],
             outpath=os.path.join(output_root, "full_adjacency_matrix.pdf"))
-    logger.info("Writing out adjacency graph")
-
-    with open(os.path.join(args.output, "tab.txt"), "w") as o:
-        for line in M:
-            o.write("\t".join([str(x) for x in line]) + "\n")
+        logger.info("Writing out adjacency graph")
+        with open(os.path.join(args.output, "tab.txt"), "w") as o:
+            for line in M:
+                o.write("\t".join([str(x) for x in line]) + "\n")
     # alt nodes
     dic = {int(x.name): [int(y.name) for y in x.neighbor_list] for x in node_list}
 
@@ -736,12 +783,16 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
 
 
     # remove short nodes
+    short_nodes = []
     logger.info("Removing nodes shorter than '-m' arg")
     for node in G.nodes():
         if nodes_data[node]["length"] < args.min_contig_len:
-            logger.debug("removing short node %s", node)
-            collapsed.append(node)
+            short_nodes.append(node)
 
+    logger.info("marked %i short nodes for ignoring:", len(short_nodes))
+    logger.info(short_nodes)
+
+    collapsed.extend(short_nodes)
 
     ########  Reduce this graph to all nodes within 20kb if a 16S region
     interior_nodes = []
@@ -877,27 +928,6 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             logger.debug("nodes in %s subgraph", subgraph_name)
             logger.debug(g.nodes())
 
-            # detect tandem repeats:
-            if region == "16S":
-                # if the any 23S nodes are in the graph, we may have a tandem repeat
-                if (
-                        len(set(g.nodes()).intersection(set(rrnas["23S"]["solid"]))) > 0 or
-                        len(set(g.nodes()).intersection(set(rrnas["23S"]["partial"]))) > 0
-                ):
-                    ANY_TANDEM = "Y"
-                else:
-                    logger.debug("no tandem repeats detected")
-            elif region == "23S":
-                # if the any 16S nodes are in the graph, we may have a tandem repeat
-                if (
-                        len(set(g.nodes()).intersection(set(rrnas["16S"]["solid"]))) > 0 or
-                        len(set(g.nodes()).intersection(set(rrnas["16S"]["partial"]))) > 0
-                ):
-                    ANY_TANDEM = "Y"
-                else:
-                    logger.debug("no tandem repeats detected")
-
-
             if PLOT and args.plot_graphs:
                 logger.info("plotting reconstructed tree from %s %s node  %s" %\
                             (subgraph_name, init_node.name))
@@ -957,7 +987,8 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             # filter out duplicated paths:
             out_paths_region_sans_collapsed = remove_duplicate_nested_lists(
                 out_paths_region_sans_collapsed)
-            # now we have filtered, and some paths might not be long enough. Others, if the graph is cyclical, will be too long.  here, we trim and filter!
+            # now we have filtered, and some paths might not be long enough.
+            # Others, if the graph is cyclical, will be too long.  here, we trim and filter!
             for path in out_paths_region_sans_collapsed:
                 filtered_path = [path[0]]
                 filtered_length = 0
@@ -1018,6 +1049,28 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             }
 
             n_upstream = len(subgraphs[subgraph_name]["filtered_paths"])
+
+
+            # detect tandem repeats:
+            if region == "16S":
+                # if the any 23S nodes are in the graph, we may have a tandem repeat
+                for path in subgraphs[subgraph_name]["filtered_paths"]:
+                    # we ignore the first one, which is the initial node
+                    if (
+                            len(set(rrnas["23S"]["solid"]).intersection(set(path[1: ]))) > 0 or
+                            len(set(rrnas["23S"]["partial"]).intersection(set(path[1: ]))) > 0
+                    ):
+                        ANY_TANDEM = "Y"
+            else:
+                assert region == "23S", "invalid region"
+                # if the any 23S nodes are in the graph, we may have a tandem repeat
+                for path in subgraphs[subgraph_name]["filtered_paths"]:
+                    # we ignore the first one, which is the initial node
+                    if (
+                            len(set(rrnas["16S"]["solid"]).intersection(set(path[1: ]))) > 0 or
+                            len(set(rrnas["16S"]["partial"]).intersection(set(path[1: ]))) > 0
+                    ):
+                        ANY_TANDEM = "Y"
 
             # interpret results
             # n_upstream = len(subgraphs[subgraph_name]["filtered_paths"])
