@@ -43,6 +43,7 @@ class RiboSpecTest(unittest.TestCase):
             "references",
             "riboSpec_references", "spades_test", "")
         self.fastg = os.path.join(self.spec_ref_dir, "mini.fastg")
+        self.gff = os.path.join(self.spec_ref_dir, "NC_011751.1.gff")
         self.to_be_removed = []
 
     def test_graph(self):
@@ -77,10 +78,10 @@ class RiboSpecTest(unittest.TestCase):
         for i in range(len(cons)):
             DG.add_weighted_edges_from([(cons[i][0], cons[i][1], cons[i][2])])
             DG.add_weighted_edges_from([(cons[i][1], cons[i][0], cons[i][2])])
-        print( "ze graph:------------------------------------------")
-        print(DG.nodes.data())
-        print(DG.edges.data())
-        print( "------------------------------------------")
+        # print( "ze graph:------------------------------------------")
+        # print(DG.nodes.data())
+        # print(DG.edges.data())
+        # print( "------------------------------------------")
         # print(nx.dijkstra_predecessor_and_distance(DG, 4))
         # incl, border = rs.neighborhood_by_length(DG, source=4, cutoff=10)
 
@@ -126,6 +127,30 @@ class RiboSpecTest(unittest.TestCase):
         node_list, g, DG = rs.parse_fastg(self.fastg)
         rs.add_temp_edges(node_list, DG)
         self.assertEqual(8, DG.number_of_edges())
+
+
+    def test_neighborhood_by_length(self):
+        node_list, g, DG = rs.parse_fastg(self.fastg)
+        rs.add_temp_edges(node_list, DG)
+        interior, border = rs.neighborhood_by_length(G=DG, source=2, cutoff=15, ignored_nodes=[])
+        self.assertEqual(interior, {2, 1, 4})
+        self.assertEqual(border, {3})
+
+    def test_make_gff_list(self):
+        gff_list = rs.make_gff_list(self.gff)
+        self.assertEqual(22, len(gff_list))
+        ref_line_1 = [
+            "gi|218703261|ref|NC_011751.1|",
+            "barrnap:0.7",
+            "rRNA",
+	    "226624",
+	    "228161",
+	    "0",
+	    "+",
+	    ".",
+	    "Name=16S_rRNA;product=16S ribosomal RNA"]
+
+        self.assertEqual(ref_line_1, gff_list[0])
 
     def tearDown(self):
         """

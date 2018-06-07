@@ -357,10 +357,10 @@ def plot_G(  # pragma: nocover
     pyplot.close(fig)
 
 
-def neighborhood_by_n(G, node, n):
-    path_lengths = nx.single_source_dijkstra_path_length(G, node)
-    return [node for node, length in path_lengths.items()
-            if length == n]
+# def neighborhood_by_n(G, node, n):
+#     path_lengths = nx.single_source_dijkstra_path_length(G, node)
+#     return [node for node, length in path_lengths.items()
+#             if length == n]
 
 
 def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
@@ -381,10 +381,16 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     nodesDict = dict(G.nodes(data=True))
     # changed this from dijkstra path because that was getting the shortes path by number of intermnediate nodes.  We can only weight nodes, not edges, so this was problematic
     paths_dict = {}
-    # first, use single_source_dij to get all connected nodes.
-    get_node_weight = lambda u,v,d: G.node[v].get('length', 0)
 
+    #### first, use single_source_dij to get all connected nodes.
+    # his lambda function replaces the built-in weight calculation, cause
+    # I want to use node length rather than some edge weight; edges in
+    # fastg are of unknown length
+    get_node_weight = lambda u,v,d: G.node[v].get('length', 0)
     targets_path = nx.single_source_dijkstra(G, source, weight=get_node_weight)[1]
+
+    #### Then, for each path, we calculate the length, binning them into
+    #### either "internal" nodes (within the cutoff and "border" nodes (including the cutoff)
     for target, path_to in targets_path.items():
     #         print(target)
     #         print(path_to)
