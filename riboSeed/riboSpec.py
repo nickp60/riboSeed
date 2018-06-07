@@ -193,15 +193,6 @@ def make_Node(name):
     return new_node
 
 
-def make_Neighbors(neighbor):
-    node_name, length, cov, rc = extract_node_len_cov_rc(neighbor)
-    new_neigh = FastgNode(
-        name=int(node_name),
-        reverse_complimented=rc
-    )
-    return new_neigh
-
-
 def make_adjacency_matrix(g):
     """ Make an adjacency matrix from a dict of node: [neighbors] pairs
     """
@@ -225,7 +216,7 @@ def make_adjacency_matrix(g):
     return M
 
 
-def plot_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outpath=None):
+def plot_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outpath=None): #pragma: nocover
     """
     - G is an adjacency matrix
     - node_order (optional) is a list of nodes, where each node in G
@@ -261,7 +252,8 @@ def plot_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outpath=
 
 
 def parse_fastg(f):
-    """parse the headers in a fastg file and return a list of Node objects
+    """parse the headers from fastg file, return a Node objects, dict, and DiGraph
+    Note that at this stage no edges are added
     """
     node_neighs = []
     with open(f, "r") as inf:
@@ -306,7 +298,7 @@ def parse_fastg(f):
     return (node_list, g, DG)
 
 
-def plot_G(
+def plot_G(  # pragma: nocover
         G,
         nodes5,
         nodes16,
@@ -663,6 +655,13 @@ def remove_duplicate_nested_lists(l):
     return L
 
 
+def add_temp_edges(node_list, G):
+    # add temporary edges; later we will weight them and redo the directionality if needed
+    for node in node_list:
+        for neigh in node.neighbor_list:
+            G.add_edge(neigh.name, node.name)
+
+
 @do_profile(follow=[make_silly_boxplot])
 def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     # make a list of node objects, a adjacency matrix M, and a DiGRaph object G
@@ -725,9 +724,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     nodes_data = dict(G.nodes(data=True))
 
     # add temporary edges; later we will weight them and redo the directionality if needed
-    for node in node_list:
-        for neigh in node.neighbor_list:
-            G.add_edge(neigh.name, node.name)
+    add_temp_edges(node_list, G)
 
     # get the depths of the big contigs
     depths_of_all_nodes, ave_depth_all_node, qs_all = get_depth_of_big_nodes(

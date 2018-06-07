@@ -42,6 +42,7 @@ class RiboSpecTest(unittest.TestCase):
             os.path.dirname(__file__),
             "references",
             "riboSpec_references", "spades_test", "")
+        self.fastg = os.path.join(self.spec_ref_dir, "mini.fastg")
         self.to_be_removed = []
 
     def test_graph(self):
@@ -86,7 +87,45 @@ class RiboSpecTest(unittest.TestCase):
 
     def test_spades_parse(self):
         t = rs.get_fastgs_from_spades_dir(self.spades_dir)
-        print(t)
+        self.assertEqual(4, len(t.keys()))
+
+    def test_extract_node_len_cov_rc(self):
+        node_name = "EDGE_313_length_1481_cov_1436.86"
+        node_name_rc = "EDGE_313_length_1481_cov_1436.86'"
+        self.assertEqual("313", rs.extract_node_len_cov_rc(node_name)[0])
+        self.assertEqual(1481, rs.extract_node_len_cov_rc(node_name)[1])
+        self.assertEqual(1436.86, rs.extract_node_len_cov_rc(node_name)[2])
+        self.assertTrue(rs.extract_node_len_cov_rc(node_name_rc)[3])
+        self.assertFalse(rs.extract_node_len_cov_rc(node_name)[3])
+
+    def test_make_Node(self):
+        node_name = "EDGE_313_length_1481_cov_1436.86"
+        n = rs.make_Node(node_name)
+        self.assertEqual(313, n.name)
+        self.assertEqual(1481, n.length)
+        self.assertEqual(1436.86, n.cov)
+        self.assertEqual(node_name, n.raw)
+
+
+    def test_make_adjacency_matrix(self):
+        d = {1: [3, 4],
+             2: [],
+             3: [],
+             4: [2, 3]}
+        M = rs.make_adjacency_matrix(d)
+        ref = [[0, 0, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0], [0, 1, 1, 0]]
+        self.assertEqual(ref, M)
+
+    def test_parse_fastg(self):
+        node_list, g, DG = rs.parse_fastg(self.fastg)
+        self.assertEqual([1, 2, 3,4], list(DG.nodes()))
+        # no edges are added yet
+        self.assertEqual(0, DG.number_of_edges())
+
+    def test_add_temp_edges(self):
+        node_list, g, DG = rs.parse_fastg(self.fastg)
+        rs.add_temp_edges(node_list, DG)
+        self.assertEqual(8, DG.number_of_edges())
 
     def tearDown(self):
         """
