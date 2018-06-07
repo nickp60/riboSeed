@@ -18,7 +18,6 @@ We have developed a scheme by which to predict the number of rDNAs in a
 DEBUG = False
 
 
-
 ######
 # The following makes profiling some of the operations easier.
 # This will be removed before riboSeed v1.0.0
@@ -325,10 +324,10 @@ def plot_G(
     _G = nx.line_graph(G)
     _N = _G.number_of_nodes()
     _M = _G.number_of_edges()
-    print(N)
-    print(M)
-    print(_N)
-    print(_M)
+    # print(N)
+    # print(M)
+    # print(_N)
+    # print(_M)
     edge_colors = range(2, M + 2)
     edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
 
@@ -356,13 +355,14 @@ def plot_G(
     ax = pyplot.gca()
     ax.set_axis_off()
     fig.savefig(outpath)
-
+    pyplot.close(fig)
 
     fig = pyplot.figure(figsize=(10, 10)) # in inches
     nx.draw(nx.line_graph(G), with_labels=True, linewidths=0, node_size=node_sizes,
             alpha=0.7,  font_size=2, arrows=False,
             node_color="black", edge_color=_edge_colors, width=.2)
     fig.savefig(outpath2)
+    pyplot.close(fig)
 
 
 def neighborhood_by_n(G, node, n):
@@ -431,7 +431,7 @@ def make_gff_list(gffpath):
     return gff_list
 
 
-def find_rRNA_from_gffs(gff_list, partial=False):
+def find_rRNA_from_gffs(gff_list, partial=False, logger=None):
     """
     this is a bit convoluted
     for gff lines where the product has the nane of the rDNA (16S, 23S, etc),
@@ -439,7 +439,7 @@ def find_rRNA_from_gffs(gff_list, partial=False):
       returned from the extract_node_len_cov function
     """
     nodes16, nodes23, nodes5, = [], [], []
-    print(gff_list)
+    # print(gff_list)
     for x in gff_list:
         if ("partial" in x[8] and not partial):
             continue
@@ -450,12 +450,6 @@ def find_rRNA_from_gffs(gff_list, partial=False):
         if "5S" in x[8]:
             nodes5.append(int(extract_node_len_cov_rc(x[0])[0]))
     nodes16, nodes23, nodes5 = list(set(nodes16)), list(set(nodes23)), list(set(nodes5))
-    print("16s nodes:")
-    print(nodes16)
-    print("23s nodes:")
-    print(nodes23)
-    print("5s nodes:")
-    print(nodes5)
     return(nodes16, nodes23, nodes5)
 
 
@@ -514,7 +508,7 @@ def make_silly_boxplot(vals, outpath, names=None, title="", yline=None):
                         alpha=.3)
     if yline is not None:
         if isinstance(yline, tuple):
-            print(yline)
+            # print(yline)
             assert len(yline)== 3,\
                 "yline must either be a single number or a 3-lenght tuple"
             pyplot.axhline(yline[0], color="green", linestyle="--"),
@@ -524,6 +518,7 @@ def make_silly_boxplot(vals, outpath, names=None, title="", yline=None):
             pyplot.axhline(yline, color="green"),
     pyplot.title(title)
     fig.savefig(outpath)
+    pyplot.close(fig)
 
 
 def percentile(N, percent, key=lambda x:x):
@@ -630,6 +625,7 @@ def check_rrnas_dict(rrnas, logger=None):
     Returns:
         returns tuple of two Bools, for whether to check 16S, 23S, or both
     """
+    logger.debug(rrnas)
     RUN_16S, RUN_23S = True, True
     if len(rrnas["16S"]["solid"]) >  1:
         logger.error(
@@ -657,6 +653,7 @@ def check_rrnas_dict(rrnas, logger=None):
     #     logger.error("No full rRNAs found in assembly; exiting")
     #     raise ValueError
     return (RUN_16S, RUN_23S)
+
 
 def remove_duplicate_nested_lists(l):
     """ removes duplicates from nested integer lists
@@ -776,7 +773,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
         collapsed.extend(these_collapsed)
 
     logger.info("marked %i partial nodes for collapsing:", len(collapsed))
-    logger.info(collapsed)
+    logger.debug(collapsed)
 
 
     # remove short nodes
@@ -821,7 +818,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             border_nodes.extend(border)
     valid_nodes = set(interior_nodes).union(set(border_nodes))
     bad_nodes = set(G.nodes).symmetric_difference(valid_nodes)
-    print("removing %i of %i nodes that aren't near rDNA" %(len(bad_nodes), len(G.nodes)))
+    logger.debug("removing %i of %i nodes that aren't near rDNA", len(bad_nodes), len(G.nodes))
     for node in bad_nodes:
         G.remove_node(node)
     if PLOT and args.plot_graphs:
@@ -875,6 +872,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             subset_node_list.append(n)
     subgraphs = {}
     ANY_TANDEM = "N"
+    rRNA_counts_for_plotting = ([], [])  # paths to the 16S and 23S rRNAs
     for region in ["16S", "23S"]:
         counter = 0
         for idx, region_node in enumerate(rrnas[region]['solid']):
@@ -920,7 +918,6 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             # add this initial node to a brand new DiGraph
             g = nx.DiGraph()
             g.add_node(init_node.name, cov=init_node.cov, length=init_node.length, raw=init_node.raw)
-            print(g.nodes(data=True))
             # here is the path tracing algorithm.
             # We get all paths leading to the 16S, or all the paths away from 23S
             if region == "16S":
@@ -1090,14 +1087,20 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             # write out results to tidy file.  we are appending in case we have
             # multiple files.  The columns are file_path, k, which_subgraph, n_paths_out,
             # conclusive_or_not, any_tandem_repeats
+            if region == "16S":
+                rRNA_counts_for_plotting[0].append(n_upstream)
+            else:
+                rRNA_counts_for_plotting[1].append(n_upstream)
+
             outfile = os.path.join(output_root, "riboSpec_results.tab")
             with open(outfile, "a") as o:
                 o.write(
                     "{fastg}\t{which_k}\t{subgraph_name}\t{n_upstream}\t\t{ANY_TANDEM}\n".format(
                     **locals()))
+    return rRNA_counts_for_plotting
 
 
-def get_fastgs_from_spades_dir(d):
+def get_fastgs_from_spades_dir(d, logger=None):
     """ get he paths to the assembly graphs in a spades output dir.
     There will be one for the main output in the root of the directory,
     and then one in each of the subdirectories for the different kmer
@@ -1108,7 +1111,11 @@ def get_fastgs_from_spades_dir(d):
 
     """
     main_g = os.path.join(d, "assembly_graph.fastg")
-    assert os.path.exists(main_g), "assembly_graph.fastg not found in  %s" % d
+    if not os.path.exists(main_g):
+        logger.error(
+            "assembly_graph.fastg not found in  " +
+            "%s. -f arg must be a SPAdes dir ", d)
+        sys.exit(1)
     # this is silly, but compute time is cheap and
     # me-figuring-out-how-to-easily-get-k-from-filepath time is not cheap.
     max_k = 151
@@ -1146,30 +1153,43 @@ def main(args, logger=None):
         args.cores = multiprocessing.cpu_count()
 
     # check if handling a single output
+    nfastgs = 1
     if os.path.isdir(args.assembly_graph):
-        fastg_dict = get_fastgs_from_spades_dir(args.assembly_graph)
+        fastg_dict = get_fastgs_from_spades_dir(args.assembly_graph, logger=logger)
+        nfastgs = len(fastg_dict)
         logger.info("Determining rRNA operon paths for each of the following fastgs:")
         # these two for loops are not combined cause I wanna see the
         # input files from the get go
         for k,v in fastg_dict.items():
             logger.info(v)
+        rRNA_counts_for_plotting = ([], [])
         for k,v in fastg_dict.items():
-            process_assembly_graph(
+            sub_rRNA_counts_for_plotting = process_assembly_graph(
                 args=args,
                 fastg=v,
                 output_root=output_root,
                 PLOT=PLOT,
                 which_k=k,
                 logger=logger)
+            rRNA_counts_for_plotting[0].extend(sub_rRNA_counts_for_plotting[0])
+            rRNA_counts_for_plotting[1].extend(sub_rRNA_counts_for_plotting[1])
     else:
-        process_assembly_graph(
+        rRNA_counts_for_plotting = process_assembly_graph(
             args=args,
             fastg=args.assembly_graph,
             output_root=output_root,
             PLOT=PLOT,
             which_k="final",
             logger=logger)
+
     # log results
     with open(os.path.join(output_root, "riboSpec_results.tab"), "r") as of:
         for line in of:
             logger.info(line.strip())
+
+    make_silly_boxplot(
+        vals=rRNA_counts_for_plotting,
+        outpath=os.path.join(output_root, "rRNA_counts.pdf"),
+        title= "rRNA counts estimated from %s assembly graph(s)" % nfastgs,
+        names=["16S", "23S"]
+    )
