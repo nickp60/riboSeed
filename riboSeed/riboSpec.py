@@ -51,13 +51,6 @@ else:
         return inner
 
 
-
-
-
-
-
-
-
 # DEBUG = True
 # PLOT = False
 # PLOT = True
@@ -155,6 +148,10 @@ def get_args():  # pragma: no cover
                           action="store", default=75,
                           help="Contigs under this length will be collapsed;" +
                           " default: %(default)s")
+    optional.add_argument("-t", "--threshold", dest="threshold",
+                          action="store", default=1500,
+                          help="paths must be at least this long (bp) to be " +
+                          "considered; default: %(default)s")
     optional.add_argument("--barrnap_exe", dest="barrnap_exe",
                           action="store", default="barrnap",
                           help="Path to barrnap executable;" +
@@ -798,26 +795,32 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     interior_nodes = []
     border_nodes = []
     for i in rrnas["16S"]["solid"]:
-        interior, border = neighborhood_by_length(G, i, cutoff=1000, ignored_nodes=[])
-        print("16S node %i (close) neighbors", i)
-        print(interior)
-        print("16S node %i (border) neighbors", i)
-        print(border)
+        interior, border = neighborhood_by_length(
+            G,
+            i,
+            cutoff=args.threshold,
+            ignored_nodes=[])
+        logger.debug("16S node %i (close) neighbors:", i)
+        logger.debug(interior)
+        logger.debug("16S node %i (border) neighbors", i)
+        logger.debug(border)
         interior_nodes.extend(interior)
         border_nodes.extend(border)
     if rrnas["16S"]["solid"] != rrnas["23S"]["solid"]:
         for i in rrnas["23S"]["solid"]:
             interior, border = neighborhood_by_length(
-                G, i, cutoff=1000, ignored_nodes=rrnas["16S"]["solid"])
-            print("23S node %i (close) neighbors", i)
-            print(interior)
-            print("23S node %i (border) neighbors", i)
-            print(border)
+                G,
+                i,
+                cutoff=args.threshold,
+                ignored_nodes=rrnas["16S"]["solid"])
+            logger.debug("23S node %i (close) neighbors:", i)
+            logger.debug(interior)
+            logger.debug("23S node %i (border) neighbors", i)
+            logger.debug(border)
             interior_nodes.extend(interior)
             border_nodes.extend(border)
-    valid_nodes = [x for y in [interior_nodes, border_nodes] for x in y]
-    print(len(set(valid_nodes)))
-    bad_nodes = set(G.nodes).symmetric_difference(set(valid_nodes))
+    valid_nodes = set(interior_nodes).union(set(border_nodes))
+    bad_nodes = set(G.nodes).symmetric_difference(valid_nodes)
     print("removing %i of %i nodes that aren't near rDNA" %(len(bad_nodes), len(G.nodes)))
     for node in bad_nodes:
         G.remove_node(node)
@@ -999,7 +1002,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
                         node_length = nodes_data[node]["length"]
                         filtered_length = filtered_length + node_length
                         filtered_path.append(node)
-                        if filtered_length > 1000:
+                        if filtered_length > args.threshold:
                             break
                 # if path does indeed pass the threshold
                 if filtered_length > 1000:
@@ -1166,3 +1169,7 @@ def main(args, logger=None):
             PLOT=PLOT,
             which_k="final",
             logger=logger)
+    # log results
+    with open(os.path.join(output_root, "riboSpec_results.tab"), "r") as of:
+        for line in of:
+            logger.info(line.strip())
