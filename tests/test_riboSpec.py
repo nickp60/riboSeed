@@ -11,6 +11,7 @@ import networkx as nx
 import os
 import unittest
 import random
+import networkx
 from Bio import SeqIO
 from argparse import Namespace
 from pyutilsnrw.utils3_5 import md5
@@ -44,6 +45,7 @@ class RiboSpecTest(unittest.TestCase):
             "riboSpec_references", "spades_test", "")
         self.fastg = os.path.join(self.spec_ref_dir, "mini.fastg")
         self.gff = os.path.join(self.spec_ref_dir, "NC_011751.1.gff")
+        self.spec_gff = os.path.join(self.spec_ref_dir, "partial_barrnapped.gff")
         self.to_be_removed = []
 
     def test_graph(self):
@@ -133,8 +135,8 @@ class RiboSpecTest(unittest.TestCase):
         node_list, g, DG = rs.parse_fastg(self.fastg)
         rs.add_temp_edges(node_list, DG)
         interior, border = rs.neighborhood_by_length(G=DG, source=2, cutoff=15, ignored_nodes=[])
-        self.assertEqual(interior, {2, 1, 4})
-        self.assertEqual(border, {3})
+        self.assertEqual(interior, {2, 1})
+        self.assertEqual(border, {3, 4})
 
     def test_make_gff_list(self):
         gff_list = rs.make_gff_list(self.gff)
@@ -151,6 +153,108 @@ class RiboSpecTest(unittest.TestCase):
 	    "Name=16S_rRNA;product=16S ribosomal RNA"]
 
         self.assertEqual(ref_line_1, gff_list[0])
+
+
+    def test_find_rRNA_from_gffs(self):
+        gff_list = rs.make_gff_list(self.spec_gff)
+        a16, a23, a5 = rs.find_rRNA_from_gffs(gff_list, partial=False, logger=logger)
+        self.assertEqual([1162], a16)
+        self.assertEqual([280], a23)
+        self.assertEqual([650], a5)
+
+    def test_get_depth_of_big_nodes(self):
+        node_list, g, DG = rs.parse_fastg(self.fastg)
+        depths, ave, quarts = rs.get_depth_of_big_nodes(DG, threshold=0)
+        ref_depths = [4.0, 3.0, 2.0, 1.0]
+        ref_weighted_mean = 2.0
+        ref_quarts = [1.75, 2.5, 3.25]
+        self.assertEqual(ref_depths, depths)
+        self.assertEqual(ref_weighted_mean, ave)
+        self.assertEqual(ref_quarts, quarts)
+        # nd = dict(DG.nodes(data=True))
+        # ds = []
+        # ls = []
+        # for k, v in nd.items():
+        #     ds.append(v['cov'])
+        #     ls.append(v['length'])
+        # prods = []
+        # for i, l in enumerate(
+        # weighted_mean = sum()/sum(ls)
+
+    def test_populate_subgraph_from_source(self):
+        node_list, g, DG = rs.parse_fastg(self.fastg)
+        dg = networkx.DiGraph()
+        init_node = node_list[0]
+        dg.add_node(init_node.name, cov=init_node.cov,
+                    length=init_node.length, raw=init_node.raw)
+        rs.populate_subgraph_from_source(
+            g=dg, root=node_list[0], node_list=node_list, counter=0, debug=False)
+        # we cant direcly diff graphs
+        self.assertEqual([x for x in dg.nodes()], [x for x in DG.nodes()])
+
+    def test_reverse_populate_subgraph_from_source(self):
+        node_list, g, DG = rs.parse_fastg(self.fastg)
+        dg = networkx.DiGraph()
+        init_node = node_list[0]
+        dg.add_node(init_node.name, cov=init_node.cov,
+                    length=init_node.length, raw=init_node.raw)
+        rs.reverse_populate_subgraph_from_source(
+            g=dg, root=node_list[0], node_list=node_list, counter=0, debug=False)
+        # THis is different from the forward version, because of the directionality of the graph
+        self.assertEqual([x for x in dg.nodes()], [x for x in DG.nodes() if x in [4,1]])
+
+    def test_make_rRNAs_dict(self):
+        gff_list = rs.make_gff_list(self.spec_gff)
+        gff_list_partial = rs.make_gff_list(self.spec_gff)
+        rrnas = rs.make_rRNAs_dict(gff_list, gff_list_partial)
+        ref_rrnas = {
+            '23S': {
+                'partial': [911, 902, 431],
+                'solid': [280]
+            }, '5S': {
+                'partial': [280, 281, 282],
+                'solid': [650]
+            }, '16S': {
+                'partial': [431],
+                'solid': [1162]
+            }
+        }
+        self.assertEqual(ref_rrnas, rrnas)
+
+    def test_check_rrnas_dict(self):
+        gff_list = rs.make_gff_list(self.spec_gff)
+        gff_list_partial = rs.make_gff_list(self.spec_gff)
+        rrnas = rs.make_rRNAs_dict(gff_list, gff_list_partial)
+        self.assertTrue(all(rs.check_rrnas_dict(rrnas, logger=logger)))
+
+    def test_check_rrnas_dict_no16s(self):
+        rrnas = {
+            "16S": {
+                "partial": [1, 2],
+                "solid": []
+            },
+            "23S": {
+                "partial": [1,2],
+                "solid": []
+            },
+            "5S": {
+                "partial": [1,2],
+                "solid": [1,2]
+            }
+        }
+        run16s, run23s = rs.check_rrnas_dict(rrnas, logger=logger)
+        self.assertFalse(run16s)
+        self.assertFalse(run23s)
+
+    def test_remove_nested_lists(self):
+        test_list = [
+            [1,2,3,4,5],
+            [1,2,3],
+            [1,2,3,4,5],
+            [1,5,6,7,8]
+        ]
+        dedup = rs.remove_duplicate_nested_lists(test_list)
+        self.assertEqual(3, len(dedup))
 
     def tearDown(self):
         """

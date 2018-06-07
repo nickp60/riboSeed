@@ -452,6 +452,10 @@ def find_rRNA_from_gffs(gff_list, partial=False, logger=None):
 
 
 def get_depth_of_big_nodes(G, threshold=5000):
+    """ return depths, eighted mean, and quartiles of weighted mean
+    Getting the simple mean ignores the length of the contigs.  So, we weight
+    by the length.
+    """
     nodes_dict = dict(G.nodes(data=True))
     lengths = []
     depths = []
@@ -480,7 +484,7 @@ def get_depth_of_big_nodes(G, threshold=5000):
     return(depths, ave, quarts)
 
 
-def make_silly_boxplot(vals, outpath, names=None, title="", yline=None):
+def make_silly_boxplot(vals, outpath, names=None, title="", yline=None):  #pragma: nocover
     """
     yline can either be an number or a tuple: (25%, 50%, 75% quartiles)
     """
