@@ -69,7 +69,7 @@ from .shared_methods import parse_clustered_loci_file, pad_genbank_sequence, \
 SAMTOOLS_MIN_VERSION = '1.3.1'
 
 
-def get_args(test_args):  # pragma: no cover
+def get_args(test_args=None):  # pragma: no cover
     """
     """
     parser = argparse.ArgumentParser(prog="ribo seed",

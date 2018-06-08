@@ -201,7 +201,8 @@ class RiboSpecTest(unittest.TestCase):
                     reverse_complimented= init_node.reverse_complimented,
                     raw=init_node.raw)
         rs.populate_subgraph_from_source(
-            g=dg, root=init_node, node_list=node_list, counter=0, debug=True)
+            g=dg, root=init_node, length=0,
+            cutoff=1000, node_list=node_list, counter=0, debug=True)
         # we cant direcly diff graphs
         print(dg.nodes())
         ref_nodes  = [5, 7, 15, 16, 17, 18, 19, 20, 30, 31, 40]
@@ -215,7 +216,7 @@ class RiboSpecTest(unittest.TestCase):
         dg.add_node(init_node.name, cov=init_node.cov,
                     length=init_node.length, raw=init_node.raw)
         rs.reverse_populate_subgraph_from_source(
-            g=dg, root=node_list[0], node_list=node_list, counter=0, debug=False)
+            g=dg, root=node_list[0], node_list=node_list, counter=0, debug=True)
         # THis is different from the forward version, because of the directionality of the graph
         self.assertEqual(sorted([x for x in dg.nodes()]), sorted([x for x in DG.nodes() if x in [4,1]]))
 

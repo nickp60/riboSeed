@@ -59,7 +59,7 @@ bgcols = {  # pragma: no cover
 }
 
 
-def get_args(test_args):  # pragma: no cover
+def get_args(test_args=None):  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
     """

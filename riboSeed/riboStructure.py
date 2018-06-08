@@ -59,7 +59,7 @@ from .shared_methods import make_barrnap_cmd, set_up_logging
 
 
 
-def get_args():  # pragma: no cover
+def get_args(test_args=None):  # pragma: no cover
     """
     """
     parser = argparse.ArgumentParser(prog="ribo structure",

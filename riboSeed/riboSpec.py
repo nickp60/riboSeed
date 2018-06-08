@@ -568,7 +568,7 @@ def node_name_and_strand_in_graph(node, G):
                     return True
     return False
 
-def populate_subgraph_from_source(g, root, node_list, counter, length=0,cutoff=1000, debug=False):
+def populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=1000, debug=False):
     # starting from node, examit its neighbors
     nneighs = len(root.neighbor_list)
     for i, neigh in enumerate(root.neighbor_list):
@@ -599,11 +599,12 @@ def populate_subgraph_from_source(g, root, node_list, counter, length=0,cutoff=1
                 root=full_neigh,
                 node_list=node_list,
                 counter=counter + 1,
+                cutoff=cutoff,
                 length= length +full_neigh.length,
                 debug=debug)
 
 
-def reverse_populate_subgraph_from_source(g, root, node_list, counter, debug=False):
+def reverse_populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=1000, debug=False):
     # counter for dbugging
     if debug:
         print("populating rev recursion depth %i" % counter)
@@ -618,17 +619,22 @@ def reverse_populate_subgraph_from_source(g, root, node_list, counter, debug=Fal
             # that list our root as its neighbor (with right orientation)
             if neigh.name == root.name and \
                neigh.reverse_complimented == root.reverse_complimented:
-                g.add_node(node.name, cov=node.cov, length=node.length, raw=node.raw)
-                # we want to build the directionality opposite what it is
-                # currently, so we make the nodes going from the root to the node
-                g.add_edge(root.name, node.name)
-                # rinse and repeat
-                reverse_populate_subgraph_from_source(
-                    g=g,
-                    root=node,
-                    node_list=node_list,
-                    counter=counter + 1,
-                    debug=debug)
+                if length >= cutoff:
+                    break
+                else:
+                    g.add_node(node.name, cov=node.cov, length=node.length, raw=node.raw)
+                    # we want to build the directionality opposite what it is
+                    # currently, so we make the nodes going from the root to the node
+                    g.add_edge(root.name, node.name)
+                    # rinse and repeat
+                    reverse_populate_subgraph_from_source(
+                        g=g,
+                        root=node,
+                        node_list=node_list,
+                        counter=counter + 1,
+                        length=length + node.length,
+                        cutoff=cutoff,
+                        debug=debug)
 
 
 def make_rRNAs_dict(gff_list, gff_list_partial):
@@ -968,15 +974,31 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
 
             # add this initial node to a brand new DiGraph
             g = nx.DiGraph()
-            g.add_node(init_node.name, cov=init_node.cov, length=init_node.length, raw=init_node.raw)
+            g.add_node(
+                init_node.name,
+                cov=init_node.cov,
+                length=init_node.length,
+                reverse_complimented=init_node.reverse_complimented,
+                raw=init_node.raw)
             # here is the path tracing algorithm.
             # We get all paths leading to the 16S, or all the paths away from 23S
             logger.info("recursivly populating %s subgraph from initial node",
                         subgraph_name)
             if region == "16S":
-                populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
+                populate_subgraph_from_source(
+                    g=g,
+                    root=init_node,
+                    length=0,
+                    cutoff=args.threshold,
+                    node_list=subset_node_list,
+                    counter=1)
             else:
-                reverse_populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
+                reverse_populate_subgraph_from_source(
+                    g=g,
+                    root=init_node,
+                    node_list=subset_node_list,
+                    cutoff=args.threshold,
+                    counter=1)
 
             logger.debug("nodes in %s subgraph", subgraph_name)
             logger.debug(g.nodes())

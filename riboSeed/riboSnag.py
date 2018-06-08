@@ -59,7 +59,7 @@ from .shared_methods import add_gb_seqrecords_to_cluster_list, \
     extract_coords_from_locus, pad_genbank_sequence, \
     parse_clustered_loci_file, set_up_logging
 
-def get_args():  # pragma: no cover
+def get_args(test_args=None):  # pragma: no cover
     """get the arguments as a main parser with subparsers
     for named required arguments and optional arguments
     """
