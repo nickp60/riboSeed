@@ -554,7 +554,7 @@ def get_matching_node(name, rc, node_list):
         if name == n.name and \
            rc == n.reverse_complimented:
             return(n)
-    raise ValueError("matching node %s not found in list!" %node.name)
+    raise ValueError("matching node %s not found in list!" % name)
 
 
 def node_name_and_strand_in_graph(node, G):
@@ -577,9 +577,14 @@ def populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=
             print(
                 "populating recursion depth %i   parent %s: neighbor %s (%i of %i)" % \
                 (counter, root.name, neigh.name, i + 1, nneighs ))
-        full_neigh = get_matching_node(name=neigh.name,
-                                       rc=neigh.reverse_complimented,
-                                       node_list=node_list)
+        try:
+            # we might get an error if there is only a one directional node
+            full_neigh = get_matching_node(name=neigh.name,
+                                           rc=neigh.reverse_complimented,
+                                           node_list=node_list)
+        except ValueError as e:
+            print(e)
+            break
         # if full_neigh.name in g.nodes():
         #     # if already in the graph, just add the edge
         #     g.add_edge(root.name, full_neigh.name)
