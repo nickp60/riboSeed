@@ -147,6 +147,11 @@ def get_args():  # pragma: no cover
                           action="store", default=75,
                           help="Contigs under this length will be collapsed;" +
                           " default: %(default)s")
+    optional.add_argument("-a", "--min_anchor_length", dest="min_anchor_length",
+                          action="store", default=500,
+                          help="Paths must contain at least one node this " +
+                          "long as an anchor;" +
+                          " default: %(default)s")
     optional.add_argument("-t", "--threshold", dest="threshold",
                           action="store", default=1500,
                           help="paths must be at least this long (bp) to be " +
@@ -672,7 +677,6 @@ def check_rrnas_dict(rrnas, logger=None):
     Returns:
         returns tuple of two Bools, for whether to check 16S, 23S, or both
     """
-    logger.debug(rrnas)
     RUN_16S, RUN_23S = True, True
     if len(rrnas["16S"]["solid"]) >  1:
         logger.error(
@@ -802,9 +806,9 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
                        check=True)
     # determine which ones are our 16s, 23s, and 5s nodes
     gff_list = make_gff_list(barrnap_gff)
-    logger.debug(gff_list)
+    # logger.debug(gff_list)
     gff_list_partial = make_gff_list(barrnap_gff_partial)
-    logger.debug(gff_list_partial)
+    # logger.debug(gff_list_partial)
 
     # dict  of {gene: {partial: [nodes]; solid: [nodes]}}has keys of gense, where the value are dict
     rrnas = make_rRNAs_dict(gff_list, gff_list_partial)
@@ -880,7 +884,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     valid_nodes = set(interior_nodes).union(set(border_nodes))
     bad_nodes = set(G.nodes).symmetric_difference(valid_nodes)
     logger.debug("removing %i of %i nodes that aren't near rDNA", len(bad_nodes), len(G.nodes))
-    logger.debug(bad_nodes)
+    # logger.debug(bad_nodes)
     for node in bad_nodes:
         G.remove_node(node)
     if PLOT and args.plot_graphs:
@@ -1072,17 +1076,20 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             for path in out_paths_region_sans_collapsed:
                 filtered_path = [path[0]]
                 filtered_length = 0
-                internal_tip = False
+                anchor_found = False
                 # skip first node, our root (either 16S or 23S)
                 for i, node in enumerate(path):
                     if i > 0:
                         node_length = nodes_data[node]["length"]
+                        if node_length > args.min_anchor_length:
+                            anchor_found = True
                         filtered_length = filtered_length + node_length
                         filtered_path.append(node)
                         if filtered_length > args.threshold:
                             break
-                # if path does indeed pass the threshold
-                if filtered_length > 1000:
+                # if path does indeed pass the threshold, and an
+                # "anchor" node has been found
+                if filtered_length > 1000 and anchor_found:
                     out_paths_region.append(filtered_path)
 
             # filter out duplicated paths, again:
