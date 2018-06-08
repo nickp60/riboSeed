@@ -216,7 +216,7 @@ def make_adjacency_matrix(g):
     return M
 
 
-def plot_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outpath=None): #pragma: nocover
+def plot_adjacency_matrix(G, node_order=None, partitions=[], colors=[], outpath=None): #pragma: no cover
     """
     - G is an adjacency matrix
     - node_order (optional) is a list of nodes, where each node in G
@@ -298,12 +298,12 @@ def parse_fastg(f):
     return (node_list, g, DG)
 
 
-def plot_G(  # pragma: nocover
+def plot_G(
         G,
         nodes5,
         nodes16,
         nodes23,
-        outpath, outpath2):
+        outpath, outpath2):  # pragma: nocover
     fig = pyplot.figure(figsize=(10, 10)) # in inches
     pos = nx.layout.spring_layout(G, iterations=5)
     node_sizes_raw = [h['length'] for g, h in G.nodes.data()]
@@ -388,12 +388,9 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     # fastg are of unknown length
     get_node_weight = lambda u,v,d: G.node[v].get('length', 0)
     targets_path = nx.single_source_dijkstra(G, source, weight=get_node_weight)[1]
-
     #### Then, for each path, we calculate the length, binning them into
     #### either "internal" nodes (within the cutoff and "border" nodes (including the cutoff)
     for target, path_to in targets_path.items():
-    #         print(target)
-    #         print(path_to)
     #         out.write(str(target) + "     " + " ".join([str(x) for x in path_to]) + "\n")
     # sys.exit()
     # if 0:
@@ -548,11 +545,12 @@ def percentile(N, percent, key=lambda x:x):
 
 
 def populate_subgraph_from_source(g, root, node_list, counter, debug=False):
-    # counter for dbugging
-    if debug:
-        print("populating recursion depth %i" % counter)
     # starting from node, examit its neighbors
     for neigh in root.neighbor_list:
+        # counter for dbugging
+        if debug:
+            print(
+                "populating recursion depth %i, (neighbor %s, parent %s)" % (counter, neigh.name, root.name))
         # find that node in the node_list by
         for node in node_list:
             # ...checking name and orientation same, and not already in graph
@@ -560,14 +558,15 @@ def populate_subgraph_from_source(g, root, node_list, counter, debug=False):
                node.reverse_complimented == neigh.reverse_complimented and \
                node.name not in g.nodes():
                 # if found, add that node and the appropriate edges
-                g.add_node(node.name, cov=node.cov, length=node.length, raw=node.raw)
-                g.add_edge(root.name, node.name)
+                g.add_node(neigh.name, cov=node.cov, length=neigh.length, raw=neigh.raw)
+                g.add_edge(root.name, neigh.name)
                 # rinse and repeat
                 populate_subgraph_from_source(
                     g=g,
                     root=node,
                     node_list=node_list,
-                    counter=counter + 1)
+                    counter=counter + 1,
+                    debug=debug)
 
 
 def reverse_populate_subgraph_from_source(g, root, node_list, counter, debug=False):
@@ -594,7 +593,8 @@ def reverse_populate_subgraph_from_source(g, root, node_list, counter, debug=Fal
                     g=g,
                     root=node,
                     node_list=node_list,
-                    counter=counter + 1)
+                    counter=counter + 1,
+                    debug=debug)
 
 
 def make_rRNAs_dict(gff_list, gff_list_partial):
@@ -670,6 +670,42 @@ def add_temp_edges(node_list, G):
     for node in node_list:
         for neigh in node.neighbor_list:
             G.add_edge(neigh.name, node.name)
+
+
+def find_collapsable_partial_rRNA_nodes(rrnas, G):
+    """ return list of nodes where partial rrna loci neighbor full-length loci
+    """
+    collapsed = []
+    for k, vals in rrnas.items():
+        print("checking for collapsable %s nodes" %k)
+        these_collapsed = []
+        if len(vals["partial"]) == 0:
+            continue
+        # check if partial node neighbors true node
+        # print(vals)
+        for part in vals["partial"]:
+            # print("partial: %i" %part)
+            if len(vals['solid']) == 0:
+                # TODO collase partials into single node if the are close enough
+                pass
+            for solid in vals["solid"]:
+                # solidlen = dict(G.nodes(solid))['length']
+                if part in G.neighbors(solid):
+                    # print(G.edges(solid))
+                    for d in G.edges(part):
+                        if d[1] != solid and d[1] not in G.neighbors(solid):
+                            # make a bi-directional graph for now
+                            #############################################3
+                            """ can we remake the node_list object to reflect these changes?
+                            """
+                            G.add_edge(solid , d[1])
+                            G.add_edge(d[1], solid)
+                    # G.remove_node(part)
+                        #############################################3
+                    these_collapsed.append(part)
+
+        collapsed.extend(these_collapsed)
+    return collapsed
 
 
 @do_profile(follow=[make_silly_boxplot])
@@ -749,35 +785,8 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             outpath=os.path.join(output_root, "average_node_depths.pdf")
         )
 
-    ########################################################################
-    # collapse nodes where partial loci neighbor full-length
-    collapsed = []
-    for k, vals in rrnas.items():
-        print("checking for collapsable %s nodes" %k)
-        these_collapsed = []
-        if len(vals["partial"]) == 0:
-            continue
-        # check if partial node neighbors true node
-        # print(vals)
-        for part in vals["partial"]:
-            # print("partial: %i" %part)
-            for solid in vals["solid"]:
-                # solidlen = dict(G.nodes(solid))['length']
-                if part in G.neighbors(solid):
-                    # print(G.edges(solid))
-                    for d in G.edges(part):
-                        if d[1] != solid and d[1] not in G.neighbors(solid):
-                            # make a bi-directional graph for now
-                            #############################################3
-                            """ can we remake the node_list object to reflect these changes?
-                            """
-                            G.add_edge(solid , d[1])
-                            G.add_edge(d[1], solid)
-                    # G.remove_node(part)
-                        #############################################3
-                    these_collapsed.append(part)
 
-        collapsed.extend(these_collapsed)
+    collapsed = find_collapsable_partial_rRNA_nodes(rrnas, G)
 
     logger.info("marked %i partial nodes for collapsing:", len(collapsed))
     logger.debug(collapsed)
@@ -826,6 +835,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     valid_nodes = set(interior_nodes).union(set(border_nodes))
     bad_nodes = set(G.nodes).symmetric_difference(valid_nodes)
     logger.debug("removing %i of %i nodes that aren't near rDNA", len(bad_nodes), len(G.nodes))
+    logger.debug(bad_nodes)
     for node in bad_nodes:
         G.remove_node(node)
     if PLOT and args.plot_graphs:
@@ -927,6 +937,8 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             g.add_node(init_node.name, cov=init_node.cov, length=init_node.length, raw=init_node.raw)
             # here is the path tracing algorithm.
             # We get all paths leading to the 16S, or all the paths away from 23S
+            logger.info("recursivly populating %s subgraph from initial node",
+                        subgraph_name)
             if region == "16S":
                 populate_subgraph_from_source(g=g, root=init_node, node_list=subset_node_list, counter=1)
             else:
@@ -936,8 +948,8 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             logger.debug(g.nodes())
 
             if PLOT and args.plot_graphs:
-                logger.info("plotting reconstructed tree from %s %s node  %s" %\
-                            (subgraph_name, init_node.name))
+                logger.info("plotting reconstructed tree from %s node %s",
+                            subgraph_name, init_node.name)
                 plot_G(
                     g,
                     rrnas["5S"]["solid"],

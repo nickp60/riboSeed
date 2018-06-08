@@ -46,6 +46,8 @@ class RiboSpecTest(unittest.TestCase):
         self.fastg = os.path.join(self.spec_ref_dir, "mini.fastg")
         self.gff = os.path.join(self.spec_ref_dir, "NC_011751.1.gff")
         self.spec_gff = os.path.join(self.spec_ref_dir, "partial_barrnapped.gff")
+        # from GAGE aureus
+        self.real_fastg = os.path.join(self.spec_ref_dir, "assembly_graph.fastg")
         self.to_be_removed = []
 
     def test_graph(self):
@@ -182,15 +184,30 @@ class RiboSpecTest(unittest.TestCase):
         # weighted_mean = sum()/sum(ls)
 
     def test_populate_subgraph_from_source(self):
-        node_list, g, DG = rs.parse_fastg(self.fastg)
+        # node 5 is the 16S
+
+        node_list, g, DG = rs.parse_fastg(self.real_fastg)
+        rs.add_temp_edges(node_list, DG)
+
+
         dg = networkx.DiGraph()
-        init_node = node_list[0]
+        init_node = node_list[8]
+        interior, border = rs.neighborhood_by_length(G=DG, source=init_node.name,
+                                                     cutoff=1000, ignored_nodes=[])
+        print(interior)
+        print(border)
+        print(init_node)
         dg.add_node(init_node.name, cov=init_node.cov,
-                    length=init_node.length, raw=init_node.raw)
+                    length=init_node.length,
+                    reverse_complimented= init_node.reverse_complimented,
+                    raw=init_node.raw)
         rs.populate_subgraph_from_source(
-            g=dg, root=node_list[0], node_list=node_list, counter=0, debug=False)
+            g=dg, root=init_node, node_list=node_list, counter=0, debug=True)
         # we cant direcly diff graphs
-        self.assertEqual([x for x in dg.nodes()], [x for x in DG.nodes()])
+        print(dg.nodes())
+        ref_nodes  = [5, 7, 15, 16, 17, 18, 19, 20, 30, 31, 40]
+        # self.assertEqual(sorted([x for x in dg.nodes()]), sorted(ref_nodes))
+        self.assertEqual(sorted([x for x in dg.nodes()]), sorted(DG.nodes()))
 
     def test_reverse_populate_subgraph_from_source(self):
         node_list, g, DG = rs.parse_fastg(self.fastg)
@@ -201,7 +218,7 @@ class RiboSpecTest(unittest.TestCase):
         rs.reverse_populate_subgraph_from_source(
             g=dg, root=node_list[0], node_list=node_list, counter=0, debug=False)
         # THis is different from the forward version, because of the directionality of the graph
-        self.assertEqual([x for x in dg.nodes()], [x for x in DG.nodes() if x in [4,1]])
+        self.assertEqual(sorted([x for x in dg.nodes()]), sorted([x for x in DG.nodes() if x in [4,1]]))
 
     def test_make_rRNAs_dict(self):
         gff_list = rs.make_gff_list(self.spec_gff)
@@ -255,6 +272,20 @@ class RiboSpecTest(unittest.TestCase):
         ]
         dedup = rs.remove_duplicate_nested_lists(test_list)
         self.assertEqual(3, len(dedup))
+
+    def test_find_collapsable_partial_rRNA_nodes(self):
+        node_list, g, DG = rs.parse_fastg(self.real_fastg)
+        rrnas = {'16S': {'partial': [], 'solid': [5]}, '23S': {'partial': [], 'solid': [1]}, '5S': {'partial': [1, 11, 37, 38, 39], 'solid': []}}
+        # {
+        #     '16S': {'partial': [682], 'solid': [63]},
+        #     '5S': {'partial': [356, 71, 142, 914, 731, 697, 282, 283,
+        #                        605, 606, 735],
+        #            'solid': []},
+        #     '23S': {'partial': [914, 44, 717, 718], 'solid': []}
+        # }
+        # these were verified visually with bandage
+        collapsed = rs.find_collapsable_partial_rRNA_nodes(rrnas, DG)
+        print(collapsed)
 
     def tearDown(self):
         """
