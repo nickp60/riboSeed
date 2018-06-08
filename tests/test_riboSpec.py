@@ -188,15 +188,14 @@ class RiboSpecTest(unittest.TestCase):
 
         node_list, g, DG = rs.parse_fastg(self.real_fastg)
         rs.add_temp_edges(node_list, DG)
-
-
         dg = networkx.DiGraph()
         init_node = node_list[8]
         interior, border = rs.neighborhood_by_length(G=DG, source=init_node.name,
                                                      cutoff=1000, ignored_nodes=[])
-        print(interior)
-        print(border)
-        print(init_node)
+        # print("\n".join([str(x) for x in node_list]))
+        # print(interior)
+        # print(border)
+        # print(init_node)
         dg.add_node(init_node.name, cov=init_node.cov,
                     length=init_node.length,
                     reverse_complimented= init_node.reverse_complimented,
@@ -206,8 +205,8 @@ class RiboSpecTest(unittest.TestCase):
         # we cant direcly diff graphs
         print(dg.nodes())
         ref_nodes  = [5, 7, 15, 16, 17, 18, 19, 20, 30, 31, 40]
-        # self.assertEqual(sorted([x for x in dg.nodes()]), sorted(ref_nodes))
-        self.assertEqual(sorted([x for x in dg.nodes()]), sorted(DG.nodes()))
+        self.assertEqual(sorted([x for x in dg.nodes()]), sorted(ref_nodes))
+        # self.assertEqual(sorted([x for x in dg.nodes()]), sorted(DG.nodes()))
 
     def test_reverse_populate_subgraph_from_source(self):
         node_list, g, DG = rs.parse_fastg(self.fastg)

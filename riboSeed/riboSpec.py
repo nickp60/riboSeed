@@ -544,29 +544,63 @@ def percentile(N, percent, key=lambda x:x):
     return d0 + d1
 
 
-def populate_subgraph_from_source(g, root, node_list, counter, debug=False):
+def get_matching_node(name, rc, node_list):
+    """ this seems redundant, but we need it to rebuild graphs.
+    the node list has the neighbor information, and often we have
+    just a name and a strand (from a neighbor list)
+    """
+    for n in node_list:
+        # ...checking name and orientation same, and not already in graph
+        if name == n.name and \
+           rc == n.reverse_complimented:
+            return(n)
+    raise ValueError("matching node %s not found in list!" %node.name)
+
+
+def node_name_and_strand_in_graph(node, G):
+    """ return true if a node is already in a graph, checking both strand and orientation
+    this
+    """
+    if node.name in G.nodes():
+        for k, v in G.nodes(data=True):
+            if k == node.name:
+                if v["reverse_complimented"] == node.reverse_complimented:
+                    return True
+    return False
+
+def populate_subgraph_from_source(g, root, node_list, counter, length=0,cutoff=1000, debug=False):
     # starting from node, examit its neighbors
-    for neigh in root.neighbor_list:
+    nneighs = len(root.neighbor_list)
+    for i, neigh in enumerate(root.neighbor_list):
         # counter for dbugging
         if debug:
             print(
-                "populating recursion depth %i, (neighbor %s, parent %s)" % (counter, neigh.name, root.name))
-        # find that node in the node_list by
-        for node in node_list:
-            # ...checking name and orientation same, and not already in graph
-            if node.name == neigh.name and \
-               node.reverse_complimented == neigh.reverse_complimented and \
-               node.name not in g.nodes():
-                # if found, add that node and the appropriate edges
-                g.add_node(neigh.name, cov=node.cov, length=neigh.length, raw=neigh.raw)
-                g.add_edge(root.name, neigh.name)
-                # rinse and repeat
-                populate_subgraph_from_source(
-                    g=g,
-                    root=node,
-                    node_list=node_list,
-                    counter=counter + 1,
-                    debug=debug)
+                "populating recursion depth %i   parent %s: neighbor %s (%i of %i)" % \
+                (counter, root.name, neigh.name, i + 1, nneighs ))
+        full_neigh = get_matching_node(name=neigh.name,
+                                       rc=neigh.reverse_complimented,
+                                       node_list=node_list)
+        # if full_neigh.name in g.nodes():
+        #     # if already in the graph, just add the edge
+        #     g.add_edge(root.name, full_neigh.name)
+        if length >= cutoff:
+            break
+        else:
+            # if found, add that node and the appropriate edges
+            g.add_node(full_neigh.name,
+                       cov=full_neigh.cov,
+                       length=full_neigh.length,
+                       reverse_complimented=full_neigh.reverse_complimented,
+                       raw=full_neigh.raw)
+            g.add_edge(root.name, full_neigh.name)
+            # rinse and repeat, if node is not in the graph already
+            populate_subgraph_from_source(
+                g=g,
+                root=full_neigh,
+                node_list=node_list,
+                counter=counter + 1,
+                length= length +full_neigh.length,
+                debug=debug)
 
 
 def reverse_populate_subgraph_from_source(g, root, node_list, counter, debug=False):
