@@ -715,6 +715,43 @@ def remove_duplicate_nested_lists(l):
     return L
 
 
+def remove_similar_lists(lst, nodes_data, medium_threshold = 200):
+    """ removes likely assembly errors near repeats by deconvulting medium length contigs
+    We have already filtered out short contigs, but there are still these that cause problemswith the graph tracing.
+    """
+    # tmp is a list of equal length with the original list, and values are a list
+    # of the original list's node's lenghts.  If the length falls below the threshold,
+    # we change it to zero (or any constant), so that later we can remove duplicates
+    deduplicated = [] # recipient structure
+    tmp = []
+    for i, l in enumerate(lst):
+        lengths = [nodes_data[x]["length"] for x in l]
+        masked_lengths = [x for x in lengths if x > medium_threshold else 0]
+        tmp.append(masked_lengths)
+
+    # now, identify those lists sharing final nodes.
+    path_ends = [x[-1] for x in lst]  # final nodes
+    for n in path_ends:
+        # here are all the paths sharing this end point
+        sublist_nodes = [] # cant use list comp cause I need the indexes
+        sublist_lengths = []
+        for i, l in enumerate(lst):
+            if l[-1] == n:
+                sublist_nodes.append(l)
+                sublist_lengths.append(tmp[i])
+        # check if the lengths are the same
+        if len(set(tuple(sublist_lengths))) != len(sublist):
+            # deal with collapsables
+            pass
+        else:
+            deduplicated.extend()
+        
+    for nodes, lengths in zip(l, tmp):
+        uniq = set(tuple(x) for x in t)
+        
+    return L
+
+
 def add_temp_edges(node_list, G):
     # add temporary edges; later we will weight them and redo the directionality if needed
     for node in node_list:
@@ -1070,8 +1107,10 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
                     out_paths_region_sans_collapsed.append(new_path)
 
             # filter out duplicated paths:
-            out_paths_region_sans_collapsed = remove_duplicate_nested_lists(
+            out_paths_region_sans_collapsed_naive = remove_duplicate_nested_lists(
                 out_paths_region_sans_collapsed)
+            out_paths_region_sans_collapsed = remove_similar_lists(
+                out_paths_region_sans_collapsed_naive, medium_threshold = 200)
             # now we have filtered, and some paths might not be long enough.
             # Others, if the graph is cyclical, will be too long.  here, we trim and filter!
             for path in out_paths_region_sans_collapsed:
