@@ -127,9 +127,10 @@ def get_args():  # pragma: no cover
         "-g", "--assemgly_graph",
         dest='assembly_graph',
         action="store", default='', type=str,
+        # metavar="assembly_graph.fastg/SPAdes_dir",
         help="fastg assembly graph from SPAdes or a SPAdes output directory." +
         " If the latter, riboSpec will be run on both the final assembly " +
-        "graph, and the intermidiate graphs for each k-mer.",
+        "graph, and all the intermediate graphs for each k-mer.",
         required=True)
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("--plot_graphs", dest='plot_graphs',
@@ -1267,9 +1268,10 @@ def main(args, logger=None):
         for line in of:
             logger.info(line.strip())
 
-    make_silly_boxplot(
-        vals=rRNA_counts_for_plotting,
-        outpath=os.path.join(output_root, "rRNA_counts.pdf"),
-        title= "rRNA counts estimated from %s assembly graph(s)" % nfastgs,
-        names=["16S", "23S"]
-    )
+    if PLOT:
+        make_silly_boxplot(
+            vals=rRNA_counts_for_plotting,
+            outpath=os.path.join(output_root, "rRNA_counts.pdf"),
+            title= "rRNA counts estimated from %s assembly graph(s)" % nfastgs,
+            names=["16S", "23S"]
+        )
