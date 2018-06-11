@@ -1,9 +1,12 @@
 #  The Change Log
 This is a bit overdue, but better better Nate than lever, right?
 ----
+## 0.4.54
+- added several commandline options for `ribo spec`
+- improved path filtering for `ribo spec`
 
 ## 0.4.52
-- added checking for args when using `ribo sun`
+- added checking for args when using `ribo run`
 - fix dtt issues
 
 

@@ -168,6 +168,7 @@ def get_args():  # pragma: no cover
                           "considered; default: %(default)s")
     optional.add_argument("-b", "--barrnap_length_threshold", dest="barrnap_length_threshold",
                           action="store", default=.75,
+                          type=float,
                           help="This gets passed to barrnap's --lencutoff " +
                           "argument, for determining what we should treat " +
                           "as a legitimate hmm hit; default: %(default)s")
