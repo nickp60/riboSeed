@@ -715,22 +715,21 @@ def remove_duplicate_nested_lists(l):
     return L
 
 
-def remove_similar_lists(lst, nodes_data, medium_threshold = 200):
+def remove_similar_lists(lst, lengths_lst, medium_threshold = 200):
     """ removes likely assembly errors near repeats by deconvulting medium length contigs
     We have already filtered out short contigs, but there are still these that cause problemswith the graph tracing.
     """
     # tmp is a list of equal length with the original list, and values are a list
     # of the original list's node's lenghts.  If the length falls below the threshold,
-    # we change it to zero (or any constant), so that later we can remove duplicates
+    # we essentially remove it, so that later we can remove duplicates
     deduplicated = [] # recipient structure
-    tmp = []
-    for i, l in enumerate(lst):
-        lengths = [nodes_data[x]["length"] for x in l]
-        masked_lengths = [x for x in lengths if x > medium_threshold else 0]
-        tmp.append(masked_lengths)
+    masked_lengths_list = []
+    for lengths in lengths_lst:
+        masked_lengths = [x for x in lengths if x > medium_threshold ]
+        masked_lengths_list.append(masked_lengths)
 
     # now, identify those lists sharing final nodes.
-    path_ends = [x[-1] for x in lst]  # final nodes
+    path_ends = set([x[-1] for x in lst])  # final nodes
     for n in path_ends:
         # here are all the paths sharing this end point
         sublist_nodes = [] # cant use list comp cause I need the indexes
@@ -738,18 +737,28 @@ def remove_similar_lists(lst, nodes_data, medium_threshold = 200):
         for i, l in enumerate(lst):
             if l[-1] == n:
                 sublist_nodes.append(l)
-                sublist_lengths.append(tmp[i])
-        # check if the lengths are the same
-        if len(set(tuple(sublist_lengths))) != len(sublist):
-            # deal with collapsables
-            pass
+                sublist_lengths.append(masked_lengths_list[i])
+        # Within this sublist, make lists of the unique paths (though these should be all distinct) and unique path lengths (as these could contain duplicates). Then, we check if the lengths of list of uniqe lengths and number of paths are the same.  If they are the same, we add all the paths to the returned list.
+        uniq_paths_to_end = set(tuple(x) for x in sublist_nodes) # these should always be unique
+        uniq_lengths_of_paths_to_end = set(tuple(x) for x in sublist_lengths)
+        if len(uniq_lengths_of_paths_to_end) != len(sublist_nodes):
+            # we can tell we have duplicate paths, but we dont know how many.
+            # There could be two duplicate paths and another distinct path to
+            # the node, we go uniqe path by unique path.
+            for uniq_lengths in uniq_lengths_of_paths_to_end:
+                # for each of these unique length lists, we should be returning a representative path
+                # This marks whether we have found it yet.
+                # This could probably be refactored with a well-placed "break"
+                selected_representative = False
+                for subpath, sublengths in zip(sublist_nodes, sublist_lengths):
+                    # if this sublengh has a duplicate, add the corresponding path of only the first one to be returned
+                    if tuple(sublengths) == uniq_lengths and not selected_representative:
+                        deduplicated.append(subpath)
+                        selected_representative = True
         else:
-            deduplicated.extend()
-        
-    for nodes, lengths in zip(l, tmp):
-        uniq = set(tuple(x) for x in t)
-        
-    return L
+            deduplicated.extend(sublist_nodes)
+
+    return deduplicated
 
 
 def add_temp_edges(node_list, G):
@@ -1109,6 +1118,14 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             # filter out duplicated paths:
             out_paths_region_sans_collapsed_naive = remove_duplicate_nested_lists(
                 out_paths_region_sans_collapsed)
+            # make list of the lengths of the nodes in the paths
+            path_node_lengths = []
+            for i, l in enumerate(out_paths_region_sans_collapsed_naive):
+                lengths = [nodes_data[x]["length"] for x in l]
+                path_node_lengths.append(lengths)
+
+
+
             out_paths_region_sans_collapsed = remove_similar_lists(
                 out_paths_region_sans_collapsed_naive, medium_threshold = 200)
             # now we have filtered, and some paths might not be long enough.

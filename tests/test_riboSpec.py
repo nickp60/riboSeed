@@ -287,6 +287,33 @@ class RiboSpecTest(unittest.TestCase):
         collapsed = rs.find_collapsable_partial_rRNA_nodes(rrnas, DG)
         print(collapsed)
 
+    def test_remove_similar_lists(self):
+        """ verify list simplification works
+        removing similar lists is when we look at the paths containing medium length nodes ( in this case, 200bp.  list "l" is the lengths of the nodes, and list "n" is the list of node names.  We are hoping to retain all the paths to node "5" that dont have duplicate lengths.  The magic is that we simplify the lights by removing values > threshold.
+        """
+        l = [
+            [500,300,100,100,500],
+            [500,300,100,150,500], # this should be removed
+            [500,300,400,900,500],
+            [100,100,400,900,800],
+        ]
+        n = [
+            [1,2,3,4,5],
+            [1,3,4,6,5],
+            [7,8,6,1,5],
+            [17,28,6,1,35],
+        ]
+        # min threshold is 200
+        ref_paths = [
+            [17, 28, 6, 1, 35],
+            [7, 8, 6, 1, 5],
+            [1, 2, 3, 4, 5]]
+        self.assertEqual(
+            ref_paths,
+            rs.remove_similar_lists(n, l)
+        )
+
+
     def tearDown(self):
         """
         """
