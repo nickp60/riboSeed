@@ -284,7 +284,7 @@ class RiboSpecTest(unittest.TestCase):
         #     '23S': {'partial': [914, 44, 717, 718], 'solid': []}
         # }
         # these were verified visually with bandage
-        collapsed = rs.find_collapsable_partial_rRNA_nodes(rrnas, DG)
+        collapsed = rs.find_collapsable_partial_rRNA_nodes(rrnas, DG, logger)
         print(collapsed)
 
     def test_remove_similar_lists(self):

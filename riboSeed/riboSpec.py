@@ -72,9 +72,9 @@ try:
     from matplotlib import pyplot, patches
     PLOT = True
 except Exception as e:  # likely an ImportError, but not taking chances
-    print(e)
-    print("\nlooks like you have some issue with matplotlib.  " +
-          "Classic matplotlib, amirite? Plotting is disabled\n")
+    sys.stderr.write(e)
+    sys.stderr.write("\nlooks like you have some issue with matplotlib.  " +
+                     "Classic matplotlib, amirite? Plotting is disabled\n")
     PLOT = False
 
 import numpy as np
@@ -599,12 +599,13 @@ def populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=
                 "populating recursion depth %i   parent %s: neighbor %s (%i of %i)" % \
                 (counter, root.name, neigh.name, i + 1, nneighs ))
         try:
-            # we might get an error if there is only a one directional node
+            # we might get an error if there is only a one directional node, or because
+            # we are inly working with a subset of the full node list.
             full_neigh = get_matching_node(name=neigh.name,
                                            rc=neigh.reverse_complimented,
                                            node_list=node_list)
         except ValueError as e:
-            print(e)
+            sys.stderr.write(e)
             break
         # if full_neigh.name in g.nodes():
         #     # if already in the graph, just add the edge
@@ -783,12 +784,12 @@ def add_temp_edges(node_list, G):
             G.add_edge(neigh.name, node.name)
 
 
-def find_collapsable_partial_rRNA_nodes(rrnas, G):
+def find_collapsable_partial_rRNA_nodes(rrnas, G, logger=None):
     """ return list of nodes where partial rrna loci neighbor full-length loci
     """
     collapsed = []
     for k, vals in rrnas.items():
-        print("checking for collapsable %s nodes" %k)
+        logger.debug("checking for collapsable %s nodes" %k)
         these_collapsed = []
         if len(vals["partial"]) == 0:
             continue
@@ -897,7 +898,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
         )
 
 
-    collapsed = find_collapsable_partial_rRNA_nodes(rrnas, G)
+    collapsed = find_collapsable_partial_rRNA_nodes(rrnas, G, logger=logger)
 
     logger.info("marked %i partial nodes for collapsing:", len(collapsed))
     logger.debug(collapsed)
@@ -1343,9 +1344,10 @@ def main(args, logger=None):
             which_k="final",
             logger=logger)
 
-    # log results
+    # log results and send to stdout
     with open(os.path.join(output_root, "riboSpec_results.tab"), "r") as of:
         for line in of:
+            sys.stdout.write(line) # we want the newline here
             logger.info(line.strip())
 
     if PLOT:
