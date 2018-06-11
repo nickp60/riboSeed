@@ -166,6 +166,11 @@ def get_args():  # pragma: no cover
                           action="store", default=1500,
                           help="paths must be at least this long (bp) to be " +
                           "considered; default: %(default)s")
+    optional.add_argument("-b", "--barrnap_length_threshold", dest="barrnap_length_threshold",
+                          action="store", default=.75,
+                          help="This gets passed to barrnap's --lencutoff " +
+                          "argument, for determining what we should treat " +
+                          "as a legitimate hmm hit; default: %(default)s")
     optional.add_argument("--barrnap_exe", dest="barrnap_exe",
                           action="store", default="barrnap",
                           help="Path to barrnap executable;" +
@@ -842,7 +847,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
         outgff=barrnap_gff,
         exe=args.barrnap_exe,
         threads=args.cores,
-        thresh=0.8,
+        thresh=args.barrnap_length_threshold,
         evalue=1e-06,
         kingdom="bac")
     barrnap_cmd_partial = make_barrnap_cmd(
