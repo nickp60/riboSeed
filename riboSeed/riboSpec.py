@@ -153,6 +153,15 @@ def get_args():  # pragma: no cover
                           help="Paths must contain at least one node this " +
                           "long as an anchor;" +
                           " default: %(default)s")
+    optional.add_argument("-f", "--medium_length_threshold",
+                          dest="medium_length_threshold",
+                          action="store", default=400,
+                          help="Paths are simplified when contigs are greater than " +
+                          "the --min_contig_length, but still short.  These " +
+                          "medium-length contigs may be assembly artificts or " +
+                          "otherwise irrelevent. IF you dont want this filtering " +
+                          "applied, set to the same value as --min_contig_len;" +
+                          " default: %(default)s")
     optional.add_argument("-t", "--threshold", dest="threshold",
                           action="store", default=1500,
                           help="paths must be at least this long (bp) to be " +
@@ -1127,7 +1136,9 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
 
 
             out_paths_region_sans_collapsed = remove_similar_lists(
-                out_paths_region_sans_collapsed_naive, medium_threshold = 200)
+                out_paths_region_sans_collapsed_naive,
+                path_node_lengths,
+                medium_threshold = args.medium_length_threshold)
             # now we have filtered, and some paths might not be long enough.
             # Others, if the graph is cyclical, will be too long.  here, we trim and filter!
             for path in out_paths_region_sans_collapsed:
