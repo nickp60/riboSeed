@@ -605,7 +605,7 @@ def populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=
                                            rc=neigh.reverse_complimented,
                                            node_list=node_list)
         except ValueError as e:
-            sys.stderr.write(e)
+            sys.stderr.write(str(e))
             break
         # if full_neigh.name in g.nodes():
         #     # if already in the graph, just add the edge
