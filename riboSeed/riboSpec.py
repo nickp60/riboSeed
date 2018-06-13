@@ -605,7 +605,7 @@ def populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=
                                            rc=neigh.reverse_complimented,
                                            node_list=node_list)
         except ValueError as e:
-            sys.stderr.write(str(e))
+            sys.stderr.write(str(e) + "\n")
             break
         # if full_neigh.name in g.nodes():
         #     # if already in the graph, just add the edge
@@ -784,8 +784,9 @@ def add_temp_edges(node_list, G):
             G.add_edge(neigh.name, node.name)
 
 
-def find_collapsable_partial_rRNA_nodes(rrnas, G, logger=None):
+def find_collapsable_partial_rRNA_nodes(rrnas, G, nodes_data, threshold=200, logger=None):
     """ return list of nodes where partial rrna loci neighbor full-length loci
+    We only collapse short nodes, by defualt 200, which should capture all the 5S/tRNA nodes
     """
     collapsed = []
     for k, vals in rrnas.items():
@@ -796,6 +797,9 @@ def find_collapsable_partial_rRNA_nodes(rrnas, G, logger=None):
         # check if partial node neighbors true node
         # print(vals)
         for part in vals["partial"]:
+            # ifs a big node with just a fraction of a rRNA on an end, we retain it
+            if nodes_data[part]["length"] > threshold:
+                continue
             # print("partial: %i" %part)
             if len(vals['solid']) == 0:
                 # TODO collase partials into single node if the are close enough
@@ -806,10 +810,10 @@ def find_collapsable_partial_rRNA_nodes(rrnas, G, logger=None):
                     # print(G.edges(solid))
                     for d in G.edges(part):
                         if d[1] != solid and d[1] not in G.neighbors(solid):
-                            # make a bi-directional graph for now
+                            # ammend graph to reflect the collapse; we dont remove nodes,
+                            # but we have the new edges
+                            # (make a bi-directional graph for now)
                             #############################################3
-                            """ can we remake the node_list object to reflect these changes?
-                            """
                             G.add_edge(solid , d[1])
                             G.add_edge(d[1], solid)
                     # G.remove_node(part)
@@ -898,7 +902,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
         )
 
 
-    collapsed = find_collapsable_partial_rRNA_nodes(rrnas, G, logger=logger)
+    collapsed = find_collapsable_partial_rRNA_nodes(rrnas, G, nodes_data=nodes_data, logger=logger)
 
     logger.info("marked %i partial nodes for collapsing:", len(collapsed))
     logger.debug(collapsed)
@@ -1108,7 +1112,13 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             # for noderegion in rrnas[region]["solid"]:
             for tip in tips:
                 out_paths_region_raw.extend(nx.all_simple_paths(g, region_node, tip))
-            logger.info("number of raw paths to %s: %i" %(subgraph_name, len(out_paths_region_raw)))
+            logger.info("number of raw paths to %s: %i",
+                        subgraph_name, len(out_paths_region_raw))
+            for i in out_paths_region_raw:
+                logger.debug(i)
+
+            # # we want to be able to trace the fate of of each possible path through the various filtering stages, we lets make it into a dict here
+            # exit_paths_dict  = {k, {"raw": v} for k,v in enumerate(out_paths_region_raw)}
 
             """
             remember the collaping stuff we figured out before?  Lets remove
@@ -1116,7 +1126,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             redundant paths.  We also take this opportunity to filter out
             paths that include tips not at the tip.  It happens, somehow...
             """
-            for path in out_paths_region_raw:
+            for  path in out_paths_region_raw:
                 new_path = []
                 internal_tip = False
                 for i in path:
@@ -1130,30 +1140,42 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
                         pass
                 if not internal_tip:
                     out_paths_region_sans_collapsed.append(new_path)
+                else:
+                    logger.debug(
+                        "removed path for containg collapsable node: %s",
+                        " ".join(new_path))
 
             # filter out duplicated paths:
             out_paths_region_sans_collapsed_naive = remove_duplicate_nested_lists(
                 out_paths_region_sans_collapsed)
+            logger.info("number of de-duplicated paths to %s: %i",
+                        subgraph_name, len(out_paths_region_sans_collapsed_naive))
+            for i in out_paths_region_sans_collapsed_naive:
+                logger.debug(i)
+
             # make list of the lengths of the nodes in the paths
+            # we use this to filter out needlessly complex paths through a bunch of tiny nodes
             path_node_lengths = []
             for i, l in enumerate(out_paths_region_sans_collapsed_naive):
                 lengths = [nodes_data[x]["length"] for x in l]
                 path_node_lengths.append(lengths)
-
-
-
             out_paths_region_sans_collapsed = remove_similar_lists(
                 out_paths_region_sans_collapsed_naive,
                 path_node_lengths,
                 medium_threshold = args.medium_length_threshold)
+            logger.info("number of dissimilar paths to %s: %i",
+                        subgraph_name, len(out_paths_region_sans_collapsed))
+            for i in out_paths_region_sans_collapsed:
+                logger.debug(i)
+
             # now we have filtered, and some paths might not be long enough.
             # Others, if the graph is cyclical, will be too long.  here, we trim and filter!
             for path in out_paths_region_sans_collapsed:
                 filtered_path = [path[0]]
                 filtered_length = 0
                 anchor_found = False
-                # skip first node, our root (either 16S or 23S)
                 for i, node in enumerate(path):
+                    # skip first node, our root (either 16S or 23S)
                     if i > 0:
                         node_length = nodes_data[node]["length"]
                         if node_length > args.min_anchor_length:

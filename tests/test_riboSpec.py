@@ -275,6 +275,7 @@ class RiboSpecTest(unittest.TestCase):
 
     def test_find_collapsable_partial_rRNA_nodes(self):
         node_list, g, DG = rs.parse_fastg(self.real_fastg)
+        nodes_data = dict(DG.nodes(data=True))
         rrnas = {'16S': {'partial': [], 'solid': [5]}, '23S': {'partial': [], 'solid': [1]}, '5S': {'partial': [1, 11, 37, 38, 39], 'solid': []}}
         # {
         #     '16S': {'partial': [682], 'solid': [63]},
@@ -284,7 +285,9 @@ class RiboSpecTest(unittest.TestCase):
         #     '23S': {'partial': [914, 44, 717, 718], 'solid': []}
         # }
         # these were verified visually with bandage
-        collapsed = rs.find_collapsable_partial_rRNA_nodes(rrnas, DG, logger)
+        collapsed = rs.find_collapsable_partial_rRNA_nodes(
+            rrnas, DG,
+            nodes_data=nodes_data, logger=logger)
         print(collapsed)
 
     def test_remove_similar_lists(self):
