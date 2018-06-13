@@ -633,14 +633,14 @@ def populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=
 
 def reverse_populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=1000, debug=False):
     # counter for dbugging
-    if debug:
-        print("populating rev recursion depth %i" % counter)
+    if root.name == 85 or root.name == 84:
+        debug=True
     # print(root)
     # look through all nodes
     for node in node_list:
         # print(node.name)
-        if node.name in g.nodes():
-            continue
+        # if g.has_edge(root.name, node.name):
+        #     continue
         # and each of thats node's neighbors
         for neigh in node.neighbor_list:
             # that list our root as its neighbor (with right orientation)
@@ -648,7 +648,15 @@ def reverse_populate_subgraph_from_source(g, root, node_list, counter, length=0,
                neigh.reverse_complimented == root.reverse_complimented:
                 if length >= cutoff:
                     break
+                # if the node is already in the graph, we add an edge, but not
+                # a node, and we dont populate deeper from there
+                elif node.name in g.nodes():
+                    if debug:
+                        print("adding edge" , root.name, node.name, "but not recursing")
+                    g.add_edge(root.name, node.name)
                 else:
+                    if debug:
+                        print("adding node", node.name, ", from node", root.name, " rev recursion depth %i" % counter)
                     g.add_node(node.name, cov=node.cov, length=node.length, raw=node.raw)
                     # we want to build the directionality opposite what it is
                     # currently, so we make the nodes going from the root to the node
@@ -822,6 +830,39 @@ def find_collapsable_partial_rRNA_nodes(rrnas, G, nodes_data, threshold=200, log
 
         collapsed.extend(these_collapsed)
     return collapsed
+
+
+def make_path_without_simple_bubbles(path, g, nodes_data, threshold=20000, logger=None):
+    """ return a path after filtering out nodes that could cause a bubble..
+    Integrated prophages or integrated plasmids can cause bubbles in the
+    assembly graph, where the integrases at each end form a repeat. We set a
+    heuistic threshold of 20kb which should include most of these but exlude
+    larger bubble that may be relavent.
+
+    To do this, we go along each node.  This is a directional graph at this
+    point, if a node's neighors have the node as THEIR neighbor, we got a
+    bubble!.  If there are two nodes separating, a bubble will not be
+    detected, hene the "sinple" in the method name
+    """
+    filtered_path = [path[0]]
+    for i, n in enumerate(path):
+        # we ignore bubbles at the rRNA. The assemlby there is always a mess
+        if i == 0:
+            continue
+        node = nodes_data[n]
+        bubble_found = False
+        logger.debug("node %s neighbors : %s", n,  " ".join([str(x) for x in g.neighbors(n)]))
+        for neigh in g.neighbors(n):
+            full_neigh = nodes_data[neigh]
+            if (
+                    n in g.neighbors(neigh) and \
+                    full_neigh["length"] <= threshold
+            ):
+                logger.debug("found possible bubble at node %s", node)
+                bubble_found = True
+        if not bubble_found:
+            filtered_path.append(n)
+    return filtered_path
 
 
 @do_profile(follow=[make_silly_boxplot])
@@ -1078,7 +1119,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
 
             logger.debug("nodes in %s subgraph", subgraph_name)
             logger.debug(g.nodes())
-
+            subgraph_nodes_data = dict(g.nodes(data=True))
             if PLOT and args.plot_graphs:
                 logger.info("plotting reconstructed tree from %s node %s",
                             subgraph_name, init_node.name)
@@ -1100,16 +1141,14 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
                         "%s_subgraph_adjacency_matrix.pdf" % subgraph_name))
 
             # count the paths going out from the 16S/23S
-            out_paths_region_raw = []
-            out_paths_region_sans_collapsed = []
-            out_paths_region = []
 
             logger.debug("tips will have an out-degree of 0 on this reduced graph")
             logger.debug([g.out_degree(node) for node in g.nodes()])
             tips = [node for node in g.nodes() if g.out_degree(node) == 0]
             logger.debug("tips of subgraph:")
             logger.debug(tips)
-            # for noderegion in rrnas[region]["solid"]:
+
+            out_paths_region_raw = []
             for tip in tips:
                 out_paths_region_raw.extend(nx.all_simple_paths(g, region_node, tip))
             logger.info("number of raw paths to %s: %i",
@@ -1126,6 +1165,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             redundant paths.  We also take this opportunity to filter out
             paths that include tips not at the tip.  It happens, somehow...
             """
+            out_paths_region_sans_collapsed = []
             for  path in out_paths_region_raw:
                 new_path = []
                 internal_tip = False
@@ -1143,7 +1183,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
                 else:
                     logger.debug(
                         "removed path for containg collapsable node: %s",
-                        " ".join(new_path))
+                        " ".join([str(x) for x in new_path]))
 
             # filter out duplicated paths:
             out_paths_region_sans_collapsed_naive = remove_duplicate_nested_lists(
@@ -1170,6 +1210,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
 
             # now we have filtered, and some paths might not be long enough.
             # Others, if the graph is cyclical, will be too long.  here, we trim and filter!
+            out_paths_region_re_length_filtered = []
             for path in out_paths_region_sans_collapsed:
                 filtered_path = [path[0]]
                 filtered_length = 0
@@ -1187,7 +1228,21 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
                 # if path does indeed pass the threshold, and an
                 # "anchor" node has been found
                 if filtered_length > 1000 and anchor_found:
-                    out_paths_region.append(filtered_path)
+                    out_paths_region_re_length_filtered.append(filtered_path)
+
+            out_paths_region_re_length_filtered = remove_duplicate_nested_lists(
+                out_paths_region_re_length_filtered)
+
+            # filter out bubble nodes
+            out_paths_region = []
+            for p in out_paths_region_re_length_filtered:
+                out_paths_region.append(
+                    make_path_without_simple_bubbles(
+                        path=p,
+                        g=g,
+                        nodes_data=subgraph_nodes_data,
+                        threshold=20000, logger=logger)
+                    )
 
             # filter out duplicated paths, again:
             out_paths_region = remove_duplicate_nested_lists(out_paths_region)
@@ -1195,6 +1250,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
             logger.debug(
                 "Removed %i paths that contained collapsable nodes, etc" % \
                 (len(out_paths_region_raw) - len(out_paths_region)))
+
             logger.info("%s Paths:\n", subgraph_name)
             for i in out_paths_region:
                 logger.info(i)
