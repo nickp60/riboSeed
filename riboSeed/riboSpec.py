@@ -607,9 +607,9 @@ def populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=
         except ValueError as e:
             sys.stderr.write(str(e) + "\n")
             break
-        # if full_neigh.name in g.nodes():
-        #     # if already in the graph, just add the edge
-        #     g.add_edge(root.name, full_neigh.name)
+        if full_neigh.name in g.nodes():
+            # if already in the graph, just add the edge
+            g.add_edge(root.name, full_neigh.name)
         if length >= cutoff:
             break
         else:
@@ -632,9 +632,9 @@ def populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=
 
 
 def reverse_populate_subgraph_from_source(g, root, node_list, counter, length=0, cutoff=1000, debug=False):
-    # counter for dbugging
-    if root.name == 85 or root.name == 84:
-        debug=True
+    # use this for debugging praticular nodes
+    # if root.name == 85 or root.name == 84:
+    #     debug=True
     # print(root)
     # look through all nodes
     for node in node_list:
@@ -646,15 +646,16 @@ def reverse_populate_subgraph_from_source(g, root, node_list, counter, length=0,
             # that list our root as its neighbor (with right orientation)
             if neigh.name == root.name and \
                neigh.reverse_complimented == root.reverse_complimented:
-                if length >= cutoff:
-                    break
                 # if the node is already in the graph, we add an edge, but not
                 # a node, and we dont populate deeper from there
-                elif node.name in g.nodes():
+                if node.name in g.nodes():
                     if debug:
                         print("adding edge" , root.name, node.name, "but not recursing")
                     g.add_edge(root.name, node.name)
                 else:
+                    # check for length here rather than above because we want to retain medium sized bubbles.
+                    if length >= cutoff:
+                        break
                     if debug:
                         print("adding node", node.name, ", from node", root.name, " rev recursion depth %i" % counter)
                     g.add_node(node.name, cov=node.cov, length=node.length, raw=node.raw)
@@ -851,7 +852,7 @@ def make_path_without_simple_bubbles(path, g, nodes_data, threshold=20000, logge
             continue
         node = nodes_data[n]
         bubble_found = False
-        logger.debug("node %s neighbors : %s", n,  " ".join([str(x) for x in g.neighbors(n)]))
+        # logger.debug("node %s neighbors : %s", n,  " ".join([str(x) for x in g.neighbors(n)]))
         for neigh in g.neighbors(n):
             full_neigh = nodes_data[neigh]
             if (
@@ -870,7 +871,6 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     # make a list of node objects, a adjacency matrix M, and a DiGRaph object G
     logger.info("Reading assembly graph: %s", fastg)
     node_list, G_dict, G = parse_fastg(f=fastg)
-
     if PLOT and args.MAKE_ADJACENCY_MATRIX:
         M = make_adjacency_matrix(g)
         plot_adjacency_matrix(
@@ -928,7 +928,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
 
     # add temporary edges; later we will weight them and redo the directionality if needed
     add_temp_edges(node_list, G)
-
+    nodes_data = dict(G.nodes(data=True))
     # get the depths of the big contigs
     depths_of_all_nodes, ave_depth_all_node, qs_all = get_depth_of_big_nodes(
         G, threshold=0)
