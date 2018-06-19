@@ -1,9 +1,11 @@
 #!/bin/bash
-set -oue
+set -e
 #  Takes three args -
 # -o the quoted nameof the organism
 # -n the number of strains
 # -f the path to an existing prokaryotes.txt file
+PROKFILE=""
+NSTRAINS=""
 while getopts "o:n:f:" opt; do
     case $opt in
 	o)
@@ -32,8 +34,16 @@ done
 
 if [ ! -f "$PROKFILE" ]
 then
-    wget ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prokaryotes.txt
+    if [ ! -f "prokaryotes.txt" ]
+    then
+	wget ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prokaryotes.txt >&2
+    fi
     PROKFILE=./prokaryotes.txt
+    if [ ! -s "$PROKFILE" ]
+    then
+	echo "The file '$PROKFILE' is empty/corrupted; please delete and try again"
+	exit 1
+    fi
 fi
 
 # column 9 has the nucc accession if it is a complete genome, or a "-" if empt
@@ -46,7 +56,7 @@ cat  $PROKFILE | \
     grep "$ORGNAME" > \
 	 ./tmp_raw_outfile
 
-# if file is not empty
+# if file is empty, raise an error
 if [ ! -s ./tmp_raw_outfile ]
 then
     echo "grepping for '$ORGNAME' returned no results"
@@ -60,10 +70,24 @@ fi
 # Note that we only get the first chromasome for a given entry. Sorry vibrioists
 
 # shuf ./tmp_raw_outfile | head -n $NSTRAINS | cut -d "\t" -f 9
-shuf ./tmp_raw_outfile | \
-    head -n $NSTRAINS | \
-    cut -f 9 | \
-    sed "s/chro.*://" | \
-    sed "s/\/.*//" > tmp_accessions
+if `which shuf`
+then
+    SHUF=shuf
+else
+    SHUF=gshuf
+fi
 
-mkdir
+
+if [ $NSTRAINS != "" ]
+then
+    $SHUF ./tmp_raw_outfile | \
+	head -n $NSTRAINS | \
+	cut -f 9 | \
+	sed "s/chro.*://" | \
+	sed "s/\/.*//"
+else
+        $SHUF ./tmp_raw_outfile | \
+	cut -f 9 | \
+	sed "s/chro.*://" | \
+	sed "s/\/.*//"
+fi
