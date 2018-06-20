@@ -38,6 +38,7 @@ then
     then
 	wget ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prokaryotes.txt >&2
     fi
+
     PROKFILE=./prokaryotes.txt
     if [ ! -s "$PROKFILE" ]
     then
@@ -51,13 +52,21 @@ fi
 # here we select the lines for all the complete genomes with awk,
 # find the lines matching out query
 # and save a temp file with the results
+
+if [ -f  /tmp/prok_subset_raw_outfile ]
+then
+    rm /tmp/prok_subset_raw_outfile
+fi
+
+
 cat  $PROKFILE | \
     awk -F "\t" '$9 ~ /chrom*/ { print $0 }' |  \
     grep "$ORGNAME" > \
-	 ./tmp_raw_outfile
+	 /tmp/prok_subset_raw_outfile
 
 # if file is empty, raise an error
-if [ ! -s ./tmp_raw_outfile ]
+
+if [ ! -s /tmp/prok_subset_raw_outfile ]
 then
     echo "grepping for '$ORGNAME' returned no results"
     exit 1
@@ -70,24 +79,30 @@ fi
 # Note that we only get the first chromasome for a given entry. Sorry vibrioists
 
 # shuf ./tmp_raw_outfile | head -n $NSTRAINS | cut -d "\t" -f 9
-if `which shuf`
+
+if [ $(command -v shuf) ]
 then
+    echo "using shuf" >&2
     SHUF=shuf
 else
+    echo "using gshuf" >&2
     SHUF=gshuf
 fi
 
+echo "selecting $NSTRAINS random strains" >&2
 
 if [ $NSTRAINS != "" ]
 then
-    $SHUF ./tmp_raw_outfile | \
+    $SHUF /tmp/prok_subset_raw_outfile | \
 	head -n $NSTRAINS | \
 	cut -f 9 | \
 	sed "s/chro.*://" | \
 	sed "s/\/.*//"
 else
-        $SHUF ./tmp_raw_outfile | \
+        $SHUF /tmp/prok_subset_raw_outfile | \
 	cut -f 9 | \
 	sed "s/chro.*://" | \
 	sed "s/\/.*//"
 fi
+
+echo "done" >&2
