@@ -10,7 +10,12 @@ import re
 from codecs import open
 from os import path
 import sys
-from pip.req import parse_requirements
+
+# see https://stackoverflow.com/questions/25192794
+try: # for pip >= 10
+    from pip._internal.req import parse_requirements
+except ImportError: # for pip <= 9.0.3
+    from pip.req import parse_requirements
 
 here = path.abspath(path.dirname(__file__))
 
