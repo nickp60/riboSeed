@@ -23,6 +23,14 @@ Nucleic Acids Research, gky212, https://doi.org/10.1093/nar/gky212
 
 Interested in the figures/tables/analyses in the manuscript?  See the [README](https://github.com/nickp60/riboSeed/blob/master/scripts/README.md) in the `scripts` dir.
 
+## Reference Selection
+`riboSeed` requires an appropriate reference genome for the *de fere novo* assembly.  We outline a few different ways to select the best refference:
+
+- [Protocol for using Kraken.](http://riboseed.readthedocs.io/en/latest/REFERENCE.html#method-1-kraken) This kmer-based method requires having a Kraken database handy, but it provides good resolution while also checking for contamination.
+- [Protocol for using Reads2Type.](http://riboseed.readthedocs.io/en/latest/REFERENCE.html#method-2-reads2type-and-cgfind) This method is quick and easy if you are less comfortable with commandline tools, but at the cost of resolution.
+- [Using ANI (in development).](./choose_reference_with_ANI.md) This method should provide a appropriate reference based on ANI.  It can be time-consuming depending on the number of references considered, but can identify the best reference in a hands-free way, perfect for automation.
+
+
 ## Table of Contents
 
 * [`Description`](./README.md#description)
@@ -60,7 +68,7 @@ Visualizations/assessment
 ## 0: Preprocessing
 
 ### `scan`
-`scan` preprocesses sequences straight from a multifasta or  one or more fasta. The issue with many legacy annotations, assemblies, and scaffold collections is rDNAs are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml) and seqret (from [`emboss`](http://www.ebi.ac.uk/Tools/emboss/))  to be available in your path.
+`scan` preprocesses reference sequences straight from a multifasta or  one or more fasta. The issue with many legacy annotations, assemblies, and scaffold collections is rDNAs are often poorly annotated at best, and unannotated at worst.  This is shortcut to happiness without using the full Prokka annotation scheme. It requires [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml) and seqret (from [`emboss`](http://www.ebi.ac.uk/Tools/emboss/))  to be available in your path.
 #### Usage
 
 riboScan can either use a directory of fastas or one (multi)fasta file.  If using a directory of fastas, provide the appropriate extension using the `-e` option. If using a (multi)fasta as input, it write out each entry to its own fasta in the `contigs` subdirectory that it makes in the output. For each of the fastas, the script renames complex headers (sketchy), scans with barrnap and captures the output gff.  It then edits the gff to add fake incrementing locus_tags, and uses the original sequence file through seqret to make a GenBank file that contains just annotated rRNA features. The last step is a concatenation which, whether or not there are multiple files, makes a single (possibly multi-entry) genbank file perfect for riboSeed-ing.
