@@ -6,26 +6,29 @@ Usage
 The pipeline consists of 3 main stages: preprocessing, de fere novo assembly, and visualization/assessment. As of version 0.4.21, the pipeline is run by invoking ``ribo`` and then one of the following commands:
 
 [ preprocessing ]
+
 - ``scan``
 - ``select``
 
 [ de fere novo assembly ]
+
 - ``seed``
 
 [ visualizations/assessment ]
+
 - ``snag``
 - ``stack``
 - ``sketch``
 - ``swap``
 - ``score``
+- ``spec``
 
 
 
 Before We Start
 ---------------
 
-This pipeline is still very much in testing. Please back up any and all
-data used, and work within a virtualenv.
+Please back up any and all data used, and work within a virtualenv.
 
 Genome assembly gobbles RAM. If you, like me, are working on a 4gb RAM
 lappy, don't run seed in parallel and instead run in series by using
@@ -59,6 +62,11 @@ sequence file through seqret to make a GenBank file that contains just
 annotated rRNA features. The last step is a concatenation which, whether
 or not there are multiple files, makes a single (possibly multi-entry)
 genbank file perfect for seed-ing.
+
+NOTE: If using a reference with long names or containing special
+characters, use the --name argument to rename the contigs to something
+a bit more convenient and less prone to errors when piping results.
+
 
 ::
 
@@ -521,8 +529,13 @@ more syntenic contigs from the *de novo* assembly. #### USAGE
                             default: 2
       -h, --help            Displays this help message
 
-Known Bugs
-----------
 
--  Submitting ``--smalt_scoring`` with vastly different scoring schemes
-   usually causes an error.
+``spec``
+~~~~~~~~~~~~~~~
+
+One limitation in resolving the rDNA repeats is the lack of confidence in
+the reference genomes that were assembled from short reads along.  ``ribo spec`` parses
+the SPAdes assembly graph in fastg format to take a guess at how many rDNAs are in
+the genome based on the nodes and edges represinting the region in the graph. This can
+help alert the user that the number of rDNAs in the reference may disagree with the
+actual number in the genome.
