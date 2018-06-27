@@ -23,6 +23,14 @@ Nucleic Acids Research, gky212, https://doi.org/10.1093/nar/gky212
 
 Interested in the figures/tables/analyses in the manuscript?  See the [README](https://github.com/nickp60/riboSeed/blob/master/scripts/README.md) in the `scripts` dir.
 
+## Table of Contents
+
+* [`Reference Selection`](./README.md#reference-selection)
+* [`Description`](./README.md#description)
+* [`Installation`](./README.md#installation)
+* [`Suggested Running`](./README.md#suggested-running)
+* [`Contributing`](./README.md#contributing)
+
 ## Reference Selection
 `riboSeed` requires an appropriate reference genome for the *de fere novo* assembly.  We outline a few different ways to select the best refference:
 
@@ -30,17 +38,6 @@ Interested in the figures/tables/analyses in the manuscript?  See the [README](h
 - [Protocol for using Reads2Type.](http://riboseed.readthedocs.io/en/latest/REFERENCE.html#method-2-reads2type-and-cgfind) This method is quick and easy if you are less comfortable with commandline tools, but at the cost of resolution.
 - [Using ANI (in development).](./choose_reference_with_ANI.md) This method should provide a appropriate reference based on ANI.  It can be time-consuming depending on the number of references considered, but can identify the best reference in a hands-free way, perfect for automation.
 
-
-## Table of Contents
-
-* [`Description`](./README.md#description)
-* [`scan: Preprocessing`](./README.md#0-preprocessing)
-* [`select: Determine rDNA Operon Structure`](./README.md#1-selection-and-extraction)
-* [`seed: Seeded Assembly`](./README.md#2-seeded-assembly)
-* [`riboSeed Key Parameters`](./README.md#key-parameters)
-* [`swap: Assembly Refinement`](./README.md#3-assembly-refinement)
-* [`Installation`](./README.md#installation)
-* [`External Requirements`](./README.md#external-requirements)
 
 ## Before We Start
 Please back up any and all data used, and work within a virtualenv.
@@ -245,16 +242,18 @@ optional arguments:
   --version             show program's version number and exit
 ```
 
+## Contributing
+Pull requests are more than welcome!
 
-## Known Bugs
+### Known Bugs
 
-### X server
+#### X server
 
 You may run into issues where you get an error about "Unable to connect to X server: None" or localhost:N. Sorry about that; any tips would be useful;  a quick glance at the commit history will show I have spent much time trying to resolve it, without any luck.  If you do run into this, try the following:
   - connect to the machine with an X session (`ssh -X hostname`)
   - avoid using `gnu screen` if possible, but if you do need to use it, start the `screen` session after ensuring you have a `$DISPLAY` availible through starting the host session with `-X`
 
-### Pysam on MacOS
+#### Pysam on MacOS
 If you are on MacOS, you may run into an issue with Pysam.
 ```
 ImportError: dlopen(/Users/nicholas/miniconda3/envs/ribo/lib/python3.5/site-packages/pysam/libchtslib.cpython-35m-darwin.so, 2): Library not loaded: @rpath/liblzma.5.dylib
@@ -270,9 +269,9 @@ pip install riboSeed
 
 If you run into malloc issues similar to https://github.com/ablab/spades/issues/9, we recommend running in a VM.
 
-### smalt scoring
+#### smalt scoring
 Submitting `--smalt_scoring` with vastly different scoring schemes usually causes an error.
 
-## Running Tests
+### Running Tests
 
 The tests for the module can be found under the `tests` directory. I run them with the unittests module.  The tests assume the installation of all the recommended tools.
