@@ -51,19 +51,19 @@ riboSeed is an supplemental assembly refinement method to try to address the iss
 For a description of each submodule, follow the links below to the readthedocs manual page.
 
 Preprocessing
-- [`scan`](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#scan)
-- [`select`](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#select)
+- [`scan` | annotate reference genome rRNAs](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#scan)
+- [`select` | identify rDNA operons](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#select)
 
 *De fere novo assembly*
-- [`seed`](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#seed)
+- [`seed` | perform interative subassembly](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#seed)
 
 Visualizations/assessment
-- [`snag`](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#snag)
-- [`stack`](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#stack)
-- [`sketch`](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#sketch)
-- [`swap`](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#swap)
-- [`score`](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#score)
-- [`spec`](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#spec)
+- [`snag` | extract and visualize rDNA regions](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#snag)
+- [`stack` | calculate coverage at rDNAs in final assembly](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#stack)
+- [`sketch` | plot the relative rDNA regions in a handful of genomes](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#sketch)
+- [`swap` | switch questionable contigs ](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#swap)
+- [`score` | automated scoring for rDNA assemblies](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#score)
+- [`spec` | speculate the nunber of rDNA operons based on assembly graph](http://riboseed.readthedocs.io/en/latest/PIPELINE.html#spec)
 
 
 ## Installation
