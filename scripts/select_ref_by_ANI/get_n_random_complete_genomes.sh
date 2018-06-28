@@ -11,7 +11,6 @@ while getopts "o:n:f:" opt; do
 	o)
 	    ORGNAME=$OPTARG
 	    echo "Organism name: $OPTARG" >&2
-
 	    ;;
 	n)
 	    NSTRAINS=$OPTARG

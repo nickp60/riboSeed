@@ -68,7 +68,6 @@ while getopts "e:o:n:f:r:p:g:" opt; do
 
   esac
 done
-
 OUTDIRBASE="./"
 OUTDIR="${OUTDIRBASE}`date +%F`_ANI_${NAME}/"
 MINIDIR=${OUTDIR}/mini_assembly/
@@ -82,12 +81,16 @@ ${SCRIPTPATH}/select_ref_by_ANI/mini_assembly.sh $FREADS $RREADS $MINIDIR  >&2
 
 
 
-if [ ! -d "$GENOMESDIR" ]
+if [ ! -d "$GENOMESDIR" ] && [ -z "$(ls -A $GENOMESDIR)" ]
 then
+    #GENOMESDIR="${OUTDIR}/genomes_for_run_ANI"
     mkdir $GENOMESDIR
     ###################   Get potenetial close genomes  #########################
     echo "Get potenetial close genomes"  >&2
-
+    if [ ! -f "$PROKFILE" ]
+    then
+        PROKFILE="./prokaryotes.txt"  # default, so we dont pass empty args below
+    fi
     ${SCRIPTPATH}/select_ref_by_ANI/get_n_random_complete_genomes.sh -o "$ORGNAME" -n $NSTRAINS -f $PROKFILE > ${OUTDIR}/accessions
 
 
