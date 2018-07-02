@@ -71,13 +71,13 @@ done
 OUTDIRBASE="./"
 OUTDIR="${OUTDIRBASE}`date +%F`_ANI_${NAME}/"
 MINIDIR=${OUTDIR}/mini_assembly/
-
+LOGFILE="${OUTDIR}/log.txt"
 mkdir ${OUTDIR}
 mkdir ${MINIDIR}
 
 #############################   Run Mini Assembly  #########################
-echo "running mini assembly"  >&2
-${SCRIPTPATH}/select_ref_by_ANI/mini_assembly.sh $FREADS $RREADS $MINIDIR  >&2
+echo "running mini assembly"  2>> "${LOGFILE}"
+${SCRIPTPATH}/select_ref_by_ANI/mini_assembly.sh $FREADS $RREADS $MINIDIR  &> "${LOGFILE}"
 
 
 
@@ -86,39 +86,44 @@ then
     #GENOMESDIR="${OUTDIR}/genomes_for_run_ANI"
     mkdir $GENOMESDIR
     ###################   Get potenetial close genomes  #########################
-    echo "Get potenetial close genomes"  >&2
+    echo "Get potenetial close genomes"  2>> "${LOGFILE}"
     if [ ! -f "$PROKFILE" ]
     then
         PROKFILE="./prokaryotes.txt"  # default, so we dont pass empty args below
     fi
-    ${SCRIPTPATH}/select_ref_by_ANI/get_n_random_complete_genomes.sh -o "$ORGNAME" -n $NSTRAINS -f $PROKFILE > ${OUTDIR}/accessions
+    ${SCRIPTPATH}/select_ref_by_ANI/get_n_random_complete_genomes.sh -o "$ORGNAME" -n $NSTRAINS -f $PROKFILE > ${OUTDIR}/accessions 2>> "${LOGFILE}"
 
 
     #######################   Download close genomes  ###########################
-    echo "Downloading genomes"  >&2
+    echo "Downloading genomes"  2>> "${LOGFILE}"
 
     while read accession
     do
-	get_genomes.py -q $accession -o $GENOMESDIR   >&2
+	get_genomes.py -q $accession -o $GENOMESDIR   2>> "${LOGFILE}"
     done < $OUTDIR/accessions
 else
-    echo "using existing genomes directory"   >&2
+    echo "using existing genomes directory"   2>> "${LOGFILE}"
+    # delete any existing "conigs.fasta" file from the dir, as those would be from old runs.
+    if [ -f "${GENOMESDIR}/contigs.fasta" ]
+    then
+	rm "${GENOMESDIR}/contigs.fasta"
+    fi
 fi
 
-echo "copy the mini_assembly result to the potential genomes dir"  >&2
+echo "copy the mini_assembly result to the potential genomes dir"  2>> "${LOGFILE}"
 cp $MINIDIR/spades/contigs.fasta $GENOMESDIR
 
 ##########################   Run ANI analysis  ###############################
 echo "Running pyani"  >&2
-average_nucleotide_identity.py -i $GENOMESDIR -g -o $OUTDIR/pyani  >&2
+average_nucleotide_identity.py -v -i $GENOMESDIR -g -o $OUTDIR/pyani  2>> "${LOGFILE}"
 
 
 ############# remove contigs from genomes dir if we plan on reusing   ########
 rm $GENOMESDIR/contigs.fasta
 
 # extract best hit
-echo "extract best hit"  >&2
+echo "extract best hit"  2>> "${LOGFILE}"
 
-python ${SCRIPTPATH}/select_ref_by_ANI/parse_closest_ANI.py $OUTDIR/pyani/ANIm_percentage_identity.tab > ${OUTDIR}/best_reference  >&2
+python ${SCRIPTPATH}/select_ref_by_ANI/parse_closest_ANI.py $OUTDIR/pyani/ANIm_percentage_identity.tab > ${OUTDIR}/best_reference  2>> "${LOGFILE}"
 
 cat ${OUTDIR}/best_reference

@@ -13,7 +13,12 @@ mkdir ${OUTDIR}/downsampled_reads/
 
 # seqtk sample -s100 $1 10000 > ${OUTDIR}/tmp/reads1.fq
 # seqtk sample -s100 $2 10000 > ${OUTDIR}/tmp/reads2.fq
-seqtk sample -s100 $1 .1 > ${OUTDIR}/downsampled_reads/reads1.fq
-seqtk sample -s100 $2 .1 > ${OUTDIR}/downsampled_reads/reads2.fq
+{
+    seqtk sample -s100 $1 10000 > ${OUTDIR}/downsampled_reads/reads1.fq
+    seqtk sample -s100 $2 10000 > ${OUTDIR}/downsampled_reads/reads2.fq
+} || {
+    seqtk sample -s100 $1 .1    > ${OUTDIR}/downsampled_reads/reads1.fq
+    seqtk sample -s100 $2 .1    > ${OUTDIR}/downsampled_reads/reads2.fq
+}    
 
-spades.py -1 ${OUTDIR}/downsampled_reads/reads1.fq -2 ${OUTDIR}/downsampled_reads/reads2.fq -o ${OUTDIR}/spades/
+spades.py -1 ${OUTDIR}/downsampled_reads/reads1.fq -2 ${OUTDIR}/downsampled_reads/reads2.fq -o ${OUTDIR}/spades/ -t 4 -m 64

@@ -24,4 +24,11 @@ headers = matrix[0]
 line_of_interest = sorted(zip(headers, matrix[contigs_idx][1:]), key=lambda x: x[1], reverse=True)
 
 # bam
-print(line_of_interest[1][0])
+# we need to do this stupid loop thing because if there is a score tie, the contigs
+# entry won't neccesdarily be first.
+for pair in line_of_interest:
+    if pair[0] != "contigs":
+        print (pair[0])
+        sys.exit(0)
+    
+# print(line_of_interest[1][0])
