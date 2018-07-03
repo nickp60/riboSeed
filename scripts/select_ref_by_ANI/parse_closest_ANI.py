@@ -27,8 +27,9 @@ line_of_interest = sorted(zip(headers, matrix[contigs_idx][1:]), key=lambda x: x
 # we need to do this stupid loop thing because if there is a score tie, the contigs
 # entry won't neccesdarily be first.
 for pair in line_of_interest:
-    if pair[0] != "contigs":
-        print (pair[0])
+    # the new version appends _## to the names
+    if pair[0].startswith("contigs"):
+        print(pair[0].split("_")[0]
         sys.exit(0)
     
 # print(line_of_interest[1][0])

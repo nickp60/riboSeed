@@ -20,8 +20,9 @@ NSTRAINS=""
 GENOMESDIR="./genomes_for_run_ANI/"
 USAGE="USAGE:run_ani.sh  -e experiment_name -o 'Organism name' -n 5 -f path/to/reads_f.fastq -r path/to/reads_r.fastq"
 
-# make sure we have enough args
-if [ -z $5 ]
+# make sure we have enough args (10, because we have 5 flagged arguments)
+
+if [ "$#" -lt 10 ]
 then
     echo "Not enough arguments"
     echo $USAGE
@@ -72,12 +73,13 @@ OUTDIRBASE="./"
 OUTDIR="${OUTDIRBASE}`date +%F`_ANI_${NAME}/"
 MINIDIR=${OUTDIR}/mini_assembly/
 LOGFILE="${OUTDIR}/log.txt"
+PYANILOGFILE="${OUTDIR}/pyanilog.txt"
 mkdir ${OUTDIR}
 mkdir ${MINIDIR}
 
 #############################   Run Mini Assembly  #########################
-echo "running mini assembly"  2>> "${LOGFILE}"
-${SCRIPTPATH}/select_ref_by_ANI/mini_assembly.sh $FREADS $RREADS $MINIDIR  &> "${LOGFILE}"
+echo "running mini assembly"  &>> "${LOGFILE}"
+${SCRIPTPATH}/select_ref_by_ANI/mini_assembly.sh $FREADS $RREADS $MINIDIR  &>> "${LOGFILE}"
 
 
 
@@ -86,7 +88,7 @@ then
     #GENOMESDIR="${OUTDIR}/genomes_for_run_ANI"
     mkdir $GENOMESDIR
     ###################   Get potenetial close genomes  #########################
-    echo "Get potenetial close genomes"  2>> "${LOGFILE}"
+    echo "Get potenetial close genomes"  &>> "${LOGFILE}"
     if [ ! -f "$PROKFILE" ]
     then
         PROKFILE="./prokaryotes.txt"  # default, so we dont pass empty args below
@@ -95,14 +97,14 @@ then
 
 
     #######################   Download close genomes  ###########################
-    echo "Downloading genomes"  2>> "${LOGFILE}"
+    echo "Downloading genomes"  &>> "${LOGFILE}"
 
     while read accession
     do
-	get_genomes.py -q $accession -o $GENOMESDIR   2>> "${LOGFILE}"
+	get_genomes.py -q $accession -o $GENOMESDIR   &>> "${LOGFILE}"
     done < $OUTDIR/accessions
 else
-    echo "using existing genomes directory"   2>> "${LOGFILE}"
+    echo "using existing genomes directory"   &>> "${LOGFILE}"
     # delete any existing "conigs.fasta" file from the dir, as those would be from old runs.
     if [ -f "${GENOMESDIR}/contigs.fasta" ]
     then
@@ -110,20 +112,46 @@ else
     fi
 fi
 
-echo "copy the mini_assembly result to the potential genomes dir"  2>> "${LOGFILE}"
+echo "copy the mini_assembly result to the potential genomes dir"  &>> "${LOGFILE}"
 cp $MINIDIR/spades/contigs.fasta $GENOMESDIR
 
 ##########################   Run ANI analysis  ###############################
-echo "Running pyani"  >&2
-average_nucleotide_identity.py -v -i $GENOMESDIR -g -o $OUTDIR/pyani  2>> "${LOGFILE}"
+echo "Running pyani"   &>> "${LOGFILE}"
+pyani index $GENOMESDIR -v -l $PYANILOGFILE
+# then fix the columns; we dont care about the name
+paste <(cut $GENOMESDIR/classes.txt -f 1,2) <(cut $GENOMESDIR/classes.txt -f 2) > tmp_classes
+mv tmp_classes $GENOMESDIR/classes.txt
+paste <(cut $GENOMESDIR/labels.txt -f 1,2) <(cut $GENOMESDIR/labels.txt -f 2) > tmp_labels
+mv tmp_labels $GENOMESDIR/labels.txt
+
+
+if [ -d .pyani ]
+then
+    echo "pyani db already exists" &>> $PYANILOGFILE
+else
+    pyani createdb
+fi
+
+pyani anim $GENOMESDIR $OUTDIR/pyani --workers 4 -v -l $PYANILOGFILE --labels $GENOMESDIR/labels.txt --classes $GENOMESDIR/classes.txt
+
+pyani report -v -l $PYANILOGFILE --runs $OUTDIR/pyani
+
+# get the most recent run
+this_run=$(tail -n 1 $OUTDIR/pyani/runs.tab | cut -f 1)
+
+pyani report -v -l $PYANILOGFILE --run_matrices $this_run $OUTDIR/pyani
+
+
+# average_nucleotide_identity.py -v -i $GENOMESDIR -g -o $OUTDIR/pyani  &>> "${LOGFILE}"
 
 
 ############# remove contigs from genomes dir if we plan on reusing   ########
 rm $GENOMESDIR/contigs.fasta
 
 # extract best hit
-echo "extract best hit"  2>> "${LOGFILE}"
+echo "extract best hit"  &>> "${LOGFILE}"
 
-python ${SCRIPTPATH}/select_ref_by_ANI/parse_closest_ANI.py $OUTDIR/pyani/ANIm_percentage_identity.tab > ${OUTDIR}/best_reference  2>> "${LOGFILE}"
+python ${SCRIPTPATH}/select_ref_by_ANI/parse_closest_ANI.py $OUTDIR/pyani/matrix_identity_${this_run}.tab > ${OUTDIR}/best_reference  &>> "${LOGFILE}"
 
-cat ${OUTDIR}/best_reference
+bestref=$(cat ${OUTDIR}/best_reference)
+echo -e "${NAME}\t${bestref}"

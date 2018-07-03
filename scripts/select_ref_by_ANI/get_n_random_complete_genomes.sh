@@ -95,13 +95,17 @@ then
     $SHUF /tmp/prok_subset_raw_outfile | \
 	head -n $NSTRAINS | \
 	cut -f 9 | \
-	sed "s/chro.*://" | \
-	sed "s/\/.*//"
+	# sed "s/chro.*://" | \
+	sed "s/^chro[^:]*://" | \
+	# sed "s/\/.*//"
+        sed "s/[;\/].*//"	
 else
         $SHUF /tmp/prok_subset_raw_outfile | \
 	cut -f 9 | \
-	sed "s/chro.*://" | \
-	sed "s/\/.*//"
+	# sed "s/chro.*://" | \
+	sed "s/^chro[^:]*://" | \
+	# sed "s/\/.*//"  # handle instances lacking both genbank and refseq accs
+        sed "s/[;\/].*//"	
 fi
 
 echo "done" >&2
