@@ -106,18 +106,21 @@ then
 else
     echo "using existing genomes directory"   &>> "${LOGFILE}"
     # delete any existing "conigs.fasta" file from the dir, as those would be from old runs.
-    if [ -f "${GENOMESDIR}/contigs.fasta" ]
-    then
-	rm "${GENOMESDIR}/contigs.fasta"
-    fi
+    # probaly shoudl make this a try/catch thingy
+    # {
+    # 	rm "${GENOMESDIR}/contigs_*.*"
+    # } || {
+    # 	echo "no need to clean genomes dir" &>> "${LOGFILE}"
+    # }
 fi
 
 echo "copy the mini_assembly result to the potential genomes dir"  &>> "${LOGFILE}"
-cp $MINIDIR/spades/contigs.fasta $GENOMESDIR
+cp $MINIDIR/spades/contigs.fasta $GENOMESDIR/contigs_${NAME}.fasta
 
 ##########################   Run ANI analysis  ###############################
-echo "Running pyani"   &>> "${LOGFILE}"
-pyani index $GENOMESDIR -v -l $PYANILOGFILE
+echo "Running pyani index"   &>> "${LOGFILE}"
+pyani index $GENOMESDIR --force -v -l $PYANILOGFILE &>> "${LOGFILE}"
+echo "recreating pyani labels"   &>> "${LOGFILE}"
 # then fix the columns; we dont care about the name
 paste <(cut $GENOMESDIR/classes.txt -f 1,2) <(cut $GENOMESDIR/classes.txt -f 2) > tmp_classes
 mv tmp_classes $GENOMESDIR/classes.txt
@@ -129,29 +132,36 @@ if [ -d .pyani ]
 then
     echo "pyani db already exists" &>> $PYANILOGFILE
 else
-    pyani createdb
+    pyani createdb &>> "${LOGFILE}"
 fi
 
-pyani anim $GENOMESDIR $OUTDIR/pyani --workers 4 -v -l $PYANILOGFILE --labels $GENOMESDIR/labels.txt --classes $GENOMESDIR/classes.txt
+echo "Running pyani anim"   &>> "${LOGFILE}"
+pyani anim $GENOMESDIR $OUTDIR/pyani --workers 4 -v -l $PYANILOGFILE --labels $GENOMESDIR/labels.txt --classes $GENOMESDIR/classes.txt &>> "${LOGFILE}"
 
-pyani report -v -l $PYANILOGFILE --runs $OUTDIR/pyani
+echo "Generating report of pyani runs"   &>> "${LOGFILE}"
+pyani report -v -l $PYANILOGFILE --runs $OUTDIR/pyani &>> "${LOGFILE}"
 
-# get the most recent run
+
+echo "Getting name of most recent pyani run"   &>> "${LOGFILE}"
 this_run=$(tail -n 1 $OUTDIR/pyani/runs.tab | cut -f 1)
 
-pyani report -v -l $PYANILOGFILE --run_matrices $this_run $OUTDIR/pyani
+echo "Generating genome comparison matrix"   &>> "${LOGFILE}"
+pyani report -v -l $PYANILOGFILE --run_matrices $this_run $OUTDIR/pyani &>> "${LOGFILE}"
 
 
 # average_nucleotide_identity.py -v -i $GENOMESDIR -g -o $OUTDIR/pyani  &>> "${LOGFILE}"
 
 
 ############# remove contigs from genomes dir if we plan on reusing   ########
-rm $GENOMESDIR/contigs.fasta
-
+# rm $GENOMESDIR/contigs.fasta
+rm $GENOMESDIR/contigs_${NAME}.fasta
+rm $GENOMESDIR/contigs_${NAME}.md5
+# rm $GENOMESDIR/labels.txt
+# rm $GENOMESDIR/classes.txt
 # extract best hit
 echo "extract best hit"  &>> "${LOGFILE}"
 
-python ${SCRIPTPATH}/select_ref_by_ANI/parse_closest_ANI.py $OUTDIR/pyani/matrix_identity_${this_run}.tab > ${OUTDIR}/best_reference  &>> "${LOGFILE}"
+python ${SCRIPTPATH}/select_ref_by_ANI/parse_closest_ANI.py $OUTDIR/pyani/matrix_identity_${this_run}.tab > ${OUTDIR}/best_reference
 
 bestref=$(cat ${OUTDIR}/best_reference)
 echo -e "${NAME}\t${bestref}"
