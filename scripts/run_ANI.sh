@@ -7,10 +7,10 @@ set -e
 # -n number of strains
 # -o organism name
 
-# And 2 optional
+# And 3 optional
 # -p prokaryotes.txt file
 # -g directory of genomes of interest
-
+# -a existing assembly; skip the miniasembly
 # hacky way to get the path tho the scripts dir
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
@@ -29,7 +29,7 @@ then
     exit 1
 fi
 
-while getopts "e:o:n:f:r:p:g:" opt; do
+while getopts "e:o:n:f:r:p:g:a:" opt; do
     case $opt in
 	e)
 	    NAME=$OPTARG
@@ -59,6 +59,10 @@ while getopts "e:o:n:f:r:p:g:" opt; do
 	    GENOMESDIR=$OPTARG
 	    echo "Genomes dir: $GENOMESDIR" >&2
 	    ;;
+	a)
+	    ASSEMBLY=$OPTARG
+	    echo "assembly: $ASSEMBLY" >&2
+	    ;;
 	\?)
 	    echo "Invalid option: -$OPTARG" >&2
 	    echo $USAGE
@@ -78,10 +82,12 @@ mkdir ${OUTDIR}
 mkdir ${MINIDIR}
 
 #############################   Run Mini Assembly  #########################
-echo "running mini assembly"  &>> "${LOGFILE}"
-${SCRIPTPATH}/select_ref_by_ANI/mini_assembly.sh $FREADS $RREADS $MINIDIR  &>> "${LOGFILE}"
-
-
+if [ ! -f $ASSEMBLY ]
+then
+    echo "running mini assembly"  &>> "${LOGFILE}"
+    ${SCRIPTPATH}/select_ref_by_ANI/mini_assembly.sh $FREADS $RREADS $MINIDIR  &>> "${LOGFILE}"
+    ASSEMBLY=${MINIDIR}/spades/contigs.fasta
+fi
 
 if [ ! -d "$GENOMESDIR" ] && [ -z "$(ls -A $GENOMESDIR)" ]
 then
@@ -115,7 +121,7 @@ else
 fi
 
 echo "copy the mini_assembly result to the potential genomes dir"  &>> "${LOGFILE}"
-cp $MINIDIR/spades/contigs.fasta $GENOMESDIR/contigs_${NAME}.fasta
+cp $ASSEMBLY $GENOMESDIR/contigs_${NAME}.fasta
 
 ##########################   Run ANI analysis  ###############################
 echo "Running pyani index"   &>> "${LOGFILE}"
@@ -136,7 +142,7 @@ else
 fi
 
 echo "Running pyani anim"   &>> "${LOGFILE}"
-pyani anim $GENOMESDIR $OUTDIR/pyani --workers 4 -v -l $PYANILOGFILE --labels $GENOMESDIR/labels.txt --classes $GENOMESDIR/classes.txt &>> "${LOGFILE}"
+pyani anim $GENOMESDIR $OUTDIR/pyani --workers 64  -v -l $PYANILOGFILE --labels $GENOMESDIR/labels.txt --classes $GENOMESDIR/classes.txt &>> "${LOGFILE}"
 
 echo "Generating report of pyani runs"   &>> "${LOGFILE}"
 pyani report -v -l $PYANILOGFILE --runs $OUTDIR/pyani &>> "${LOGFILE}"
