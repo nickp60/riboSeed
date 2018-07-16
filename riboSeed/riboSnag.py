@@ -103,13 +103,20 @@ def get_args(test_args=None):  # pragma: no cover
                           help="Skip running BLAST Comparisons" +
                           "default: %(default)s",
                           default=False, action="store_true", dest="skip_blast")
-    optional.add_argument("-c", "--circular",
-                          help="if the genome is known to be circular, and " +
+    # optional.add_argument("-c", "--circular",
+    #                       help="if the genome is known to be circular, and " +
+    #                       "an region of interest (including flanking bits) " +
+    #                       "extends past chromosome end, this extends the " +
+    #                       "sequence past chromosome origin forward by 5kb; " +
+    #                       "default: %(default)s",
+    #                       default=False, dest="circular", action="store_true")
+    optional.add_argument("--linear",
+                          help="if the genome is not circular, and " +
                           "an region of interest (including flanking bits) " +
                           "extends past chromosome end, this extends the " +
                           "sequence past chromosome origin forward by 5kb; " +
                           "default: %(default)s",
-                          default=False, dest="circular", action="store_true")
+                          default=False, dest="linear", action="store_true")
     optional.add_argument("-p", "--padding", dest='padding', action="store",
                           default=5000, type=int,
                           help="if treating as circular, this controls the " +
@@ -191,7 +198,10 @@ def get_args(test_args=None):  # pragma: no cover
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
-    args = parser.parse_args(sys.argv[2:])
+    if test_args is None:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args(test_args)
     return args
 
 
@@ -249,8 +259,8 @@ def stitch_together_target_regions(cluster,
         logger.warning("Caution! Cannot retrieve full flanking region, as " +
                        "the 5' flanking region extends past start of " +
                        "sequence. If this is a problem, try using a smaller " +
-                       "--flanking region, and/or if  appropriate, run with " +
-                       "--circular.")
+                       "--flanking region, and/or if  appropriate, run " +
+                       "without with --linear.")
         cluster.global_start_coord = 1
     cluster.global_end_coord = max([x.end_coord for
                                     x in cluster.loci_list]) + flanking
@@ -258,8 +268,8 @@ def stitch_together_target_regions(cluster,
         logger.warning("Caution! Cannot retrieve full flanking region, as " +
                        "the 5' flanking region extends past start of " +
                        "sequence. If this is a problem, try using a smaller " +
-                       "--flanking region, and/or if  appropriate, run with " +
-                       "--circular.")
+                       "--flanking region, and/or if  appropriate, run " +
+                       "without with --linear.")
         cluster.global_end_coord = len(cluster.seq_record)
 
     logger.debug("global start and end: %s %s", cluster.global_start_coord,
@@ -1153,7 +1163,7 @@ def main(args, logger=None):
                                              gb_filepath=args.genbank_genome,
                                              output_root='',
                                              padding=args.padding,
-                                             circular=args.circular,
+                                             circular=not args.linear,
                                              logger=logger)
         clusters = add_gb_seqrecords_to_cluster_list(
             cluster_list=clusters,
@@ -1178,7 +1188,7 @@ def main(args, logger=None):
         verbose=False,
         flanking=args.flanking,
         output=output_root,
-        circular=args.circular,
+        circular= not args.linear,
         prefix_name=args.name,
         no_revcomp=args.no_revcomp,
         args=args
