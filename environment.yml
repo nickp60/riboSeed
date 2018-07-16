@@ -20,3 +20,5 @@ dependencies:
     - bwa ==0.7.8
     - samtools ==1.4.1
     - bcftools ==1.5
+    - quast
+    - bedtools
