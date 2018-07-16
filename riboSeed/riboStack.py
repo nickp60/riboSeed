@@ -37,7 +37,7 @@ from Bio.Seq import Seq
 # --------------------------- methods --------------------------- #
 
 
-def get_args():  # pragma: no cover
+def get_args(test_args=None):  # pragma: no cover
     parser = argparse.ArgumentParser(
         description="This facilitates the mapping of reads to a reference " +
         "and comparison of coverage depths in rDNA regions to assess " +
@@ -80,7 +80,10 @@ def get_args():  # pragma: no cover
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
-    args = parser.parse_args(sys.argv[2:])
+    if test_args is None:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args(test_args)
     return args
 
 

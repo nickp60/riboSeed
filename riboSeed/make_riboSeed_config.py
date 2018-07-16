@@ -56,7 +56,8 @@ def config_exes():
                     ("SPADES_EXE", "spades.py"),
                     ("BWA_EXE", "bwa"),
                     ("SAMTOOLS_EXE", "samtools"),
-                    ("BLAST_EXE", "blastn")]
+                    ("BLAST_EXE", "blastn"),
+                    ("MAKEBLASTDB_EXE", "makeblastdb")]
     config_lines = [
         "#------------------------#",
         "##  Required programs   ##",
@@ -73,6 +74,8 @@ def config_exes():
     # # find all optional sys requirements
     opt_programs = [("QUAST_EXE", "quast.py"),
                     ("SMALT_EXE", "smalt"),
+                    ("PRANK_EXE", "prank"),
+                    ("MAFFT_EXE", "mafft"),
                     ("BCFTOOLS_EXE", "bcftools")]
     config_lines.extend([
         "#------------------------#",
@@ -161,6 +164,42 @@ def config_select_defaults():
         select_lines.append(k + " : " + v + "\n")
     return select_lines
 
+
+def config_snag_defaults():
+    snag_params = [
+        ("SNAG_NAME", "'name'",
+         "name to use when plotting the results"),
+        ("SNAG_FLANKING", "'name'",
+         "length (bps) of flanking regions to analyze"),
+        ("SNAG_MSA_KMERS", "false",
+         ""),
+        ("SNAG_SKIP_KMERS", "false",
+         ""),
+        ("SNAG_SKIP_BLAST", "false",
+         ""),
+        ("SNAG_LINEAR", "false",
+         ""),
+        ("SNAG_TITLE", "title",
+         ""),
+        ("SNAG_NO_REVCOMP", "false",
+         ""),
+        ("SNAG_JUST_EXTRACT", "false",
+         ""),
+        ("SNAG_MSA_TOOL", "mafft",
+         ""),
+        ("SNAG_PADDING", "5000",
+         ""),
+        ("SNAG_VERBOSITY", "2",
+         "-v: verbosity for riboSnag")]
+    snag_lines = [
+        "#------------------------#",
+        "## riboSnag Parameters #",
+        "#------------------------#",
+        "# TODO:the documentation here could be improved"]
+    for k, v, h in snag_params:
+        snag_lines.append("# " + h)
+        snag_lines.append(k + " : " + v + "\n")
+    return snag_lines
 
 def config_seed_defaults():
     seed_params = [
@@ -262,6 +301,46 @@ def config_score_defaults():
     score_lines.append("SCORE_VERBOSITY : 2\n")
     return score_lines
 
+def config_stack_defaults():
+    stack_params = [
+        ("STACK_N_SAMPLES", "10",
+         "number of samples to compare rRNA region depth to"),
+        ("STACK_INFER", "false",
+         "how to handle naming of regions"),
+        ("STACK_VERBOSITY", "2",
+         "-v: verbosity for riboSketch")]
+    stack_lines = [
+        "#------------------------#",
+        "## riboStack Parameters #",
+        "#------------------------#"]
+    for k, v, h in stack_params:
+        stack_lines.append("# \n# " + h)
+        stack_lines.append(k + " : " + v + "\n")
+    return stack_lines
+
+def config_spec_defaults():
+    spec_params = [
+        ("SPEC_MIN_CONTIG_LEN", "75",
+         "minimum length of contig to consider for depth calculations"),
+        ("SPEC_MIN_ANCHOR_LENGTH", "500",
+         "The minimum length for an 'anchor contig'; see riboSpec docs"),
+        ("SPEC_THRESHOLD", "1000",
+         "Threshold for minimun length of valid graph paths away from rDNA "),
+        ("SPEC_MEDIUM_LENGTH_THRESHOLD", "400",
+         "Threshold for defining medium-length contigs"),
+        ("SPEC_BARRNAP_LENGTH_THRESHOLD", ".75",
+         "Threshold barrnap uses for length of hits"),
+        ("SPEC_VERBOSITY", "2",
+         "-v: verbosity for riboSketch")]
+    spec_lines = [
+        "#------------------------#",
+        "## riboSpec Parameters #",
+        "#------------------------#"]
+    for k, v, h in spec_params:
+        spec_lines.append("# \n# " + h)
+        spec_lines.append(k + " : " + v + "\n")
+    return spec_lines
+
 
 def config_run_defaults():
     run_lines = [
@@ -313,6 +392,12 @@ def main(args):
     append_config(lines=config_sketch_defaults(), outfile=outfile)
     # riboScore
     append_config(lines=config_score_defaults(), outfile=outfile)
+    # riboStack
+    append_config(lines=config_stack_defaults(), outfile=outfile)
+    # riboSpec
+    append_config(lines=config_spec_defaults(), outfile=outfile)
+    # riboSnag
+    append_config(lines=config_snag_defaults(), outfile=outfile)
     # run_riboSeed
     append_config(lines=config_run_defaults(), outfile=outfile)
     # this lines allows run_riboseed to find the path to the new config

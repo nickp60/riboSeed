@@ -85,7 +85,7 @@ class riboSeedShallow(unittest.TestCase):
         self.bwa_exe = "bwa"
         self.samtools_exe = "samtools"
         self.spades_exe = "spades.py"
-        self.quast_exe = "quast.py"
+        self.quast_exe = "quast"
         self.test_estimation_file = os.path.join(self.test_dir,
                                                  "est_distance.sam")
         self.map_results_prefix = os.path.join(self.test_dir,
@@ -747,7 +747,7 @@ class riboSeedShallow(unittest.TestCase):
                          method="bwa")
         # I want this  generalized, so replace the acual path with spades.py
         test_exes.spades = "spades.py"
-        test_exes.quast = "quast.py"
+        test_exes.quast = "quast"
         gen.ref_fasta = self.ref_fasta
         with patch.object(sys, 'version_info') as v_info:
             v_info.minor = 5
@@ -924,7 +924,7 @@ class riboSeedShallow(unittest.TestCase):
         with patch.object(sys, 'version_info') as v_info:
             v_info.minor = 6
             self.assertFalse(
-                bool_run_quast("quast.py", logger))
+                bool_run_quast("quast", logger))
 
     def test_bool_run_quast_false_none(self):
         self.assertFalse(bool_run_quast(None, logger))
@@ -959,7 +959,7 @@ class riboSeedShallow(unittest.TestCase):
         with patch.object(sys, 'version_info') as v_info:
             v_info.minor = 4
             self.assertTrue(
-                bool_run_quast("quast.py", logger))
+                bool_run_quast("quast", logger))
 
     def test_make_quast_command(self):
         test_exes = Exes(python="/bin/python3.5",
@@ -972,7 +972,7 @@ class riboSeedShallow(unittest.TestCase):
                          method="bwa")
 
         ref_cmd = str(
-            "/bin/python3.5 quast.py ref.fasta /assembly/contigs.fasta -o " +
+            "/bin/python3.5 quast ref.fasta /assembly/contigs.fasta -o " +
             "/here/quast_de_novo")
         test_cmd = make_quast_command(
             exes=test_exes, output_root="/here", ref="ref.fasta",
@@ -1304,7 +1304,7 @@ class riboSeedDeep(unittest.TestCase):
         self.bwa_exe = "bwa"
         self.samtools_exe = "samtools"
         self.spades_exe = "spades.py"
-        self.quast_exe = "quast.py"
+        self.quast_exe = "quast"
         self.test_estimation_file = os.path.join(self.test_dir,
                                                  "est_distance.sam")
         self.map_results_prefix = os.path.join(self.test_dir,

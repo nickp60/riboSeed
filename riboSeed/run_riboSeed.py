@@ -26,8 +26,11 @@ from . import riboScan as rscan
 from . import riboSelect as rsel
 from . import riboSeed as rseed
 from . import riboScore as rscore
-# import this here in case there are issues with mpl''s X windows
+from . import riboSpec as rspec
+from . import riboStack as rstack
+from . import riboSnag as rsnag
 from . import riboSketch as rsketch
+# import this here in case there are issues with mpl''s X windows
 from . import make_riboSeed_config as mrc
 
 
@@ -151,11 +154,11 @@ def get_args():  # pragma: no cover
                           default=False,
                           help="Don't do an assembly, just generate the long" +
                           " read 'seeds'; default: %(default)s")
-    optional.add_argument("--score", dest='RUN_SCORE',
-                          action="store_true",
-                          default=False,
-                          help="run riboScore too! " +
-                          "default: %(default)s")
+    # optional.add_argument("--score", dest='RUN_SCORE',
+    #                       action="store_true",
+    #                       default=False,
+    #                       help="run riboScore too! " +
+    #                       "default: %(default)s")
     # optional.add_argument("--sketch", dest='RUN_SKETCH',
     #                       action="store_true",
     #                       default=False,
@@ -229,6 +232,15 @@ def get_args():  # pragma: no cover
                           action="store_true",
                           default=False,
                           help="Ignore certain  errors, full speed ahead!")
+    optional.add_argument("--stages", nargs="+",
+                          dest='stages',
+                          action="store",
+                          default=["stack", "score", "spec"],
+                          choices=["sketch", "spec", "snag", "score", "stack"],
+                          help="Which assessment stages you wish to run: " +
+                          "sketch, spec, snag, score, stack.  " +
+                          "Any combination thereof; "+
+                          "default: %(default)s")
     optional.add_argument("-t", "--threads", dest='RUN_THREADS',
                           action="store",
                           default=1, type=int,
@@ -335,6 +347,20 @@ def simulate_args_from_namespace(n, positional=[]):
     return argparse_formatted_list
 
 
+def parse_stages(args):
+    args.RUN_SNAG, args.RUN_SKETCH, args.RUN_SPEC, \
+    args.RUN_STACK, args.RUN_SCORE = \
+                False, False, False, False, False
+    if "snag" in args.stages:
+        args.RUN_SNAG = True
+    if "sketch" in args.stages:
+        args.RUN_SKETCH = True
+    if "SPEC" in args.stages:
+        args.RUN_SPEC = True
+    if "stack" in args.stages:
+        args.RUN_STACK = True
+    if "score" in args.stages:
+        args.RUN_SCORE = True
 
 def main(args):
     # set up output directory and logging
@@ -359,7 +385,9 @@ def main(args):
         if args.RUN_CORES is None:
             args.RUN_CORES = multiprocessing.cpu_count()
             logger.info("Using %i cores", args.RUN_CORES)
-
+    # determine which assessment stages will be run.
+    # This creates the RUN_SPEC (snag, etc) argument in the namespaces
+    parse_stages(args)
     # if starting a fresh run, create a config file.  If not, read it in
     args.RUN_CONFIG = detect_or_create_config(
         config_file=args.RUN_CONFIG,
@@ -398,6 +426,7 @@ def main(args):
         seqret_exe=conf.SEQRET_EXE,
         min_length=conf.SCAN_MIN_LENGTH,
         verbosity=conf.SCAN_VERBOSITY)
+
     select_args = Namespace(
         genbank_genome=os.path.join(
             output_root, "scan", "scannedScaffolds.gb"),
@@ -408,6 +437,32 @@ def main(args):
         clusters=conf.RUN_CLUSTERS,
         verbosity=conf.SELECT_VERBOSITY,
         debug=False)
+
+    snag_args = Namespace(
+        genbank_genome=os.path.join(
+            output_root, "scan", "scannedScaffolds.gb"),
+        clustered_loci=cluster_txt_file,
+        output=os.path.join(output_root, "snag"),
+        name="name",
+        flanking=conf.RUN_FLANKING,
+        msa_kmers=conf.SNAG_MSA_KMERS,
+        skip_kmers=conf.SNAG_SKIP_KMERS,
+        skip_blast=conf.SNAG_SKIP_BLAST,
+        linear=conf.SNAG_LINEAR,
+        title=conf.SNAG_TITLE,
+        pubplot=False,
+        clobber=False,
+        no_revcomp=conf.SNAG_NO_REVCOMP,
+        just_extract=conf.SNAG_JUST_EXTRACT,
+        msa_tool=conf.SNAG_MSA_TOOL,
+        prank_exe=conf.PRANK_EXE,
+        mafft_exe=conf.MAFFT_EXE,
+        barrnap_exe=conf.BARRNAP_EXE,
+        makeblastdb_exe=conf.MAKEBLASTDB_EXE,
+        kingdom=conf.RUN_KINGDOM,
+        seq_name=None,
+        padding=conf.SNAG_PADDING,
+        verbosity=conf.SELECT_VERBOSITY)
     seed_args = Namespace(
         clustered_loci_txt=cluster_txt_file,
         reference_genbank=os.path.join(
@@ -461,6 +516,7 @@ def main(args):
         replot=False,
         mauve_jar=conf.MAUVE_JAR,
         verbosity=conf.SKETCH_VERBOSITY)
+
     score_args = Namespace(
         indir=os.path.join(output_root, "seed","mauve"),
         output=os.path.join(output_root, "score"),
@@ -469,6 +525,28 @@ def main(args):
         assembly_ext=conf.SKETCH_ASSEMBLY_EXT,
         blast_full=False,
         verbosity=conf.SCORE_VERBOSITY)
+
+    spec_args = Namespace(
+        output=os.path.join(output_root, "spec"),
+        assembly_graph=os.path.join(
+            output_root, "seed", "final_de_novo_assembly"),
+        min_contig_len=conf.SPEC_MIN_CONTIG_LEN,
+        min_anchor_length=conf.SPEC_MIN_ANCHOR_LENGTH,
+        plot_graphs=True,
+        medium_length_threshold=conf.SPEC_MEDIUM_LENGTH_THRESHOLD,
+        threshold=conf.SPEC_THRESHOLD,
+        barrnap_length_threshold=conf.SPEC_BARRNAP_LENGTH_THRESHOLD,
+        barrnap_exe=conf.BARRNAP_EXE,
+        cores=conf.RUN_CORES,
+        make_adjacency_matrix=True,
+        verbosity=conf.SPEC_VERBOSITY)
+    stack_args = Namespace(
+        riboScan_dir=os.path.join(output_root, "scan"),
+        bam=os.path.join(output_root, "seed","scannedScaffolds_mapping_iteration_0", "scannedScaffolds_mapping_iteration_0.bam"),
+        output=os.path.join(output_root, "sketch"),
+        n_samples=conf.STACK_N_SAMPLES,
+        infer=conf.STACK_INFER,
+        verbosity=conf.STACK_VERBOSITY)
 
     # TODO:
     # So we dont get too far ahead of outselves")
@@ -479,6 +557,9 @@ def main(args):
     rseed.get_args(simulate_args_from_namespace(seed_args, positional=["clustered_loci_txt"]))
     rsketch.get_args(simulate_args_from_namespace(sketch_args, positional=["indir"]))
     rscore.get_args(simulate_args_from_namespace(score_args, positional=["indir"]))
+    rstack.get_args(simulate_args_from_namespace(stack_args, positional=["riboScan_dir"]))
+    rspec.get_args(simulate_args_from_namespace(spec_args, positional=[]))
+    rsnag.get_args(simulate_args_from_namespace(snag_args, positional=["clustered_loci", "genbank_genome"]))
     # rselect.get_args(select_args)
     # rseed.get_args(seed_args)
     # rsketch.get_args(sketch_args)
@@ -495,6 +576,7 @@ def main(args):
         rsel.main(select_args, logger)
     logger.info("\nrunning riboSeed\n")
     rseed.main(seed_args, logger)
+    # now, perform the assessment stages
     if conf.RUN_SKETCH:
         if conf.MAUVE_JAR is not None:
             logger.info("\nrunning riboSketch\n")
@@ -504,6 +586,19 @@ def main(args):
                 "Skipping riboSketch: no Mauve.jar found. To fix, " +
                 "add the path to Mauve.jar in the config file from this " +
                 "run, and re-run with -c path/to/config.py")
+
+    if conf.RUN_SNAG:
+        logger.info("\nrunning riboSnag\n")
+        rsnag.main(snag_args, logger=logger)
+    if conf.RUN_STACK:
+        logger.info("\nrunning riboStack\n")
+        rstack.main(stack_args, logger=logger)
+    if conf.RUN_SPEC:
+        logger.info("\nrunning riboSpec\n")
+        rspec.main(spec_args, logger=logger)
+        # else:
+        #     logger.info("Skipping riboScore, as no blastn executable was " +
+        #                 "found in path.")
     if conf.RUN_SCORE:
         if conf.BLAST_EXE is not None:
             logger.info("\nrunning riboScore\n")
@@ -511,4 +606,6 @@ def main(args):
         else:
             logger.info("Skipping riboScore, as no blastn executable was " +
                         "found in path.")
+    # if conf.RUN_SPEC:
+
     new_log_for_diff(logfile_path=log_path)

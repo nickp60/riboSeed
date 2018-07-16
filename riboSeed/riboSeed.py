@@ -292,7 +292,7 @@ def get_args(test_args=None):  # pragma: no cover
                           help="Path to BWA executable;" +
                           " default: %(default)s")
     optional.add_argument("--quast_exe", dest="quast_exe",
-                          action="store", default="quast.py",
+                          action="store", default="quast",
                           help="Path to quast executable; " +
                           "default: %(default)s")
     optional.add_argument("--bcftools_exe", dest="bcftools_exe",

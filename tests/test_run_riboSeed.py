@@ -10,11 +10,12 @@ import unittest
 import logging
 import subprocess
 from argparse import Namespace
+from unittest.mock import patch
 
 from pyutilsnrw.utils3_5 import md5
 
 from riboSeed.run_riboSeed import detect_or_create_config, parse_config, \
-    new_log_for_diff
+    new_log_for_diff, main, get_args
 
 logger = logging
 
@@ -23,7 +24,7 @@ logger = logging
                  "Subprocess.call among other things wont run if tried " +
                  "with less than python 3.5")
 class runRiboSeedTestCase(unittest.TestCase):
-    """ Testing all the functions surrounding the actual plotting functions
+    """ Testing the runner script
     """
     def setUp(self):
         self.test_dir = os.path.join(os.path.dirname(__file__),
@@ -34,6 +35,12 @@ class runRiboSeedTestCase(unittest.TestCase):
             os.path.dirname(__file__),
             "references",
             "run_riboSeed_references", "")
+        self.run_testall_dir = os.path.join(
+            self.test_dir,
+            "testall" "")
+        self.refpath = os.path.join(
+            os.path.dirname(__file__),
+            "..", "riboSeed", "integration_data" )
         self.test_args = Namespace(
             outdir="",
             name="empty")
@@ -85,6 +92,24 @@ class runRiboSeedTestCase(unittest.TestCase):
         self.assertEqual(
             md5(ref_notime_log), md5(test_log))
         self.to_be_removed.append(test_log)
+
+    @unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+                     "Skipping this test on Travis CI. Too hard to debug")
+    def test_run_all(self):
+        Fread = os.path.join(self.refpath, "test_reads1.fq")
+        Rread = os.path.join(self.refpath, "test_reads2.fq")
+        ref = os.path.join(self.refpath, "concatenated_seq.fasta")
+        testargs = ["ribo", "run",
+                    "-F", Fread,
+                    "-R", Rread,
+                    "-o", self.run_testall_dir,
+                    "-r", ref,
+                    "--stages", "stack"]
+        if os.path.isdir(self.run_testall_dir):
+            shutil.rmtree(self.run_testall_dir)
+        with patch.object(sys, 'argv', testargs):
+            args = get_args()
+            main(args)
 
     def tearDown(self):
         """ delete temp files if no errors

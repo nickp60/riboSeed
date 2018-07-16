@@ -108,7 +108,7 @@ class FastgNode(object):
                    )
 
 
-def get_args():  # pragma: no cover
+def get_args(test_args=None):  # pragma: no cover
     """
     """
     parser = argparse.ArgumentParser(
@@ -124,7 +124,7 @@ def get_args():  # pragma: no cover
         "default: %(default)s", default=os.getcwd(),
         type=str, required=True)
     requiredNamed.add_argument(
-        "-g", "--assemgly_graph",
+        "-g", "--assembly_graph",
         dest='assembly_graph',
         action="store", default='', type=str,
         # metavar="assembly_graph.fastg/SPAdes_dir",
@@ -188,7 +188,10 @@ def get_args():  # pragma: no cover
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
-    args = parser.parse_args(sys.argv[2:])
+    if test_args is None:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args(test_args)
     return args
 
 

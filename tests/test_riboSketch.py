@@ -153,6 +153,8 @@ class riboSketchTestCase(unittest.TestCase):
                      "Skipping this test on Travis CI.")
     def test_main(self):
         tempout = os.path.join(self.test_dir, "main_out")
+        if  os.path.isdir(tempout):
+            shutil.rmtree(tempout)
         self.args = Namespace(indir=self.mauve_res_dir,
                               outdir=tempout,
                               replot=False,
