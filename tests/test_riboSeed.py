@@ -949,17 +949,11 @@ class riboSeedShallow(unittest.TestCase):
         logger.warning("this_version: %s", this_version)
         self.assertEqual("4.4", this_version)
 
-    # @unittest.skipIf(shutil.which("quast.py") is None,
-    #                  "quast executable not found, skipping." +
-    #                  "If this isnt an error from travis deployment, you " +
-    #                  "probably should install it")
-    @unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+    @unittest.skipIf(shutil.which("quast.py") is None and \
+                     "TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
                      "Skipping this test on Travis CI. Too hard to debug")
     def test_bool_run_quast_true(self):
-        with patch.object(sys, 'version_info') as v_info:
-            v_info.minor = 4
-            self.assertTrue(
-                bool_run_quast("quast", logger))
+        self.assertTrue(bool_run_quast(shutil.which("quast"), logger))
 
     def test_make_quast_command(self):
         test_exes = Exes(python="/bin/python3.5",

@@ -59,11 +59,11 @@ from pyutilsnrw.utils3_5 import \
     combine_contigs, get_ave_read_len_from_fastq, \
     get_number_mapped, \
     keep_only_first_contig, get_fasta_lengths, \
-    file_len, check_version_from_cmd
+    file_len
 
 from .shared_methods import parse_clustered_loci_file, pad_genbank_sequence, \
     extract_coords_from_locus, add_gb_seqrecords_to_cluster_list, \
-    set_up_logging
+    set_up_logging, check_version_from_cmd
 
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
@@ -1727,9 +1727,10 @@ def bool_run_quast(quast_exe, logger):
     try:
         quast_version = check_version_from_cmd(
             exe=sys.executable + " " + quast_exe,
-            cmd='--version', line=1, where='stderr',
+            cmd='--version', line=1, where='stdout',
             pattern=r".* v(?P<version>[^\n,]+)",
-            min_version="4.0", logger=logger)
+            min_version="4.0", logger=logger,
+            coerce_two_digit=False)
         if quast_version =="4.5":
             logger.warning("Due to bugs in QUAST 4.5, we will not run QUAST")
             return False
