@@ -235,12 +235,14 @@ def get_args():  # pragma: no cover
     optional.add_argument("--stages", nargs="+",
                           dest='stages',
                           action="store",
+                          type=list,
                           default=["stack", "score", "spec"],
                           choices=["sketch", "spec", "snag", "score", "stack"],
                           help="Which assessment stages you wish to run: " +
                           "sketch, spec, snag, score, stack.  " +
-                          "Any combination thereof; "+
-                          "default: %(default)s")
+                          "Any combination thereof; ")
+                          # "default: %(default)s")
+                          # )
     optional.add_argument("-t", "--threads", dest='RUN_THREADS',
                           action="store",
                           default=1, type=int,
