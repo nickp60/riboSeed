@@ -72,7 +72,7 @@ def config_exes():
             config_lines.append(k + " : null\n" )
 
     # # find all optional sys requirements
-    opt_programs = [("QUAST_EXE", "quast.py"),
+    opt_programs = [("QUAST_EXE", "quast"),
                     ("SMALT_EXE", "smalt"),
                     ("PRANK_EXE", "prank"),
                     ("MAFFT_EXE", "mafft"),
