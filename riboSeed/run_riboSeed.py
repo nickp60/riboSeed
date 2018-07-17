@@ -154,16 +154,6 @@ def get_args():  # pragma: no cover
                           default=False,
                           help="Don't do an assembly, just generate the long" +
                           " read 'seeds'; default: %(default)s")
-    # optional.add_argument("--score", dest='RUN_SCORE',
-    #                       action="store_true",
-    #                       default=False,
-    #                       help="run riboScore too! " +
-    #                       "default: %(default)s")
-    # optional.add_argument("--sketch", dest='RUN_SKETCH',
-    #                       action="store_true",
-    #                       default=False,
-    #                       help="run riboSketch too! " +
-    #                       "default: %(default)s")
     optional.add_argument("-l", "--flanking_length",
                           help="length of flanking regions, in bp; " +
                           "default: %(default)s",
@@ -240,9 +230,7 @@ def get_args():  # pragma: no cover
                           choices=["sketch", "spec", "snag", "score", "stack"],
                           help="Which assessment stages you wish to run: " +
                           "sketch, spec, snag, score, stack.  " +
-                          "Any combination thereof; ")
-                          # "default: %(default)s")
-                          # )
+                          "Any combination thereof")
     optional.add_argument("-t", "--threads", dest='RUN_THREADS',
                           action="store",
                           default=1, type=int,
@@ -562,10 +550,6 @@ def main(args):
     rstack.get_args(simulate_args_from_namespace(stack_args, positional=["riboScan_dir"]))
     rspec.get_args(simulate_args_from_namespace(spec_args, positional=[]))
     rsnag.get_args(simulate_args_from_namespace(snag_args, positional=["clustered_loci", "genbank_genome"]))
-    # rselect.get_args(select_args)
-    # rseed.get_args(seed_args)
-    # rsketch.get_args(sketch_args)
-    # rscore.get_args(score_args)s
 
     logger.info("\nrunning riboScan\n")
     rscan.main(scan_args, logger)
