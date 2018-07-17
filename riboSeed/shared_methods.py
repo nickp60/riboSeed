@@ -12,6 +12,7 @@
 # import of matplotlib and other horrors
 import logging
 import sys
+import re
 import multiprocessing
 import subprocess
 
@@ -314,3 +315,61 @@ def test_barrnap_ok(exe):
               "certain perl dependecies. Either install those, or install " +
               "python barrnap from https://github.com/nickp60/barrnap-python")
         sys.exit(1)
+
+
+def check_version_from_cmd(
+        exe,
+        cmd, line,
+        pattern=r"^__version__ = '(?P<version>[^']+)'$",
+        where='stderr',
+        min_version="0.0.0", logger=None,
+        coerce_two_digit=False):
+    """the guts have been stolen from pyani; returns version
+    from an system call that should return a version string.
+    Hacky, but better than nothing.
+    line arg is 1-indexed
+    .strip() is called on match to remove whitspaces
+    20170920 changed to remove shutil.which call.
+    That should be done outside of this funciton
+    """
+    assert logger is not None, "must use logging"
+    from distutils.version import StrictVersion
+    result = subprocess.run("{0} {1}".format(exe, cmd),
+                             # is this a securiy risk?
+                            shell=sys.platform != "win32",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            check=False)
+    logger.debug(result)
+    try:
+        if where == 'stderr':
+            printout = result.stderr.decode("utf-8").split("\n")
+        elif where == 'stdout':
+            printout = result.stdout.decode("utf-8").split("\n")
+        else:
+            raise ValueError("where option can only be 'stderr' or 'stdout'")
+    except Exception as e:
+        raise e
+    logger.debug(printout)
+
+    this_version = None
+    try:
+        m = re.search(pattern, printout[line - 1])
+    except IndexError as e:
+        raise e
+    if m:
+        this_version = m.group('version').strip()
+    logger.debug("this_version: %s", this_version)
+    if coerce_two_digit:
+        this_version = "0.{0}".format(this_version)
+        logger.debug("coerced this_version: %s", this_version)
+    if this_version is None:
+        raise ValueError("No verison was captured with pattern" +
+                         "{0}".format(pattern))
+    try:
+        if StrictVersion(this_version) < StrictVersion(min_version):
+            raise ValueError("{0} version {1} must be greater than {2}".format(
+                cmd, this_version, min_version))
+    except Exception as e:
+        raise e
+    return(this_version)

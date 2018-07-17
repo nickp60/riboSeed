@@ -19,7 +19,7 @@ logger = logging
 
 
 @unittest.skipIf(shutil.which("bwa") is None or
-                 shutil.which("quast.py") is None or
+                 shutil.which("quast") is None or
                  shutil.which("python2.7") is None or
                  shutil.which("spades.py") is None,
                  "bwa executable not found, skipping.If this isnt an " +
@@ -33,7 +33,7 @@ class ExesTest(unittest.TestCase):
         self.bwa_exe = "bwa"
         self.samtools_exe = "samtools"
         self.spades_exe = "spades.py"
-        self.quast_exe = "quast.py"
+        self.quast_exe = "quast"
         self.python_exe = "python"
 
     def test_Exes_bad_method(self):
