@@ -31,14 +31,16 @@ from . import riboStack as rstack
 from . import riboSnag as rsnag
 from . import riboSketch as rsketch
 # import this here in case there are issues with mpl''s X windows
+# lol doesn't help...
 from . import make_riboSeed_config as mrc
 
 
 def get_args():  # pragma: no cover
     parser = argparse.ArgumentParser(
         prog="ribo run",
-        description="Run the riboSeed pipeline of scan, select, seed, " +
-        "sketch, and score.  Uses a config file to wrangle all the args not " +
+        description="Run the riboSeed pipeline of scan, select, and seed, " +
+        "plus any additional stages. " +
+        " Uses a config file to wrangle all the args not " +
         "available via these commandline args.\n\n\n" +
         "This can either be run by providing (as minimum) a reference, " +
         "some reads, and an output directory; or, if you have a completed " +
@@ -351,6 +353,7 @@ def parse_stages(args):
         args.RUN_STACK = True
     if "score" in args.stages:
         args.RUN_SCORE = True
+    return args
 
 def main(args):
     # set up output directory and logging
@@ -377,7 +380,7 @@ def main(args):
             logger.info("Using %i cores", args.RUN_CORES)
     # determine which assessment stages will be run.
     # This creates the RUN_SPEC (snag, etc) argument in the namespaces
-    parse_stages(args)
+    args = parse_stages(args)
     # if starting a fresh run, create a config file.  If not, read it in
     args.RUN_CONFIG = detect_or_create_config(
         config_file=args.RUN_CONFIG,
@@ -538,18 +541,22 @@ def main(args):
         infer=conf.STACK_INFER,
         verbosity=conf.STACK_VERBOSITY)
 
-    # TODO:
     # So we dont get too far ahead of outselves")
     logger.info("\nCheck all the arguments provided\n")
 
     rscan.get_args(simulate_args_from_namespace(scan_args, positional=["contigs"]))
     rsel.get_args(simulate_args_from_namespace(select_args, positional=["genbank_genome"]))
     rseed.get_args(simulate_args_from_namespace(seed_args, positional=["clustered_loci_txt"]))
-    rsketch.get_args(simulate_args_from_namespace(sketch_args, positional=["indir"]))
-    rscore.get_args(simulate_args_from_namespace(score_args, positional=["indir"]))
-    rstack.get_args(simulate_args_from_namespace(stack_args, positional=["riboScan_dir"]))
-    rspec.get_args(simulate_args_from_namespace(spec_args, positional=[]))
-    rsnag.get_args(simulate_args_from_namespace(snag_args, positional=["clustered_loci", "genbank_genome"]))
+    if conf.RUN_SKETCH:
+        rsketch.get_args(simulate_args_from_namespace(sketch_args, positional=["indir"]))
+    if conf.RUN_SCORE:
+        rscore.get_args(simulate_args_from_namespace(score_args, positional=["indir"]))
+    if conf.RUN_STACK:
+        rstack.get_args(simulate_args_from_namespace(stack_args, positional=["riboScan_dir"]))
+    if conf.RUN_SPEC:
+        rspec.get_args(simulate_args_from_namespace(spec_args, positional=[]))
+    if conf.RUN_SPEC:
+        rsnag.get_args(simulate_args_from_namespace(snag_args, positional=["clustered_loci", "genbank_genome"]))
 
     logger.info("\nrunning riboScan\n")
     rscan.main(scan_args, logger)
@@ -592,6 +599,5 @@ def main(args):
         else:
             logger.info("Skipping riboScore, as no blastn executable was " +
                         "found in path.")
-    # if conf.RUN_SPEC:
 
     new_log_for_diff(logfile_path=log_path)
