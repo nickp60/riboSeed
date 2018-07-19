@@ -535,7 +535,8 @@ def main(args):
         verbosity=conf.SPEC_VERBOSITY)
     stack_args = Namespace(
         riboScan_dir=os.path.join(output_root, "scan"),
-        bam=os.path.join(output_root, "seed","scannedScaffolds_mapping_iteration_0", "scannedScaffolds_mapping_iteration_0.bam"),
+        riboSeed_dir=os.path.join(output_root, "seed"),
+        bam=None,
         output=os.path.join(output_root, "sketch"),
         n_samples=conf.STACK_N_SAMPLES,
         infer=conf.STACK_INFER,

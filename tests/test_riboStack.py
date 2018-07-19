@@ -20,7 +20,7 @@ sys.path.append(os.path.join(
 
 from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboStack import makeRegions, makeBedtoolsShuffleCmd, \
-    samtoolsGetDepths, getRecLengths, mean, printPlot
+    samtoolsGetDepths, getRecLengths, mean, printPlot, get_bam_from_riboSeed
 
 sys.dont_write_bytecode = True
 
@@ -139,6 +139,37 @@ class riboStackTestCase(unittest.TestCase):
                 data=range(1, 51),
                 line=15, ymax=10, xmax=60,
                 tick=.2, title="reference", fill=False, logger=logger))
+
+    def test_get_bam_from_riboSeed(self):
+        riboSeed_dir = os.path.join(
+            self.stack_ref_dir, "seed_sample_output")
+        self.assertEqual(
+            get_bam_from_riboSeed(riboSeed_dir, logger=logger),
+            os.path.join(self.stack_ref_dir,
+                         "seed_sample_output",
+                         "scannedScaffolds_mapping_for_iteration_0",
+                         "scannedScaffolds_mapping_iteration_0_sorted.bam"))
+
+    def test_get_bam_from_riboSeed_nodir(self):
+        riboSeed_dir = os.path.join(
+            self.stack_ref_dir, "seed_sample_porcupine")
+        with self.assertRaises(FileNotFoundError):
+            get_bam_from_riboSeed(riboSeed_dir, logger=logger)
+
+    def test_get_bam_from_riboSeed_nofileindir(self):
+        riboSeed_dir = self.stack_ref_dir
+        with self.assertRaises(FileNotFoundError):
+            get_bam_from_riboSeed(riboSeed_dir, logger=logger)
+
+    def test_get_bam_from_riboSeed(self):
+        riboSeed_dir = os.path.join(
+            self.stack_ref_dir, "seed_sample_output")
+        self.assertEqual(
+            get_bam_from_riboSeed(riboSeed_dir, logger=logger),
+            os.path.join(self.stack_ref_dir,
+                         "seed_sample_output",
+                         "scannedScaffolds_mapping_for_iteration_0",
+                         "scannedScaffolds_mapping_iteration_0_sorted.bam"))
 
     def tearDown(self):
         """ delete temp files

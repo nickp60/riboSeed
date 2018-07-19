@@ -48,16 +48,22 @@ def get_args(test_args=None):  # pragma: no cover
                         "riboScan run.")
 
     requiredNamed = parser.add_argument_group('required named arguments')
-    requiredNamed.add_argument("-b", "--bam", dest='bam', action="store",
-                               help="BAM file; tested with BWA output; " +
-                               "default: %(default)s", default=os.getcwd(),
-                               type=str, required=True)
     requiredNamed.add_argument("-o", "--output", dest='output', action="store",
                                help="output directory; " +
                                "default: %(default)s", default=os.getcwd(),
                                type=str, required=True)
 
     optional = parser.add_argument_group('optional arguments')
+    optional.add_argument("-b", "--bam", dest='bam', action="store",
+                          help="BAM file; tested with BWA output; " +
+                          "default: %(default)s",
+                          type=str)
+    optional.add_argument("-r", "--riboSeed_dir", dest='riboSeed_dir',
+                          action="store",
+                          help="look for BAM file in this riboSeed output " +
+                          "directory ",
+                          required="-b" not in sys.argv, # require if no BAM
+                          type=str)
     optional.add_argument("-n", "--n_samples", dest='n_samples',
                           action="store",
                           help="Number of regions to compare rDNA depth to; "
@@ -124,6 +130,27 @@ def makeRegions(outdir, gff, dest, name="", logger=None):
     #                stdout=subprocess.PIPE,
     #                stderr=subprocess.PIPE,
     #                check=True)
+
+def get_bam_from_riboSeed(d, iteration=0, logger=None):
+    # I have both mapping_for_iteration and mapping_iteration
+    # because I hate myself, apparently...
+    if not os.path.isdir(d):
+        logger.error("riboSeed directory not found: %s", d)
+        raise(FileNotFoundError)
+    pattern = os.path.join(
+        d,
+        "*_mapping_for_iteration_{}".format(iteration),
+        "*_mapping_iteration_{}_sorted.bam".format(iteration))
+    options = glob.glob(pattern)
+    if len(options) == 0:
+        logger.error("No BAM file found in riboSeed directory with glob %s",
+                     pattern)
+        raise(FileNotFoundError)
+    if len(options) > 1:
+        logger.warning("multiple bam files found; using first: %s",
+                       options[0])
+    return options[0]
+
 
 def makeBedtoolsShuffleCmd(region, destdir, genome, bedtools_exe, n=10):
     cmd_list = []
@@ -257,6 +284,15 @@ def main(args, logger=None):
     fasta = os.path.join(args.riboScan_dir, "scannedScaffolds.fa")
     logger.info("GFF file: %s", gff)
     logger.info("fasta file: %s", fasta)
+    if args.riboSeed_dir is not None:
+        if args.bam is not None:
+            logger.warning("Both BAM and riboSeed dir were provided; " +
+                           "using bam from riboSeed dir")
+        args.bam = get_bam_from_riboSeed(
+            args.riboSeed_dir, iteration=0, logger=logger)
+    if not os.path.exists(args.bam):
+        logger.error("BAM file not found: %s", args.bam)
+        sys.exit(1)
     for f in [gff, fasta]:
         if not os.path.exists(f):
             logger.error("file %s not found!", f)

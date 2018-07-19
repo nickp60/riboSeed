@@ -81,7 +81,7 @@ cmds = [
 ]
 
 ribo_run_cmd = \
-    "ribo run -r {0} -o {1} -F {2} -R {3} --serialize -v 1".format(
+    "ribo run -r {0} -o {1} -F {2} -R {3} --serialize -v 1 --stages stack score spec".format(
         fasta,
         os.path.join(root_dir, "run"),
         fastq1,
