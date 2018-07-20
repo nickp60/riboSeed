@@ -105,11 +105,6 @@ def get_args(test_args=None):  # pragma: no cover
     optional.add_argument("-S1", "--fastq_single1", dest='fastqS1',
                           action="store",
                           help="single fastq reads", type=str, default=None)
-    # TODO, multiple sing end libraries
-    # optional.add_argument("-S2", "--fastq_single2", dest='fastqS2',
-    #                       action="store",
-    #                       help="single fastq reads", type=str, default=None)
-
     # parameters for run
     optional.add_argument("-l", "--flanking_length",
                           help="length of flanking regions, in bp; " +
@@ -210,6 +205,13 @@ def get_args(test_args=None):  # pragma: no cover
                           "infer: if mapping percentage " +
                           "over 80%%, 'trusted'; else 'untrusted'." +
                           " See SPAdes docs for details.  default: infer")
+    optional.add_argument("--additional_libs",
+                          help="include these libraries in  final assembly " +
+                          "in addition to the reads supplied as -F and -R. " +
+                          "They must be supplied according to SPAdes arg " +
+                          "naming scheme. Use at own risk."
+                          "default: %(default)s",
+                          dest="additional_libs", type=str)
     optional.add_argument("--clean_temps", dest='clean_temps',
                           default=False, action="store_true",
                           help="if --clean_temps, mapping files will be " +
@@ -459,11 +461,6 @@ def nonify_empty_lib_files(ngsLib, logger=None):
             setattr(ngsLib, f, None)
     if EMPTIES == 3:
         raise ValueError("None of the read files hold data!")
-
-# MapperParams = namedtuple(
-#     "MapperParams",
-#     "cores samtools_exe mapper_exe ignore_singletons " +
-#     "score_minimum single_lib scoring step k smalt_scoring")
 
 
 def map_to_genome_ref_smalt(mapping_ob, ngsLib, cores,
@@ -1757,6 +1754,7 @@ def make_quast_command(exes, output_root, ref, assembly_subdir, name,
 
 def get_final_assemblies_cmds(seedGenome, exes,
                               ref_as_contig,
+                              additional_libs,
                               cores,
                               memory,
                               serialize,
@@ -1808,6 +1806,10 @@ def get_final_assemblies_cmds(seedGenome, exes,
         modest_spades_cmd = make_modest_spades_cmd(
             cmd=spades_cmd, cores=cores, memory=memory, split=2,
             serialize=serialize, logger=logger)
+        ## add additional cmdline args for assembly
+        if additional_libs is not None:
+            modest_spades_cmd = "{0} {1}".format(
+                modest_spades_cmd, additional_libs)
         ref = str("-R %s" % seedGenome.ref_fasta)
         quast_cmd = make_quast_command(
             exes=exes, output_root=seedGenome.output_root, ref=ref,
@@ -1822,6 +1824,68 @@ def get_final_assemblies_cmds(seedGenome, exes,
             quast_reports = None
             cmd_list.append([modest_spades_cmd, None])
     return(cmd_list, quast_reports)
+
+
+def check_spades_extra_library_input(inp):
+    """ check user supplied args against SPAdes args.
+     This is pretty brittle, cause its experts only for now.
+    will raise an error if any funny business is detected
+    It will not however check your syntax, ensure you have correct pairs, etc.
+    You are in the deep end now.
+
+    """
+    scary_chars = [";", "|"]
+    for char in scary_chars:
+        if char in inp:
+            raise ValueError("'%s' cannot be part of lib input" %char)
+
+    single_valid = "--s"
+    simple_valid = ["--sanger", "--pacbio", "--nanopore"]
+    comp_valid_prefixes = ["--pe", "--mp", "--hqmp", "--nxmate"]
+    comp_valid_suffixes = ["1", "12", "2", "s", "ff", "fr", "rf"]
+    splitcmds = inp.split(" ")
+    cmds_dict = {}
+
+    MARKER = True
+    # attempt to separate out args into key value pairs.
+    try:
+        for i, cmd in enumerate(splitcmds):
+            if MARKER:
+                cmds_dict[cmd] = splitcmds[i + 1]
+            MARKER = not MARKER
+    except IndexError:
+        raise IndexError("All args must have exactly 1 value; no flags!")
+
+    for cmd, value in cmds_dict.items():
+        VALID = False
+        # check if its a single library (coded as --s#)
+        if cmd[:-1] == single_valid:
+            # does it have a valid numeric library idenifier?
+            for i in range(1,10):
+                if cmd == single_valid + str(i):
+                    VALID = True
+        # check if its a simple arg
+        elif cmd in simple_valid:
+            VALID = True
+
+        # check if its a compound arg
+        else:
+            # does it have a valid prefix?
+            for pref in comp_valid_prefixes:
+                if cmd.startswith(pref):
+                    # does it have a valid numeric library idenifier?
+                    for i in range(1,10):
+                        if cmd.startswith(pref + str(i)):
+                            # does it have a valid suffix?
+                            for suff in comp_valid_suffixes:
+                                if cmd == (pref + str(i) + "-" + suff):
+                                    VALID = True
+                                    break
+        if not VALID:
+            raise ValueError("Invalid spades arg %s" % cmd)
+
+
+
 
 
 def make_faux_genome(cluster_list, seedGenome, iteration,
@@ -2390,7 +2454,9 @@ def main(args, logger=None):
         except Exception as f:
             logger.error(f)
             sys.exit(1)
-
+    if args.additional_libs:
+        logger.debug("Checking additional args for final assembly ahead of time")
+        check_spades_extra_library_input(args.additional_libs)
     logger.debug("samtools version: %s", samtools_version)
     if samtools_version.startswith("1.5"):
         logger.error("Cannot use samtools 1.5! see samtools github issue #726")
@@ -2950,6 +3016,7 @@ def main(args, logger=None):
         seedGenome=seedGenome, exes=sys_exes,
         cores=args.cores,
         memory=args.memory,
+        additional_libs=args.additional_libs,
         serialize=args.serialize,
         ref_as_contig=final_ref_as_contig,
         skip_control=args.skip_control, kmers=checked_k, logger=logger)

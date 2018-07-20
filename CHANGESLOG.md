@@ -1,6 +1,12 @@
 #  The Change Log
-This is a bit overdue, but better better Nate than lever, right?
-----
+This is a bit overdue, but better better Nate than lever, right? ---- 
+
+## 0.4.65
+- add --additional_libs option for final assembly
+
+## 0.4.61
+- add --stages option for `ribo run`
+
 ## 0.4.54
 - added several commandline options for `ribo spec`
 - improved path filtering for `ribo spec`

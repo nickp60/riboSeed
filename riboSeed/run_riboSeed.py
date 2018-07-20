@@ -242,6 +242,13 @@ def get_args():  # pragma: no cover
                           "If unsure, see 'cat /proc/cpuinfo' under 'cpu " +
                           "cores', or 'lscpu' under 'Thread(s) per core'." +
                           ": %(default)s")
+    optional.add_argument("--additional_libs",
+                          help="include these libraries in  final assembly " +
+                          "in addition to the reads supplied as -F and -R. " +
+                          "They must be supplied according to SPAdes arg " +
+                          "naming scheme. Use at own risk." +
+                          "default: %(default)s",
+                          dest="RUN_ADDITIONAL_LIBS", type=str)
     optional.add_argument("-z", "--serialize", dest='serialize',
                           action="store_true",
                           default=False,
@@ -456,6 +463,7 @@ def main(args):
         seq_name=None,
         padding=conf.SNAG_PADDING,
         verbosity=conf.SELECT_VERBOSITY)
+
     seed_args = Namespace(
         clustered_loci_txt=cluster_txt_file,
         reference_genbank=os.path.join(
@@ -490,6 +498,7 @@ def main(args):
         ref_as_contig=conf.RUN_REF_AS_CONTIG,
         mapper_args=conf.SEED_MAPPER_ARGS,
         initial_consensus=conf.SEED_INITIAL_CONSENSUS,
+        additional_libs=conf.RUN_ADDITIONAL_LIBS,
         spades_exe=conf.SPADES_EXE,
         samtools_exe=conf.SAMTOOLS_EXE,
         smalt_exe=conf.SMALT_EXE,

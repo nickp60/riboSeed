@@ -38,7 +38,7 @@ from riboSeed.riboSeed import \
     filter_bam_AS, make_bwa_map_cmds, set_ref_as_contig, \
     make_get_consensus_cmds, exclude_subassembly_based_on_coverage, \
     convert_fastq_to_fasta, get_fasta_consensus_from_BAM, \
-    fiddle_with_spades_exe
+    fiddle_with_spades_exe, check_spades_extra_library_input
 
 from riboSeed.shared_methods import parse_clustered_loci_file
 
@@ -756,20 +756,21 @@ class riboSeedShallow(unittest.TestCase):
                     ref_as_contig="trusted",
                     cores=4,
                     serialize=True,
+                    additional_libs="-s1 path/to/single_reads.fastq",
                     memory=8,
                     seedGenome=gen, exes=test_exes,
                     skip_control=False, kmers="33,77,99", logger=logger)
         final_spades_cmds_ref = [
             str(
                 "/bin/python3.5 {0} -t 4 -m 8 --careful -k 33,77,99 --pe1-1 {1} " +
-                "--pe1-2 {2} --trusted-contigs {3}  -o {4}"
+                "--pe1-2 {2} --trusted-contigs {3}  -o {4} -s1 path/to/single_reads.fastq"
             ).format(
                 self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
                 gen.assembled_seeds,
                 os.path.join(self.test_dir, "final_de_fere_novo_assembly")),
             str(
                 "/bin/python3.5 {0} -t 4 -m 8 --careful -k 33,77,99 --pe1-1 {1} " +
-                "--pe1-2 {2}   -o {3}"
+                "--pe1-2 {2}   -o {3} -s1 path/to/single_reads.fastq"
             ).format(
                 self.spades_exe, self.ref_Ffastq, self.ref_Rfastq,
                 os.path.join(self.test_dir, "final_de_novo_assembly"))]
@@ -1242,6 +1243,27 @@ class riboSeedShallow(unittest.TestCase):
         self.assertEqual(None,
         exclude_subassembly_based_on_coverage(
                 clu=gen.loci_clusters[0], iteration=0, logger=logger))
+
+    def test_check_spades_extra_library_input(self):
+        oddnum = "sg -g rm testdir everythin"
+        # badcmd4 = "--mp3-1 path/to/file1 path/to/file1 --mp2-1 path/to/elsewhere"
+        badcmd1 = "-f file1; rm testdir"
+        badcmd2 = "sg -g s; || rm testdir"
+        badcmd3 = "--pe3-1 test; rm testdir"
+        badcmd4 = "--mp3-1 path/to/file1 -nsanopore path/to/file1 --mp2-1 path/to/elsewhere"
+        badcmd5 = "--mp3-1 path/to/;cowsay;file1 -nsanopore path/to/file1 --mp2-1 path/to/elsewhere"
+
+        with self.assertRaises(IndexError):
+            check_spades_extra_library_input(oddnum)
+        for badcmd in [badcmd1, badcmd2, badcmd3, badcmd4,badcmd5]:
+            with self.assertRaises(ValueError):
+                check_spades_extra_library_input(badcmd)
+        goodcmd1 = "--pe2-1 path/to/files --pe2-1 path/to/elsewhere"
+        goodcmd2 = "--pe9-1 path/to/files --nanopore path/to/elsewhere"
+        goodcmd3 = "--mp3-1 path/to/files --mp2-1 path/to/elsewhere"
+        goodcmd3 = "--s4 path/to/files --sanger path/to/elsewhere"
+        for goodcmd in [goodcmd1, goodcmd2, goodcmd3]:
+            check_spades_extra_library_input(goodcmd)
 
 
     def tearDown(self):
