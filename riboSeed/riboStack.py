@@ -16,6 +16,7 @@ import time
 import glob
 import re
 import math
+import statistics as stats
 from bisect import bisect
 import shutil
 import subprocess
@@ -37,12 +38,20 @@ from Bio.Seq import Seq
 # --------------------------- methods --------------------------- #
 
 
+def n_samples_type(x):
+    x = int(x)
+    if x < 2:
+        raise argparse.ArgumentTypeError("Minimum number of samples is 2")
+    return x
+
 def get_args(test_args=None):  # pragma: no cover
+
     parser = argparse.ArgumentParser(
         description="This facilitates the mapping of reads to a reference " +
         "and comparison of coverage depths in rDNA regions to assess " +
         "disparity in rDNA counts between the reference and your reads",
         add_help=False)
+    parser.prog = "ribo stack"
     parser.add_argument("riboScan_dir", action="store",
                         help="We need the gff and fasta files from your " +
                         "riboScan run.")
@@ -66,9 +75,15 @@ def get_args(test_args=None):  # pragma: no cover
                           type=str)
     optional.add_argument("-n", "--n_samples", dest='n_samples',
                           action="store",
-                          help="Number of regions to compare rDNA depth to; "
-                          "default: 10",
-                          type=int, default=10)
+                          help="Number of regions to compare rDNA depth to; " +
+                          "must be greater than 1; " +
+                          "default: %(default)s",
+                          type=n_samples_type, default=10)
+    optional.add_argument("-e", "--experiment_name", dest='experiment_name',
+                          action="store",
+                          help="prefix for results files; " +
+                          "default: %(default)s",
+                          default="riboStack", type=str)
     optional.add_argument("-i", "--infer", dest='infer',
                           action="store_true",
                           help="If --infer, ignore the name and length " +
@@ -249,9 +264,6 @@ def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
     return(plotlines)
 
 
-def mean(x):
-    return float(sum(x)) / max(len(x), 1)
-
 def main(args, logger=None):
     output_root = os.path.abspath(os.path.expanduser(args.output))
     try:
@@ -366,18 +378,23 @@ def main(args, logger=None):
     logger.debug("first 100 reference depths")
     logger.debug(ref_depths[0:100])
     printPlot(
-        data=ref_depths, line=round(mean(ref_depths), 2), ymax=10, xmax=60,
+        data=ref_depths, line=round(stats.mean(ref_depths), 2), ymax=10, xmax=60,
         tick=.2, title="reference", fill=False, logger=logger)
     sample_means = []
     logger.debug("first 100 sample depths")
     for sample in sample_depths_list:
         logger.debug(sample[1:100])
         if len(sample) != 0:  # dont average in zeros
-            sample_means.append(mean(sample))
+            sample_means.append(stats.mean(sample))
     printPlot(
-        data=sample_means, line=round(mean(sample_means), 2), ymax=10,
+        data=sample_means, line=round(stats.mean(sample_means), 2), ymax=10,
         xmax=60, tick=.2, title="samples 1-10", fill=False, logger=logger)
 
-    print("Average depth in rDNA regions:\t%d" % mean(ref_depths))
+    print("Average depth in rDNA regions:\t%0.2f" % stats.mean(ref_depths))
     print(str("Average depth in %d sets of randomly sampled " +
-              "non-rDNA regions:\t%d") % (args.n_samples, mean(sample_means)))
+              "non-rDNA regions:\t%0.2f") % (args.n_samples, stats.mean(sample_means)))
+    with open(os.path.join(output_root, "riboStack_results.txt"), "w") as outf:
+        outf.write("{0}\t{1}\t{2}\t{3}\n".format(
+            args.experiment_name, "rDNA_mean_depth", stats.mean(ref_depths), stats.stdev(ref_depths)))
+        outf.write("{0}\t{1}\t{2}\t{3}\n".format(
+            args.experiment_name, "rDNA_mean_depth", stats.mean(sample_means), stats.stdev(sample_means)))

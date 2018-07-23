@@ -70,7 +70,7 @@ def get_args():  # pragma: no cover
                                   "_riboSeed_pipeline_results"), ""),
                           type=str,
                           metavar="/output/dir/")
-    optional.add_argument("-n", "--experiment_name",
+    optional.add_argument("-e", "--experiment_name",
                           dest='RUN_EXPERIMENT_NAME',
                           action="store",
                           help="prefix for results files; " +
@@ -546,6 +546,7 @@ def main(args):
         riboScan_dir=os.path.join(output_root, "scan"),
         riboSeed_dir=os.path.join(output_root, "seed"),
         bam=None,
+        experiment_name=experiment_name,
         output=os.path.join(output_root, "stack"),
         n_samples=conf.STACK_N_SAMPLES,
         infer=conf.STACK_INFER,

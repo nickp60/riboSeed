@@ -115,7 +115,7 @@ def get_args(test_args=None):  # pragma: no cover
                           default=False,
                           help="Don't do an assembly, just generate the long" +
                           " read 'seeds'; default: %(default)s")
-    optional.add_argument("-n", "--experiment_name", dest='experiment_name',
+    optional.add_argument("-e", "--experiment_name", dest='experiment_name',
                           action="store",
                           help="prefix for results files; " +
                           "default: %(default)s",
