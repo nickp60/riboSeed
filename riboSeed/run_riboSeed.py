@@ -546,7 +546,7 @@ def main(args):
         riboScan_dir=os.path.join(output_root, "scan"),
         riboSeed_dir=os.path.join(output_root, "seed"),
         bam=None,
-        output=os.path.join(output_root, "sketch"),
+        output=os.path.join(output_root, "stack"),
         n_samples=conf.STACK_N_SAMPLES,
         infer=conf.STACK_INFER,
         verbosity=conf.STACK_VERBOSITY)
