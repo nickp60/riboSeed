@@ -20,7 +20,7 @@ sys.path.append(os.path.join(
 
 from pyutilsnrw.utils3_5 import md5
 from riboSeed.riboStack import makeRegions, makeBedtoolsShuffleCmd, \
-    samtoolsGetDepths, getRecLengths, mean, printPlot, get_bam_from_riboSeed
+    samtoolsGetDepths, getRecLengths, printPlot, get_bam_from_riboSeed
 
 sys.dont_write_bytecode = True
 
@@ -110,9 +110,6 @@ class riboStackTestCase(unittest.TestCase):
         flist = getRecLengths(fasta=self.multifasta)
         self.assertEqual(flist, [["seq1", 660],
                                  ["seq2", 660]])
-
-    def test_mean(self):
-        self.assertEqual(mean([4, 5, 7, 8]), 6)
 
     def test_printPlot(self):
         refplotlist = [
