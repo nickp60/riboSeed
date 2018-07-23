@@ -26,6 +26,7 @@ def get_args():  # pragma: no cover
         "list of de novo contig names, replace the offending contig with " +
         "the de novo contig(s) ",
         add_help=False)  # to allow for custom help
+    parser.prog = "ribo swap"
     parser.add_argument("de_novo_file", action="store",
                         help="multifasta containing de novo contigs")
 

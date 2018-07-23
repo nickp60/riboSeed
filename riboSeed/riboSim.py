@@ -37,6 +37,7 @@ def get_args():  # pragma: no cover
         "to test the effectiveness of riboSeed on divergent " +
         "reference sequences.",
         add_help=False)  # to allow for custom help
+    parser.prog = "ribo sim"
     parser.add_argument("fasta", action="store",
                         help="(multi)fasta file containing the sequences to " +
                         "be mutated")

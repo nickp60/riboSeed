@@ -68,6 +68,7 @@ def get_args(test_args=None):  # pragma: no cover
                                      "of interest based on supplied Locus " +
                                      "tags and evaluate the extracted regions",
                                      add_help=False)
+    parser.prog = "ribo snag"
     parser.add_argument("genbank_genome", help="Genbank file (WITH SEQUENCE)")
     parser.add_argument("clustered_loci", help="output from riboSelect")
 

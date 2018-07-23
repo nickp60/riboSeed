@@ -27,6 +27,7 @@ def get_args(test_args=None):  # pragma: no cover
     parser = argparse.ArgumentParser(prog="ribo score",
         description="This does some simple blasting to detect correctness " +
         "of riboSeed results")
+    parser.prog = "ribo score"
     parser.add_argument("indir",
                         help="dir containing a genbank file, assembly files" +
                         "as fastas. Usually the 'mauve' dir in the riboSeed " +

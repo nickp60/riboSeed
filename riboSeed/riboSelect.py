@@ -42,6 +42,7 @@ def get_args(test_args=None):  # pragma: no cover
                                      " and cluster rRNA regions from a gb " +
                                      "file, returns" +
                                      "a text file with the clusters")
+    parser.prog = "ribo select"
     parser.add_argument("genbank_genome", help="Genbank file (WITH SEQUENCE)")
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument("-o", "--output",

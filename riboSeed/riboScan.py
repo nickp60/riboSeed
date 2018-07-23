@@ -34,6 +34,7 @@ def get_args(test_args=None):  # pragma: no cover
         " and outputs all sequences as a single, annotated genbank file",
         # usage='xuxxxxxu',
         add_help=False)  # to allow for custom help
+    parser.prog = "ribo scan"
     parser.add_argument("contigs", action="store",
                         help="either a (multi)fasta or a directory " +
                         "containing one or more chromosomal " +

@@ -47,6 +47,7 @@ def get_args():  # pragma: no cover
         "config file, you can run it with just that.",
         formatter_class=argparse.MetavarTypeHelpFormatter,
         add_help=False)  # to allow for custom help
+    parser.prog = "ribo run"
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument("-r", "--reference_fasta",
                           dest="REFERENCE_FASTA", action="store",

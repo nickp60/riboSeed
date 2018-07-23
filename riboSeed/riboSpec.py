@@ -117,6 +117,7 @@ def get_args(test_args=None):  # pragma: no cover
         "and reference, determine whether the number of rDNAs appears " +
         "to match the reference",
         add_help=False)  # to allow for custom help
+    parser.prog = "ribo spec"
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument(
         "-o", "--output", dest='output', action="store",

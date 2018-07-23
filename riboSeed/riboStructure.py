@@ -67,6 +67,7 @@ def get_args(test_args=None):  # pragma: no cover
                                      "plot the organizational structure  " +
                                      "of the ribosomal coding regions",
                                      add_help=False)
+    parser.prog = "ribo structure"
     parser.add_argument("dir", help="folder with (multi)fasta genomes.")
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument("-o", "--output", dest='output', action="store",
