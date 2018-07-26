@@ -1,0 +1,110 @@
+LOCUS       AF501913                 594 bp    DNA     linear   BCT 26-JUL-2016
+DEFINITION  Vibrio cholerae strain 5011 DNA gyrase subunit B (gyrB) gene,
+            partial cds.
+ACCESSION   AF501913
+VERSION     AF501913.1
+KEYWORDS    .
+SOURCE      Vibrio cholerae
+  ORGANISM  Vibrio cholerae
+            Bacteria; Proteobacteria; Gammaproteobacteria; Vibrionales;
+            Vibrionaceae; Vibrio.
+REFERENCE   1  (bases 1 to 594)
+  AUTHORS   Li,M., Kotetishvili,M., Chen,Y. and Sozhamannan,S.
+  TITLE     Comparative genomic analyses of the vibrio pathogenicity island and
+            cholera toxin prophage regions in nonepidemic serogroup strains of
+            Vibrio cholerae
+  JOURNAL   Appl. Environ. Microbiol. 69 (3), 1728-1738 (2003)
+   PUBMED   12620865
+REFERENCE   2  (bases 1 to 594)
+  AUTHORS   Li,M., Kotetishvili,M., Chen,Y., Stine,O.C., Morris,G.J. Jr.,
+            Sulakvelidze,A. and Sozhamannan,S.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (11-APR-2002) Intralytix, Inc, Columbus Center 701 E.
+            Pratt St., Room 4016, Baltimore, MD 21202, USA
+FEATURES             Location/Qualifiers
+     source          1..594
+                     /organism="Vibrio cholerae"
+                     /mol_type="genomic DNA"
+                     /strain="5011"
+                     /db_xref="taxon:666"
+                     /note="serogroup: O1"
+     gene            <1..>594
+                     /gene="gyrB"
+     CDS             <1..>594
+                     /gene="gyrB"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="DNA gyrase subunit B"
+                     /protein_id="AAM28851.1"
+                     /translation="AFVTHLTRNKTPIHEKVFHFNQEREDGISVEVAMQWNDGFQENI
+                     YCFTNNIPQRDGGTHLAGFRGALTRTLNNYMDKEGFSKKAQAATSGDDAREGLTAVVS
+                     VKVPDPKFSSQTKDKLVSSEVKSAVESAMNEKLADFLAENPSEAKNVCSKIIDAARAR
+                     EAARKAREMTRRKGALDLAGLPGKLADCQEKDPALSEL"
+ORIGIN      
+        1 gcgtttgtga cccacttgac ccgtaacaaa acgccaatcc atgagaaagt cttccacttt
+       61 aaccaagagc gtgaagatgg catcagcgtg gaagtggcaa tgcagtggaa cgatggtttc
+      121 caagaaaaca tctactgctt tactaacaac atcccacagc gtgatggtgg tacccactta
+      181 gccggtttcc gtggtgcgtt gacccgtact ttgaacaact acatggacaa agaaggcttc
+      241 tcgaagaaag cgcaagcggc aacctcgggt gatgatgcgc gtgaaggctt aacggcagtg
+      301 gtttcggtga aagtgccgga tcctaaattc tcaagccaaa ccaaagataa gctggtttct
+      361 tcggaagtaa aatccgcggt tgagtcagcc atgaatgaga agctggcgga tttcctagcg
+      421 gaaaacccaa gcgaagcgaa aaacgtttgt tcgaagatta ttgatgcggc gcgtgcgcgt
+      481 gaagcggcgc gtaaagcccg ggaaatgact cgccgtaaag gcgcgctgga tcttgctggc
+      541 ttacccggca aactggcgga ttgtcaggaa aaagacccag cattgtctga actc
+//
+
+LOCUS       AF501913                 594 bp    DNA     linear   BCT 26-JUL-2016
+DEFINITION  Vibrio cholerae strain 5011 DNA gyrase subunit B (gyrB) gene,
+            partial cds.
+ACCESSION   AF501913
+VERSION     AF501913.1
+KEYWORDS    .
+SOURCE      Vibrio cholerae
+  ORGANISM  Vibrio cholerae
+            Bacteria; Proteobacteria; Gammaproteobacteria; Vibrionales;
+            Vibrionaceae; Vibrio.
+REFERENCE   1  (bases 1 to 594)
+  AUTHORS   Li,M., Kotetishvili,M., Chen,Y. and Sozhamannan,S.
+  TITLE     Comparative genomic analyses of the vibrio pathogenicity island and
+            cholera toxin prophage regions in nonepidemic serogroup strains of
+            Vibrio cholerae
+  JOURNAL   Appl. Environ. Microbiol. 69 (3), 1728-1738 (2003)
+   PUBMED   12620865
+REFERENCE   2  (bases 1 to 594)
+  AUTHORS   Li,M., Kotetishvili,M., Chen,Y., Stine,O.C., Morris,G.J. Jr.,
+            Sulakvelidze,A. and Sozhamannan,S.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (11-APR-2002) Intralytix, Inc, Columbus Center 701 E.
+            Pratt St., Room 4016, Baltimore, MD 21202, USA
+FEATURES             Location/Qualifiers
+     source          1..594
+                     /organism="Vibrio cholerae"
+                     /mol_type="genomic DNA"
+                     /strain="5011"
+                     /db_xref="taxon:666"
+                     /note="serogroup: O1"
+     gene            <1..>594
+                     /gene="gyrB"
+     CDS             <1..>594
+                     /gene="gyrB"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="DNA gyrase subunit B"
+                     /protein_id="AAM28851.1"
+                     /translation="AFVTHLTRNKTPIHEKVFHFNQEREDGISVEVAMQWNDGFQENI
+                     YCFTNNIPQRDGGTHLAGFRGALTRTLNNYMDKEGFSKKAQAATSGDDAREGLTAVVS
+                     VKVPDPKFSSQTKDKLVSSEVKSAVESAMNEKLADFLAENPSEAKNVCSKIIDAARAR
+                     EAARKAREMTRRKGALDLAGLPGKLADCQEKDPALSEL"
+ORIGIN      
+        1 gcgtttgtga cccacttgac ccgtaacaaa acgccaatcc atgagaaagt cttccacttt
+       61 aaccaagagc gtgaagatgg catcagcgtg gaagtggcaa tgcagtggaa cgatggtttc
+      121 caagaaaaca tctactgctt tactaacaac atcccacagc gtgatggtgg tacccactta
+      181 gccggtttcc gtggtgcgtt gacccgtact ttgaacaact acatggacaa agaaggcttc
+      241 tcgaagaaag cgcaagcggc aacctcgggt gatgatgcgc gtgaaggctt aacggcagtg
+      301 gtttcggtga aagtgccgga tcctaaattc tcaagccaaa ccaaagataa gctggtttct
+      361 tcggaagtaa aatccgcggt tgagtcagcc atgaatgaga agctggcgga tttcctagcg
+      421 gaaaacccaa gcgaagcgaa aaacgtttgt tcgaagatta ttgatgcggc gcgtgcgcgt
+      481 gaagcggcgc gtaaagcccg ggaaatgact cgccgtaaag gcgcgctgga tcttgctggc
+      541 ttacccggca aactggcgga ttgtcaggaa aaagacccag cattgtctga actc
+//
+
