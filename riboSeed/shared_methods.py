@@ -13,6 +13,8 @@
 import logging
 import sys
 import re
+import os
+import glob
 import multiprocessing
 import subprocess
 
@@ -373,3 +375,123 @@ def check_version_from_cmd(
     except Exception as e:
         raise e
     return(this_version)
+
+
+def combine_contigs(contigs_dir, pattern="*",
+                    contigs_name="riboSeedContigs_aggregated",
+                    ext=".fasta", verbose=False, logger=None):
+    """changed over to biopython
+    combine all *ext files in dir, return path to concatenated file
+    requires Bio.SeqIO, glob, os
+    """
+    # make sure it ends in a path sep
+    if contigs_dir[-1] != os.path.sep:
+        contigs_dir = str(contigs_dir + os.path.sep)
+    output = os.path.join(contigs_dir, str(contigs_name + ext))
+    fastas = glob.glob(str(contigs_dir + pattern + ext))
+    fastas.sort()
+    if verbose:
+        print(str("combining the following files matching pattern " +
+                  "{0}:{1}".format(pattern, " ".join(fastas))))
+    if logger:
+        logger.debug(str("combining the following files matching pattern " +
+                        "{0}:{1}".format(pattern, " ".join(fastas))))
+    if len(fastas) == 0:
+        if logger:
+            logger.error("No matching files to combine found" +
+                         " in {0}!".format(contigs_dir))
+        sys.exit(1)
+    with open(output, 'w') as w_file:
+        for filen in fastas:
+            with open(filen, 'r') as o_file:
+                seq_records = SeqIO.parse(o_file, 'fasta')
+                SeqIO.write(seq_records, w_file, 'fasta')
+
+    return output
+
+
+def get_number_mapped(bam, samtools_exe, logger=None):
+    """use samtools flagstats to retrieve total mapped reads as a diagnostic
+    returns a string to be printed, the 4th line of flagstat
+    requires subprocess, sys, logger (SAMtools)
+    """
+    flagstatcmd = str("{0} flagstat {1}").format(samtools_exe, bam)
+    flagstats = subprocess.run(flagstatcmd,
+                               shell=sys.platform != "win32",
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               check=True)
+    try:
+        printout = flagstats.stdout.decode("utf-8").split("\n")[4]
+    # TODO test for none mapped
+    except IndexError:
+        if logger:
+            logger.error("Error reading {0}".format(bam))
+        sys.exit(1)
+    return printout
+
+
+def keep_only_first_contig(ref, newname="contig1"):
+    # TODO make a biopython version
+    """
+    given a multi fasta from SPAdes, extract first entry,
+    rename "NODE_1" with newname, overwrite file
+    requires os, re
+    fasta_sequences = SeqIO.parse(open(ref),'fasta')
+    with open(output_file) as out_file:
+        for fasta in fasta_sequences:
+            name, sequence = fasta.id, fasta.seq.tostring()
+            new_sequence = some_function(sequence)
+            write_fasta(out_file)
+
+    """
+    temp = os.path.join(os.path.dirname(ref), "temp.fasta")
+    with open(temp, "w") as outfile:
+        with open(ref, "r") as file_handle:
+            lines = file_handle.readlines()
+            if lines[0][0] != ">":
+                raise ValueError(str("Error  with spades output contig!" +
+                                     " Not a valid fasta!"))
+            new_header = str(re.sub("NODE_\d*", newname, str(lines[0])))
+            outfile.write(new_header)
+            for line in range(1, len(lines)):
+                if lines[line][0] == ">":
+                    break  # stop after first entry
+                outfile.write(str(lines[line]))
+    os.remove(ref)
+    os.rename(temp, ref)
+
+
+def get_fasta_lengths(fasta):
+    """ given a fasta file, return list of sequence lengths as list
+    """
+    len_list = []
+    with open(fasta, "rt") as data:
+        for read in SeqIO.parse(data, "fasta"):
+            len_list.append(len(read))
+    return len_list
+
+
+def file_len(fname):
+    """http://stackoverflow.com/questions/845058/
+    how-to-get-line-count-cheaply-in-python
+    """
+    if os.path.splitext(fname)[-1] in ['.gz', '.gzip']:
+        open_fun = gzip.open
+    else:
+        open_fun = open
+    with open_fun(fname) as f:
+        for i, l in enumerate(f):
+            index = i
+            pass
+    return index + 1
+
+
+def multisplit(delimiters, string, maxsplit=0):
+    """from SO. takes a list of delimiters and a string, and
+    returns a list of split string
+    """
+    import re
+    assert isinstance(delimiters, list)
+    regexPattern = '|'.join(map(re.escape, delimiters))
+    return re.split(regexPattern, string, maxsplit)

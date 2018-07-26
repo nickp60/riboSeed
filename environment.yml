@@ -6,11 +6,11 @@ dependencies:
     - jenkspy=0.1.4
     - pyaml=17.8.0
     - pysam=0.11.2.2
-    - pyutilsnrw=0.1.1
     - matplotlib=1.5.3
     - pandas=0.20.1
     - coverage=4.4.1
     - nose=1.3.7
+    - networkx
     # sys reqs
     - emboss
     - barrnap ==0.7

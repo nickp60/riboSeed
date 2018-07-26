@@ -52,9 +52,6 @@ from collections import defaultdict  # for calculating kmer frequency
 from itertools import product  # for getting all possible kmers
 # from heatmapcluster import heatmapcluster
 
-from pyutilsnrw.utils3_5 import check_installed_tools,\
-    combine_contigs, check_version_from_cmd
-
 from .shared_methods import make_barrnap_cmd, set_up_logging
 
 

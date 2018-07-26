@@ -714,9 +714,7 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
     """
     assert logger is not None, "Must use logger"
     if msa_tool == "prank":
-        if check_installed_tools(executable=prank_exe,
-                                 hard=False,
-                                 logger=logger):
+        if shutil.which(prank_exe):
             msa_cmd, results_path = prepare_prank_cmd(
                 outdir=outdir,
                 outfile_name="best_MSA",
@@ -728,9 +726,7 @@ def make_msa(msa_tool, unaligned_seqs, prank_exe, mafft_exe,
             raise ValueError("Construction of MSA skipped because " +
                              "%s is not a valid executable!", prank_exe)
     elif msa_tool == "mafft":
-        if check_installed_tools(executable=mafft_exe,
-                                 hard=False,
-                                 logger=logger):
+        if shutil.which(mafft_exe):
             msa_cmd, results_path = prepare_mafft_cmd(
                 outdir=outdir,
                 outfile_name="best_MSA",

@@ -55,13 +55,9 @@ from distutils.version import StrictVersion
 #     PLOT = False
 
 
-from pyutilsnrw.utils3_5 import \
-    combine_contigs, get_ave_read_len_from_fastq, \
-    get_number_mapped, \
-    keep_only_first_contig, get_fasta_lengths, \
-    file_len
-
 from .shared_methods import parse_clustered_loci_file, pad_genbank_sequence, \
+    combine_contigs, file_len, get_number_mapped, \
+    keep_only_first_contig, get_fasta_lengths, \
     extract_coords_from_locus, add_gb_seqrecords_to_cluster_list, \
     set_up_logging, check_version_from_cmd
 

@@ -35,13 +35,6 @@ from Bio.Alphabet import IUPAC
 from distutils.version import StrictVersion
 
 
-from pyutilsnrw.utils3_5 import set_up_logging, \
-    combine_contigs, get_ave_read_len_from_fastq, \
-    get_number_mapped, \
-    keep_only_first_contig, get_fasta_lengths, \
-    file_len, check_version_from_cmd
-
-
 # GLOBALS
 SAMTOOLS_MIN_VERSION = '1.3.1'
 # --------------------------- classes --------------------------- #
@@ -649,6 +642,30 @@ class Locus(object):
 
 
 # --------------------------- methods --------------------------- #
+
+def get_ave_read_len_from_fastq(fastq1, N=50, logger=None):
+    """from LP; return average read length in fastq1 file from first N reads
+    """
+    count, tot = 0, 0
+    if os.path.splitext(fastq1)[-1] in ['.gz', '.gzip']:
+        open_fun = gzip.open
+    else:
+        open_fun = open
+    with open_fun(fastq1, "rt") as file_handle:
+        data = SeqIO.parse(file_handle, "fastq")
+        for read in data:
+            count += 1
+            tot += len(read)
+            if count >= N:
+                break
+    if logger:
+        logger.info(str("From the first {0} reads in {1}, " +
+                        "mean length is {2}").format(N,
+                                                     os.path.basename(fastq1),
+                                                     float(tot / count)))
+    file_handle.close()
+    return float(tot / count)
+
 
 def estimate_distances_smalt(outfile, smalt_exe, ref_genome, fastq1, fastq2,
                              cores=None, logger=None):  # pragma: no cover

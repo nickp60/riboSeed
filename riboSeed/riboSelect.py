@@ -29,8 +29,7 @@ import jenkspy
 from Bio import SeqIO
 
 from .classes import Locus
-from .shared_methods import set_up_logging
-from pyutilsnrw.utils3_5 import multisplit
+from .shared_methods import set_up_logging, multisplit
 
 
 def get_args(test_args=None):  # pragma: no cover

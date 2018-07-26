@@ -19,8 +19,7 @@ import glob
 from Bio import SeqIO
 import pandas as pd
 from Bio.Blast.Applications import NcbiblastnCommandline
-from pyutilsnrw.utils3_5 import combine_contigs
-from .shared_methods import set_up_logging
+from .shared_methods import set_up_logging, combine_contigs
 
 
 def get_args(test_args=None):  # pragma: no cover
