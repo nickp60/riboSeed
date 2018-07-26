@@ -43,10 +43,10 @@ class sharedMethodsTestCase(unittest.TestCase):
             "test_only_first_reference.fasta")
         self.genbank_filename = os.path.join(
             self.ref_dir,
-            'n_equitans.gbk')
+            'single.gb')
         self.multigenbank_filename = os.path.join(
             self.ref_dir,
-            'uams1_rs.gb')
+            'multi.gb')
         self.test_md5s_prefix = os.path.join(
             self.ref_dir, "md5")
         self.startTime = time.time()
