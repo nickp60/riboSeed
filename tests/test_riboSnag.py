@@ -15,10 +15,9 @@ import time
 
 from Bio import SeqIO
 
-from pyutilsnrw.utils3_5 import get_genbank_record, combine_contigs, md5
 
 from riboSeed.shared_methods import parse_clustered_loci_file, \
-    pad_genbank_sequence, \
+    pad_genbank_sequence, get_genbank_record, combine_contigs, md5, \
     extract_coords_from_locus, add_gb_seqrecords_to_cluster_list
 
 from riboSeed.riboSnag import stitch_together_target_regions, \

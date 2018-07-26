@@ -12,7 +12,7 @@ import subprocess
 from argparse import Namespace
 from unittest.mock import patch
 
-from pyutilsnrw.utils3_5 import md5
+from riboSeed.shared_methods import md5
 
 from riboSeed.run_riboSeed import detect_or_create_config, parse_config, \
     new_log_for_diff, main, get_args

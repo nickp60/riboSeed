@@ -22,7 +22,8 @@ sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
-from pyutilsnrw.utils3_5 import md5, file_len, copy_file, get_number_mapped
+from riboSeed.shared_methods import md5
+
 from riboSeed.riboSwap import remove_bad_contig, append_replacement_contigs
 sys.dont_write_bytecode = True
 

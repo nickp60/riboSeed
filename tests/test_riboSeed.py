@@ -17,7 +17,7 @@ from Bio import SeqIO
 from argparse import Namespace
 
 
-from pyutilsnrw.utils3_5 import md5, get_number_mapped, check_version_from_cmd
+from riboSeed.shared_methods import md5, get_number_mapped, check_version_from_cmd
 
 from riboSeed.classes import SeedGenome, NgsLib, LociMapping, Exes
 from riboSeed.riboSeed import \

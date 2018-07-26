@@ -41,6 +41,14 @@ class sharedMethodsTestCase(unittest.TestCase):
         self.test_singlefasta = os.path.join(
             self.ref_dir,
             "test_only_first_reference.fasta")
+        self.genbank_filename = os.path.join(
+            self.ref_dir,
+            'n_equitans.gbk')
+        self.multigenbank_filename = os.path.join(
+            self.ref_dir,
+            'uams1_rs.gb')
+        self.test_md5s_prefix = os.path.join(
+            self.ref_dir, "md5")
         self.startTime = time.time()
         self.cores = 2
         self.maxDiff = 2000
@@ -94,6 +102,32 @@ class sharedMethodsTestCase(unittest.TestCase):
         self.assertNotEqual(list_of_other_things, ["look", "this", "is", "a",
                                                    "locus", "that", "is",
                                                    "multi", "delimited"])
+
+    def test_get_genbank_record(self):
+        """Reads records from a GenBank file.
+        """
+        records = sm.get_genbank_record(self.genbank_filename)
+        assert isinstance(records, list)
+        multirecords = sm.get_genbank_record(self.multigenbank_filename,
+                                          first_only=False)
+        assert isinstance(multirecords, list)
+
+    def test_md5_strings(self):
+        """ minimal md5 examples with strings
+        """
+        self.assertEqual(sm.md5("thisstringisidenticalto", string=True),
+                         sm.md5("thisstringisidenticalto", string=True))
+        self.assertNotEqual(sm.md5("thisstringisntidenticalto", string=True),
+                            sm.md5("thisstringisnotidenticalto", string=True))
+
+    def test_md5_files(self):
+        """ test file contests identiy
+        """
+        md5_a = sm.md5(str(self.test_md5s_prefix + "_a.txt"))
+        md5_b = sm.md5(str(self.test_md5s_prefix + "_b.txt"))
+        md5_fail = sm.md5(str(self.test_md5s_prefix + "_fail.txt"))
+        self.assertEqual(md5_a, md5_b)
+        self.assertNotEqual(md5_a, md5_fail)
 
     def tearDown(self):
         """ delete temp files if no errors

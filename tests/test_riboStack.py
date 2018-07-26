@@ -18,7 +18,7 @@ sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
-from pyutilsnrw.utils3_5 import md5
+from riboSeed.shared_methods import md5
 from riboSeed.riboStack import makeRegions, makeBedtoolsShuffleCmd, \
     samtoolsGetDepths, getRecLengths, printPlot, get_bam_from_riboSeed
 

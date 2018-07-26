@@ -18,7 +18,7 @@ from Bio.SeqRecord import SeqRecord
 from argparse import Namespace
 from unittest.mock import MagicMock, patch
 
-from pyutilsnrw.utils3_5 import md5
+from riboSeed.shared_methods import md5
 from riboSeed.riboScan import parse_fasta_header, \
     add_locus_tags_to_gff, combine_gbs, append_accession_and_version, \
     make_seqret_cmd, splitMultifasta, getFastas, checkSingleFasta, main

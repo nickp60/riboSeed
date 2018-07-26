@@ -17,6 +17,7 @@ import os
 import glob
 import multiprocessing
 import subprocess
+import hashlib
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
@@ -495,3 +496,30 @@ def multisplit(delimiters, string, maxsplit=0):
     assert isinstance(delimiters, list)
     regexPattern = '|'.join(map(re.escape, delimiters))
     return re.split(regexPattern, string, maxsplit)
+
+
+def md5(fname, string=False):
+    """straight from quantumsoup
+    http://stackoverflow.com/questions/3431825/
+        generating-an-md5-checksum-of-a-file
+    updated 20160916 for strings; if true, fname can be a string
+    """
+    if string:
+        return hashlib.md5(fname.encode('utf-8')).hexdigest()
+    else:
+        hash_md5 = hashlib.md5()
+        with open(fname, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+            return hash_md5.hexdigest()
+
+def get_genbank_record(input_genome_path, logger=None, first_only=True):
+    """Returns a list of records in a GenBank file"""
+    if logger:
+        logger.info("Reading genbank file...")
+    with open(input_genome_path) as input_genome_handle:
+        records = list(SeqIO.parse(input_genome_handle, "genbank"))
+    if first_only:
+        return [records[0]]
+    else:
+        return records

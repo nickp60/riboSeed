@@ -13,13 +13,14 @@ import unittest
 import random
 from Bio import SeqIO
 from argparse import Namespace
-from pyutilsnrw.utils3_5 import md5
 # I hate this line but it works :(
 sys.path.append(os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "riboSeed"))
 
 
 from riboSeed.riboSim import ageSequence, main
+from riboSeed.shared_methods import md5
+
 
 
 sys.dont_write_bytecode = True

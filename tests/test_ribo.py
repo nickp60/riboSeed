@@ -13,7 +13,6 @@ import time
 from unittest.mock import Mock
 
 
-from pyutilsnrw.utils3_5 import md5
 from riboSeed.ribo import main
 
 logger = logging

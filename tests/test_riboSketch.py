@@ -9,7 +9,8 @@ import os
 import unittest
 import time
 
-from pyutilsnrw.utils3_5 import md5
+from riboSeed.shared_methods import md5
+
 from argparse import Namespace
 
 sys.path.append(os.path.join(

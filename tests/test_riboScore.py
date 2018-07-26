@@ -13,7 +13,8 @@ import time
 from unittest.mock import Mock
 
 
-from pyutilsnrw.utils3_5 import md5
+from riboSeed.shared_methods import md5
+
 from riboSeed.riboScore import getSnagCmd, getSelectCmd, getScanCmd, \
     parseDirContents, make_nuc_nuc_recip_blast_cmds, merge_outfiles, \
     BLAST_tab_to_df, filter_recip_BLAST_df, checkBlastForMisjoin, \
