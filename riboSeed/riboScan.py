@@ -78,7 +78,7 @@ def get_args(test_args=None):  # pragma: no cover
                           action="store",
                           help="number of threads/cores to use; " +
                           "default: %(default)s", default=2,
-                          choices=[1, 2, 4, 8, 16], type=int)
+                          type=int)
     optional.add_argument("-s", "--seqret_exe", dest='seqret_exe',
                           action="store",
                           help="path to seqret executable, usually " +
