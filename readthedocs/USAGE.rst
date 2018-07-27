@@ -39,10 +39,26 @@ All of the elements of the package can be run individually: Perhaps you want to
 modify barrnap's behaviour in ``scan``, or you want to experiment with
 different feature selectors in ``select``.  Go for it!
 
-``ribo scan``
-``ribo select``
-``ribo seed``
-``ribo snag``
-``ribo score``
+::
 
-And so on...
+   $ ribo
+
+   Description: A suite of tools to perform de fere novo assembly to bridge
+   gaps caused by rDNA repeats
+
+   Usage:   ribo <command> [options]
+
+   Available commands:
+   -run        execute pipeline (scan, select, seed, sketch, and score)
+   -scan       reannotate rRNAs in a FASTA file
+   -select     group rRNA annotations into rDNA operons
+   -seed       perform de fere novo assembly
+   -snag       extract rDNA regions and plot entropy
+   -sim        perform simulations used in manuscript
+   -sketch     plot results from a de fere novo assembly
+   -stack      compare coverage depth in rDNA regions to rest of genome
+   -score      score batches of assemblies with BLASTn
+   -swap       swap contigs from assemblies
+   -spec       use assembly graph to speculate number of rDNAs
+   -structure  view the rRNA operon structure across several genomes
+   -config     write out a blank config file to be used with `run`

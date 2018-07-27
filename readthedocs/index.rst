@@ -12,9 +12,8 @@ Impatient? See our `Quickstart Guide <https://github.com/nickp60/riboSeed/blob/m
 A brief overview of the theory can be found
 `here <https://nickp60.github.io/riboSeed.html>`__.
 
-Preprint of the riboSeed manuscript can be found
-`here <http://www.biorxiv.org/content/early/2017/07/14/159798>`__;
-comments welcome!
+The manuscript can be found here:
+`Nicholas R Waters, Florence Abram, Fiona Brennan, Ashleigh Holmes, Leighton Pritchard; riboSeed: leveraging prokaryotic genomic architecture to assemble across ribosomal regions, Nucleic Acids Research, Volume 46, Issue 11, 20 June 2018, Pages e68, https://doi.org/10.1093/nar/gky212 <https://academic.oup.com/nar/article/46/11/e68/4955760>`__
 
 Description
 -----------
