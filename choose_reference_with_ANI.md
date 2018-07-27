@@ -1,17 +1,26 @@
-# Reference Selection via ANI
+## Reference Selection via ANI
 With any assembly that uses a reference, the choice of that reference is
 crucial. Here, we outline a protocol for using Average Nucleotide Identity via pyANI.
 
 All the subscripts are in the `scripts/select_ref_by_ANI` dir, and the main runner script can be found at `scripts/run_ANI.sh`
 
-# Required Tools
-## `shuf`
+### Required Tools
+#### `shuf`
 You must have coreutils installed on OSX to provide the `gshuf` replacement for `shuf`.
 
-## `pyani`
-`pyani` makes it easy to perform average nucleotide identity computations.  install with either `conda install pyani` (prefered), or with `pip install pyani`.
+#### `pyani`
+`pyani` makes it easy to perform average nucleotide identity computations. Their development team has some exciting updates in the works, so we will be working with the `classify` branch from GitHub.
 
-# `run_ANI.sh`: Helper Script Usage
+```
+git clone https://github.com/widdowquinn/pyani.git
+cd pyani
+git checkout classify
+python setup.py install
+
+```
+
+
+### `run_ANI.sh`: Helper Script Usage
 This script helps automate this process.  It takes 5 mandatory args:
 
 
@@ -21,18 +30,19 @@ This script helps automate this process.  It takes 5 mandatory args:
 - `-n` number of strains
 - `-o` organism name
 
- And 2 optional arguments.  This allows you to reuse the same prokaryotes.txt file from NCBI and the same comparison genomes (rather than having to download them fresh each time)
+ And 3 optional arguments.  This allows you to reuse the same prokaryotes.txt file from NCBI and the same comparison genomes (rather than having to download them fresh each time). The last arg `-a` allows you to skip the assembly step and use an existing assembly for ANI anaysis.
 
 - `-p` prokaryotes.txt file
 - `-g` directory of genomes of interest
+- `-a` existing assembly
 
 This returns the string of the file name of the best reference, as well as writes that to a file in the output directory called `best_reference`.
 
 
 What's it doing under the hood?
 
-# Description of Components
-## 1. Randomly Selecting Potential References
+### Description of Components
+#### 1. Randomly Selecting Potential References (if not using `-g`)
 We use the list of prokaryote assemblies from [NCBI](ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prokaryotes.txt). If you have it downloaded already, you can pass it as an arg to the get_n_genomes_script.
 
 The following script will get 25 random E. coli genomes
@@ -55,7 +65,7 @@ done < tmp_accessions
 ```
 
 
-## 2. Mini Assembly
+#### 2. Mini Assembly (if not using `-a`)
 Now, because we have a chicken/egg situation as we need an assembly to determine ANI to determine the best reference to make an assembly, we start with a minimal assembly with 1/10th of the reads using the `mini_assembly.sh` scsript.
 
 ```
@@ -66,7 +76,7 @@ cp 2018-06-19_mini_assembly_TEST/spades/scaffolds.fasta ./potential_references/
 ```
 
 
-## 3. Run pyANI
+#### 3. Run pyANI
 
 ```
 average_nucleotide_identity.py -i potential_references -g -o ./pyani
