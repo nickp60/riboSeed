@@ -127,8 +127,8 @@ closest score to 1.
 
 
 
-Method #1: Kraken
-~~~~~~
+Kraken Method
+-----
 
 
 Kraken is a kmer-based phylogeny tool that can be used to idenify the strains present in a metagenomic dataset;  the installation and usage `instructions can be found here <https://ccb.jhu.edu/software/kraken/>`__
@@ -147,8 +147,8 @@ Because the MiniKraken database was built from all the complete genomes from Ref
 PS:  This is a great time to check if you have any contamination in your sample;  thanks, Kraken!
 
 
-Method #2: reads2type and  `cgFind <https://nickp60.github.io/cgfind>`__
-~~~~~
+reads2type and  `cgFind <https://nickp60.github.io/cgfind>`__ Method
+------
 
 
 reads2type is also a kmer-based phylogeny tool, but it relies on a lightweight, prebuilt database that allows the analysis to be performed in your web browser, and it doesn't require you to upload your whole read file to a webserver.  It works by taking one read at a time from your file, generating 55-mers, and comparing to its databse. If there is not enough taxanomic information to indentify the isolate off of that read alone, additional reads will be processed until a single taxonomy is achieved.  This method works best on trimmed reads. `Instructions and the webserver can be found here <https://cge.cbs.dtu.dk/services/Reads2Type/>`__
