@@ -355,7 +355,7 @@ def parse_stages(args):
         args.RUN_SNAG = True
     if "sketch" in args.stages:
         args.RUN_SKETCH = True
-    if "SPEC" in args.stages:
+    if "spec" in args.stages:
         args.RUN_SPEC = True
     if "stack" in args.stages:
         args.RUN_STACK = True
@@ -541,7 +541,7 @@ def main(args):
         barrnap_length_threshold=conf.SPEC_BARRNAP_LENGTH_THRESHOLD,
         barrnap_exe=conf.BARRNAP_EXE,
         cores=conf.RUN_CORES,
-        make_adjacency_matrix=True,
+        MAKE_ADJACENCY_MATRIX=True,
         verbosity=conf.SPEC_VERBOSITY)
     stack_args = Namespace(
         riboScan_dir=os.path.join(output_root, "scan"),
@@ -601,9 +601,6 @@ def main(args):
     if conf.RUN_SPEC:
         logger.info("\nrunning riboSpec\n")
         rspec.main(spec_args, logger=logger)
-        # else:
-        #     logger.info("Skipping riboScore, as no blastn executable was " +
-        #                 "found in path.")
     if conf.RUN_SCORE:
         if conf.BLAST_EXE is not None:
             logger.info("\nrunning riboScore\n")

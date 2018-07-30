@@ -104,7 +104,7 @@ class runRiboSeedTestCase(unittest.TestCase):
                     "-R", Rread,
                     "-o", self.run_testall_dir,
                     "-r", ref,
-                    "--stages", "stack"]
+                    "--stages", "stack", "sketch", "spec", "score"]
         if os.path.isdir(self.run_testall_dir):
             shutil.rmtree(self.run_testall_dir)
         with patch.object(sys, 'argv', testargs):

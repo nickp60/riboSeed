@@ -122,7 +122,7 @@ def get_args(test_args=None):  # pragma: no cover
     requiredNamed.add_argument(
         "-o", "--output", dest='output', action="store",
         help="output directory; " +
-        "default: %(default)s", default=os.getcwd(),
+        "default: %(default)s",
         type=str, required=True)
     requiredNamed.add_argument(
         "-g", "--assembly_graph",
@@ -181,7 +181,7 @@ def get_args(test_args=None):  # pragma: no cover
                           default=None, type=int,
                           help="cores to be used" +
                           "; default: %(default)s")
-    optional.add_argument("-x", "--make_adjacency_matrix",
+    optional.add_argument("-x", "--MAKE_ADJACENCY_MATRIX",
                           dest='MAKE_ADJACENCY_MATRIX', action="store_true",
                           help="generate and plot an adjacency matrix" +
                           "; default: %(default)s")
@@ -876,7 +876,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     logger.info("Reading assembly graph: %s", fastg)
     node_list, G_dict, G = parse_fastg(f=fastg)
     if PLOT and args.MAKE_ADJACENCY_MATRIX:
-        M = make_adjacency_matrix(g)
+        M = make_adjacency_matrix(G_dict)
         plot_adjacency_matrix(
             M, node_order=None, partitions=[], colors=[],
             outpath=os.path.join(output_root, "full_adjacency_matrix.pdf"))

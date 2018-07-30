@@ -343,6 +343,7 @@ def check_scan_select_snag_retruncodes(subreturns, logger):
     if subreturns[2].returncode != 0:
         logger.info("error with riboSnag! This often happens if " +
                     "the assembly doesnt reconstruct any rDNAs.")
+        # note the lack of sys exit
 
 
 def main(args, logger=None):

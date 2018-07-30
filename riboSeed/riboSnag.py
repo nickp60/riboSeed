@@ -1140,12 +1140,12 @@ def main(args, logger=None):
     date = str(datetime.datetime.now().strftime('%Y%m%d'))
     # test whether executables are there
     executables = [args.barrnap_exe]
-    test_ex = [check_installed_tools(x, logger=logger) for x in executables]
-    if all(test_ex):
+    # test_ex = [check_installed_tools(x, logger=logger) for x in executables]
+    if shutil.which(args.barrnap_exe):
         logger.debug("All needed system executables found!")
         logger.debug(str([shutil.which(i) for i in executables]))
     check_version_from_cmd(
-        exe='barrnap',
+        exe=args.barrnap_exe,
         cmd='', line=2,
         pattern=r"barrnap (?P<version>[^-]+)",
         where='stderr',

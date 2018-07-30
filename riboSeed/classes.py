@@ -20,9 +20,7 @@ import shutil
 import multiprocessing
 import subprocess
 import traceback
-import pysam
 import math
-import pkg_resources
 import itertools
 
 from bisect import bisect

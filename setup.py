@@ -46,7 +46,7 @@ setup(
     # long_description=long_description,
     long_description="""
     its a blast, you gotta try it!  check out the GitHub
-    repo for the read README.md file
+    repo for the read README.md file at https://github.com/nickp60/riboSeed
     """,
     url='https://github.com/nickp60/riboSeed',
     author='Nick Waters',
