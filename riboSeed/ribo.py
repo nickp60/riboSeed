@@ -25,19 +25,20 @@ helpmsg = [
     "Usage:   ribo <command> [options]",
     "",
     "Available commands:",
-    " -run        execute pipeline (scan, select, seed, sketch, and score)",
-    " -scan       reannotate rRNAs in a FASTA file",
-    " -select     group rRNA annotations into rDNA operons",
-    " -seed       perform de fere novo assembly",
-    " -snag       extract rDNA regions and plot entropy",
-    " -sim        perform simulations used in manuscript",
-    " -sketch     plot results from a de fere novo assembly",
-    " -stack      compare coverage depth in rDNA regions to rest of genome",
-    " -score      score batches of assemblies with BLASTn",
-    " -swap       swap contigs from assemblies",
-    " -spec       use assembly graph to speculate number of rDNAs",
-    " -structure  view the rRNA operon structure across several genomes",
-    " -config     write out a blank config file to be used with `run`",
+    "  run        execute pipeline (scan, select, seed, and more)",
+    "  scan       reannotate rRNAs in a FASTA file",
+    "  select     group rRNA annotations into rDNA operons",
+    "  seed       perform de fere novo assembly",
+    "  snag       extract rDNA regions and plot entropy",
+    "  sim        perform simulations used in manuscript",
+    "  sketch     plot results from a de fere novo assembly",
+    "  stack      compare coverage depth in rDNA regions to rest of genome",
+    "  score      score batches of assemblies with BLASTn",
+    "  swap       swap contigs from assemblies",
+    "  spec       use assembly graph to speculate number of rDNAs",
+    "  structure  view the rRNA operon structure across several genomes",
+    "  config     write out a blank config file to be used with `run`",
+    "  try        runs the pipeline on some included sample data",
     ""
 ]
 
@@ -70,7 +71,8 @@ def main(args=None):
         "swap": "riboSwap",
         "spec": "riboSpec",
         "structure": "riboStructure",
-        "config": "make_riboSeed_config"}
+        "config": "make_riboSeed_config",
+        "try": "riboTry"}
     if args[1] not in modules_dict.keys():
         print("Error:" + args[1] +
               " is not an available program. See the list below:\n")

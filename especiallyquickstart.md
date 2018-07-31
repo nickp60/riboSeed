@@ -9,7 +9,10 @@ The pseudogenome was constructed from the 7 rDNAs separated by several kb of fla
 
 Two read files can be found in the same directory.
 
-
+Run the analysis using the built in `ribo test` command.
 ```
-ribo run ./riboSeed/integration_data/concatenated_seq.fasta -F ./riboSeed/integration_data/test_reads1.fq -R ./riboSeed/integration_data/test_reads2.fq -o ./test1/ -v 1
+ribo test
+
+# This is running the following command under the hood
+# ribo run ./riboSeed/integration_data/concatenated_seq.fasta -F ./riboSeed/integration_data/test_reads1.fq -R ./riboSeed/integration_data/test_reads2.fq -o ./test1/ -v 1
 ```

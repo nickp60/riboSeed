@@ -77,6 +77,5 @@ setup(
     },
     scripts=[
         'scripts/seedRand.py',
-        "scripts/runme.py"
     ],
 )

@@ -107,9 +107,6 @@ pip install --extra-index-url https://testpypi.python.org/pypi riboSeed
 #### From GitHub
 You can also clone this repository, and run `python3.5 setup.py install`.
 
-In the scripts directory, there is a script called `runme.py` which run the pipeline on a small sample dataset.  it should output a folder to your current working dir called `integration_tests`.
-
-
 ### Dependencies
 Python requirements can be found in the `requirements.txt` file.
 

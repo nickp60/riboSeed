@@ -18,7 +18,7 @@ from .shared_methods import set_up_logging
 # --------------------------- methods --------------------------- #
 
 
-def get_args():  # pragma: no cover
+def get_args(test_args=None):  # pragma: no cover
     parser = argparse.ArgumentParser(
         prog="ribo swap",
         description="Given de novo and de fere novo contigs files, a " +
@@ -59,7 +59,10 @@ def get_args():  # pragma: no cover
     optional.add_argument("-h", "--help",
                           action="help", default=argparse.SUPPRESS,
                           help="Displays this help message")
-    args = parser.parse_args(sys.argv[2:])
+    if test_args is None:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args(test_args)
     return args
 
 
