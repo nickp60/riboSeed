@@ -15,7 +15,6 @@ import sys
 import math
 import re
 import shutil
-import itertools
 import multiprocessing
 
 try:
@@ -49,9 +48,6 @@ from Bio.Seq import Seq
 from collections import defaultdict  # for calculating kmer frequency
 from itertools import product  # for getting all possible kmers
 # from heatmapcluster import heatmapcluster
-
-
-from .classes import LociCluster, Locus
 
 from .shared_methods import add_gb_seqrecords_to_cluster_list, \
     extract_coords_from_locus, pad_genbank_sequence, \
@@ -670,7 +666,7 @@ def plot_pairwise_least_squares(counts, names_list, output_prefix):
     FigureCanvas(fig)
     ax = fig.add_subplot(111)
     #fi, ax = plt.subplots(1, 1)
-    lsdf = lsdf_wNA.fillna(value=0)
+    # lsdf = lsdf_wNA.fillna(value=0)
     heatmap = ax.pcolormesh(wlsdf, cmap='Greens')
     # put the major ticks at the middle of each cell
     ax.set_yticks(np.arange(wlsdf.shape[0]) + 0.5, minor=False)
@@ -833,7 +829,7 @@ def get_rec_from_generator(recordID, gen, method=None):
 
 
 def submain(clusters, gb_path, logger, verbose, no_revcomp,
-         output, circular, flanking, prefix_name, args):
+            output, circular, flanking, prefix_name, date, args):
     get_rev_comp = no_revcomp is False  # kinda clunky
     flanking_regions_output = os.path.join(output, "flanking_regions_output")
     try:
@@ -1187,6 +1183,7 @@ def main(args, logger=None):
         circular= not args.linear,
         prefix_name=args.name,
         no_revcomp=args.no_revcomp,
+        date=date,
         args=args
     )
 
@@ -1257,7 +1254,7 @@ def main(args, logger=None):
             data=seq_entropy,
             consensus_cov=consensus_cov,
             names=["Position", "Entropy"],
-            title=args.title,
+            title=label_name,
             anno_list=annos,
             pubplot=args.pubplot,
             output_prefix=os.path.join(

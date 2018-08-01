@@ -113,6 +113,7 @@ def main(args, logger=None):
     fastq2 = pkg_resources.resource_filename(resource_package, resource_path_2)
     # fasta_path = pkg_resources.resource_string("/", resource_path)
     logger.debug(fasta)
+    logger.debug(reffasta)
     logger.debug(fastq1)
     logger.debug(fastq2)
 

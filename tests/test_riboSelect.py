@@ -16,7 +16,7 @@ sys.path.append(os.path.join(
 
 from riboSeed.riboSelect import get_loci_list_for_features, \
     dict_from_jenks, count_feature_hits_per_sequence, parse_args_clusters
-from riboSeed.riboSnag import Locus
+from riboSeed.classes import Locus
 
 logger = logging
 sys.dont_write_bytecode = True

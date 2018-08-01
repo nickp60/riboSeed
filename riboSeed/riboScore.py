@@ -540,7 +540,9 @@ def main(args, logger=None):
             filelist=f_paths_to_recip_outputs,
             outfile=os.path.join(
                 this_root, "recip_merged_flanking_results.tab"))
+        # this currently doesnt get used
         f_resultsdf = BLAST_tab_to_df(f_merged_tab)
+        # we use the reciprocal results
         f_recip_resultsdf = BLAST_tab_to_df(f_recip_merged_tab)
         # 5 columns: [fasta, good/bad/?, query, startseq, end_seq]
         flanking_hits = checkBlastForMisjoin(

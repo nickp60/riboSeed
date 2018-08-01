@@ -13,7 +13,6 @@ import matplotlib
 matplotlib.use("Agg")
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
-from matplotlib import gridspec
 import matplotlib.patches as patches
 from matplotlib.patches import FancyBboxPatch
 

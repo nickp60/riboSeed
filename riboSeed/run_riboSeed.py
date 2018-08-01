@@ -8,18 +8,16 @@
 # this package.
 
 import argparse
+from argparse import Namespace
 import yaml
-import pkg_resources
 import time
 import sys
 import os
-import shutil
-import subprocess
 import multiprocessing
 import re
+import shutil
 
 from .shared_methods import set_up_logging
-from argparse import Namespace
 
 from ._version import __version__
 from . import riboScan as rscan
@@ -596,8 +594,12 @@ def main(args):
         logger.info("\nrunning riboSnag\n")
         rsnag.main(snag_args, logger=logger)
     if conf.RUN_STACK:
-        logger.info("\nrunning riboStack\n")
-        rstack.main(stack_args, logger=logger)
+        if shutil.which("bedtools") is not None:
+            logger.info("\nrunning riboStack\n")
+            rstack.main(stack_args, logger=logger)
+        else:
+            logger.info("Skipping riboStack, as no bedtools executable was " +
+                        "found in path.")
     if conf.RUN_SPEC:
         logger.info("\nrunning riboSpec\n")
         rspec.main(spec_args, logger=logger)

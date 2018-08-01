@@ -18,25 +18,20 @@ import sys
 import time
 import random
 import os
-import re
 import shutil
 import multiprocessing
 import subprocess
 import traceback
 import pysam
 import math
-import pkg_resources
 
 from riboSeed import __version__
 from .classes import SeedGenome, LociMapping, Exes, NgsLib
 from bisect import bisect
-from itertools import chain
-from collections import namedtuple
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
-from distutils.version import StrictVersion
 
 # plotting with mpl is depreciated till I can figure out why
 # it wont work in screen sessions ( see bioconda issue  #6451)
@@ -55,7 +50,7 @@ from distutils.version import StrictVersion
 #     PLOT = False
 
 
-from .shared_methods import parse_clustered_loci_file, pad_genbank_sequence, \
+from .shared_methods import parse_clustered_loci_file, \
     combine_contigs, file_len, get_number_mapped, \
     keep_only_first_contig, get_fasta_lengths, \
     extract_coords_from_locus, add_gb_seqrecords_to_cluster_list, \
@@ -833,68 +828,6 @@ def convert_bam_to_fastqs_cmd(mapping_ob, ref_fasta, samtools_exe,
                             ref_fasta=ref_fasta))
 
 
-# def check_version_from_cmd2(
-#         exe,
-#         cmd, line,
-#         pattern=r"^__version__ = '(?P<version>[^']+)'$",
-#         where='stderr',
-#         min_version="0.0.0", logger=None,
-#         coerce_two_digit=False):
-#     """the guts have been stolen from pyani; returns version
-#     from an system call that should return a version string.
-#     Hacky, but better than nothing.
-#     line arg is 1-indexed
-#     .strip() is called on match to remove whitspaces
-
-#     This will be removed when pyutilsnrw v0.1.1 is released
-#     """
-#     # exe_path = shutil.which(exe)
-#     # if exe_path is None:
-#     #     raise ValueError("executable %s not found!" % exe)
-#     from distutils.version import StrictVersion
-#     result = subprocess.run("{0} {1}".format(exe, cmd),
-#                              # is this a securiy risk?
-#                             shell=sys.platform != "win32",
-#                             stdout=subprocess.PIPE,
-#                             stderr=subprocess.PIPE,
-#                             check=False)
-#     logger.debug(result)
-#     try:
-#         if where == 'stderr':
-#             printout = result.stderr.decode("utf-8").split("\n")
-#         elif where == 'stdout':
-#             printout = result.stdout.decode("utf-8").split("\n")
-#         else:
-#             raise ValueError("where option can only be 'stderr' or 'stdout'")
-#     except Exception as e:
-#         raise e
-#     if logger:
-#         logger.debug(printout)
-#     this_version = None
-#     try:
-#         m = re.search(pattern, printout[line - 1])
-#     except IndexError as e:
-#         raise e
-#     if m:
-#         this_version = m.group('version').strip()
-#     if logger:
-#         logger.debug("this_version: %s", this_version)
-#     if coerce_two_digit:
-#         this_version = "0.{0}".format(this_version)
-#         if logger:
-#             logger.debug("coerced this_version: %s", this_version)
-#     if this_version is None:
-#         raise ValueError("No version was captured with pattern" +
-#                          "{0}".format(pattern))
-#     try:
-#         if StrictVersion(this_version) < StrictVersion(min_version):
-#             raise ValueError("{0} version {1} must be greater than {2}".format(
-#                 cmd, this_version, min_version))
-#     except Exception as e:
-#         raise e
-#     return this_version
-
-
 def fiddle_with_spades_exe(spades_exe, logger=None):
     """  so heres the deal.  SPAdes 3.9  can be run with python3.5 and below.
      version 3.10 can be run with 3.6 and below.  If the version of spades
@@ -942,7 +875,7 @@ def fiddle_with_spades_exe(spades_exe, logger=None):
                          " and spades. Check to see if your spades " +
                          "version is compatible with your python version")
             sys.exit(1)
-
+    logger.debug("SPAdes version: %s", spades_verison)
     return sys.executable
 
 
@@ -1992,7 +1925,7 @@ def copy_to_handy_dir(outdir, pre, ref_gb, seedGenome,
                  pre + ".gb"]
     if skip_control:
         new_names = [new_names[i] for i in [0,2]]
-        file_to_copy = [file_to_copy[i] for i in [0,2]]
+        files_to_copy = [files_to_copy[i] for i in [0,2]]
     for idx, f in enumerate(files_to_copy):
         logger.debug("copying %s to %s as %s",
                      f,
@@ -2307,7 +2240,6 @@ def convert_fastq_to_fasta(fastq, outfasta,  # only_first=True,
     If you need to convert more, learn how to use awk.
     """
     assert logger is not None, "must use logging"
-    from Bio.Alphabet import IUPAC
     counter = 0
     with open(outfasta, "w") as ofile:
         with open(fastq, "r") as ifile:
@@ -2547,6 +2479,7 @@ def main(args, logger=None):
         try:
             check_fastqs_len_equal(file1=args.fastq1, file2=args.fastq2)
         except Exception as e:
+            logger.error(e)
             # not just value error, whatever file_len throws
             logger.error(last_exception())
             sys.exit(1)
@@ -2968,6 +2901,7 @@ def main(args, logger=None):
                                         clu.mappings[-1].iteration)))
 
             except Exception as e:
+                logger.error(e)
                 logger.error(last_exception())
                 sys.exit(1)
     for dirpath, dirnames, files in os.walk(seedGenome.final_long_reads_dir):

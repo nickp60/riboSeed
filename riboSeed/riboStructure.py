@@ -9,15 +9,10 @@
 
 import os
 import subprocess
-import datetime
 import argparse
 import sys
-import math
-import re
 from glob import glob
-import shutil
 import itertools
-import multiprocessing
 
 try:
     import numpy as np
@@ -25,7 +20,6 @@ try:
     matplotlib.use("Agg")
     from matplotlib.backends.backend_agg import \
         FigureCanvasAgg as FigureCanvas
-    from matplotlib.patches import FancyBboxPatch
     from matplotlib.figure import Figure
     from matplotlib import gridspec
     import matplotlib.patches as patches
@@ -41,16 +35,8 @@ except Exception as e:  # likely an ImportError, but not taking chances
           "Classic matplotlib, amirite? Plotting is disabled\n")
     PLOT = False
 
-# import pandas as pd
 
 from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord
-from Bio.Alphabet import IUPAC
-from Bio.Blast.Applications import NcbiblastnCommandline
-from Bio.Seq import Seq
-from collections import defaultdict  # for calculating kmer frequency
-from itertools import product  # for getting all possible kmers
-# from heatmapcluster import heatmapcluster
 
 from .shared_methods import make_barrnap_cmd, set_up_logging
 
@@ -190,9 +176,7 @@ def plot_rDNAs(
     # ax.grid(color='r', linestyle='-', linewidth=2)
     ax2.set_ylim([ymin, ymax])
     #  plot the color shadings
-    unused_cols = ["red", "green", "yellow", "purple", "red", "blue"]
     nudge = coding_height / 2
-    patch_list = []
     # add annotations
     print(len(gff_lists))
     names, descs, short_descs, lens = [], [], [], []
@@ -245,13 +229,12 @@ def plot_rDNAs(
             ax.plot([last_chrom_end + breakwidth, maxlen],
                     [centers[gff_i],centers[gff_i]], color = 'black', linestyle='--', dashes=(2,5))
 
-        previous_end = 0
         for f, seq, prog, feat, start, end, x1, strand, x2, product in gff:
             start, end = int(start), int(end)
-            if feat != "rRNA" and i == 0:
+            if feat != "rRNA":  # and i == 0:
                 #Exclude this feature
                 continue
-            feat_len = int(end) - int(start)
+            # feat_len = int(end) - int(start)
             # ------------------------ .5 total
             # |                      |
             # ------------------------
@@ -284,7 +267,6 @@ def plot_rDNAs(
                 linewidth=.5
             )
             ax.add_patch(anno_box)
-            # previous_end = this_end
     # add a legend to this mess
     red_patch = patches.Patch(color=mycolors['redish'], label='16S')
     yellish_patch = patches.Patch(color=mycolors['yellish'], label='23S')
@@ -393,7 +375,7 @@ def find_pairs(list_16, list_23, max_dist):
     print(n_rDNAs)
     final = []
     unavailable_23s = []
-    still_needs_reducing = True
+    all_single = True
     max_i = 50
     i = 0
     while len(final) != n_rDNAs:

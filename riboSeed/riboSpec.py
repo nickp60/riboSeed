@@ -62,13 +62,11 @@ import glob
 import subprocess
 import argparse
 import multiprocessing
-from copy import deepcopy
 
 
 try:
     import matplotlib
     matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
     from matplotlib import pyplot, patches
     PLOT = True
 except Exception as e:  # likely an ImportError, but not taking chances
@@ -77,7 +75,6 @@ except Exception as e:  # likely an ImportError, but not taking chances
                      "Classic matplotlib, amirite? Plotting is disabled\n")
     PLOT = False
 
-import numpy as np
 import networkx as nx
 
 
@@ -345,8 +342,8 @@ def plot_G(
     # print(M)
     # print(_N)
     # print(_M)
-    edge_colors = range(2, M + 2)
-    edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
+    # edge_colors = range(2, M + 2)
+    # edge_alphas = [(5 + i) / (M + 4) for i in range(M)]
 
     node_colors = ["lightgrey" for x in range(N)]
     for i, (g, h) in enumerate(G.nodes.data()):
@@ -405,7 +402,7 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     border_nodes = []
     nodesDict = dict(G.nodes(data=True))
     # changed this from dijkstra path because that was getting the shortes path by number of intermnediate nodes.  We can only weight nodes, not edges, so this was problematic
-    paths_dict = {}
+    # paths_dict = {}
 
     #### first, use single_source_dij to get all connected nodes.
     # his lambda function replaces the built-in weight calculation, cause
@@ -767,20 +764,28 @@ def remove_similar_lists(lst, lengths_lst, medium_threshold = 200):
             if l[-1] == n:
                 sublist_nodes.append(l)
                 sublist_lengths.append(masked_lengths_list[i])
-        # Within this sublist, make lists of the unique paths (though these should be all distinct) and unique path lengths (as these could contain duplicates). Then, we check if the lengths of list of uniqe lengths and number of paths are the same.  If they are the same, we add all the paths to the returned list.
-        uniq_paths_to_end = set(tuple(x) for x in sublist_nodes) # these should always be unique
+        # Within this sublist, make lists of the unique paths
+        # (though these should be all distinct) and unique path lengths
+        # (as these could contain duplicates). Then, we check if the lengths
+        # of list of uniqe lengths and number of paths are the same.
+        # If they are the same, we add all the paths to the returned list.
+
+        # these should always be unique
+        uniq_paths_to_end = set(tuple(x) for x in sublist_nodes)
         uniq_lengths_of_paths_to_end = set(tuple(x) for x in sublist_lengths)
         if len(uniq_lengths_of_paths_to_end) != len(sublist_nodes):
             # we can tell we have duplicate paths, but we dont know how many.
             # There could be two duplicate paths and another distinct path to
             # the node, we go uniqe path by unique path.
             for uniq_lengths in uniq_lengths_of_paths_to_end:
-                # for each of these unique length lists, we should be returning a representative path
+                # for each of these unique length lists, we should be
+                #   returning a representative path
                 # This marks whether we have found it yet.
                 # This could probably be refactored with a well-placed "break"
                 selected_representative = False
                 for subpath, sublengths in zip(sublist_nodes, sublist_lengths):
-                    # if this sublengh has a duplicate, add the corresponding path of only the first one to be returned
+                    # if this sublengh has a duplicate, add the corresponding
+                    # path of only the first one to be returned
                     if tuple(sublengths) == uniq_lengths and not selected_representative:
                         deduplicated.append(subpath)
                         selected_representative = True
@@ -791,15 +796,19 @@ def remove_similar_lists(lst, lengths_lst, medium_threshold = 200):
 
 
 def add_temp_edges(node_list, G):
-    # add temporary edges; later we will weight them and redo the directionality if needed
+    """ add temporary edges to all nodes in graph
+    later we will weight them and redo the directionality if needed
+    """
     for node in node_list:
         for neigh in node.neighbor_list:
             G.add_edge(neigh.name, node.name)
 
 
-def find_collapsable_partial_rRNA_nodes(rrnas, G, nodes_data, threshold=200, logger=None):
+def find_collapsable_partial_rRNA_nodes(
+        rrnas, G, nodes_data, threshold=200, logger=None):
     """ return list of nodes where partial rrna loci neighbor full-length loci
-    We only collapse short nodes, by defualt 200, which should capture all the 5S/tRNA nodes
+    We only collapse short nodes, by defualt 200, which should capture all
+    the 5S/tRNA nodes
     """
     collapsed = []
     for k, vals in rrnas.items():
@@ -810,12 +819,12 @@ def find_collapsable_partial_rRNA_nodes(rrnas, G, nodes_data, threshold=200, log
         # check if partial node neighbors true node
         # print(vals)
         for part in vals["partial"]:
-            # ifs a big node with just a fraction of a rRNA on an end, we retain it
+            # ifs a big node with just a bit of a rRNA on an end, we retain it
             if nodes_data[part]["length"] > threshold:
                 continue
             # print("partial: %i" %part)
             if len(vals['solid']) == 0:
-                # TODO collase partials into single node if the are close enough
+                # TODO collapse partials into one node if the are close enough
                 pass
             for solid in vals["solid"]:
                 # solidlen = dict(G.nodes(solid))['length']
@@ -823,7 +832,8 @@ def find_collapsable_partial_rRNA_nodes(rrnas, G, nodes_data, threshold=200, log
                     # print(G.edges(solid))
                     for d in G.edges(part):
                         if d[1] != solid and d[1] not in G.neighbors(solid):
-                            # ammend graph to reflect the collapse; we dont remove nodes,
+                            # ammend graph to reflect the collapse;
+                            # we dont remove nodes,
                             # but we have the new edges
                             # (make a bi-directional graph for now)
                             #############################################3

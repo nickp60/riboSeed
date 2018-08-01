@@ -12,15 +12,12 @@
 
 import argparse
 import sys
-import time
 import glob
-import re
 import math
 import statistics as stats
 from bisect import bisect
 import shutil
 import subprocess
-import logging
 import os
 import traceback
 
@@ -28,8 +25,6 @@ import traceback
 sys.path.append(os.path.join('..', 'riboSeed'))
 from .shared_methods import set_up_logging
 from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord
-from Bio.Seq import Seq
 
 
 # --------------------------- classes --------------------------- #
@@ -271,7 +266,6 @@ def main(args, logger=None):
     except OSError:
         print("Output directory already exists; exiting...")
         sys.exit(1)
-    t0 = time.time()
     log_path = os.path.join(output_root, "riboStack.log")
 
     if logger is None:

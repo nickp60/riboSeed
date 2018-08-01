@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#! /usr/bin/env python3
 #-*- coding: utf-8 -*-
 # Copyright 2017, National University of Ireland and The James Hutton Insitute
 # Author: Nicholas Waters
@@ -10,27 +10,18 @@
 """
 """
 
-import argparse
 import sys
-import time
-import random
 import os
-import re
 import shutil
 import multiprocessing
 import subprocess
-import traceback
-import math
+import gzip
 import itertools
 
-from bisect import bisect
-from itertools import chain
-from collections import namedtuple
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
-from distutils.version import StrictVersion
 
 
 # GLOBALS
@@ -88,7 +79,7 @@ class SeedGenome(object):
         self.unmapped_mapping_list = unmapped_mapping_list
         # holds dynamically updated list of remaining unmapped
         self.unmapped_sam = unmapped_sam
-        # after partitioning, the last mapping list is extracted into this ngs ob
+        # after partitioning, the last mapping list is put into this ngs ob
         self.unmapped_ngsLib = unmapped_ngsLib
         # path to file mapped read names are appended to
         self.reads_mapped_txt = reads_mapped_txt
@@ -489,7 +480,8 @@ class Exes(object):
 
     """
     def __init__(self, python, samtools, method, spades, quast,
-                 smalt, bwa, bcftools=None, vcfutils=None, check=True, mapper=None):
+                 smalt, bwa, bcftools=None, vcfutils=None,
+                 check=True, mapper=None):
         self.python = python
         self.samtools = samtools
         self.method = method
@@ -624,7 +616,7 @@ class Locus(object):
         # int: unique identifier for cluster
         self.index = index
         # str: sequence name, usually looks like 'NC_17777373.1' or similar
-        self.sequence_id = sequence_id  # is this needed? I dont think so as long
+        self.sequence_id = sequence_id  # I dont think this is this needed?
         # str: unique identifier from \locus_tag= of gb file
         self.locus_tag = locus_tag
         # int: 1 is +strand, -1 is -strand
@@ -636,7 +628,6 @@ class Locus(object):
         self.product = product
         # str "feature" genbank identifier
         self.feature_type = feature_type
-
 
 
 # --------------------------- methods --------------------------- #

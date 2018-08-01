@@ -53,18 +53,18 @@ class runRiboSeedTestCase(unittest.TestCase):
         """
         path = detect_or_create_config(
             config_file=os.path.join(
-                self.run_ref_dir, "sample_config.py"),
+                self.run_ref_dir, "sample_config.yaml"),
             theseargs=self.test_args,
             output_root="test", logger=logger)
         self.assertEqual(
-            path, os.path.join(self.run_ref_dir, "sample_config.py"))
+            path, os.path.join(self.run_ref_dir, "sample_config.yaml"))
 
     def test_detect_or_create_config_noexist(self):
         """ can we get the path to our config file back if it dont exists
         """
         path = detect_or_create_config(
             config_file=os.path.join(
-                self.run_ref_dir, "not_an_existing_sample_config.py"),
+                self.run_ref_dir, "not_an_existing_sample_config.yaml"),
             output_root=self.test_dir,
             theseargs=self.test_args,
             newname="lookanewconfig",
@@ -77,7 +77,7 @@ class runRiboSeedTestCase(unittest.TestCase):
         """
         conf = parse_config(
             config_file=os.path.join(
-                self.run_ref_dir, "sample_config.py"),
+                self.run_ref_dir, "sample_config.yaml"),
             logger=logger)
         self.assertEqual(
             conf.MAUVE_ALIGNER_EXE,

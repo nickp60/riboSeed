@@ -15,9 +15,9 @@ import sys
 import re
 import os
 import glob
-import multiprocessing
 import subprocess
 import hashlib
+import gzip
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
