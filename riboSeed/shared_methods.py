@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2017, National University of Ireland and The James Hutton Insitute
 # Author: Nicholas Waters
 #
@@ -7,9 +7,6 @@
 # Please see the LICENSE file that should have been included as part of
 # this package.
 
-
-# These methods were moved from riboSnag to avoid circular
-# import of matplotlib and other horrors
 import logging
 import sys
 import re
@@ -25,6 +22,7 @@ from Bio.Seq import Seq
 from .classes import Locus, LociCluster
 
 logger = logging.getLogger('root')
+
 
 def parse_clustered_loci_file(filepath, gb_filepath, output_root,
                               circular, padding=1000, logger=None):
@@ -112,7 +110,7 @@ def pad_genbank_sequence(cluster, logger=None, verbose=False):
     # take care of the coordinates
     if logger:
         logger.debug(str("adjusting coordinates by {0} to account for " +
-                        "padding").format(cluster.padding))
+                         "padding").format(cluster.padding))
     for loc in cluster.loci_list:
         if logger:
             logger.debug("pre-padded")
@@ -232,10 +230,13 @@ def set_up_logging(verbosity, outfile, name):
         raise ValueError('Invalid log level: %s' % verbosity)
     # logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(logging.DEBUG)
-    logging.addLevelName(logging.DEBUG,  "DBUG")
+    logging.addLevelName(logging.DEBUG, "DBUG")
     # create console handler and set level to given verbosity
     console_err = logging.StreamHandler(sys.stderr)
     console_err.setLevel(level=(verbosity * 10))
+    # console_err_format = logging.Formatter(
+    #     str("%(asctime)s " + name + " %(levelname).4s " +"%(message)s "),
+    #     "%H:%M:%S")
     console_err_format = logging.Formatter(
         str("%(asctime)s " + "%(levelname).4s" +" %(message)s"),
         "%H:%M:%S")
@@ -256,11 +257,12 @@ def set_up_logging(verbosity, outfile, name):
             logging.Formatter("%(asctime)s - %(levelname).4s - %(message)s")
         logfile_handler.setFormatter(logfile_handler_formatter)
         logger.addHandler(logfile_handler)
-    except:
-        logger.error("Could not open {0} for logging".format(outfile))
+    except Exception as e:
+        logger.error(e)
+        logger.error("Could not open %s for logging", outfile)
         sys.exit(1)
     logger.debug("Initializing logger")
-    logger.debug("logging at level {0}".format(verbosity))
+    logger.debug("logging at level %s", verbosity)
     return logger
 
 
@@ -278,7 +280,7 @@ def make_barrnap_cmd(infasta, outgff, exe, thresh, kingdom, evalue=1e-06, thread
         (str): command
 
     """
-    assert thresh > 0 and thresh < 1, "Thresh must be between 0 and 1!"
+    assert 1 >= thresh > 0 and thresh , "Thresh must be between 0 and 1!"
     if exe.endswith("py"):
         # ensure running python barrnap uses >3.5
         pyexe = str(sys.executable + " ")
@@ -338,7 +340,7 @@ def check_version_from_cmd(
     assert logger is not None, "must use logging"
     from distutils.version import StrictVersion
     result = subprocess.run("{0} {1}".format(exe, cmd),
-                             # is this a securiy risk?
+                            # is this a securiy risk?
                             shell=sys.platform != "win32",
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
@@ -375,7 +377,7 @@ def check_version_from_cmd(
                 cmd, this_version, min_version))
     except Exception as e:
         raise e
-    return(this_version)
+    return this_version
 
 
 def combine_contigs(contigs_dir, pattern="*",
@@ -396,7 +398,7 @@ def combine_contigs(contigs_dir, pattern="*",
                   "{0}:{1}".format(pattern, " ".join(fastas))))
     if logger:
         logger.debug(str("combining the following files matching pattern " +
-                        "{0}:{1}".format(pattern, " ".join(fastas))))
+                         "{0}:{1}".format(pattern, " ".join(fastas))))
     if len(fastas) == 0:
         if logger:
             logger.error("No matching files to combine found" +
@@ -484,7 +486,6 @@ def file_len(fname):
     with open_fun(fname) as f:
         for i, l in enumerate(f):
             index = i
-            pass
     return index + 1
 
 
@@ -513,6 +514,7 @@ def md5(fname, string=False):
                 hash_md5.update(chunk)
             return hash_md5.hexdigest()
 
+
 def get_genbank_record(input_genome_path, logger=None, first_only=True):
     """Returns a list of records in a GenBank file"""
     if logger:
@@ -521,5 +523,4 @@ def get_genbank_record(input_genome_path, logger=None, first_only=True):
         records = list(SeqIO.parse(input_genome_handle, "genbank"))
     if first_only:
         return [records[0]]
-    else:
-        return records
+    return records

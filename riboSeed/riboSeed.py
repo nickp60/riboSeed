@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2017, National University of Ireland and The James Hutton Insitute
 # Author: Nicholas Waters
 #
@@ -63,7 +63,8 @@ SAMTOOLS_MIN_VERSION = '1.3.1'
 def get_args(test_args=None):  # pragma: no cover
     """
     """
-    parser = argparse.ArgumentParser(prog="ribo seed",
+    parser = argparse.ArgumentParser(
+        prog="ribo seed",
         description="Given cluster file of rDNA regions from riboSelect and " +
         "either paired-end or single-end reads, assembles the mapped reads " +
         "into pseduocontig 'seeds', and uses those with the reads to run" +
@@ -1047,7 +1048,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     # seed_len = get_fasta_lengths(mapping_ob.ref_fasta)[0]
     # set proceed_to_target params
     if proceed_to_target:
-        if target_len > 0 and 5 > target_len:
+        if 5 > target_len > 0:
             target_seed_len = int(target_len * seed_len)
         elif target_len > 50:
             target_seed_len = int(target_len)
@@ -1176,7 +1177,7 @@ def make_quick_quast_table(pathlist, write=False, writedir=None, logger=None):
                         else:
                             mainDict[row] = [val]
             except Exception:
-                raise ValueError("error parsing %s", i)
+                raise ValueError("error parsing %s" % i)
         else:
             report_list = []
             try:
@@ -1230,10 +1231,10 @@ def check_kmer_vs_reads(k, readlen, min_diff=2, logger=None):
     for i in klist:
         if i > readlen:
             logger.warning("removing %d from list of kmers: exceeds read length",
-                        i)
+                           i)
         elif readlen - i <= min_diff:
             logger.warning("removing %d from list of kmers: too close " +
-                        "to read length", i)
+                           "to read length", i)
         elif i % 2 == 0:
             logger.warning("removing %d from list of kmers: must be odd", i)
         else:
@@ -1401,10 +1402,10 @@ def prepare_next_mapping(cluster, seedGenome, flank,
     else:
         logger.info("using coords from previous iterations 'genome'")
     logger.debug("Coordinates for %s cluster %i:  [%i - %i]",
-                cluster.seq_record.id,
-                cluster.index,
-                cluster.global_start_coord,
-                cluster.global_end_coord)
+                 cluster.seq_record.id,
+                 cluster.index,
+                 cluster.global_start_coord,
+                 cluster.global_end_coord)
 
     cluster.extractedSeqRecord = SeqRecord(
         cluster.seq_record.seq[
@@ -1657,7 +1658,7 @@ def bool_run_quast(quast_exe, logger):
             pattern=r".* v(?P<version>[^\n,]+)",
             min_version="4.0", logger=logger,
             coerce_two_digit=False)
-        if quast_version =="4.5":
+        if quast_version == "4.5":
             logger.warning("Due to bugs in QUAST 4.5, we will not run QUAST")
             return False
 
@@ -1790,7 +1791,7 @@ def check_spades_extra_library_input(inp):
         # check if its a single library (coded as --s#)
         if cmd[:-1] == single_valid:
             # does it have a valid numeric library idenifier?
-            for i in range(1,10):
+            for i in range(1, 10):
                 if cmd == single_valid + str(i):
                     VALID = True
         # check if its a simple arg
@@ -1803,7 +1804,7 @@ def check_spades_extra_library_input(inp):
             for pref in comp_valid_prefixes:
                 if cmd.startswith(pref):
                     # does it have a valid numeric library idenifier?
-                    for i in range(1,10):
+                    for i in range(1, 10):
                         if cmd.startswith(pref + str(i)):
                             # does it have a valid suffix?
                             for suff in comp_valid_suffixes:
@@ -1829,7 +1830,7 @@ def make_faux_genome(cluster_list, seedGenome, iteration,
     faux_genome = ""
     counter = 0
     new_seq_name = seedGenome.name
-    if len(cluster_list) == 0:
+    if not cluster_list:
         return 1
     for clu in cluster_list:
         if not clu.keep_contigs or not clu.continue_iterating:
@@ -1868,7 +1869,7 @@ def decide_proceed_to_target(target_len, logger=None):
                          "decimal greater than zero, ie where 1.1 would be " +
                          "110% of the original sequence length.")
             raise ValueError
-        elif target_len > 5 and 50 > target_len:
+        elif 50 > target_len > 5:
             logger.error("We dont reccommend seeding to lengths greater than" +
                          "5x original seed length. Try between 0.5 and 1.5." +
                          "  If you are setting a target number of bases, it " +
@@ -1924,8 +1925,8 @@ def copy_to_handy_dir(outdir, pre, ref_gb, seedGenome,
                  pre + "_de_novo_contigs.fasta",
                  pre + ".gb"]
     if skip_control:
-        new_names = [new_names[i] for i in [0,2]]
-        files_to_copy = [files_to_copy[i] for i in [0,2]]
+        new_names = [new_names[i] for i in [0, 2]]
+        files_to_copy = [files_to_copy[i] for i in [0, 2]]
     for idx, f in enumerate(files_to_copy):
         logger.debug("copying %s to %s as %s",
                      f,
@@ -2145,7 +2146,7 @@ def make_modest_spades_cmd(cmd, cores, memory, split=0,
             mem_each = int(memory / cores)  # should be floor
             if mem_each < 1:
                 logger.warning("you must have at least 1gb memory allocated " +
-                             "to each spades call!  allocating minimum")
+                               "to each spades call!  allocating minimum")
                 mem_each = 1
             cores_each = 1
             logger.info(
@@ -2201,10 +2202,12 @@ def check_genbank_for_fasta(gb, logger=None):
     """
     assert logger is not None, "must use logging"
     with open(gb) as ingb:
-        for idx, line in enumerate(ingb):
+        for line in ingb:
             if line.startswith(">"):
                 logger.error("This genbank file looks like a fasta! Exiting")
                 raise ValueError
+            else:
+                break
 
 
 def get_fasta_consensus_from_BAM(samtools_exe, bcftools_exe, # vcfutils_exe,
@@ -2250,7 +2253,7 @@ def convert_fastq_to_fasta(fastq, outfasta,  # only_first=True,
                     new_record = read
                     new_seq = ""
                     for i in range(0, len(read.seq)):
-                        if read.seq[i] not in ["A","T", "C", "G"]:
+                        if read.seq[i] not in ["A", "T", "C", "G"]:
                             new_seq = new_seq + "N"
                         else:
                             new_seq = new_seq + read.seq[i]
@@ -2305,7 +2308,7 @@ def make_get_consensus_cmds(samtools_exe, bcftools_exe,# vcfutils_exe,
     consensus_cmd = "{0} faidx {1} {2} | {3} consensus {4} > {5}".format(
         samtools_exe,  #0
         ref,  #1
-          #2, note this is not "this_region", as we do not need the -r
+        #2, note this is not "this_region", as we do not need the -r
         region if region is not None else "",
         bcftools_exe,  #3
         temp_zvcf,  #4

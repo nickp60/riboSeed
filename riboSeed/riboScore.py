@@ -565,6 +565,7 @@ def main(args, logger=None):
             ambig_hits,  # 4
             bad_hits  # 5
         ))
+        logger.debug("report list:")
         logger.debug(report_list)
     with open(os.path.join(output_root, "riboScore_report.txt"), "a") as r:
         for line in report_list:
