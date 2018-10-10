@@ -1,8 +1,12 @@
 #  The Change Log
-This is a bit overdue, but better better Nate than lever, right? ----
+This is a bit overdue, but better Nate than lever, right? ----
+
+## 0.4.75
+- add support for skesa as a subassembler!
+
 
 ## 0.4.71
-- add `ribo test` instead of runme.py
+- add `ribo try` instead of runme.py
 
 ## 0.4.65
 - add --additional_libs option for final assembly

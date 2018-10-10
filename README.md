@@ -105,7 +105,7 @@ pip install --extra-index-url https://testpypi.python.org/pypi riboSeed
 ```
 
 #### From GitHub
-You can also clone this repository, and run `python3.5 setup.py install`.
+You can also clone this repository, and run `python setup.py install`.
 
 ### Dependencies
 Python requirements can be found in the `requirements.txt` file.
@@ -113,7 +113,7 @@ Python requirements can be found in the `requirements.txt` file.
 ### External Requirements
 External requirements can be found in the `environment.yml`, and can be used to create a conda environment: (`conda env create -f environment.yml`)
 
-NOTE: barrnap has certain Perl requirements that may not be included on your machine. Ensure barrnap runs fine before trying `snag.py`.  Or try [python barrnap](https://github.com/nickp60/barrnap/).
+NOTE: barrnap has certain Perl requirements that may not be included on your machine. Ensure barrnap runs fine before trying `ribo snag`.  Or try [python barrnap](https://github.com/nickp60/barrnap/).
 
 
 ## Suggested Running
@@ -188,7 +188,11 @@ optional arguments:
                         interest (including flanking bits) extends past
                         chromosome end, this extends the seqence past
                         chromosome origin forward by --padding; default: False
-  -j, --just_seed       Don't do an assembly, just generate the long read
+  --subassembler {spades,skesa}
+                        assembler to use for subassembly scheme. SPAdes is
+                        used by default, but Skesa is a new addition that
+                        seems to work for subassembly and is faster
+   -j, --just_seed       Don't do an assembly, just generate the long read
                         'seeds'; default: False
   --score               run riboScore too! default: False
   -l int, --flanking_length int
@@ -249,6 +253,17 @@ Pull requests are more than welcome!
 You may run into issues where you get an error about "Unable to connect to X server: None" or localhost:N. Sorry about that; any tips would be useful;  a quick glance at the commit history will show I have spent much time trying to resolve it, without any luck.  If you do run into this, try the following:
   - connect to the machine with an X session (`ssh -X hostname`)
   - avoid using `gnu screen` if possible, but if you do need to use it, start the `screen` session after ensuring you have a `$DISPLAY` availible through starting the host session with `-X`
+
+#### SPAdes 3.9.0 on MacOS
+riboSeed requires SPAdes 3.9, but SPAdes 3.9.0 has a bug that was resolved in 3.9.1.  This version, sadly, is unavailable via conda.  The easiest solution in to uninstall conda's SPAdes, download the binary from [this link](http://cab.spbu.ru/files/release3.9.1/SPAdes-3.9.1-Darwin.tar.gz), and add that program to your path temporarily.
+```
+conda uninstall spades
+curl http://cab.spbu.ru/files/release3.9.1/SPAdes-3.9.1-Darwin.tar.gz | tar xvz
+export $PATH=./SPAdes-3.9.1-Darwin/bin:$PATH
+
+```
+
+
 
 #### Pysam on MacOS
 If you are on MacOS, you may run into an issue with Pysam.

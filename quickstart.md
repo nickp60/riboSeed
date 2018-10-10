@@ -6,14 +6,9 @@ In this guide, I will walk you through a typical experiment.
 
 ## Requirements
 
-The following tools must be installed to complete this QuickStart guide
-
-* [`sra-tools`/`sratoolkit`](https://github.com/ncbi/sra-tools)
-* [`open_utils`](https://github.com/nickp60/open_utils)
-* [`barrnap`](http://www.vicbioinformatics.com/software.barrnap.shtml)
-* [`emboss`](http://www.ebi.ac.uk/Tools/emboss/)
-* [`bwa`](http://bio-bwa.sourceforge.net/)
-* [`riboSeed`](https://github.com/nickp60/riboSeed)
+```
+conda install riboseed
+```
 
 ## Get the Data
 Let's try using riboSeed on *Listeria monocytogenes*.  We will use the SRA toolkit's `fastq-dump` tool to get the data:
@@ -29,17 +24,20 @@ Read 618654 spots for SRR5181495
 Written 618654 spots for SRR5181495
 ```
 
-Let's use the *Listeria monocytogenes str. 4b F2365* genome as reference, NCBI accession [AE017262.2](https://www.ncbi.nlm.nih.gov/nuccore/AE017262).  Downloading this with the `get_genomes.py` tool installed along with [`pyutilsnrw` repository](https://github.com/nickp60/pyutilsnrw) (assuming this tool is in your `$PATH`):
-
+Let's use the *Listeria monocytogenes str. 4b F2365* genome as reference, NCBI accession [AE017262.2](https://www.ncbi.nlm.nih.gov/nuccore/AE017262).  Download this :
 ```
-$ get_genomes.py -q AE017262.2 -o ./
+wget ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/285/GCF_000008285.1_ASM828v1/GCF_000008285.1_ASM828v1_genomic.fna.gz
+# unzip it
+gunzip GCF_000008285.1_ASM828v1_genomic.fna.gz
+# rename it something slightly shorter
+mv GCF_000008285.1_ASM828v1_genomic.fna  AE017262.2.fasta
 ```
 
 ## `ribo run`
 Now that we have the reference as a fasta file and our reads, lets run the pipeline:
 
 ```
-$ ribo run ./AE017262.2.fasta -F ./SRR5181495_1.fastq -R ./SRR5181495_2.fastq  --cores 4 --threads 1 -v 1 --serialize  --keep_temps -o ./listeria_riboSeed_output/
+$ ribo run -r ./AE017262.2.fasta -F ./SRR5181495_1.fastq -R ./SRR5181495_2.fastq  --cores 4 --threads 1 -v 1 --serialize -o ./listeria_riboSeed_output/
 ```
 
 ## Evaluate
