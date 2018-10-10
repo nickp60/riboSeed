@@ -480,13 +480,14 @@ class Exes(object):
 
     """
     def __init__(self, python, samtools, method, spades, quast,
-                 smalt, bwa, bcftools=None, vcfutils=None,
+                 smalt, bwa, skesa, bcftools=None, vcfutils=None,
                  check=True, mapper=None):
         self.python = python
         self.samtools = samtools
         self.method = method
         self.mapper = mapper
         self.spades = spades
+        self.skesa = skesa
         self.quast = quast
         self.smalt = smalt
         self.bwa = bwa
@@ -501,7 +502,7 @@ class Exes(object):
         """ checks that all mandatory arguments are not none
         """
         mandatory = [self.python, self.spades, self.method,
-                     self.samtools, self.bwa]
+                     self.samtools, self.bwa, self.skesa]
         assert None not in mandatory, \
             "must instantiate with python, samtools, spades, method!"
 
@@ -521,7 +522,7 @@ class Exes(object):
         to get full path to executable.  If not found, throw an error
         """
         if self.check:
-            for exe in ["mapper", "samtools", "spades",
+            for exe in ["mapper", "samtools", "spades", "skesa",
                         "mapper"]:
                 exe_groomed = os.path.expanduser(getattr(self, exe))
                 exe_groomed = shutil.which(exe_groomed)

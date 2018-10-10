@@ -150,6 +150,14 @@ def get_args():  # pragma: no cover
                           "default: %(default)s",
                           default=False, dest="RUN_LINEAR",
                           action="store_true")
+    optional.add_argument("--subassembler", dest='RUN_SUBASSEMBLER',
+                          action="store", type=str,
+                          default="spades",
+                          choices=["spades", "skesa"],
+                          help="assembler to use for subassembly scheme. " +
+                          "SPAdes is used by default, but Skesa is a new " +
+                          "addition that seems to work for subassembly " +
+                          "and is faster")
     optional.add_argument("-j", "--just_seed", dest='RUN_JUST_SEED',
                           action="store_true",
                           default=False,
@@ -489,6 +497,7 @@ def main(args):
         min_assembly_len=conf.SEED_MIN_ASSEMBLY_LENGTH,
         include_short_contigs=conf.SEED_INCLUDE_SHORTS,
         subtract=conf.SEED_SUBTRACT,
+        subassembler=conf.RUN_SUBASSEMBLER,
         linear=conf.RUN_LINEAR,
         skip_control=conf.SEED_SKIP_CONTROL,
         target_len=conf.SEED_TARGET_LEN,
@@ -501,6 +510,7 @@ def main(args):
         spades_exe=conf.SPADES_EXE,
         samtools_exe=conf.SAMTOOLS_EXE,
         smalt_exe=conf.SMALT_EXE,
+        skesa_exe=conf.SKESA_EXE,
         bwa_exe=conf.BWA_EXE,
         bcftools_exe=conf.BCFTOOLS_EXE,
         quast_exe=conf.QUAST_EXE,

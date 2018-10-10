@@ -53,6 +53,7 @@ def config_exes():
     req_programs = [("BARRNAP_EXE", "barrnap"),
                     ("SEQRET_EXE", "seqret"),
                     ("SPADES_EXE", "spades.py"),
+                    ("SKESA_EXE", "skesa"),
                     ("BWA_EXE", "bwa"),
                     ("SAMTOOLS_EXE", "samtools"),
                     ("BLAST_EXE", "blastn"),

@@ -186,6 +186,14 @@ def get_args(test_args=None):  # pragma: no cover
                           "5' end of the pseudocontig. " +
                           "default: %(default)s",
                           default=0, dest="min_flank_depth", type=float)
+    optional.add_argument("--subassembler", dest='subassembler',
+                          action="store", type=str,
+                          default="spades",
+                          choices=["spades", "skesa"],
+                          help="assembler to use for subassembly scheme. " +
+                          "SPAdes is used by default, but Skesa is a new " +
+                          "addition that seems to work for subassembly " +
+                          "and is faster")
     optional.add_argument("--ref_as_contig", dest='ref_as_contig',
                           action="store", type=str,
                           default="infer",
@@ -276,6 +284,10 @@ def get_args(test_args=None):  # pragma: no cover
     optional.add_argument("--samtools_exe", dest="samtools_exe",
                           action="store", default="samtools",
                           help="Path to samtools executable; " +
+                          "default: %(default)s")
+    optional.add_argument("--skesa_exe", dest="skesa_exe",
+                          action="store", default="skesa",
+                          help="Path to skesa executable; " +
                           "default: %(default)s")
     optional.add_argument("--smalt_exe", dest="smalt_exe",
                           action="store", default="smalt",
@@ -842,8 +854,8 @@ def fiddle_with_spades_exe(spades_exe, logger=None):
     # we will assume the error means that we are running with an incompatible
     # version of python
     # SPAdes 3.11.0 : all
-    # SPAdes 3.10.0 : python3.5 and below
-    # SPAdes 3.9.0 : python3.4 and below
+    # SPAdes 3.10.0 : python3.6 and below
+    # SPAdes 3.9.0 : python3.5 and below
     logger.debug("Making sure python's version is compatible with SPAdes")
     logger.debug("Python executable: %s", sys.executable)
     logger.debug("SPAdes executable: %s", spades_exe)
@@ -947,14 +959,93 @@ def generate_spades_cmd(
             spades_exe, kmers, reads, alt_contig, addLibs,
             mapping_ob.assembly_subdir)
     if check_libs:
-        spades_cmd = make_spades_empty_check(liblist=libs, cmd=cmd,
+        spades_cmd = make_assembler_empty_check(liblist=libs, cmd=cmd,
                                              logger=logger)
     else:
         spades_cmd = cmd
     return python_exe + " " + spades_cmd
 
+def generate_skesa_cmd(
+        mapping_ob, ngs_ob, ref_as_contig, python_exe, as_paired=True,
+        addLibs="", prelim=False, k="21,33,55,77,99", exe="skesa",
+        single_lib=False, logger=None, check_libs=False, check_exe=True):
+    """return spades command so we can multiprocess the assemblies
+    wrapper for common spades setting for long illumina reads
+    ref_as_contig should be either None, 'trusted', or 'untrusted'
+    prelim flag is True, only assembly is run, and without coverage corrections
+    """
+    assert logger is not None, "Must Use Logging"
+    # make use default kmers, for now
+    # if k is not 'auto':
+    #     kmers = "-k " + k
+    # else:
+    #     kmers = ""
+    # #  prepare reference, if being used
+    if ref_as_contig is not None:
+        alt_contig = "--fasta {0} ".format(mapping_ob.ref_fasta)
+    else:
+        alt_contig = ''
+    libs = []
+    if single_lib:
+        singles = "--fastq {0}".format(ngs_ob.readS0)
+        pairs = ""
+        libs.append(ngs_ob.readS0)
+    elif as_paired and ngs_ob.readS0 is not None:  # for lib with both
+        singles = "--fastq {0}".format(
+            ngs_ob.readS0)
+        pairs = " {0} {1}".format(
+            ngs_ob.readF,
+            ngs_ob.readR)
+        libs.append(ngs_ob.readS0)
+        libs.append(ngs_ob.readF)
+        libs.append(ngs_ob.readR)
+    elif as_paired and ngs_ob.readS0 is None:  # for lib with just PE
+        singles = "--fastq"
+        pairs = " {0} {1}".format(
+            ngs_ob.readF,
+            ngs_ob.readR)
+        libs.append(ngs_ob.readF)
+        libs.append(ngs_ob.readR)
+    # for libraries treating paired ends as two single-end libs
+    elif not as_paired and ngs_ob.readS0 is None:
+        singles = '--fastq'
+        pairs = " {0} {1}".format(
+            ngs_ob.readF,
+            ngs_ob.readR)
+        libs.append(ngs_ob.readF)
+        libs.append(ngs_ob.readR)
+    else:  # for 3 single end libraries
+        singles = "--fastq {0}".format(
+            ngs_ob.readS0)
+        pairs = " {0} {1}".format(
+            ngs_ob.readF,
+            ngs_ob.readR)
+        # singles = "--pe3-s {0} ".format(ngs_ob.readS0)
+        # pairs = str("--pe1-s {0} --pe2-s {1} ".format(
+        #     ngs_ob.readF, ngs_ob.readR))
+        libs.append(ngs_ob.readS0)
+        libs.append(ngs_ob.readF)
+        libs.append(ngs_ob.readR)
+    reads = str(singles + pairs)
 
-def make_spades_empty_check(liblist, cmd, logger):
+    # os.makedirs(mapping_ob.assembly_subdir)
+    # naming convention so we can reuse spades parsing methods
+    contigs_path = os.path.join(mapping_ob.assembly_subdir,
+                                "contigs.fasta")
+    paired_string = "--use_paired_ends" if as_paired else ""
+    if True:  # if prelim:
+        # which is always, for now -- skesa is too conservate
+        # for final assemblies
+        cmd = str(
+            "{exe} {reads}{addLibs} " + # watch the spaces
+            "--contigs_out {contigs_path} {paired_string}").format(**locals())
+    if check_libs:
+        cmd = make_assembler_empty_check(liblist=libs, cmd=cmd,
+                                         logger=logger)
+    return cmd
+
+
+def make_assembler_empty_check(liblist, cmd, logger):
     """ returns shell/spades cmd as string. All this does is make it a
     conditional shell cmd that depends on the presense of the file
     needed for assembly.  It is needed so we can bin all
@@ -965,16 +1056,16 @@ def make_spades_empty_check(liblist, cmd, logger):
     for i, lib in enumerate(liblist):
         if i != 0:
             prefix = prefix + "&& "
-        check = "[ -s {0} ] ".format(lib)
+        check = "[ -s {0} ] ".format(lib) # unix test for empty
         prefix = prefix + check
     suffix = str("; then {0} ; else echo 'input lib not found, " +
-                 "skipping this SPAdes call' ; fi").format(cmd)
+                 "skipping this assembler call' ; fi").format(cmd)
     return str(prefix + suffix)
 
 
 def exclude_subassembly_based_on_coverage(clu, iteration, logger=None):
     """ if using coverage_exclusion, then return 0 if passing or 2 if not.
-    if not, return None
+    if not using this, return None
     deal with those excluded from assembly by lack of coverage depth
       ie  (coverage_exclusion=True)
     """
@@ -1016,6 +1107,7 @@ def evaluate_spades_success(clu, mapping_ob, proceed_to_target, target_len,
     assert logger is not None, "Must Use Logging"
     if seqname == '':
         seqname = os.path.splitext(os.path.basename(mapping_ob.ref_fasta))[0]
+    # check if cluster has be marked for exclusion during partition_mapping()
     cov_exclude_result = exclude_subassembly_based_on_coverage(
         clu=clu, iteration=mapping_ob.iteration, logger=logger)
     if cov_exclude_result is not None:
@@ -1726,20 +1818,39 @@ def get_final_assemblies_cmds(seedGenome, exes,
         os.rmdir(final_mapping.mapping_subdir)
 
         logger.info("Getting commands for %s SPAdes" % j)
-        spades_cmd = generate_spades_cmd(
-            single_lib=seedGenome.master_ngs_ob.libtype == "s_1",
-            check_libs=False,
-            python_exe=exes.python,
-            mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
-            ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
-            k=kmers, spades_exe=exes.spades, logger=logger)
-        modest_spades_cmd = make_modest_spades_cmd(
-            cmd=spades_cmd, cores=cores, memory=memory, split=2,
-            serialize=serialize, logger=logger)
-        ## add additional cmdline args for assembly
-        if additional_libs is not None:
-            modest_spades_cmd = "{0} {1}".format(
-                modest_spades_cmd, additional_libs)
+        if True: # args.subassembler == "spades":
+            spades_cmd = generate_spades_cmd(
+                single_lib=seedGenome.master_ngs_ob.libtype == "s_1",
+                check_libs=False,
+                python_exe=exes.python,
+                mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
+                ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
+                k=kmers, spades_exe=exes.spades, logger=logger)
+            modest_spades_cmd = make_modest_assembler_cmd(
+                assembler="spades",
+                cmd=spades_cmd, cores=cores, memory=memory, split=2,
+                serialize=serialize, logger=logger)
+            ## add additional cmdline args for assembly
+            if additional_libs is not None:
+                modest_spades_cmd = "{0} {1}".format(
+                    modest_spades_cmd, additional_libs)
+            subassembly_cmd = modest_spades_cmd
+        # else:
+        #     assert args.subassembler == "skesa", \
+        #         "Only valid subassemblers are skesa and spades!"
+        #     cmd = generate_skesa_cmd(
+        #         single_lib=seedGenome.master_ngs_ob.libtype == "s_1",
+        #         check_libs=False,
+        #         python_exe=exes.python,
+        #         mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
+        #         ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
+        #         k=kmers, spades_exe=exes.spades, logger=logger)
+        # )
+        #     modest_skesa_cmd = make_modest_assembler_cmd(
+        #         assembler="skesa",
+        #         cmd=spades_cmd, cores=cores, memory=memory, split=2,
+        #         serialize=serialize, logger=logger)
+
         ref = str("-R %s" % seedGenome.ref_fasta)
         quast_cmd = make_quast_command(
             exes=exes, output_root=seedGenome.output_root, ref=ref,
@@ -2113,17 +2224,20 @@ def report_region_depths(inp, logger):
     return report_list
 
 
-def make_modest_spades_cmd(cmd, cores, memory, split=0,
-                           serialize=False, logger=None):
-    """ adjust spades commands to use set amounts of cores and memory
-    returns the command, split on "--careful", cause why would you run
+def make_modest_assembler_cmd(cmd, cores, memory, split=0, assembler="spades",
+                              serialize=False, logger=None):
+    """ adjust assembler commands to use set amounts of cores and memory
+    returns the command,
+    if spades, split on "--careful", cause why would you run
     SPAdes with "--reckless"?
+
+    if skesa, just append to the end of the cmd
+
     if you need to split resouces between, say, two commands, use split 2
     """
     assert logger is not None, "Must use logging"
-    cmdA, cmdB = cmd.split("--careful")
     if serialize:
-        logger.debug("Allocating SPAdes %dgb of memory", memory)
+        logger.debug("Allocating assembler %dgb of memory", memory)
         mem_each = memory
         cores_each = cores
     else:
@@ -2152,11 +2266,18 @@ def make_modest_spades_cmd(cmd, cores, memory, split=0,
             logger.info(
                 "Allocating SPAdes %dgb of memory for each of %d cores",
                 mem_each, cores)
-    return "{0}-t {1} -m {2} --careful{3}".format(
-        cmdA,
-        cores_each,
-        mem_each,
-        cmdB)
+    if assembler == "spades":
+        cmdA, cmdB = cmd.split("--careful")
+        return "{0}-t {1} -m {2} --careful{3}".format(
+            cmdA,
+            cores_each,
+            mem_each,
+            cmdB)
+    else:
+        return "{0} --cores {1} --memory {2} ".format(
+            cmd,
+            cores_each,
+            mem_each)
 
 
 def define_score_minimum(args, readlen, iteration, logger):
@@ -2358,6 +2479,7 @@ def main(args, logger=None):
                         samtools=args.samtools_exe,
                         spades=args.spades_exe,
                         bwa=args.bwa_exe,
+                        skesa=args.skesa_exe,
                         smalt=args.smalt_exe,
                         quast=args.quast_exe,
                         bcftools=args.bcftools_exe,
@@ -2771,22 +2893,37 @@ def main(args, logger=None):
                 samtools_exe=sys_exes.samtools,
                 ref_fasta=cluster.mappings[-1].ref_fasta, logger=logger)
             cmdlist.append(convert_cmds)
-            spades_cmd = generate_spades_cmd(
-                mapping_ob=cluster.mappings[-1],
-                ngs_ob=new_ngslib, single_lib=True,
-                ref_as_contig=subassembly_ref_as_contig,
-                # only check if files exist if using a subset of reads
-                check_libs=args.subtract,
-                python_exe=sys_exes.python,
-                as_paired=False,
-                prelim=True,
-                k=checked_prek,
-                spades_exe=sys_exes.spades, logger=logger)
-            # setting some thread limits here
-            modest_spades_cmd = make_modest_spades_cmd(
-                cmd=spades_cmd, cores=args.cores, memory=args.memory,
+            if args.subassembler == "spades":
+                assembler_cmd = generate_spades_cmd(
+                    mapping_ob=cluster.mappings[-1],
+                    ngs_ob=new_ngslib, single_lib=True,
+                    ref_as_contig=subassembly_ref_as_contig,
+                    # only check if files exist if using a subset of reads
+                    check_libs=args.subtract,
+                    python_exe=sys_exes.python,
+                    as_paired=False,
+                    prelim=True,
+                    k=checked_prek,
+                    spades_exe=sys_exes.spades, logger=logger)
+            else:
+                assert args.subassembler == "skesa", \
+                    "Only valid subassemblers are skesa and spades!"
+                assembler_cmd = generate_skesa_cmd(
+                    mapping_ob=cluster.mappings[-1],
+                    ngs_ob=new_ngslib, single_lib=True,
+                    ref_as_contig=subassembly_ref_as_contig,
+                    # only check if files exist if using a subset of reads
+                    check_libs=args.subtract,
+                    python_exe=sys_exes.python,
+                    as_paired=False,
+                    prelim=True,
+                    k=checked_prek,
+                    exe=sys_exes.skesa, logger=logger)
+            modest_assembler_cmd = make_modest_assembler_cmd(
+                assembler=args.subassembler,
+                cmd=assembler_cmd, cores=args.cores, memory=args.memory,
                 serialize=args.serialize, logger=logger)
-            cmdlist.append(modest_spades_cmd)
+            cmdlist.append(modest_assembler_cmd)
 
             cluster.mappings[-1].mapped_ngslib = new_ngslib
             extract_convert_assemble_cmds.append(cmdlist)

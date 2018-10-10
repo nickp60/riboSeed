@@ -24,15 +24,15 @@ from riboSeed.riboSeed import \
     map_to_genome_ref_smalt, map_to_genome_ref_bwa, \
     add_coords_to_clusters, partition_mapping, \
     convert_bam_to_fastqs_cmd, get_smalt_full_install_cmds,\
-    generate_spades_cmd, get_final_assemblies_cmds,\
+    generate_spades_cmd, generate_skesa_cmd, get_final_assemblies_cmds,\
     nonify_empty_lib_files, make_faux_genome, \
     evaluate_spades_success, prepare_next_mapping, make_mapped_partition_cmds,\
     make_unmapped_partition_cmds, make_quick_quast_table, \
     check_fastqs_len_equal, parse_subassembly_return_code, \
-    make_spades_empty_check, get_samtools_depths, \
+    make_assembler_empty_check, get_samtools_depths, \
     decide_proceed_to_target, get_rec_from_generator, \
     check_kmer_vs_reads, make_samtools_depth_cmds, \
-    parse_samtools_depth_results, make_modest_spades_cmd, get_bam_AS, \
+    parse_samtools_depth_results, make_modest_assembler_cmd, get_bam_AS, \
     pysam_extract_reads, define_score_minimum, bool_run_quast, \
     make_quast_command, check_genbank_for_fasta, \
     filter_bam_AS, make_bwa_map_cmds, set_ref_as_contig, \
@@ -85,6 +85,7 @@ class riboSeedShallow(unittest.TestCase):
         self.bwa_exe = "bwa"
         self.samtools_exe = "samtools"
         self.spades_exe = "spades.py"
+        self.skesa_exe = "skesa"
         self.quast_exe = "quast"
         self.test_estimation_file = os.path.join(self.test_dir,
                                                  "est_distance.sam")
@@ -154,7 +155,7 @@ class riboSeedShallow(unittest.TestCase):
         \t WARNING:root:read file readR is empty and will not be used for mapping!
         """)
 
-    def test_make_spades_empty_check(self):
+    def test_make_assembler_empty_check(self):
         """ construct spades command that check for file presense
         this is useful when multiprocessing and unable to check before
         sending the command out
@@ -163,14 +164,14 @@ class riboSeedShallow(unittest.TestCase):
         lib2 = "/path/to/lib2.fastq"
         lib3 = "/path/to/lib3.fastq"
         cmd = "spades command"
-        fullcmd = make_spades_empty_check(
+        fullcmd = make_assembler_empty_check(
             liblist=[lib1, lib2, lib3],
             cmd=cmd,
             logger=logger)
         self.assertEqual(
             str("if [ -s {0} ] && [ -s {1} ] && [ -s {2} ] ; " +
                 "then {3} ; else echo 'input lib not found, " +
-                "skipping this SPAdes call' ; " +
+                "skipping this assembler call' ; " +
                 "fi").format(lib1, lib2, lib3, cmd),
             fullcmd)
 
@@ -308,6 +309,26 @@ class riboSeedShallow(unittest.TestCase):
             os.path.join(testmapping.mapping_subdir,
                          "test_mappedreadS.fastq"), )
         self.assertEqual(cmd, cmd_ref)
+
+    def test_generate_skesa_cmds_pe_prelim(self):
+        """ PE reads, prelim
+        """
+        cmd1 = generate_skesa_cmd(mapping_ob=self.testmapping,
+                                   ngs_ob=self.testngs1,
+                                   ref_as_contig='trusted',
+                                   as_paired=True, addLibs="",
+                                   prelim=True,
+                                   k="21,33,55,77,99",
+                                   python_exe="python3.5",
+                                   exe="skesa",
+                                   logger=logger)
+        cmd1_ref = str(
+            "skesa --fastq {0} {1} --contigs_out {2} --use_paired_ends"
+        ).format(
+            self.ref_Ffastq, self.ref_Rfastq,
+            os.path.join(self.test_dir, "contigs.fasta"))
+        self.assertEqual(cmd1, cmd1_ref)
+
 
     def test_generate_spades_cmds_pe_prelim(self):
         """ PE reads, prelim
@@ -742,6 +763,7 @@ class riboSeedShallow(unittest.TestCase):
                          quast=self.quast_exe,
                          smalt=self.smalt_exe,
                          spades=self.spades_exe,
+                         skesa=self.skesa_exe,
                          bwa=self.bwa_exe,
                          check=False,
                          method="bwa")
@@ -849,36 +871,36 @@ class riboSeedShallow(unittest.TestCase):
                 region=None, prep=False)
         )
 
-    def test_make_modest_spades_cmd(self):
+    def test_make_modest_assembler_cmd(self):
         """ test serialized allocation"""
         cmd = "spades.py --careful some args and stuff"
         self.assertEqual(
             "spades.py -t 4 -m 8 --careful some args and stuff",
-            make_modest_spades_cmd(cmd=cmd, cores=4, memory=8,
+            make_modest_assembler_cmd(cmd=cmd, cores=4, memory=8,
                                    serialize=True, logger=logger))
 
-    def test_make_modest_spades_cmd_parallel(self):
+    def test_make_modest_assembler_cmd_parallel(self):
         """ test parallel allocation"""
         cmd = "spades.py --careful some args and stuff"
         self.assertEqual(
             "spades.py -t 1 -m 2 --careful some args and stuff",
-            make_modest_spades_cmd(cmd=cmd, cores=4, memory=8,
+            make_modest_assembler_cmd(cmd=cmd, cores=4, memory=8,
                                    serialize=False, logger=logger))
 
-    def test_make_modest_spades_cmd_split(self):
+    def test_make_modest_assembler_cmd_split(self):
         """ test parallel allocation"""
         cmd = "spades.py --careful some args and stuff"
         self.assertEqual(
             "spades.py -t 2 -m 4 --careful some args and stuff",
-            make_modest_spades_cmd(cmd=cmd, cores=4, memory=8, split=2,
+            make_modest_assembler_cmd(cmd=cmd, cores=4, memory=8, split=2,
                                    serialize=False, logger=logger))
 
-    def test_make_modest_spades_cmd_odd(self):
+    def test_make_modest_assembler_cmd_odd(self):
         """ test parallel allocation, odd values"""
         cmd = "spades.py --careful some args and stuff"
         self.assertEqual(
             "spades.py -t 1 -m 3 --careful some args and stuff",
-            make_modest_spades_cmd(cmd=cmd, cores=3, memory=11,
+            make_modest_assembler_cmd(cmd=cmd, cores=3, memory=11,
                                    serialize=False, logger=logger))
 
     def test_define_score_minimum_smalt(self):
@@ -962,6 +984,7 @@ class riboSeedShallow(unittest.TestCase):
                          quast=self.quast_exe,
                          smalt=self.smalt_exe,
                          spades=self.spades_exe,
+                         skesa=self.skesa_exe,
                          bwa=self.bwa_exe,
                          check=False,
                          method="bwa")
@@ -1320,6 +1343,7 @@ class riboSeedDeep(unittest.TestCase):
         self.bwa_exe = "bwa"
         self.samtools_exe = "samtools"
         self.spades_exe = "spades.py"
+        self.skesa_exe = "skesa"
         self.quast_exe = "quast"
         self.test_estimation_file = os.path.join(self.test_dir,
                                                  "est_distance.sam")
