@@ -14,9 +14,10 @@ Reference Selection via ANI
 
 With any assembly that uses a reference, the choice of that reference is
 crucial. Here, we outline a protocol for using Average Nucleotide
-Identity via pyANI.
+Identity via pyANI.  All the script are available in the riboSeed repository on Github.
 
-All the subscripts are in the ``scripts/select_ref_by_ANI`` dir, and the
+
+Clone the riboSeed repo.  All the subscripts are in the ``scripts/select_ref_by_ANI`` dir, and the
 main runner script can be found at ``scripts/run_ANI.sh``
 
 Required Tools
@@ -33,13 +34,13 @@ replacement for ``shuf``.
 
 ``pyani`` makes it easy to perform average nucleotide identity
 computations. Their development team has some exciting updates in the
-works, so we will be working with the ``classify`` branch from GitHub.
+works, so we will be working with the ``development`` branch from GitHub.
 
 ::
 
     git clone https://github.com/widdowquinn/pyani.git
     cd pyani
-    git checkout classify
+    git checkout development
     python setup.py install
 
 ``run_ANI.sh``: Helper Script Usage
@@ -118,11 +119,15 @@ start with a minimal assembly with 1/10th of the reads using the
 
 ::
 
-    average_nucleotide_identity.py -i potential_references -g -o ./pyani
+   pyani createdb
+   pyani index ./path/to/potential_references/
+   pyani anim  -i potential_references -g -o ./pyani
 
-Look at the resulting ``pyani/ANIm_percentage_identity.tab`` file; the
+Look at the resulting ``pyani/ANIm_percentage_identity.tab`` file for the particular run; the
 best hit will be the one in the column/row for "contigs" with the
 closest score to 1.
+
+This has been updated to use the new pyani syntax.
 
 
 
