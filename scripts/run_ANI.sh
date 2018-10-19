@@ -28,6 +28,7 @@ SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 PROKFILE=""
 NSTRAINS=""
 ASSEMBLY=""
+ASSEMBLER="skesa"
 RREADS=""
 GENOMESDIR="./genomes_for_run_ANI/"
 USAGE="USAGE:run_ani.sh  -e experiment_name -o 'Organism name' -n 5 -f path/to/reads_f.fastq -r path/to/reads_r.fastq"
@@ -41,7 +42,7 @@ then
     exit 1
 fi
 
-while getopts "e:o:n:f:r:p:g:a:" opt; do
+while getopts "e:o:n:f:r:p:g:a:s:" opt; do
     case $opt in
 	e)
 	    NAME=$OPTARG
@@ -74,6 +75,23 @@ while getopts "e:o:n:f:r:p:g:a:" opt; do
 	a)
 	    ASSEMBLY=$OPTARG
 	    echo "assembly: $ASSEMBLY" >&2
+	    ;;
+	s)
+	    ASSEMBLER=$OPTARG
+	    case "$ASSEMBLER" in
+		skesa)
+		    # Do stuff
+		    ;;
+		spades)
+
+		    # Do stuff
+		    ;;
+		*)
+		    echo "Error: assembler must be either spades or skesa"
+		    exit 1
+		    ;;
+	    esac
+	    echo "assembler: $ASSEMBLER" >&2
 	    ;;
 	\?)
 	    echo "Invalid option: -$OPTARG" >&2
@@ -110,18 +128,29 @@ then
     if [ ! -s $RREADS ]
     then
 	{
-	    echo "seqtk sample -s100 $RREADS 100000    > ${OUTDIR}/downsampled_reads/reads1.fq" >&2
+	    echo "seqtk sample -s100 $RREADS 100000   > ${OUTDIR}/downsampled_reads/reads1.fq" >&2
 	    seqtk sample -s100 $RREADS 100000 > ${OUTDIR}/downsampled_reads/reads2.fq
 	} || {
-	    echo "seqtk sample -s100 $RREADS .1    > ${OUTDIR}/downsampled_reads/reads1.fq" >&2
+	    echo "seqtk sample -s100 $RREADS .1   > ${OUTDIR}/downsampled_reads/reads1.fq" >&2
 	    seqtk sample -s100 $RREADS .1    > ${OUTDIR}/downsampled_reads/reads2.fq
 	}
+	SPADES_STRING="-1 ${OUTDIR}/downsampled_reads/reads1.fq -2 ${OUTDIR}/downsampled_reads/reads2.fq"
+        SKESA_STRING="${OUTDIR}/downsampled_reads/reads1.fq ${OUTDIR}/downsampled_reads/reads2.fq"
+    else
+	SPADES_STRING="-s ${OUTDIR}/downsampled_reads/reads1.fq"
+        SKESA_STRING="${OUTDIR}/downsampled_reads/reads1.fq"
     fi
     echo "running mini assembly"  >> "${LOGFILE}"
-
+    echo "$SPADES_string"
     mkdir ${MINIDIR}/assembly/
-    # spades.py -1 ${OUTDIR}/downsampled_reads/reads1.fq -2 ${OUTDIR}/downsampled_reads/reads2.fq -o ${OUTDIR}/assembly/ -t 4 -m 64
-    skesa --fastq ${OUTDIR}/downsampled_reads/reads1.fq ${OUTDIR}/downsampled_reads/reads2.fq --contigs_out ${MINIDIR}/assembly/contigs.fasta
+    case "$ASSEMBLER" in
+	skesa)
+	    skesa --fastq $SKESA_STRING --contigs_out ${MINIDIR}/assembly/contigs.fasta
+	    ;;
+	spades)
+	    spades.py $SPADES_STRING -o ${MINIDIR}/assembly/ -t 4 -m 64
+	    ;;
+    esac
 
     ASSEMBLY=${MINIDIR}/assembly/contigs.fasta
 fi
