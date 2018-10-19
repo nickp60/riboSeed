@@ -107,7 +107,7 @@ then
 	echo "seqtk sample -s100 $FREADS .1    > ${OUTDIR}/downsampled_reads/reads1.fq" >&2
 	seqtk sample -s100 $FREADS .1    > ${OUTDIR}/downsampled_reads/reads1.fq
     }
-    if [ -s $ASSEMBLY ]
+    if [ -s $RREADS ]
     then
 	{
 	    echo "seqtk sample -s100 $RREADS 100000    > ${OUTDIR}/downsampled_reads/reads1.fq" >&2
