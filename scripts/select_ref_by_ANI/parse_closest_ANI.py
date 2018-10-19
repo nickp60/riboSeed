@@ -14,14 +14,19 @@ with open(sys.argv[1], 'r') as inf:
 # just start by getting the first forward comparison (ie, the vertical part of the matrix
 # we assume rthere is just one entry
 
-# get the index of the row with id "contigs"
-contigs_idx = [i for i, x in enumerate(matrix) if x[0].startswith("contigs") or x[0].startswith("run")][0]
+# lets transpose this
+tmatrix = list(map(list, zip(*matrix)))
+print(tmatrix)
+
+# get the index of the row/column with id "contigs*
+contigs_idx = [i for i, x in enumerate(tmatrix) if x[0].startswith("contigs") or x[0].startswith("run")][0]
+print(contigs_idx)
 
 # select our headers
 headers = matrix[0]
 # note here that we have to trim the first column from the row of interest, we have one less header column than the rest of the rows, cause the first one is empty
-line_of_interest = sorted(zip(headers, matrix[contigs_idx][1:]), key=lambda x: x[1], reverse=True)
-
+line_of_interest = sorted(zip(headers, tmatrix[contigs_idx][1:]), key=lambda x: x[1], reverse=True)
+print(line_of_interest)
 # bam
 # we need to do this stupid loop thing because if there is a score tie, the contigs
 # entry won't neccesdarily be first.  So, we go through the line, printing the first entry that doesnt start with "contigs" and isn't identical (probably an artifact)
@@ -32,5 +37,5 @@ for pair in line_of_interest:
         closest_id_perc = pair[1]
         print("{0}\t{1}".format(closest_id, closest_id_perc))
         sys.exit(0)
-    
+
 # print(line_of_interest[1][0])
