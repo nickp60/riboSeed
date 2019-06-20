@@ -14,121 +14,22 @@ Reference Selection via ANI
 
 With any assembly that uses a reference, the choice of that reference is
 crucial. Here, we outline a protocol for using Average Nucleotide
-Identity via pyANI.  All the script are available in the riboSeed repository on Github.
+Identity via pyANI.  We call this pipeline Plenty of Bugs, as it
+will help you find a compatible match for your sequenced isolate.
+
+`PlentyOfBugs found here <https://github.com/nickp60/plentyofbugs>`__
 
 
-Clone the riboSeed repo.  All the subscripts are in the ``scripts/select_ref_by_ANI`` dir, and the
-main runner script can be found at ``scripts/run_ANI.sh``
+This is easiest to do with Docker (or Singularity)
 
-Required Tools
-~~~~~~~~~~~~~~
 
-``shuf``
-^^^^^^^^
-
-You must have coreutils installed on OSX to provide the ``gshuf``
-replacement for ``shuf``.
-
-``pyani``
-^^^^^^^^^
-
-``pyani`` makes it easy to perform average nucleotide identity
-computations. Their development team has some exciting updates in the
-works, so we will be working with the ``development`` branch from GitHub.
+The following script will identify 25 random E. coli genomes,
+download then, build the pyani database, do a quick assembly of your isolate,
+and find the closest reference to your isolate.
 
 ::
 
-    git clone https://github.com/widdowquinn/pyani.git
-    cd pyani
-    git checkout development
-    python setup.py install
-
-``run_ANI.sh``: Helper Script Usage
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This script helps automate this process. It takes 5 mandatory args:
-
--  ``-e`` experiement name
--  ``-f`` Forward Reads
--  ``-r`` Reverse Reads
--  ``-n`` number of strains
--  ``-o`` organism name
-
-And 3 optional arguments. This allows you to reuse the same
-prokaryotes.txt file from NCBI and the same comparison genomes (rather
-than having to download them fresh each time). The last arg ``-a``
-allows you to skip the assembly step and use an existing assembly for
-ANI anaysis.
-
--  ``-p`` prokaryotes.txt file
--  ``-g`` directory of genomes of interest
--  ``-a`` existing assembly
-
-This returns the string of the file name of the best reference, as well
-as writes that to a file in the output directory called
-``best_reference``.
-
-What's it doing under the hood?
-
-Description of Components
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-1. Randomly Selecting Potential References (if not using ``-g``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-We use the list of prokaryote assemblies from
-`NCBI <ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/prokaryotes.txt>`__.
-If you have it downloaded already, you can pass it as an arg to the
-get\_n\_genomes\_script.
-
-The following script will get 25 random E. coli genomes
-
-::
-
-    ./scripts/select_ref_by_ANI/get_n_random_complete_genomes.sh -o "Escherichia coli" -n 25 > tmp_accessions
-
-use the get\_genomes.py script to download all of those into a directory
-called ``potential_references``
-
-::
-
-    mkdir potential_references
-    while read x
-    do
-      echo "fetching $x"
-      get_genomes.py -q $x -o potential_references
-    done < tmp_accessions
-
-2. Mini Assembly (if not using ``-a``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Now, because we have a chicken/egg situation as we need an assembly to
-determine ANI to determine the best reference to make an assembly, we
-start with a minimal assembly with 1/10th of the reads using the
-``mini_assembly.sh`` scsript.
-
-::
-
-    ./scripts/mini_assembly.sh ./tests/references/toy_reads1.fq ./tests/references/toy_reads2.fq TEST
-
-    # copy the resulting assembly scaffold into the same dir as the other genomes we selected
-    cp 2018-06-19_mini_assembly_TEST/spades/scaffolds.fasta ./potential_references/
-
-3. Run pyANI
-^^^^^^^^^^^^
-
-::
-
-   pyani createdb
-   pyani index ./path/to/potential_references/
-   pyani anim  -i potential_references -g -o ./pyani
-
-Look at the resulting ``pyani/ANIm_percentage_identity.tab`` file for the particular run; the
-best hit will be the one in the column/row for "contigs" with the
-closest score to 1.
-
-This has been updated to use the new pyani syntax.
-
+    docker run --rm -t -v  ${PWD}:/data/ nickp60/plentyofbugs:0.87 -f /data/tests/references/toy_reads1.fq -o "Escherichia coli" -n 25 -e sample_ecoli -d /data/results/
 
 
 
