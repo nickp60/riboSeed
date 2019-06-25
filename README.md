@@ -272,7 +272,13 @@ ImportError: dlopen(/Users/nicholas/miniconda3/envs/ribo/lib/python3.5/site-pack
   Referenced from: /Users/nicholas/miniconda3/envs/ribo/lib/libhts.2.dylib
   Reason: Incompatible library version: libhts.2.dylib requires version 8.0.0 or later, but liblzma.5.dylib provides version 6.0.0
 ```
-In this case, try installing by first making a conda env with the `environment.yaml` file, and then installing riboSeed from pip.
+The simplest solution is to pip instal pysam, forcing the original to be overwritten:
+
+```
+pip install pysam -U
+```
+
+In cases where this does not work, try installing by first making a conda env with the `environment.yaml` file, and then installing riboSeed from pip.
 ```
 conda env create -y environment.yaml
 source activate ribo
