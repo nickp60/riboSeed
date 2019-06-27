@@ -206,7 +206,9 @@ def get_args(test_args=None):  # pragma: no cover
                           "over 80%%, 'trusted'; else 'untrusted'." +
                           " See SPAdes docs for details.  default: infer")
     optional.add_argument("--additional_libs",
-                          help="include these libraries in  final assembly " +
+                          help="include this string (usually additional " +
+                          "library, but could be other SPAdes args) " +
+                          "these libraries in  final assembly " +
                           "in addition to the reads supplied as -F and -R. " +
                           "They must be supplied according to SPAdes arg " +
                           "naming scheme. Use at own risk."
@@ -217,6 +219,12 @@ def get_args(test_args=None):  # pragma: no cover
                           help="if --clean_temps, mapping files will be " +
                           "removed once they are no no longer needed during " +
                           "the mapping iterations to save space; " +
+                          "default: %(default)s")
+    optional.add_argument("--enable-spades-error-corection",
+                          dest='err_correct', action="store_true",
+                          help="Default behaviour should be to skip read " +
+                          "error correction: http://cab.spbu.ru/benchmarking-tools-for-de-novo-microbial-assembly/ . " +
+                          "This re-enables it" +
                           "default: %(default)s")
     optional.add_argument("--skip_control", dest='skip_control',
                           action="store_true",
@@ -1777,6 +1785,7 @@ def make_quast_command(exes, output_root, ref, assembly_subdir, name,
 def get_final_assemblies_cmds(seedGenome, exes,
                               ref_as_contig,
                               additional_libs,
+                              err_correct,
                               cores,
                               memory,
                               serialize,
@@ -1834,6 +1843,9 @@ def get_final_assemblies_cmds(seedGenome, exes,
             if additional_libs is not None:
                 modest_spades_cmd = "{0} {1}".format(
                     modest_spades_cmd, additional_libs)
+            if not err_correct:
+                modest_spades_cmd = "{0} --only-assembler".format(
+                    modest_spades_cmd)
             subassembly_cmd = modest_spades_cmd
         # else:
         #     assert args.subassembler == "skesa", \
@@ -1875,7 +1887,7 @@ def check_spades_extra_library_input(inp):
     You are in the deep end now.
 
     """
-    scary_chars = [";", "|"]
+    scary_chars = [";", "|", "&"]
     for char in scary_chars:
         if char in inp:
             raise ValueError("'%s' cannot be part of lib input" %char)
@@ -3086,6 +3098,7 @@ def main(args, logger=None):
         seedGenome=seedGenome, exes=sys_exes,
         cores=args.cores,
         memory=args.memory,
+        err_correct=args.err_correct,
         additional_libs=args.additional_libs,
         serialize=args.serialize,
         ref_as_contig=final_ref_as_contig,
