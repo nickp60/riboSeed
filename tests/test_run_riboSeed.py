@@ -102,6 +102,7 @@ class runRiboSeedTestCase(unittest.TestCase):
         testargs = ["ribo", "run",
                     "-F", Fread,
                     "-R", Rread,
+                    "-e", "test",
                     "-o", self.run_testall_dir,
                     "-r", ref,
                     "--stages", "stack", "sketch", "spec", "score"]

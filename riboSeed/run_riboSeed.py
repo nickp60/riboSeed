@@ -427,10 +427,10 @@ def main(args):
         output=os.path.join(output_root, "scan"),
         kingdom=conf.RUN_KINGDOM,
         id_thresh=conf.SCAN_ID_THRESH,
-        name=conf.SCAN_CONTIG_NAME,
+        name=experiment_name,
         cores=conf.RUN_CORES,
         barrnap_exe=conf.BARRNAP_EXE,
-        seqret_exe=conf.SEQRET_EXE,
+        #seqret_exe=conf.SEQRET_EXE,
         min_length=conf.SCAN_MIN_LENGTH,
         verbosity=conf.SCAN_VERBOSITY)
 

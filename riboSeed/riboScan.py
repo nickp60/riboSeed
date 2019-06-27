@@ -229,7 +229,30 @@ def append_accession_and_version(accession, ingb, finalgb):
                 else:
                     outfile.write(line)
 
+
+def make_renamed_fasta(infasta, outfasta):
+    """ to avoid issues with names too long genbank
+    https://github.com/biopython/biopython/issues/747
+    """
+    with open(infasta, "r") as inf, open(outfasta, "w") as outf:
+        for i, rec in enumerate(SeqIO.parse(inf, "fasta")):
+            rec.id = "riboScan_%i" % i
+            SeqIO.write(rec, outf, "fasta")
+
+
 def make_genbank(fasta, gff, outpath):
+    # check names not too long (16 chars max for genbank?)
+    rename = False
+    # with open(fasta, "r") as inf:
+    #     for rec in SeqIO.parse(inf, "fasta"):
+    #         if len(rec.id) > 16:
+    #             rename = True
+    # if rename:
+    #     outfasta = os.path.splitext(outpath)[0] + ".fasta"
+    #     make_renamed_fasta(infasta=fasta, outfasta=outfasta)
+    #     this_fasta = outfasta
+    # else:
+    #     this_fasta = fasta
     fasta_input = SeqIO.to_dict(SeqIO.parse(fasta, "fasta", generic_dna))
     gff_iter = GFF.parse(gff, fasta_input)
     SeqIO.write(gff_iter, outpath, "genbank")
@@ -311,18 +334,17 @@ def getFastas(inp, output_root, name, logger):
             logger.error("'%s' is not a valid directory or file!",
                          os.path.expanduser(inp))
             sys.exit(1)
-        else:
-            if not os.path.getsize(os.path.expanduser(inp)) > 0:
-                logger.error("'%s' looks like an empty file!",
-                             os.path.expanduser(inp))
-                sys.exit(1)
-            logger.info("spliting multifasta into multiple fastas " +
-                        "for easier processing")
-            splitMultifasta(multi=inp, output=output_root, name=name,
-                            logger=logger)
+        if not os.path.getsize(os.path.expanduser(inp)) > 0:
+            logger.error("'%s' looks like an empty file!",
+                         os.path.expanduser(inp))
+            sys.exit(1)
+        logger.info("spliting multifasta into multiple fastas " +
+                    "for easier processing")
+        splitMultifasta(multi=inp, output=output_root, name=name,
+                        logger=logger)
 
-            fastas = glob.glob(os.path.join(output_root, "contigs",
-                                            "*.fa"))
+        fastas = glob.glob(os.path.join(output_root, "contigs",
+                                        "*.fa"))
     else:
         fastas = glob.glob(os.path.join(os.path.expanduser(inp),
                                         "*.fa"))
@@ -361,17 +383,16 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
     idlist = []
     assert logger is not None, "must use logging"
     os.makedirs(os.path.join(output, dirname))
-    source_fname = os.path.splitext(os.path.basename(multi))[0]
+    #source_fname = os.path.splitext(os.path.basename(multi))[0]
     with open(os.path.expanduser(multi), "r") as mf:
         for idx, rec in enumerate(SeqIO.parse(mf, "fasta")):
             logger.debug("record %d: %s", idx, rec.id)
             # logger.debug(rec)
-            if name is not None:
-                fname = name
-            else:
-                fname = rec.id
+            if name is None:
+                name = rec.id
             # if fname in idlist:
-            fname = fname + "_" + str(idx)
+            fname = name + "_" + str(idx)
+            rec.id  = fname
             if not re.match("^[a-zA-Z0-9_\.]*$", fname):
                 logger.warning("Problem with header %s", fname)
                 logger.warning("file header contains special characters! " +
@@ -379,10 +400,12 @@ def splitMultifasta(multi, output, name, dirname="contigs", logger=None):
                                "rename with the --name option to prevent " +
                                "later issues. Renaming as source filename " +
                                "with index, sorr..." )
-                fname = source_fname + "_" + str(idx)
+            if len(rec.id) > 16:
+                logger.warning("Fixing problem with header %s: must be shorter than 16 chars", fname)
+
             with open(os.path.join(output, dirname,
                                    fname + ".fa"), "w") as outf:
-                renamed_rec = SeqRecord(rec.seq, id=fname,
+                renamed_rec = SeqRecord(rec.seq, id=rec.id,
                                         description="from riboScan")
                 SeqIO.write(renamed_rec, outf, "fasta")
             idlist.append(fname)

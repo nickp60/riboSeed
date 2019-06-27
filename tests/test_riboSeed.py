@@ -777,6 +777,7 @@ class riboSeedShallow(unittest.TestCase):
                 get_final_assemblies_cmds(
                     ref_as_contig="trusted",
                     cores=4,
+                    err_correct=True,
                     serialize=True,
                     additional_libs="-s1 path/to/single_reads.fastq",
                     memory=8,

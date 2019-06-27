@@ -504,7 +504,8 @@ class Exes(object):
         mandatory = [self.python, self.spades, self.method,
                      self.samtools, self.bwa, self.skesa]
         assert None not in mandatory, \
-            "must instantiate with python, samtools, spades, method!"
+            "must instantiate with python, samtools, " +\
+            "spades, skesa, bwa, and methods!"
 
     def set_mapper(self):
         """Exes.mapper attribute is set here to avoid further
