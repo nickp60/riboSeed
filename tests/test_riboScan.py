@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 from riboSeed.shared_methods import md5
 from riboSeed.riboScan import parse_fasta_header, \
     add_locus_tags_to_gff, combine_gbs, append_accession_and_version, \
-    make_seqret_cmd, splitMultifasta, getFastas, checkSingleFasta, main
+    splitMultifasta, getFastas, checkSingleFasta, main
 from riboSeed.shared_methods import make_barrnap_cmd
 
 sys.dont_write_bytecode = True
@@ -137,21 +137,6 @@ class riboSeedTestCase(unittest.TestCase):
         self.assertEqual(md5(temp_gb2), md5(self.with_accession_gb))
         self.to_be_removed.append(temp_gb2)
 
-    @unittest.skipIf(
-        shutil.which("seqret") is None,
-        "seqret executable not found, skipping." +
-        "If this isnt an error from travis deployment, you probably " +
-        "should install it")
-    def test_make_seqret_cmd(self):
-        test_cmd = make_seqret_cmd(exe="seqret",
-                                   outgb="dest_file.gb",
-                                   infasta="input_sequence.fasta",
-                                   ingff="input_annos.gff")
-        ref_cmd = str(
-            "{0} -sequence input_sequence.fasta -feature -fformat gff3 " +
-            "-fopenfile input_annos.gff -osformat genbank -auto " +
-            "-outseq dest_file.gb").format(shutil.which("seqret"))
-        self.assertEqual(ref_cmd, test_cmd)
 
     def test_getFastas(self):
         getFastas(inp=self.multifasta, output_root=self.test_dir,
