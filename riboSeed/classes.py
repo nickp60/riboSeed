@@ -296,6 +296,10 @@ class NgsLib(object):
             else:
                 raise ValueError("cannot set library type from one PE read")
         else:
+            if self.readR is None:
+                raise ValueError(
+                    "No reverse reads provided. If using single-end " +
+                    "reads, use the --fastqS arg, not --fastq1")
             if self.readS0 is not None:
                 self.libtype = "pe_s"  # paired end and single
             else:

@@ -82,6 +82,15 @@ class NgsLibTest(unittest.TestCase):
                 readS0="dummy",
                 ref_fasta=self.ref_fasta,
                 mapper_exe=self.smalt_exe)
+        with self.assertRaises(ValueError):
+            NgsLib(
+                name=None,
+                master=False,
+                readF=self.ref_Ffastq,
+                readR=None,
+                readS0=None,
+                ref_fasta=self.ref_fasta,
+                mapper_exe=self.smalt_exe)
 
         # check master files cannot bge deleted
         testlib_pe = NgsLib(
