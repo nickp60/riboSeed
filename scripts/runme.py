@@ -51,7 +51,7 @@ print(fastq1)
 print(fastq2)
 
 for i in ["blastn", "spades.py", "bwa", "mafft",
-          "samtools", "seqret", "barrnap"]:
+          "samtools", "barrnap"]:
     assert shutil.which(i) is not None, "{0} executable not found in PATH!".format(i)
 
 root_dir = os.path.join(os.getcwd(), "integration_test_results")

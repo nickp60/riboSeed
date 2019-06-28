@@ -118,7 +118,7 @@ def main(args, logger=None):
     logger.debug(fastq2)
 
     for i in ["blastn", "spades.py", "bwa", "mafft",
-              "samtools", "seqret", "barrnap"]:
+              "samtools", "barrnap"]:
         assert shutil.which(i) is not None, "{0} executable not found in PATH!".format(i)
 
     ribo_run_cmd = str(

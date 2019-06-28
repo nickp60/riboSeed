@@ -81,12 +81,6 @@ def get_args(test_args=None):  # pragma: no cover
                           help="number of threads/cores to use; " +
                           "default: %(default)s", default=2,
                           type=int)
-    # optional.add_argument("-s", "--seqret_exe", dest='seqret_exe',
-    #                       action="store",
-    #                       help="path to seqret executable, usually " +
-    #                       "installed with emboss; " +
-    #                       "default: %(default)s", default="seqret",
-    #                       type=str)
     optional.add_argument("-m", "--min_length", dest='min_length',
                           action="store",
                           help="skip the scaffold if its shorter than this " +
@@ -256,33 +250,6 @@ def make_genbank(fasta, gff, outpath):
     fasta_input = SeqIO.to_dict(SeqIO.parse(fasta, "fasta", generic_dna))
     gff_iter = GFF.parse(gff, fasta_input)
     SeqIO.write(gff_iter, outpath, "genbank")
-
-# def make_seqret_cmd(exe, outgb, ingff, infasta):
-#     """construct system call to seqret to make genbank file
-
-#     Construct a genbank file from a gff and fasta file
-
-#     Args:
-#         exe (str): path to seqret executable or just the name (seqret)
-#         outgb (str): path to resulting genbank file
-#         ingff (str): path to gff(3?) file from barrnap
-#         infasta (str): path to fasta file
-#     Returns:
-#         (str): command
-#     Raises:
-#         None
-
-#     """
-#     assert shutil.which(exe) is not None, "seqret executable not found!"
-#     cmd = str(
-#         "{0} -sequence {1} -feature -fformat gff3 -fopenfile {2} " +
-#         "-osformat genbank -auto -outseq {3}"
-#     ).format(
-#         shutil.which(exe),
-#         infasta,
-#         ingff,
-#         outgb)
-#     return cmd
 
 
 def checkSingleFasta(fasta, logger):
@@ -479,15 +446,6 @@ def main(args, logger=None):
             fasta=fasta,
             gff=tagged_gff,
             outpath=os.path.join(output_root, "{0}_pre.gb".format(accession)))
-        # seqret_cmd = make_seqt_cmd(
-        #     exe=args.seqret_exe,
-        #     outgb=os.path.join(output_root, "{0}_pre.gb".format(accession)),
-        #     ingff=tagged_gff, infasta=fasta)
-        # subprocess.run(seqret_cmd,
-        #                shell=sys.platform != "win32",
-        #                stdout=subprocess.PIPE,
-        #                stderr=subprocess.PIPE,
-        #                check=True)
         append_accession_and_version(
             accession=accession,
             ingb=unfinished_gb,

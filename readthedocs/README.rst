@@ -52,8 +52,7 @@ scaffold collections is rDNAs are often poorly annotated at best, and
 unannotated at worst. This is shortcut to happiness without using the
 full Prokka annotation scheme. It requires
 ```barrnap`` <http://www.vicbioinformatics.com/software.barrnap.shtml>`__
-and seqret (from ```emboss`` <http://www.ebi.ac.uk/Tools/emboss/>`__) to
-be available in your path.
+to be available in your path.
 
 #### Usage
 

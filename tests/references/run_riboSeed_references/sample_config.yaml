@@ -17,9 +17,6 @@
 # executable for barrnap
 BARRNAP_EXE : /home/nicholas/barrnap/bin/barrnap
 
-# executable for seqret
-#SEQRET_EXE : /home/nicholas/bin/seqret
-
 # executable for spades.py
 SPADES_EXE : /home/nicholas/bin/SPAdes-3.9.1-Linux/bin/spades.py
 

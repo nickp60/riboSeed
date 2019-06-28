@@ -51,7 +51,6 @@ def make_config_header():
 def config_exes():
     # find all needed system requiremnts
     req_programs = [("BARRNAP_EXE", "barrnap"),
-                    #("SEQRET_EXE", "seqret"),
                     ("SPADES_EXE", "spades.py"),
                     ("SKESA_EXE", "skesa"),
                     ("BWA_EXE", "bwa"),
