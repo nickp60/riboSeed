@@ -1,0 +1,3 @@
+[submodule "spades"]
+	path = spades
+	url = https://github.com/ablab/spades/
