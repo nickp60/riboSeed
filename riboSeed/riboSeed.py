@@ -223,9 +223,8 @@ def get_args(test_args=None):  # pragma: no cover
     optional.add_argument("--enable-spades-error-corection",
                           dest='err_correct', action="store_true",
                           help="Default behaviour should be to skip read " +
-                          "error correction: http://cab.spbu.ru/" +
-                          "benchmarking-tools-for-de-novo-microbial-" +
-                          "assembly/ . This re-enables it" +
+                          "error correction: http://cab.spbu.ru/benchmarking-tools-for-de-novo-microbial-assembly/ . " +
+                          "This re-enables it" +
                           "default: %(default)s")
     optional.add_argument("--skip_control", dest='skip_control',
                           action="store_true",
@@ -2584,16 +2583,21 @@ def main(args, logger=None):
     # add ngslib object for user supplied NGS data
     logger.debug("adding the sequencing libraries to the seedGenome")
     logger.debug(args.fastqS1)
-    seedGenome.master_ngs_ob = NgsLib(
-        name="master",
-        master=True,
-        make_dist=args.mapper == "smalt",
-        readF=args.fastq1,
-        readR=args.fastq2,
-        readS0=args.fastqS1,
-        logger=logger,
-        mapper_exe=sys_exes.mapper,
-        ref_fasta=seedGenome.ref_fasta)
+    try:
+        seedGenome.master_ngs_ob = NgsLib(
+            name="master",
+            master=True,
+            make_dist=args.mapper == "smalt",
+            readF=args.fastq1,
+            readR=args.fastq2,
+            readS0=args.fastqS1,
+            logger=logger,
+            mapper_exe=sys_exes.mapper,
+            ref_fasta=seedGenome.ref_fasta)
+    except Exception as e:
+        logger.error(e)
+        logger.error(last_exception())
+        sys.exit(1)
     if args.force_kmers:
         logger.info("Skipping kmer check, using kmers provided")
         checked_k = args.kmers
