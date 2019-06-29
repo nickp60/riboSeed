@@ -514,6 +514,7 @@ def main(args):
         bwa_exe=conf.BWA_EXE,
         bcftools_exe=conf.BCFTOOLS_EXE,
         quast_exe=conf.QUAST_EXE,
+        err_correct=conf.SEED_ERR_CORRECT,
         verbosity=conf.SEED_VERBOSITY)
     sketch_args = Namespace(
         indir=os.path.join(output_root, "seed","mauve"),

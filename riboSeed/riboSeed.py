@@ -223,8 +223,9 @@ def get_args(test_args=None):  # pragma: no cover
     optional.add_argument("--enable-spades-error-corection",
                           dest='err_correct', action="store_true",
                           help="Default behaviour should be to skip read " +
-                          "error correction: http://cab.spbu.ru/benchmarking-tools-for-de-novo-microbial-assembly/ . " +
-                          "This re-enables it" +
+                          "error correction: http://cab.spbu.ru/" +
+                          "benchmarking-tools-for-de-novo-microbial-" +
+                          "assembly/ . This re-enables it" +
                           "default: %(default)s")
     optional.add_argument("--skip_control", dest='skip_control',
                           action="store_true",

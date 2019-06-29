@@ -254,9 +254,15 @@ def config_seed_defaults():
          "If mapping with SMALT, \n#" +
          "submit custom smalt scoring via smalt -S \n#" +
          "scorespec option"),
+        ("SEED_ERR_CORRECT", "false",
+         "Default behaviour should be to skip read " +
+         "error correction: http://cab.spbu.ru/benchmarking-"  +
+         "tools-for-de-novo-microbial-assembly/ . " +
+         "This re-enables it" +
+         "default: %(default)s \n#"),
         ("SEED_VERBOSITY", "2",
          "-v: verbosity for riboSeed"),
-        ("SEED_INITIAL_CONSENSUS", "False",
+        ("SEED_INITIAL_CONSENSUS", "false",
          "--initial_consensus enables a consensus approach to the first\n#" +
          " iterations subassemblies, rather than a de Druijn graph de non\n#" +
          " assembly with SPAdes")]

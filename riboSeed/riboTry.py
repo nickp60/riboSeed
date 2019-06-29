@@ -119,10 +119,12 @@ def main(args, logger=None):
 
     for i in ["blastn", "spades.py", "bwa", "mafft",
               "samtools", "barrnap"]:
-        assert shutil.which(i) is not None, "{0} executable not found in PATH!".format(i)
+        assert shutil.which(i) is not None, \
+            "{0} executable not found in PATH!".format(i)
 
     ribo_run_cmd = str(
         "ribo run -r {0} -o {1} -F {2} -R {3} --serialize -v 1 " +
+        "--subassembler skesa  " +
         "--stages stack score spec --cores {4} --threads {5} --memory {6}"
     ).format(
         fasta,
