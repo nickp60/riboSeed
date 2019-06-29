@@ -293,3 +293,16 @@ Submitting `--smalt_scoring` with vastly different scoring schemes usually cause
 ### Running Tests
 
 The tests for the module can be found under the `tests` directory. I run them with the unittests module.  The tests assume the installation of all the recommended tools.
+
+### A note on SPAdes version
+We have tried to include spades binaries for installation simplicity.  The SPAdes update from 3.9 to 3.10 changed how they deal with long reads/included contigs, and so we require users to run with SPAdes 3.9.  However, a known bug prevents osx users from running the 3.9 release.  On the `subspades` branch of this repo, we have added spades as a submodule, and compiled for both OSX and Linux.
+
+```
+# on a mac
+PREFIX=${PWD}/osx/ ./spades/assembler/spades_compile.sh
+git add osx/bin/
+git add osx/share/
+# on linux
+PREFIX=${PWD}/linux/ ./spades/assembler/spades_compile.sh
+git add osx/bin/
+```
