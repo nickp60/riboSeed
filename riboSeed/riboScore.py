@@ -87,7 +87,8 @@ def make_nuc_nuc_recip_blast_cmds(
         blast_cline = NcbiblastnCommandline(query=f,
                                             subject=subject_file,
                                             # evalue=.001,
-                                            outfmt="'6 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen'",
+                                            outfmt=6,
+                                            #outfmt="'6 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen'",
                                             out=output_path_tab)
         add_params = str(" -num_threads 1 -num_alignments 50")
         blast_command = str(str(blast_cline) + add_params)
@@ -101,7 +102,8 @@ def make_nuc_nuc_recip_blast_cmds(
             query=subject_file,
             subject=f,
             # evalue=.001,
-            outfmt="'6 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen'",
+            outfmt=6,
+            #outfmt="'6 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen'",
             out=recip_output_path_tab)
         recip_blast_command = str(str(recip_blast_cline) + add_params)
         blast_cmds.append(recip_blast_command)
@@ -138,7 +140,7 @@ def merge_outfiles(filelist, outfile):
 def BLAST_tab_to_df(path):
     colnames = ["query_id", "subject_id", "identity_perc", "alignment_length",
                 "mismatches", "gap_opens", "q_start", "q_end", "s_start",
-                "s_end", "evalue", "bit_score", "q_length"]
+                "s_end", "evalue", "bit_score"]
     with open(path) as tab:
         raw_csv_results = pd.read_csv(
             tab, comment="#", sep="\t", names=colnames)
