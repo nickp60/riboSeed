@@ -87,7 +87,8 @@ def make_nuc_nuc_recip_blast_cmds(
         blast_cline = NcbiblastnCommandline(query=f,
                                             subject=subject_file,
                                             # evalue=.001,
-                                            outfmt=6, out=output_path_tab)
+                                            outfmt="'6 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen'",
+                                            out=output_path_tab)
         add_params = str(" -num_threads 1 -num_alignments 50")
         blast_command = str(str(blast_cline) + add_params)
         blast_cmds.append(blast_command)
@@ -100,7 +101,8 @@ def make_nuc_nuc_recip_blast_cmds(
             query=subject_file,
             subject=f,
             # evalue=.001,
-            outfmt=6, out=recip_output_path_tab)
+            outfmt="'6 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen'",
+            out=recip_output_path_tab)
         recip_blast_command = str(str(recip_blast_cline) + add_params)
         blast_cmds.append(recip_blast_command)
         recip_blast_outputs.append(recip_output_path_tab)
@@ -136,7 +138,7 @@ def merge_outfiles(filelist, outfile):
 def BLAST_tab_to_df(path):
     colnames = ["query_id", "subject_id", "identity_perc", "alignment_length",
                 "mismatches", "gap_opens", "q_start", "q_end", "s_start",
-                "s_end", "evalue", "bit_score"]
+                "s_end", "evalue", "bit_score", "q_length"]
     with open(path) as tab:
         raw_csv_results = pd.read_csv(
             tab, comment="#", sep="\t", names=colnames)
@@ -223,7 +225,6 @@ def checkBlastForMisjoin(df, fasta, ref_lens, BUF, flanking, logger=None):
     df['name'] = df.query_id.str.replace("_upstream", "").str.replace("_downstream", "")
     # df['name2'] = df.name.str.replace("_downstream", "")
     df['query_name'] = df['name'].str.split('flanking').str.get(0)
-    df['query_len'] = df.query_id.str.split('length_').str.get(1).str.split("_").str.get(0)
     where = []
     for i, row in df.iterrows():
         where.append("down" if "downstream" in row['query_id'] else "up")
@@ -302,11 +303,13 @@ def getScanCmd(ref, outroot, other_args):
         return (None, ref)
 
     resulting_gb = os.path.join(outroot, "scan", "scannedScaffolds.gb")
-    return ("ribo scan {0} --min_length 5000 -o {1}{2}".format(
-        ref,
-        os.path.join(outroot, "scan"),
-        other_args
-    ), resulting_gb)
+    return (
+        "ribo scan {0} --min_length 5000 -o {1}{2}".format(
+            ref,
+            os.path.join(outroot, "scan"),
+            other_args
+        ), resulting_gb
+    )
 
 
 def getSelectCmd(gb, outroot, other_args):
@@ -376,7 +379,7 @@ def main(args, logger=None):
 
     # snags from reference
     bs_dir1 = os.path.join(output_root, "bridgeSeeds_ref")
-    scancmd1, scangb1 = getScanCmd(ref=gb, outroot=bs_dir1, other_args="")
+    scancmd1, scangb1 = getScanCmd(ref=gb, outroot=bs_dir1, other_args="--name riboScore")
     selectcmd1, cluster1 = getSelectCmd(gb=scangb1, outroot=bs_dir1,
                                         other_args="-s 16S:23S")
     snagcmd1, snagdir1 = getSnagCmd(scangb=scangb1, cluster=cluster1,
@@ -404,7 +407,7 @@ def main(args, logger=None):
         os.makedirs(bs_dir2)
         # snags from assembly
         scancmd2, scangb2 = getScanCmd(ref=fasta, outroot=bs_dir2,
-                                       other_args='')
+                                       other_args='--name riboScore')
         selectcmd2, cluster2 = getSelectCmd(gb=scangb2, outroot=bs_dir2,
                                             other_args="-s 16S:23S")
         snagcmd2, snagdir2 = getSnagCmd(scangb=scangb2, cluster=cluster2,

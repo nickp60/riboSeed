@@ -1142,7 +1142,7 @@ def main(args, logger=None):
         logger.debug(str([shutil.which(i) for i in executables]))
     check_version_from_cmd(
         exe=args.barrnap_exe,
-        cmd='', line=2,
+        cmd='--version', line=1,
         pattern=r"barrnap (?P<version>[^-]+)",
         where='stderr',
         logger=logger,

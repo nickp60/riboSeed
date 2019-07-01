@@ -441,11 +441,15 @@ def main(args, logger=None):
             acc=accession)
         unfinished_gb = os.path.join(
             output_root, "{0}_pre.gb".format(accession))
-
-        make_genbank(
-            fasta=fasta,
-            gff=tagged_gff,
-            outpath=os.path.join(output_root, "{0}_pre.gb".format(accession)))
+        logger.info("creating GenBank file")
+        try:
+            make_genbank(
+                fasta=fasta,
+                gff=tagged_gff,
+                outpath=os.path.join(output_root, "{0}_pre.gb".format(accession)))
+        except Exception as e:
+            logger.error(e)
+            sys.exit(1)
         append_accession_and_version(
             accession=accession,
             ingb=unfinished_gb,

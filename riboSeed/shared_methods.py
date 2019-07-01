@@ -365,12 +365,13 @@ def check_version_from_cmd(
     if m:
         this_version = m.group('version').strip()
     logger.debug("this_version: %s", this_version)
+    if this_version is None:
+        raise ValueError("No verison was captured with pattern" +
+                         "{} from the following line:\n{}".format(
+                             pattern, printout[line - 1]))
     if coerce_two_digit:
         this_version = "0.{0}".format(this_version)
         logger.debug("coerced this_version: %s", this_version)
-    if this_version is None:
-        raise ValueError("No verison was captured with pattern" +
-                         "{0}".format(pattern))
     try:
         if StrictVersion(this_version) < StrictVersion(min_version):
             raise ValueError("{0} version {1} must be greater than {2}".format(

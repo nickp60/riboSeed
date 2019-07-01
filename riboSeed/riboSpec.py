@@ -1009,7 +1009,7 @@ def process_assembly_graph(args, fastg, output_root, PLOT, which_k, logger):
     # logger.debug(bad_nodes)
     for node in bad_nodes:
         G.remove_node(node)
-    if PLOT and args.plot_graphs:
+    if PLOT and args.plot_graphs and len(G)  != 0  :
         plot_G(
             G,
             rrnas["5S"]["solid"],

@@ -1,12 +1,12 @@
-Biopython==1.68
+Biopython
 pysam
 bcbio-gff
-coverage==4.4.1
-jenkspy==0.1.4
-matplotlib==1.5.3
+coverage
+jenkspy
+matplotlib
 pandas
 #heatmapcluster>=0.1.2
-pyaml==17.8.0
+pyaml
 networkx
 nose
 # for readthedocs
