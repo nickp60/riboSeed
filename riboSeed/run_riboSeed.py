@@ -236,7 +236,7 @@ def get_args():  # pragma: no cover
                           action="store",
                           type=str,
                           default=["stack", "score", "spec"],
-                          choices=["sketch", "spec", "snag", "score", "stack"],
+                          choices=["sketch", "spec", "snag", "score", "stack", "none"],
                           help="Which assessment stages you wish to run: " +
                           "sketch, spec, snag, score, stack.  " +
                           "Any combination thereof")
@@ -350,6 +350,7 @@ def simulate_args_from_namespace(n, positional=[]):
         else:
             argparse_formatted_list.append("--{}".format(l[0]))
             argparse_formatted_list.append(str(l[1]))
+    print(argparse_formatted_list)
     return argparse_formatted_list
 
 
@@ -369,59 +370,8 @@ def parse_stages(args):
         args.RUN_SCORE = True
     return args
 
-def main(args):
-    # set up output directory and logging
-    output_root = os.path.abspath(os.path.expanduser(args.RUN_OUTPUT))
-    try:
-        os.makedirs(output_root)
-    except FileExistsError:
-        print("Selected output directory %s exists" %
-              output_root)
-        sys.exit(1)
-    log_path = os.path.join(output_root, "run_riboSeed.log")
-    logger = set_up_logging(verbosity=args.RUN_VERBOSITY,
-                            outfile=log_path,
-                            name=__name__)
-    logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
-    logger.debug("All settings used:")
-    for k, v in sorted(vars(args).items()):
-        logger.debug("%s: %s", k, str(v))
-    # if not using a config, groom some of the arguments
-    if args.REFERENCE_FASTA is not None:
-        # detect system attributes if not given expressly
-        if args.RUN_CORES is None:
-            args.RUN_CORES = multiprocessing.cpu_count()
-            logger.info("Using %i cores", args.RUN_CORES)
-    # determine which assessment stages will be run.
-    # This creates the RUN_SPEC (snag, etc) argument in the namespaces
-    args = parse_stages(args)
-    # if starting a fresh run, create a config file.  If not, read it in
-    args.RUN_CONFIG = detect_or_create_config(
-        config_file=args.RUN_CONFIG,
-        theseargs=args,
-        output_root=output_root, logger=logger)
-    conf = parse_config(args.RUN_CONFIG, logger=logger)
-    # if no name given, infer from the name of the contigs file, from either
-    # args or the config file
-    if conf.RUN_EXPERIMENT_NAME is not None:
-        experiment_name = conf.RUN_EXPERIMENT_NAME
-    elif conf.REFERENCE_FASTA is not  None:
-        experiment_name = os.path.basename(
-            os.path.splitext(conf.REFERENCE_FASTA)[0])
-    else:  # infer from riboScan arg
-        assert conf.SCAN_CONTIG_NAME is not None, \
-            "no reference fasta found in args or config! Exiting"
-        experiment_name = os.path.basename(
-            os.path.splitext(conf.SCAN_CONTIG_NAME)[0])
 
-    logger.debug(experiment_name)
-
-    if conf.RUN_CLUSTER_FILE is None:
-        cluster_txt_file = os.path.join(
-            output_root, "select", "riboSelect_grouped_loci.txt")
-    else:
-        cluster_txt_file = conf.RUN_CLUSTER_FILE
-
+def make_namespaces(args, conf, output_root, experiment_name):
     scan_args = Namespace(
         contigs=conf.REFERENCE_FASTA,
         output=os.path.join(output_root, "scan"),
@@ -448,7 +398,7 @@ def main(args):
     snag_args = Namespace(
         genbank_genome=os.path.join(
             output_root, "scan", "scannedScaffolds.gb"),
-        clustered_loci=cluster_txt_file,
+        clustered_loci=conf.RUN_CLUSTER_FILE,
         output=os.path.join(output_root, "snag"),
         name="name",
         flanking=conf.RUN_FLANKING,
@@ -472,7 +422,7 @@ def main(args):
         verbosity=conf.SELECT_VERBOSITY)
 
     seed_args = Namespace(
-        clustered_loci_txt=cluster_txt_file,
+        clustered_loci_txt=conf.RUN_CLUSTER_FILE,
         reference_genbank=os.path.join(
             output_root, "scan", "scannedScaffolds.gb"),
         output=os.path.join(output_root, "seed"),
@@ -561,40 +511,103 @@ def main(args):
         n_samples=conf.STACK_N_SAMPLES,
         infer=conf.STACK_INFER,
         verbosity=conf.STACK_VERBOSITY)
+    return {
+        "scan": scan_args,
+        "select": select_args,
+        "seed": seed_args,
+        "snag": snag_args,
+        "sketch": sketch_args,
+        "spec": spec_args,
+        "stack":stack_args,
+        "score":score_args,
+    }
 
+def main(args):
+    # set up output directory and logging
+    output_root = os.path.abspath(os.path.expanduser(args.RUN_OUTPUT))
+    try:
+        os.makedirs(output_root)
+    except FileExistsError:
+        print("Selected output directory %s exists" %
+              output_root)
+        sys.exit(1)
+    log_path = os.path.join(output_root, "run_riboSeed.log")
+    logger = set_up_logging(verbosity=args.RUN_VERBOSITY,
+                            outfile=log_path,
+                            name=__name__)
+    logger.info("Usage:\n%s\n", " ".join([x for x in sys.argv]))
+    logger.debug("All settings used:")
+    for k, v in sorted(vars(args).items()):
+        logger.debug("%s: %s", k, str(v))
+    # if not using a config, groom some of the arguments
+    if args.REFERENCE_FASTA is not None:
+        # detect system attributes if not given expressly
+        if args.RUN_CORES is None:
+            args.RUN_CORES = multiprocessing.cpu_count()
+            logger.info("Using %i cores", args.RUN_CORES)
+    # determine which assessment stages will be run.
+    # This creates the RUN_SPEC (snag, etc) argument in the namespaces
+    args = parse_stages(args)
+    # if starting a fresh run, create a config file.  If not, read it in
+    args.RUN_CONFIG = detect_or_create_config(
+        config_file=args.RUN_CONFIG,
+        theseargs=args,
+        output_root=output_root, logger=logger)
+    conf = parse_config(args.RUN_CONFIG, logger=logger)
+    # if no name given, infer from the name of the contigs file, from either
+    # args or the config file
+    if conf.RUN_EXPERIMENT_NAME is not None:
+        experiment_name = conf.RUN_EXPERIMENT_NAME
+    elif conf.REFERENCE_FASTA is not  None:
+        experiment_name = os.path.basename(
+            os.path.splitext(conf.REFERENCE_FASTA)[0])
+    else:  # infer from riboScan arg
+        assert conf.SCAN_CONTIG_NAME is not None, \
+            "no reference fasta found in args or config! Exiting"
+        experiment_name = os.path.basename(
+            os.path.splitext(conf.SCAN_CONTIG_NAME)[0])
+
+    logger.debug(experiment_name)
+    skip_riboSelect = True
+    if conf.RUN_CLUSTER_FILE is None:
+        conf.RUN_CLUSTER_FILE = os.path.join(
+            output_root, "select", "riboSelect_grouped_loci.txt")
+        skip_riboSelect = False
+
+    namespaces = make_namespaces(args, conf, output_root, experiment_name)
     # So we dont get too far ahead of outselves")
     logger.info("\nCheck all the arguments provided\n")
 
-    rscan.get_args(simulate_args_from_namespace(scan_args, positional=["contigs"]))
-    rsel.get_args(simulate_args_from_namespace(select_args, positional=["genbank_genome"]))
-    rseed.get_args(simulate_args_from_namespace(seed_args, positional=["clustered_loci_txt"]))
+    rscan.get_args(simulate_args_from_namespace(namespaces["scan"], positional=["contigs"]))
+    rsel.get_args(simulate_args_from_namespace(namespaces["select"], positional=["genbank_genome"]))
+    rseed.get_args(simulate_args_from_namespace(namespaces["seed"], positional=["clustered_loci_txt"]))
     if conf.RUN_SKETCH:
-        rsketch.get_args(simulate_args_from_namespace(sketch_args, positional=["indir"]))
+        rsketch.get_args(simulate_args_from_namespace(namespaces["sketch"], positional=["indir"]))
     if conf.RUN_SCORE:
-        rscore.get_args(simulate_args_from_namespace(score_args, positional=["indir"]))
+        rscore.get_args(simulate_args_from_namespace(namespaces["score"], positional=["indir"]))
     if conf.RUN_STACK:
-        rstack.get_args(simulate_args_from_namespace(stack_args, positional=["riboScan_dir"]))
+        rstack.get_args(simulate_args_from_namespace(namespaces["stack"], positional=["riboScan_dir"]))
     if conf.RUN_SPEC:
-        rspec.get_args(simulate_args_from_namespace(spec_args, positional=[]))
+        rspec.get_args(simulate_args_from_namespace(namespaces["spec"], positional=[]))
     if conf.RUN_SPEC:
-        rsnag.get_args(simulate_args_from_namespace(snag_args, positional=["clustered_loci", "genbank_genome"]))
+        rsnag.get_args(simulate_args_from_namespace(namespaces["snag"], positional=["clustered_loci", "genbank_genome"]))
 
     logger.info("\nrunning riboScan\n")
-    rscan.main(scan_args, logger)
-    if conf.RUN_CLUSTER_FILE is not None:
+    rscan.main(namespaces["scan"], logger)
+    if skip_riboSelect:
         logger.info(
             "Skipping riboSelect, using user-supplied cluster file: %s",
             conf.RUN_CLUSTER_FILE)
     else:
         logger.info("\nrunning riboSelect\n")
-        rsel.main(select_args, logger)
+        rsel.main(namespaces["select"], logger)
     logger.info("\nrunning riboSeed\n")
-    rseed.main(seed_args, logger)
+    rseed.main(namespaces["seed"], logger)
     # now, perform the assessment stages
     if conf.RUN_SKETCH:
         if conf.MAUVE_JAR is not None:
             logger.info("\nrunning riboSketch\n")
-            rsketch.main(sketch_args, logger=logger)
+            rsketch.main(namespaces["sketch"], logger=logger)
         else:
             logger.info(
                 "Skipping riboSketch: no Mauve.jar found. To fix, " +
@@ -603,21 +616,21 @@ def main(args):
 
     if conf.RUN_SNAG:
         logger.info("\nrunning riboSnag\n")
-        rsnag.main(snag_args, logger=logger)
+        rsnag.main(namespaces["snag"], logger=logger)
     if conf.RUN_STACK:
         if shutil.which("bedtools") is not None:
             logger.info("\nrunning riboStack\n")
-            rstack.main(stack_args, logger=logger)
+            rstack.main(namespaces["stack"], logger=logger)
         else:
             logger.info("Skipping riboStack, as no bedtools executable was " +
                         "found in path.")
     if conf.RUN_SPEC:
         logger.info("\nrunning riboSpec\n")
-        rspec.main(spec_args, logger=logger)
+        rspec.main(namespaces["spec"], logger=logger)
     if conf.RUN_SCORE:
         if conf.BLAST_EXE is not None:
             logger.info("\nrunning riboScore\n")
-            rscore.main(score_args, logger=logger)
+            rscore.main(namespaces["score"], logger=logger)
         else:
             logger.info("Skipping riboScore, as no blastn executable was " +
                         "found in path.")

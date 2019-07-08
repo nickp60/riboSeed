@@ -153,6 +153,16 @@ class NgsLibTest(unittest.TestCase):
         nonify_empty_lib_files(ngsLib=ngs_ob, logger=logger)
         self.assertTrue(ngs_ob.readR is None)
         self.to_be_removed.append(empty_file)
+    def test_single_lib(self):
+        testlib_s = NgsLib(
+            name="test",
+            master=True,
+            readF=None,
+            readR=None,
+            readS0=self.ref_Ffastq,
+            ref_fasta=self.ref_fasta,
+            mapper_exe=self.smalt_exe)
+        self.assertEqual(testlib_s.libtype, "s_1")
 
     def tearDown(self):
         """

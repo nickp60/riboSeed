@@ -94,7 +94,7 @@ def get_args(test_args=None):  # pragma: no cover
     optional.add_argument("-R", "--fastq2", dest='fastq2', action="store",
                           help="reverse fastq reads, can be compressed",
                           type=str, default=None)
-    optional.add_argument("-S1", "--fastq_single1", dest='fastqS1',
+    optional.add_argument("-S1", "--fastqS1", dest='fastqS1',
                           action="store",
                           help="single fastq reads", type=str, default=None)
     # parameters for run

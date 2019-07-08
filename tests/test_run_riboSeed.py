@@ -15,7 +15,8 @@ from unittest.mock import patch
 from riboSeed.shared_methods import md5
 
 from riboSeed.run_riboSeed import detect_or_create_config, parse_config, \
-    new_log_for_diff, main, get_args
+    new_log_for_diff, main, get_args, simulate_args_from_namespace,\
+    make_namespaces
 
 logger = logging
 
@@ -72,6 +73,9 @@ class runRiboSeedTestCase(unittest.TestCase):
         self.assertEqual(
             path, os.path.join(self.test_dir, "lookanewconfig.yaml"))
 
+    def test_make_namespaces(self):
+        pass
+
     def test_parse_config(self):
         """ can we read in values from our sample config file
         """
@@ -95,7 +99,7 @@ class runRiboSeedTestCase(unittest.TestCase):
 
     @unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
                      "Skipping this test on Travis CI. Too hard to debug")
-    def test_run_all(self):
+    def test_run_all_PE(self):
         Fread = os.path.join(self.refpath, "test_reads1.fq")
         Rread = os.path.join(self.refpath, "test_reads2.fq")
         ref = os.path.join(self.refpath, "concatenated_seq.fasta")
@@ -111,6 +115,29 @@ class runRiboSeedTestCase(unittest.TestCase):
         with patch.object(sys, 'argv', testargs):
             args = get_args()
             main(args)
+
+    def test_run_all_single(self):
+        Sread = os.path.join(self.refpath, "test_reads1.fq")
+        ref = os.path.join(self.refpath, "concatenated_seq.fasta")
+        testargs = ["ribo", "run",
+                    "-S1", Sread,
+                    "-e", "test",
+                    "-o", self.run_testall_dir,
+                    "-r", ref,
+                    "--serialize",
+                    "--subassembler", "skesa",
+                    "--stages", "none"]
+        if os.path.isdir(self.run_testall_dir):
+            shutil.rmtree(self.run_testall_dir)
+        # this fails, cause surprise surprise, having single end reads
+        # doesn't give good assemblies...
+        with self.assertRaises(SystemExit) as cm:
+            with patch.object(sys, 'argv', testargs):
+                args = get_args()
+                main(args)
+        # ... so we ensure the exit is a 0.
+        # if its no, some error other than a bad assembly occured
+        self.assertEqual(cm.exception.code, 0)
 
     def tearDown(self):
         """ delete temp files if no errors
