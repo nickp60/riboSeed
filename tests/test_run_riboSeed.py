@@ -98,7 +98,7 @@ class runRiboSeedTestCase(unittest.TestCase):
         self.to_be_removed.append(test_log)
 
     @unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
-                     "Skipping this test on Travis CI. Too hard to debug")
+                     "Skipping this test on Travis CI. Too many dependencies")
     def test_run_all_PE(self):
         Fread = os.path.join(self.refpath, "test_reads1.fq")
         Rread = os.path.join(self.refpath, "test_reads2.fq")
@@ -116,6 +116,8 @@ class runRiboSeedTestCase(unittest.TestCase):
             args = get_args()
             main(args)
 
+    @unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true",
+                     "Skipping this test on Travis CI. Too many dependencies")
     def test_run_all_single(self):
         Sread = os.path.join(self.refpath, "test_reads1.fq")
         ref = os.path.join(self.refpath, "concatenated_seq.fasta")
