@@ -32,12 +32,7 @@ Interested in the figures/tables/analyses in the manuscript?  See the [README](h
 * [`Contributing`](./README.md#contributing)
 
 ## Reference Selection
-`riboSeed` requires an appropriate reference genome for the *de fere novo* assembly.  We outline a few different ways to select the best refference:
-
-- [Protocol for using Kraken.](http://riboseed.readthedocs.io/en/latest/REFERENCE.html#method-1-kraken) This kmer-based method requires having a Kraken database handy, but it provides good resolution while also checking for contamination.
-- [Protocol for using Reads2Type.](http://riboseed.readthedocs.io/en/latest/REFERENCE.html#method-2-reads2type-and-cgfind) This method is quick and easy if you are less comfortable with commandline tools, but at the cost of resolution.
-- [Using ANI (in development).](./choose_reference_with_ANI.md) This method should provide a appropriate reference based on ANI.  It can be time-consuming depending on the number of references considered, but can identify the best reference in a hands-free way, perfect for automation.
-
+`riboSeed` requires an appropriate reference genome for the *de fere novo* assembly.  We recommend using [PlentyOfBugs.](http://github.com/nickp60/plentyofbugs), which simplifies this process by comparing a preliminary assembly of your isolate to existing reference genomes.
 
 ## Before We Start
 Please back up any and all data used, and work within a virtualenv.
@@ -69,15 +64,7 @@ Visualizations/assessment
 ## Installation
 
 ### From conda (new and recommended!)
-Conda is a cross-platform, cross-language package management system.  If you haven't already installed conda, follow [these instructions here](https://bioconda.github.io/index.html), and install the python3.6 version.  Once you have that done, add the appropriate channels.
-
-```
-conda config --add channels defaults
-conda config --add channels conda-forge
-conda config --add channels bioconda
-```
-
-and then install riboSeed and all of its dependencies with one command:
+Conda is a cross-platform, cross-language package management system.  If you haven't already installed conda, follow [these instructions here](https://bioconda.github.io/index.html), and install the python3 version.  Once you have that done, install riboSeed and all of its dependencies with one command:
 
 ```
 conda install riboseed
@@ -253,16 +240,6 @@ Pull requests are more than welcome!
 You may run into issues where you get an error about "Unable to connect to X server: None" or localhost:N. Sorry about that; any tips would be useful;  a quick glance at the commit history will show I have spent much time trying to resolve it, without any luck.  If you do run into this, try the following:
   - connect to the machine with an X session (`ssh -X hostname`)
   - avoid using `gnu screen` if possible, but if you do need to use it, start the `screen` session after ensuring you have a `$DISPLAY` availible through starting the host session with `-X`
-
-#### SPAdes 3.9.0 on MacOS
-riboSeed requires SPAdes 3.9, but SPAdes 3.9.0 has a bug that was resolved in 3.9.1.  This version, sadly, is unavailable via conda.  The easiest solution in to uninstall conda's SPAdes, download the binary from [this link](http://cab.spbu.ru/files/release3.9.1/SPAdes-3.9.1-Darwin.tar.gz), and add that program to your path temporarily.
-```
-conda uninstall spades
-curl http://cab.spbu.ru/files/release3.9.1/SPAdes-3.9.1-Darwin.tar.gz | tar xvz
-export $PATH=./SPAdes-3.9.1-Darwin/bin:$PATH
-
-```
-
 
 
 #### Pysam on MacOS
