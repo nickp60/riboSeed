@@ -393,6 +393,7 @@ def main(args, logger=None):
     outlines = []
     with open(args.genbank_genome, "r") as gb:
         for i, rec in enumerate(SeqIO.parse(gb, 'genbank')):
+
             logger.info("Processing {0}\n".format(rec.id))
             # if user gives clusters, make sure it matches the length:
             if args.clusters:
@@ -420,11 +421,12 @@ def main(args, logger=None):
                 sys.exit(1)
             logger.debug("nfeat_simple:\n%s", nfeat_simple)
             rec_nfeat = [v for k, v in nfeat_simple.items() if
-                              rec.id in k][0]
+                              rec.id == k][0]
             logger.debug("rec_nfeat: {0}".format(rec_nfeat))
             if all([x == 0 for x in rec_nfeat]):
                 logger.error("unable to count features!")
                 sys.exit(1)
+
             indexes = [x.start_coord for x in subset]  # get index back from tuple key
             ## if centers[i] is 0, try max and min sequentially; if that fails skip
             if centers_per_seq[i] == 0:
