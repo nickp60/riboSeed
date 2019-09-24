@@ -3093,6 +3093,7 @@ def main(args, logger=None):
         logger.info("Combined Contig Seeds (for validation or alternate " +
                     "assembly): %s", seedGenome.assembled_seeds)
         logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
+        return 0
 
     final_ref_as_contig = set_ref_as_contig(
         ref_arg=subassembly_ref_as_contig,
@@ -3184,3 +3185,4 @@ def main(args, logger=None):
     logger.info("Combined Contig Seeds (for validation or alternate " +
                 "assembly): %s", seedGenome.assembled_seeds)
     logger.info("Time taken: %.2fm" % ((time.time() - t0) / 60))
+    return 0

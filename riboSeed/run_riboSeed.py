@@ -603,6 +603,10 @@ def main(args):
         rsel.main(namespaces["select"], logger)
     logger.info("\nrunning riboSeed\n")
     rseed.main(namespaces["seed"], logger)
+    if args.RUN_JUST_SEED:
+        logger.info("Ran riboSeed with --just_seed; skipping remaining steps")
+        new_log_for_diff(logfile_path=log_path)
+        return (0)
     # now, perform the assessment stages
     if conf.RUN_SKETCH:
         if conf.MAUVE_JAR is not None:
@@ -636,3 +640,4 @@ def main(args):
                         "found in path.")
 
     new_log_for_diff(logfile_path=log_path)
+    return 0
