@@ -211,6 +211,11 @@ def get_args():  # pragma: no cover
                           "until --iterations are completed or --target_len"
                           " is matched or exceeded; " +
                           "default: %(default)s")
+    optional.add_argument("--skip_control", dest='RUN_SKIP_CONTROL',
+                          action="store_true",
+                          default=False,
+                          help="if --skip_control, no de novo " +
+                          "assembly will be done; default: %(default)s")
     optional.add_argument("-v", "--verbosity", dest='RUN_VERBOSITY',
                           action="store",
                           default=2, type=int, choices=[1, 2, 3, 4, 5],
@@ -449,7 +454,7 @@ def make_namespaces(args, conf, output_root, experiment_name):
         subtract=conf.SEED_SUBTRACT,
         subassembler=conf.RUN_SUBASSEMBLER,
         linear=conf.RUN_LINEAR,
-        skip_control=conf.SEED_SKIP_CONTROL,
+        skip_control=conf.RUN_SKIP_CONTROL,
         target_len=conf.SEED_TARGET_LEN,
         smalt_scoring=conf.SEED_SMALT_SCORING,
         serialize=conf.serialize,

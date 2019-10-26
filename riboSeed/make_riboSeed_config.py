@@ -225,9 +225,9 @@ def config_seed_defaults():
          "round of subassembly will not be included in \n# " +
          "subsequent rounds.  This can lead to problems \n# " +
          "with multiple mapping and inflated coverage."),
-        ("SEED_SKIP_CONTROL", "false",
-         "if --skip_control, no de novo \n# " +
-         "assembly will be done; default: %(default)s"),
+        # ("SEED_SKIP_CONTROL", "false",
+        #  "if --skip_control, no de novo \n# " +
+        #  "assembly will be done; default: %(default)s"),
         # ("SEED_REF_AS_CONTIG", "infer",
         #  "ignore: reference will not be used in \n# " +
         #  "subassembly. trusted: SPAdes will use the seed\n# " +
