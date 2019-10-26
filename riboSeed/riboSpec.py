@@ -77,7 +77,6 @@ except Exception as e:  # likely an ImportError, but not taking chances
 
 import networkx as nx
 
-
 from .shared_methods import set_up_logging, make_barrnap_cmd
 
 
@@ -408,7 +407,12 @@ def neighborhood_by_length(G, source, cutoff=20000, ignored_nodes=[]):
     # his lambda function replaces the built-in weight calculation, cause
     # I want to use node length rather than some edge weight; edges in
     # fastg are of unknown length
-    get_node_weight = lambda u,v,d: G.node[v].get('length', 0)
+    try:
+        #  :( networkx >= 2.4
+        get_node_weight = lambda u,v,d: G.nodes[v].get('length', 0)
+    except AttributeError:
+        #  :( networkx < 2.4
+        get_node_weight = lambda u,v,d: G.node[v].get('length', 0)
     targets_path = nx.single_source_dijkstra(G, source, weight=get_node_weight)[1]
     #### Then, for each path, we calculate the length, binning them into
     #### either "internal" nodes (within the cutoff and "border" nodes (including the cutoff)
