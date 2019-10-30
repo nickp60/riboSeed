@@ -1837,7 +1837,7 @@ def get_final_assemblies_cmds(seedGenome, exes,
                 k=kmers, spades_exe=exes.spades, logger=logger)
             modest_spades_cmd = make_modest_assembler_cmd(
                 assembler="spades",
-                cmd=spades_cmd, cores=cores, memory=memory, split=2,
+                cmd=spades_cmd, cores=cores, memory=memory, split=len(final_list),
                 serialize=serialize, logger=logger)
             ## add additional cmdline args for assembly
             if additional_libs is not None:
@@ -1847,21 +1847,6 @@ def get_final_assemblies_cmds(seedGenome, exes,
                 modest_spades_cmd = "{0} --only-assembler".format(
                     modest_spades_cmd)
             subassembly_cmd = modest_spades_cmd
-        # else:
-        #     assert args.subassembler == "skesa", \
-        #         "Only valid subassemblers are skesa and spades!"
-        #     cmd = generate_skesa_cmd(
-        #         single_lib=seedGenome.master_ngs_ob.libtype == "s_1",
-        #         check_libs=False,
-        #         python_exe=exes.python,
-        #         mapping_ob=final_mapping, ngs_ob=seedGenome.master_ngs_ob,
-        #         ref_as_contig=assembly_ref_as_contig, as_paired=True, prelim=False,
-        #         k=kmers, spades_exe=exes.spades, logger=logger)
-        # )
-        #     modest_skesa_cmd = make_modest_assembler_cmd(
-        #         assembler="skesa",
-        #         cmd=spades_cmd, cores=cores, memory=memory, split=2,
-        #         serialize=serialize, logger=logger)
 
         ref = str("-R %s" % seedGenome.ref_fasta)
         quast_cmd = make_quast_command(
@@ -2131,61 +2116,6 @@ def printPlot(data, line=None, ymax=30, xmax=60, tick=.2,
             for item in plotlines:
                 file_handler.write("{0}\n".format(item))
 
-
-# def plotAsScores(score_list, score_min, outdir, logger=None):
-#     """ This function is depreciated til I can figure out how to get
-#         conda to play nice with matplotlib.  No one (not even me)
-#         cares about this graph anyway #singletear
-#     """
-#     assert logger is not None, "must use logging"
-#     basename = os.path.join(outdir, "AS_score_plot")
-#     if len(score_list) > 200000:
-#         logger.info("Downsampling our pltting data to 20k points")
-#         score_list = random.sample(score_list, 200000)
-#     xmax = max(score_list)
-#     ymax = max(set(score_list), key=score_list.count)
-#     logger.info("score_min, xmax and ymax: %s, %s, %s", score_min, xmax, ymax)
-#     # plt.figure()  # <- makes a new figure and sets it active (add this)
-#     fig = Figure()
-#     FigureCanvas(fig)
-#     ax1 = fig.add_subplot(121)
-#     ax2 = fig.add_subplot(122)
-
-#     # fig, (ax1, ax2) = plt.subplots(1, 2, sharex=False)
-#     # ,
-#     #                                  gridspec_kw={'height_ratios': [1, 1]})
-#     ax1.hist(score_list, bins=50, color='b', alpha=0.9, label='Binned')
-#     ax1.hist(score_list, bins=100,
-#               cumulative=True, color='r', alpha=0.5,
-#               label='Cumulative')
-#     ax1.set_title('Read Alignment Score Histogram')
-#     ax1.set_xlabel('Alignemnt Score')
-#     ax1.set_ylabel('Abundance')
-#     ax1.plot([score_min, score_min], [0, len(score_list) * 1.1],
-#               color='green', linewidth=5, alpha=0.6)
-#     ax1.axis([0, max(score_list), 0, len(score_list) * 1.1])
-#     # ax1.set_yscale("log", nonposy='clip')
-#     ax1.legend()
-#     fig.tight_layout()
-#     ax1.grid(True)
-#     ax2.grid(True)
-
-#     ax2.scatter(y=sorted(score_list, reverse=True),
-#                  x=range(0, len(score_list)))
-#     ax2.plot([0, len(score_list) * 1.1], [score_min, score_min],
-#               color='green', linewidth=5, alpha=0.6)
-#     ax2.axis([0, len(score_list) * 1.1, 0, max(score_list) * 1.1])
-#     ax2.set_title('Read Alignment Score, Sorted')
-#     ax2.set_ylabel('Alignment Score')
-#     ax2.set_xlabel('Index of Sorted Read')
-#     fig.set_size_inches(12, 7.5)
-#     fig.savefig(str(basename + '.png'), dpi=(200))
-#     fig.savefig(str(basename + '.pdf'), dpi=(200))
-#     logger.info("Plotting alignment score of mapping:")
-#     logger.info("Filled area represents the reads retained after filtering. " +
-#                 "If it looks like " +
-#                 "this filtering threshold is inapporpriate, consider " +
-#                 "adjusting with --score_min")
 
 
 def set_ref_as_contig(ref_arg, map_percentage, final=False, logger=None):

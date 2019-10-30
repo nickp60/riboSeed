@@ -74,12 +74,12 @@ conda install riboseed
 
 
 #### From Pypi
-riboSeed is on Pypi, so you can install with pip, preferably within a virtualenv (recommended):
+riboSeed is on Pypi, so you can install with pip, preferably within a conda environemnt (recommended):
 
 ```
-virtualenv -p python3.5 venv-riboSeed
-source venv-riboSeed/bin/activate
-pip3.5 install riboSeed
+conda create -name riboseed  -p python=3.5
+conda activate riboseed
+pip install riboSeed
 ```
 
 
