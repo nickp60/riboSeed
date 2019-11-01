@@ -544,7 +544,6 @@ class Exes(object):
         if self.check:
             for exe in ["bcftools", "quast"]:
                 if getattr(self, exe) is not None:
-                    print(exe)
                     exe_groomed = os.path.expanduser(getattr(self, exe))
                     exe_groomed = shutil.which(exe_groomed)
                     setattr(self, exe, exe_groomed)
