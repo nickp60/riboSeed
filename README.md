@@ -23,6 +23,7 @@ Nucleic Acids Research, gky212, https://doi.org/10.1093/nar/gky212
 
 Interested in the figures/tables/analyses in the manuscript?  See the [README](https://github.com/nickp60/riboSeed/blob/master/scripts/README.md) in the `scripts` dir.
 
+
 ## Table of Contents
 
 * [`Reference Selection`](./README.md#reference-selection)
@@ -38,6 +39,8 @@ Interested in the figures/tables/analyses in the manuscript?  See the [README](h
 Please back up any and all data used, and work within a virtualenv.
 
 Genome assembly gobbles RAM. If you, like me, are working on a 4gb RAM lappy, don't run riboSeed in parallel and instead run in series by using the `--serialize` option.  That should prevent you from running out of RAM during the final SPAdes calls.
+
+
 
 ## Description
 
@@ -63,7 +66,16 @@ Visualizations/assessment
 
 ## Installation
 
-### From conda (new and recommended!)
+### Docker (recommended!)
+riboSeed can be run as a docker container, as follows
+```
+docker run -it --rm  -v $PWD:/data/nickp60/riboseed:0.4.90 run -r  /data/<path to reference file>  -F /data/<path to reads> -o /data/<path to deesired output>
+# for instance,
+docker run -it --rm -v $PWD:/data/  nickp60/riboseed:0.4.90 run -r  /data/tests/references/contigs.fasta  -S1 /data/tests/references/toy_reads1.fq -o /data/dockertest/
+```
+`-it` helps deal with managing messages between the container and the host, and `--rm` deletes the container as it exits.  `-v` sets volumes toallow a bridge between the container and the host.
+
+### From conda
 Conda is a cross-platform, cross-language package management system.  If you haven't already installed conda, follow [these instructions here](https://bioconda.github.io/index.html), and install the python3 version.  Once you have that done, install riboSeed and all of its dependencies with one command:
 
 ```
@@ -80,15 +92,6 @@ riboSeed is on Pypi, so you can install with pip, preferably within a conda envi
 conda create -name riboseed  -p python=3.5
 conda activate riboseed
 pip install riboSeed
-```
-
-
-#### From TestPypi
-To install the bleeding-edge version, install from testpypi:
-```
-virtualenv -p python3.5 venv-riboSeed
-source venv-riboSeed/bin/activate
-pip install --extra-index-url https://testpypi.python.org/pypi riboSeed
 ```
 
 #### From GitHub
