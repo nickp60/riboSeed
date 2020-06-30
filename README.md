@@ -4,7 +4,7 @@
 [![DOI](https://zenodo.org/badge/68617544.svg)](https://zenodo.org/badge/latestdoi/68617544)
 [![Code Health](https://landscape.io/github/nickp60/riboSeed/master/landscape.svg?style=flat)](https://landscape.io/github/nickp60/riboSeed/master)
 [![Documentation Status](https://readthedocs.org/projects/riboseed/badge/?version=latest)](http://riboseed.readthedocs.io/en/latest/?badge=latest)
-
+[![](https://images.microbadger.com/badges/version/nickp60/riboseed.svg)](https://microbadger.com/images/nickp60/riboseed "Get your own version badge on microbadger.com")
 ![riboSeed](https://github.com/nickp60/riboSeed/blob/master/icon/logo_1.png)
 
 # riboSeed Pipeline
@@ -69,30 +69,23 @@ Visualizations/assessment
 ### Docker (recommended!)
 riboSeed can be run as a docker container, as follows
 ```
-docker run -it --rm  -v $PWD:/data/nickp60/riboseed:0.4.90 run -r  /data/<path to reference file>  -F /data/<path to reads> -o /data/<path to deesired output>
+docker run -it --rm  -v $PWD:/data/ nickp60/riboseed:latest run -r  /data/<path to reference file>  -S1 /data/<path to reads> -o /data/<path to desired output>
 # for instance,
 docker run -it --rm -v $PWD:/data/  nickp60/riboseed:0.4.90 run -r  /data/tests/references/contigs.fasta  -S1 /data/tests/references/toy_reads1.fq -o /data/dockertest/
 ```
-`-it` helps deal with managing messages between the container and the host, and `--rm` deletes the container as it exits.  `-v` sets volumes toallow a bridge between the container and the host.
+`-it` helps deal with managing messages between the container and the host, and `--rm` deletes the container as it exits.  `-v` sets volumes to allow a bridge between the container and the host.
 
 ### From conda
-Conda is a cross-platform, cross-language package management system.  If you haven't already installed conda, follow [these instructions here](https://bioconda.github.io/index.html), and install the python3 version.  Once you have that done, install riboSeed and all of its dependencies with one command:
+Conda is a cross-platform, cross-language package management system.  If you haven't already installed conda, follow [these instructions here](https://bioconda.github.io/user/install.html), and install the python3 version.  Once you have that done, install riboSeed and all of its dependencies with one command:
 
 ```
-conda install riboseed
+conda create --name ribo_env riboseed
+source activate ribo_env
 ```
 
 (Note the lowercase "s")
 
 
-#### From Pypi
-riboSeed is on Pypi, so you can install with pip, preferably within a conda environemnt (recommended):
-
-```
-conda create -name riboseed  -p python=3.5
-conda activate riboseed
-pip install riboSeed
-```
 
 #### From GitHub
 You can also clone this repository, and run `python setup.py install`.
