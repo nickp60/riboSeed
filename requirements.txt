@@ -1,4 +1,4 @@
-Biopython
+Biopython==1.76
 pysam
 bcbio-gff
 coverage
